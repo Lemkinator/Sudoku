@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_color">#ff009808</color>
+    <color name="primary_dark_color">#8D009808</color>
+    <color name="secondary_color">#00DA95</color>
+
+    <color name="sesl_thumb_control_color_activated">@color/primary_color</color>
+
+    <!--color name="red">#ffD50000</color>
+    <color name="yellow">#ffFFD600</color>
+    <color name="green">#ff009808</color>
+    <color name="blue">#ff304FFE</color>
+    <color name="orange">#ffFF6D00</color>
+    <color name="cyan">#ff00BFA5</color>
+    <color name="magenta">#ffC51162</color>
+    <color name="white">#ffffffff</color-->
+</resources>

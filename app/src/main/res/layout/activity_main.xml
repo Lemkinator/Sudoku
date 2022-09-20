@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dev.oneuiproject.oneui.layout.ToolbarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_toolbarlayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:title="@string/app_name"
+    >
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_location="main_content" />
+
+    <dev.oneuiproject.oneui.widget.MarginsTabLayout
+        android:id="@+id/main_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_location="footer" />
+
+</dev.oneuiproject.oneui.layout.ToolbarLayout>

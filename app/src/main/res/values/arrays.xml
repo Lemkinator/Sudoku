@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="mainactivity_tab_tag">
+        <item>tabMain</item>
+        <item>tabHistory</item>
+        <item>tabStatistics</item>
+    </string-array>
+
+    <string-array name="mainactivity_tab_class">
+        <item>de.lemke.sudoku.ui.fragments.MainActivityTabMain</item>
+        <item>de.lemke.sudoku.ui.fragments.MainActivityTabHistory</item>
+        <item>de.lemke.sudoku.ui.fragments.MainActivityTabStatistics</item>
+    </string-array>
+
+    <array name="preferences_darkmode_entries_image">
+        <item>@drawable/display_help_light</item>
+        <item>@drawable/display_help_dark</item>
+    </array>
+    <string-array name="preferences_darkmode_entries">
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
+    <string-array name="preferences_darkmode_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+</resources>

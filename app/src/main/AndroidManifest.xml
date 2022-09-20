@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+    TODO / Ideas
+        drawer onBackPressed
+        statistics
+
+        (new Android 12 Splashscreen)
+    -->
+
+    <application
+        android:name=".App"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:resizeableActivity="true"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Sudoku"
+        tools:targetApi="32">
+
+        <activity android:name=".ui.SettingsActivity" />
+        <activity android:name=".ui.AboutActivity" />
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".ui.SplashActivity"
+            android:exported="true"
+            android:noHistory="true">
+            <!--Launcher-->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--Shortcuts-->
+            <!--meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" /-->
+        </activity>
+    </application>
+
+</manifest>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?><!--suppress ALL -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="@string/design">
+        <dev.oneuiproject.oneui.preference.HorizontalRadioPreference
+            android:key="dark_mode_pref"
+            app:entries="@array/preferences_darkmode_entries"
+            app:entriesImage="@array/preferences_darkmode_entries_image"
+            app:entryValues="@array/preferences_darkmode_values"
+            app:viewType="image" />
+        <SwitchPreferenceCompat
+            android:key="dark_mode_auto"
+            android:title="@string/system_default" />
+    </PreferenceCategory>
+
+
+    <PreferenceCategory android:title="@string/general">
+        <SwitchPreference
+            android:key="confirmExit"
+            android:summary="@string/press_again_to_exit"
+            android:title="@string/confirm_exit"
+            app:icon="@drawable/ic_baseline_oui_power_24" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="dev_options"
+        android:title="@string/dev_options">
+        <PreferenceScreen
+            android:key="delete_app_data"
+            android:title="@string/delete_appdata_and_exit"
+            app:icon="@drawable/ic_baseline_oui_restart_24" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/privacy">
+        <PreferenceScreen
+            android:key="privacy"
+            android:title="@string/privacy_information"
+            app:icon="@drawable/ic_baseline_oui_security_24" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/about">
+        <PreferenceScreen
+            android:key="about_app"
+            android:title="@string/about_app"
+            app:icon="@drawable/ic_baseline_oui_info_outline_24">
+            <intent
+                android:targetClass="de.lemke.sudoku.ui.AboutActivity"
+                android:targetPackage="de.lemke.sudoku" />
+        </PreferenceScreen>
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        // Set the splash screen background, animated icon, and animation duration.
+        <item name="windowSplashScreenBackground">@color/sesl_fragment_bgcolor</item>
+
+        // Use windowSplashScreenAnimatedIcon to add either a drawable or an
+        // animated drawable. One of these is required.
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+        <item name="windowSplashScreenAnimationDuration">500</item>
+        # Required for animated icons
+
+        // Set the theme of the Activity that directly follows your splash screen.
+        <item name="postSplashScreenTheme">@style/OneUITheme</item>
+        # Required.
+    </style-->
+
+    <style name="Theme.Sudoku" parent="OneUITheme">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorPrimaryDark">@color/primary_dark_color</item>
+        <item name="colorSecondary">@color/secondary_color</item>
+        <item name="colorAccent">@color/secondary_color</item>
+    </style>
+
+    <style name="ButtonStyle.Colored" parent="OneUI.ButtonStyleColored">
+        <item name="android:backgroundTint">@color/primary_color</item>
+        <item name="android:textColor">@color/oui_round_and_bgcolor</item>
+        <item name="tint">@color/oui_round_and_bgcolor</item>
+    </style>
+
+    <style name="ButtonStyle.Transparent" parent="OneUI.ButtonStyleTransparent">
+        <item name="android:backgroundTint">@android:color/transparent</item>
+        <item name="android:textColor">@color/primary_color</item>
+        <item name="tint">@color/primary_color</item>
+    </style>
+
+    <style name="ButtonStyle.Filled" parent="Widget.AppCompat.Button">
+        <item name="android:backgroundTint">?colorControlHighlight</item>
+        <item name="android:textColor">@color/oui_primary_text_color</item>
+        <item name="tint">@color/oui_primary_icon_color</item>
+    </style>
+
+    <style name="DrawerDividerStyle">
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">3dp</item>
+        <item name="android:layout_marginStart">24dp</item>
+        <item name="android:layout_marginEnd">24dp</item>
+        <item name="android:foreground">@drawable/drawer_item_separator_bg</item>
+    </style>
+
+    <style name="MenuPopupAnimStyle" parent="@android:style/Animation">
+        <item name="android:windowEnterAnimation">@anim/sesl_menu_popup_enter</item>
+        <item name="android:windowExitAnimation">@anim/sesl_menu_popup_exit</item>
+    </style>
+
+</resources>
