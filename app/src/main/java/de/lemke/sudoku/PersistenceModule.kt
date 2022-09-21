@@ -31,8 +31,14 @@ PersistenceModule : Application() {
     fun provideAppDatabase(
         @ApplicationContext context: Context,
     ): AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, "app")
-        .createFromAsset("databases/app-v2.db")
+        //.createFromAsset("databases/app-v1.db")
         .build()
+
+    @Provides
+    fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()
+
+    @Provides
+    fun provideFieldDao(database: AppDatabase): FieldDao = database.fieldDao()
 }
 
 

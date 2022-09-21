@@ -37,7 +37,6 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_splash)
         splashView = findViewById(R.id.splash)
         lifecycleScope.launch {
-            //TODO splashView.text = getString(R.string.app_name)
             if (getUserSettings().devModeEnabled) {
                 val devText: Spannable = SpannableString(" Dev")
                 devText.setSpan(

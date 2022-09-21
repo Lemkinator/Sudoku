@@ -5,19 +5,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.domain.model.Sudoku
-import kotlin.math.pow
 
 class SudokuViewAdapter(
     private val context: Context,
     private val sudoku: Sudoku,
-) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder?>() {
-    private val fieldViews: Array<FieldView?>
+) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
+    private val fieldViews: MutableList<FieldView?>
 
     init {
-        fieldViews = arrayOfNulls(itemCount)
+        fieldViews = MutableList(itemCount) {FieldView((context))}
     }
 
-    override fun getItemCount(): Int = sudoku.board.size.toDouble().pow(2.0).toInt()
+    override fun getItemCount(): Int = sudoku.itemCount
 
     fun getFieldView(position: Int): FieldView? = fieldViews[position]
 
@@ -25,9 +24,9 @@ class SudokuViewAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        fieldViews[position] = holder.itemView as FieldView
-        (holder.itemView as FieldView).init(sudoku, position, this)
+    override fun onBindViewHolder(holder: ViewHolder, index: Int) {
+        fieldViews[index] = holder.itemView as FieldView
+        (holder.itemView as FieldView).init(sudoku, index, this)
     }
 
     inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView)

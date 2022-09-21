@@ -16,7 +16,7 @@
         app:layout_location="main_content">
 
         <LinearLayout
-            android:id="@+id/play_layout"
+            android:id="@+id/game_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:animateLayoutChanges="true"
@@ -62,35 +62,38 @@
                     tools:ignore="HardcodedText" />
 
             </LinearLayout>
-        </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/resume_button_layout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@color/oui_background_color"
+            <LinearLayout
+                android:id="@+id/resume_button_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:gravity="center"
                 android:orientation="vertical"
-                android:padding="15dp">
+                android:visibility="gone">
 
-                <androidx.appcompat.widget.AppCompatButton
-                    style="@style/ButtonStyle.Colored"
-                    android:layout_width="match_parent"
+                <dev.oneuiproject.oneui.widget.RoundLinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginVertical="5dp"
-                    android:onClick="resumeGameTimer"
-                    android:text="@string/resume" />
+                    android:background="@color/oui_background_color"
+                    android:orientation="vertical"
+                    android:padding="15dp">
 
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+                    <androidx.appcompat.widget.AppCompatButton
+                        style="@style/ButtonStyle.Colored"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="5dp"
+                        android:onClick="resumeGame"
+                        android:text="@string/resume" />
+
+                </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
+
+
 
     </androidx.core.widget.NestedScrollView>
 

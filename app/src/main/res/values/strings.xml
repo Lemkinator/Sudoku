@@ -46,9 +46,17 @@
     <string name="about">Über</string>
     <string name="privacy_information">Informationen zum Datenschutz</string>
     <string name="privacy">Datenschutz</string>
+
+    <!--Difficuilties-->
+    <string name="very_easy"> Sehr Einfach</string>
     <string name="easy">Einfach</string>
     <string name="medium">Mittel</string>
     <string name="hard">Schwer</string>
+    <string name="expert">Expert</string>
+
+    <!--Game-->
+    <string name="elapsed_time">Elapsed time: %1$s</string>
+    <string name="current_time">Time: %1$s</string>
 
     <!--Others TODO-->
     <string name="completed_no_error_title">Finished</string>

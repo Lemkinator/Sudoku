@@ -51,7 +51,8 @@ class Position private constructor(
             return Position(
                 size = size,
                 index = row * size + column,
-                row = row, column = column,
+                row = row,
+                column = column,
                 block = row / (size / sqrtSize) * sqrtSize + column / (size / sqrtSize)
             )
         }

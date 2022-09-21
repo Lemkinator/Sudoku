@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="end"
-                android:text="@string/hard" />
+                android:text="@string/expert" />
 
         </LinearLayout>
 

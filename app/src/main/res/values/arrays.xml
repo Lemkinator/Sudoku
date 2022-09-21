@@ -24,4 +24,12 @@
         <item>0</item>
         <item>1</item>
     </string-array>
+
+    <string-array name="difficuilty">
+        <item>@string/very_easy</item>
+        <item>@string/easy</item>
+        <item>@string/medium</item>
+        <item>@string/hard</item>
+        <item>@string/expert</item>
+    </string-array>
 </resources>

@@ -3,6 +3,7 @@ package de.lemke.sudoku.ui
 import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
+import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
@@ -16,7 +17,7 @@ import java.util.stream.Collectors
 class FieldView(context: Context) : LinearLayout(context) {
     private lateinit var fieldViewValue: TextView
     private lateinit var fieldViewNotes: TextView
-    private lateinit var fieldViewContainer: View
+    private var fieldViewContainer: View? = null
     private lateinit var adapter: SudokuViewAdapter
     private lateinit var sudoku: Sudoku
     private lateinit var field: Field
@@ -39,11 +40,12 @@ class FieldView(context: Context) : LinearLayout(context) {
         this.adapter = adapter
         this.sudoku = sudoku
         position = Position.create(sudoku.size, index)
-        //TODO if (fieldViewContainer == null) return
+        //if (fieldViewContainer == null) return
         field = sudoku[position.index]
 
         //init view
         fieldViewValue.text = if (field.value == null) null else field.value.toString()
+        fieldViewValue.visibility = if (field.value == null) GONE else VISIBLE
         if (!field.given && !field.hint && !sudoku.completed) {
             setOnClickListener {
                 //showMainPopup()

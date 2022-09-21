@@ -3,19 +3,18 @@ package de.lemke.sudoku.data.database
 import androidx.room.*
 
 @Entity(tableName = "field",
-    primaryKeys = ["id", "index"],
+    primaryKeys = ["sudokuId", "index"],
     foreignKeys = [
         ForeignKey(
             entity = SudokuDb::class,
             parentColumns = arrayOf("id"),
-            childColumns = arrayOf("id"),
+            childColumns = arrayOf("sudokuId"),
             onDelete = ForeignKey.NO_ACTION,
         )
     ],
 )
 data class FieldDb(
-    @PrimaryKey
-    val id: String,
+    val sudokuId: String,
     val gameSize: Int,
     val index: Int,
     val value: Int?,

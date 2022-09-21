@@ -1,5 +1,6 @@
 package de.lemke.sudoku.domain
 
+import android.util.Log
 import de.lemke.sudoku.domain.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,16 +53,17 @@ class GenerateSudokuUseCase @Inject constructor(
 
     private fun generateSudoku(size: Int, difficulty: Difficulty): Sudoku {
         val sudokuId = SudokuId.generate()
+        val initialSudoku = getInitialSudoku(size)
         return Sudoku.create(
             sudokuId = sudokuId,
             size = size,
             difficulty = difficulty,
-            fields = MutableList(size) { index ->
+            fields = MutableList(initialSudoku.size) { index ->
                 Field(
                     sudokuId = sudokuId,
                     position = Position.create(size, index),
-                    value = getInitialSudoku(size)[index],
-                    solution = getInitialSudoku(size)[index],
+                    value = initialSudoku[index],
+                    solution = initialSudoku[index],
                     given = true,
                 )
             })
@@ -121,19 +123,19 @@ class GenerateSudokuUseCase @Inject constructor(
         sudoku.setColumn(c2, column)
     }
 
-    private fun shuffleBlockRows(sudoku: Sudoku) {
+    private suspend fun shuffleBlockRows(sudoku: Sudoku) {
         for (i in 0 until sudoku.blockSize) swapBlockRows(sudoku, i, random.nextInt(sudoku.blockSize))
     }
 
-    private fun swapBlockRows(sudoku: Sudoku, r1: Int, r2: Int) {
+    private suspend fun swapBlockRows(sudoku: Sudoku, r1: Int, r2: Int) {
         for (i in 0 until sudoku.blockSize) swapRows(sudoku, r1 * sudoku.blockSize + i, r2 * sudoku.blockSize + i)
     }
 
-    private fun shuffleBlockColumns(sudoku: Sudoku) {
+    private suspend fun shuffleBlockColumns(sudoku: Sudoku) {
         for (i in 0 until sudoku.blockSize) swapBlockColumns(sudoku, i, random.nextInt(sudoku.blockSize))
     }
 
-    private fun swapBlockColumns(sudoku: Sudoku, c1: Int, c2: Int) {
+    private suspend fun swapBlockColumns(sudoku: Sudoku, c1: Int, c2: Int) {
         for (i in 0 until sudoku.blockSize) swapColumns(sudoku, c1 * sudoku.blockSize + i, c2 * sudoku.blockSize + i)
     }
 
@@ -144,7 +146,7 @@ class GenerateSudokuUseCase @Inject constructor(
     }
 
     private suspend fun removedRandomNumber(sudoku: Sudoku, numbersToRemove: Int, tries: Int = 20): Sudoku {
-        val index = random.nextInt(sudoku.maxIndex + 1)
+        val index = random.nextInt(sudoku.itemCount)
         val newSudoku = sudoku.copy()
         return if (newSudoku[index].value != null) {
             newSudoku[index].value = null

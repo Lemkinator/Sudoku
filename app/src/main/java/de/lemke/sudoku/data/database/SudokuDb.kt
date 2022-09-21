@@ -22,7 +22,7 @@ data class SudokuWithFields(
     val sudoku: SudokuDb,
     @Relation(
         parentColumn = "id",
-        entityColumn = "id",
+        entityColumn = "sudokuId",
     )
     val fields: List<FieldDb>
 )

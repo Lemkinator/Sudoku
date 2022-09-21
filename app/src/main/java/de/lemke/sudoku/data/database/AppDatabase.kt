@@ -5,14 +5,16 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    version = 2,
+    version = 1,
     entities = [
         SudokuDb::class,
+        FieldDb::class,
     ],
     exportSchema = true,
 
     )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun gameDao(): SudokuDao
+    abstract fun sudokuDao(): SudokuDao
+    abstract fun fieldDao(): FieldDao
 }

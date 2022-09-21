@@ -6,8 +6,23 @@ import androidx.room.*
 interface SudokuDao {
 
     @Transaction
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(hymn: SudokuDb)
+    open suspend fun upsert(sudoku: SudokuDb) {
+        val rowId = insert(sudoku)
+        if (rowId == -1L) {
+            update(sudoku)
+        }
+    }
+
+    @Transaction
+    open suspend fun upsert(sudokus: List<SudokuDb>) {
+        sudokus.forEach { upsert(it) }
+    }
+
+    @Update
+    suspend fun update(sudoku: SudokuDb)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insert(sudoku: SudokuDb): Long
 
     @Transaction
     @Query("SELECT * FROM sudoku")

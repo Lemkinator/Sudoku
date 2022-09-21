@@ -1,5 +1,6 @@
 package de.lemke.sudoku.domain.model
 
+import android.util.Log
 import de.lemke.sudoku.ui.SudokuViewAdapter
 import java.time.ZonedDateTime
 import java.util.*
@@ -25,7 +26,7 @@ class Sudoku(
     var gameListener: GameListener?,
     val created: ZonedDateTime,
     val updated: ZonedDateTime,
-    private val fields: MutableList<Field>,
+    val fields: MutableList<Field>,
 ) {
     companion object {
         fun create(
@@ -77,34 +78,35 @@ class Sudoku(
     val completed: Boolean
         get() = fields.all { !it.error && it.value != null }
 
-    val maxIndex: Int
-        get() = (this.size * this.size) - 1
+    val itemCount: Int
+        get() = (this.size * this.size)
     val blockSize: Int
         get() = sqrt(this.size.toDouble()).toInt()
 
     operator fun get(position: Position): Field = fields[position.index]
     operator fun set(position: Position, field: Field) {
-        fields[position.index] = field
+        fields[position.index] = field.clone(position = position)
     }
 
     operator fun get(index: Int): Field = fields[index]
     operator fun set(index: Int, field: Field) {
-        fields[index] = field
+        fields[index] = field.clone(position = Position.create(index, size))
     }
 
     operator fun get(row: Int, column: Int) = fields[Position.create(size = size, row = row, column = column).index]
     operator fun set(row: Int, column: Int, field: Field) {
-        fields[Position.create(size = size, row = row, column = column).index] = field
+        fields[Position.create(size = size, row = row, column = column).index] =
+            field.clone(position = Position.create(size = size, row = row, column = column))
     }
 
     fun getRow(row: Int): List<Field> =
-        fields.toMutableList().filterIndexed { _, field -> field.position.row == row }.toList()
+        fields.filter { it.position.row == row }
 
     fun getColumn(column: Int): List<Field> =
-        fields.toMutableList().filterIndexed { _, field -> field.position.column == column }.toList()
+        fields.filter { it.position.column == column }
 
-    fun getBlock(block: Int): List<Field> =
-        fields.toMutableList().filterIndexed { _, field -> field.position.block == block }.toList()
+    private fun getBlock(block: Int): List<Field> =
+        fields.filter { it.position.block == block }
 
     fun setRow(row: Int, fields: List<Field>) {
         fields.forEachIndexed { index, field -> set(row = row, column = index, field = field) }
@@ -158,7 +160,7 @@ class Sudoku(
     )
 
     fun move(position: Position, value: Int?) {
-        val field = fields[position.index]
+        val field = get(position)
         if (field.value == value) return
         history.add(HistoryItem(position, if (value == null) field.value else null))
         field.value = value
@@ -168,7 +170,7 @@ class Sudoku(
     fun revertLastChange(adapter: SudokuViewAdapter) {
         if (history.size != 0) {
             val item = history.removeAt(history.lastIndex)
-            fields[item.position.index].value = item.deletedNumber
+            get(item.position.index).value = item.deletedNumber
             adapter.updateFieldView(item.position.index)
             gameListener?.onHistoryChange(history.size)
         }

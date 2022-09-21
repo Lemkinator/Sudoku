@@ -1,6 +1,7 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,8 +14,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.utils.SeekBarUtils
@@ -39,6 +42,9 @@ class MainActivityTabMain : Fragment() {
     @Inject
     lateinit var generateSudoku: GenerateSudokuUseCase
 
+    @Inject
+    lateinit var saveSudoku: SaveSudokuUseCase
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         rootView = inflater.inflate(R.layout.fragment_tab_main, container, false)
         return rootView
@@ -56,8 +62,9 @@ class MainActivityTabMain : Fragment() {
             mLoadingDialog.setCancelable(false)
             mLoadingDialog.show()
             lifecycleScope.launch {
-                val game = generateSudoku(size, Difficulty.fromInt(difficultySeekbar.progress))
-
+                val sudoku = generateSudoku(size, Difficulty.fromInt(difficultySeekbar.progress))
+                saveSudoku(sudoku)
+                startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 mLoadingDialog.dismiss()
             }
         }
