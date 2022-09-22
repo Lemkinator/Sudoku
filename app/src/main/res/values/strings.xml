@@ -57,6 +57,7 @@
     <!--Game-->
     <string name="elapsed_time">Elapsed time: %1$s</string>
     <string name="current_time">Time: %1$s</string>
+    <string name="current_errors">Errors: %1$d</string>
 
     <!--Others TODO-->
     <string name="completed_no_error_title">Finished</string>

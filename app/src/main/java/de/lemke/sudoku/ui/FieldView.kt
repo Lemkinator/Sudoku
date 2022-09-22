@@ -15,11 +15,11 @@ import de.lemke.sudoku.domain.model.*
 import java.util.stream.Collectors
 
 class FieldView(context: Context) : LinearLayout(context) {
-    private lateinit var fieldViewValue: TextView
-    private lateinit var fieldViewNotes: TextView
+    private var fieldViewValue: TextView? = null
+    private var fieldViewNotes: TextView? = null
     private var fieldViewContainer: View? = null
+    private var sudoku: Sudoku? = null
     private lateinit var adapter: SudokuViewAdapter
-    private lateinit var sudoku: Sudoku
     private lateinit var field: Field
     private lateinit var position: Position
     private var isColored = false
@@ -32,6 +32,8 @@ class FieldView(context: Context) : LinearLayout(context) {
             fieldViewValue = findViewById(R.id.itemNumber)
             fieldViewNotes = findViewById(R.id.itemNotes)
             fieldViewContainer = findViewById(R.id.itemContainer)
+
+            sudoku?.let { init(it, position.index, adapter) }
         }
     }
 
@@ -40,12 +42,12 @@ class FieldView(context: Context) : LinearLayout(context) {
         this.adapter = adapter
         this.sudoku = sudoku
         position = Position.create(sudoku.size, index)
-        //if (fieldViewContainer == null) return
         field = sudoku[position.index]
+        if (fieldViewContainer == null) return
 
         //init view
-        fieldViewValue.text = if (field.value == null) null else field.value.toString()
-        fieldViewValue.visibility = if (field.value == null) GONE else VISIBLE
+        fieldViewValue?.text = if (field.value == null) null else field.value.toString()
+        fieldViewValue?.visibility = if (field.value == null) GONE else VISIBLE
         if (!field.given && !field.hint && !sudoku.completed) {
             setOnClickListener {
                 //showMainPopup()
@@ -63,9 +65,9 @@ class FieldView(context: Context) : LinearLayout(context) {
         //init appearance
         val typedValue = TypedValue()
         context.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
-        fieldViewValue.setTextColor(typedValue.data)
+        fieldViewValue?.setTextColor(typedValue.data)
         if (field.hint) {
-            fieldViewValue.setTextColor(context.getColor(R.color.secondary_color))
+            fieldViewValue?.setTextColor(context.getColor(R.color.secondary_color))
         }
         val rm = position.row % (sudoku.blockSize * 2)
         val cm = position.column % (sudoku.blockSize * 2)
@@ -75,34 +77,34 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     private fun move(value: Int?) {
         if (value == field.value) return
-        sudoku.move(position, value)
-        fieldViewValue.text = value?.toString()
-        fieldViewValue.visibility = if (value == null) View.GONE else View.VISIBLE
+        sudoku?.move(position, value) ?: return
+        fieldViewValue?.text = value?.toString()
+        fieldViewValue?.visibility = if (value == null) View.GONE else View.VISIBLE
         setBackground()
         if (value != null) {
-            if (field.error) sudoku.errorsMade++
+            if (field.error) sudoku!!.errorsMade++
             checkSudoku()
         }
     }
 
     private fun setHint() {
-        sudoku.hintsUsed++
+        sudoku!!.hintsUsed++
         field.hint = true
         isEnabled = false
-        fieldViewValue.setTextColor(context.getColor(R.color.secondary_color))
+        fieldViewValue?.setTextColor(context.getColor(R.color.secondary_color))
         move(field.solution)
     }
 
     private fun updateNotes() {
-        fieldViewNotes.visibility = if (field.notes.size == 0) View.GONE else View.VISIBLE
-        fieldViewNotes.text = field.notes.stream().map { it.toString() }.collect(Collectors.joining())
-        if (position.row == sudoku.size - 1 && (position.column == 0 || position.column == sudoku.size - 1))
-            fieldViewNotes.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        fieldViewNotes?.visibility = if (field.notes.size == 0) View.GONE else View.VISIBLE
+        fieldViewNotes?.text = field.notes.stream().map { it.toString() }.collect(Collectors.joining())
+        if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1))
+            fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
     }
 
     private fun checkSudoku() {
-        if (sudoku.completed) {
-            sudoku.gameListener?.onCompleted()
+        if (sudoku?.completed == true) {
+            sudoku!!.gameListener?.onCompleted()
             AlertDialog.Builder(context)
                 .setTitle(R.string.completed_no_error_title)
                 .setPositiveButton(R.string.dismiss, null)

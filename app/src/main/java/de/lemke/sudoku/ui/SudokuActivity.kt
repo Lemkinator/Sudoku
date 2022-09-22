@@ -66,6 +66,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
+        loadingDialog.show()
 
         drawerLayout = findViewById(R.id.drawer_layout_sudoku)
         drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, R.drawable.ic_baseline_oui_back_24))
@@ -99,13 +100,13 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         val sudokuId = SudokuId(id)
         lifecycleScope.launch {
             sudoku = getSudoku(sudokuId)
-            drawerLayout.setTitle(resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal])
-            setSubtitle(
-                getString(
-                    if (sudoku.completed) R.string.elapsed_time else R.string.current_time,
-                    sudoku.getTimeString()
-                )
+            drawerLayout.setTitle(
+                getString(R.string.app_name) + " (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")"
             )
+            setSubtitle(
+                getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
+            )
+
 
             //recycler
             gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
@@ -124,10 +125,13 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 }
 
                 override fun onTimeChanged(time: String?) {
-                    lifecycleScope.launch { setSubtitle(getString(R.string.current_time, time)) }
+                    lifecycleScope.launch {
+                        setSubtitle(getString(R.string.current_time, time) + " | " + getString(R.string.current_errors, sudoku.errorsMade))
+                    }
                 }
             }
             resumeGame()
+            loadingDialog.dismiss()
         }
 
 
@@ -165,9 +169,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun setSubtitle(subtitle: CharSequence) {
         drawerLayout.setExpandedSubtitle(subtitle)
-        val outValue = TypedValue()
-        resources.getValue(dev.oneuiproject.oneui.R.dimen.sesl_appbar_height_proportion, outValue, true)
-        drawerLayout.setCollapsedSubtitle(if (outValue.float.toDouble() == 0.0) subtitle else null)
+        drawerLayout.setCollapsedSubtitle(subtitle)
     }
 
     @Suppress("unused_parameter")
