@@ -2,7 +2,7 @@ package de.lemke.sudoku.domain.model
 
 import android.util.Log
 import de.lemke.sudoku.ui.SudokuViewAdapter
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.sqrt
 
@@ -24,8 +24,8 @@ class Sudoku(
     var resumed: Boolean,
     var timer: Timer?,
     var gameListener: GameListener?,
-    val created: ZonedDateTime,
-    val updated: ZonedDateTime,
+    val created: LocalDateTime,
+    val updated: LocalDateTime,
     val fields: MutableList<Field>,
 ) {
     companion object {
@@ -40,8 +40,8 @@ class Sudoku(
             resumed: Boolean = false,
             timer: Timer? = null,
             gameListener: GameListener? = null,
-            created: ZonedDateTime = ZonedDateTime.now(),
-            updated: ZonedDateTime = ZonedDateTime.now(),
+            created: LocalDateTime = LocalDateTime.now(),
+            updated: LocalDateTime = LocalDateTime.now(),
             fields: MutableList<Field>,
         ): Sudoku = Sudoku(
             id = sudokuId,
@@ -140,8 +140,8 @@ class Sudoku(
         errors: Int = this.errorsMade,
         seconds: Int = this.seconds,
         resumed: Boolean = this.resumed,
-        created: ZonedDateTime = this.created,
-        updated: ZonedDateTime = this.updated,
+        created: LocalDateTime = this.created,
+        updated: LocalDateTime = this.updated,
         fields: MutableList<Field> = this.fields,
     ): Sudoku = Sudoku(
         id = id,

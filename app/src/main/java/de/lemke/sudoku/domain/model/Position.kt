@@ -22,17 +22,9 @@ class Position private constructor(
 
     override fun hashCode(): Int = 31 * size + index
 
-    fun next(): Position = if (index < size * size - 1) {
-        create(size, index + 1)
-    } else {
-        create(size, 0)
-    }
+    fun next(): Position? = if (index < size * size - 1) create(size, index + 1) else null
 
-    fun previous(): Position = if (index > 0) {
-        create(size, index - 1)
-    } else {
-        create(size, size * size - 1)
-    }
+    fun previous(): Position? = if (index > 0) create(size, index - 1) else null
 
     companion object {
         fun create(size: Int, index: Int): Position {
@@ -57,6 +49,8 @@ class Position private constructor(
             )
         }
 
+        fun first(sudoku: Sudoku): Position = first(sudoku.size)
+        fun last(sudoku: Sudoku): Position = last(sudoku.size)
         fun first(size: Int): Position = create(size, 0)
         fun last(size: Int): Position = create(size, size * size - 1)
     }

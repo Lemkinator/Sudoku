@@ -1,8 +1,8 @@
 package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -42,6 +43,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     lateinit var loadingDialog: ProgressDialog
     lateinit var resumeButtonLayout: LinearLayout
     lateinit var gameLayout: LinearLayout
+    lateinit var noteButton: AppCompatButton
+    private val selectButtons: MutableList<AppCompatButton> = mutableListOf()
+    private var notesEnabled = false
+
+    var selected: Int? = null
 
     companion object {
         var refreshView = false
@@ -68,6 +74,20 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         loadingDialog.setCancelable(false)
         loadingDialog.show()
 
+        selectButtons.add(findViewById(R.id.number_button_1))
+        selectButtons.add(findViewById(R.id.number_button_2))
+        selectButtons.add(findViewById(R.id.number_button_3))
+        selectButtons.add(findViewById(R.id.number_button_4))
+        selectButtons.add(findViewById(R.id.number_button_5))
+        selectButtons.add(findViewById(R.id.number_button_6))
+        selectButtons.add(findViewById(R.id.number_button_7))
+        selectButtons.add(findViewById(R.id.number_button_8))
+        selectButtons.add(findViewById(R.id.number_button_9))
+        selectButtons.add(findViewById(R.id.delete_button))
+        selectButtons.add(findViewById(R.id.hint_button))
+
+        noteButton = findViewById(R.id.note_button)
+        noteButton.setOnClickListener { toggleOrSetNote() }
         drawerLayout = findViewById(R.id.drawer_layout_sudoku)
         drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, R.drawable.ic_baseline_oui_back_24))
         drawerLayout.setNavigationButtonOnClickListener { onBackPressed() }
@@ -107,6 +127,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
             )
 
+            for (index in selectButtons.indices) {
+                selectButtons[index].setOnClickListener {
+                    select(sudoku.itemCount + index)
+                }
+            }
 
             //recycler
             gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
@@ -170,6 +195,146 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     private fun setSubtitle(subtitle: CharSequence) {
         drawerLayout.setExpandedSubtitle(subtitle)
         drawerLayout.setCollapsedSubtitle(subtitle)
+    }
+
+    private fun select(newSelected: Int?) {
+        when (selected) {
+            null -> {//nothing is selected
+                when (newSelected) {
+                    null -> {} //selected nothing
+                    in 0 until sudoku.itemCount -> { //selected field
+                        gameAdapter.selectFieldView(newSelected)
+                    }
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button
+                        selectButton(newSelected - sudoku.itemCount)
+                    }
+                    else -> {} //selected nothing
+                }
+            }
+            in 0 until sudoku.itemCount -> { //field is selected
+                when (newSelected) {
+                    null -> { //selected nothing
+                        gameAdapter.selectFieldView(null)
+                    }
+                    selected -> { //selected same field
+                        selected = null
+                        gameAdapter.selectFieldView(null)
+                        return
+                    }
+                    in 0 until sudoku.itemCount -> { //selected field
+                        gameAdapter.selectFieldView(newSelected)
+                    }
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
+                        if (notesEnabled){
+                            sudoku[selected!!].toggleNote(newSelected - sudoku.itemCount + 1)
+                        } else {
+                            sudoku[selected!!].value = newSelected - sudoku.itemCount + 1
+                        }
+                        gameAdapter.updateFieldView(selected!!)
+                    }
+                    sudoku.itemCount + sudoku.size -> { //selected delete
+                        if (notesEnabled){
+                            sudoku[selected!!].notes.clear()
+                        } else {
+                            sudoku[selected!!].value = null
+                        }
+                        gameAdapter.updateFieldView(selected!!)
+                    }
+                    sudoku.itemCount + sudoku.size + 1 -> { //selected hint
+                        sudoku[selected!!].setHint()
+                        gameAdapter.updateFieldView(selected!!)
+                    }
+                }
+            }
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
+                when (newSelected) {
+                    null -> { //selected nothing
+                        selectButton(null)
+                    }
+                    selected -> { //selected same button
+                        selected = null
+                        selectButton(null)
+                        return
+                    }
+                    in 0 until sudoku.itemCount -> { //selected field
+                        if (notesEnabled){
+                            sudoku[selected!!].toggleNote(selected!! - sudoku.itemCount + 1)
+                        } else {
+                            sudoku[selected!!].value = selected!! - sudoku.itemCount + 1
+                        }
+                    }
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button
+                        selectButton(newSelected - sudoku.itemCount)
+                    }
+                }
+            }
+            sudoku.itemCount -> { // delete button is selected
+                when (newSelected) {
+                    null -> { //selected nothing
+                        selectButton(null)
+                    }
+                    selected -> { //selected same button
+                        selected = null
+                        selectButton(null)
+                        return
+                    }
+                    in 0 until sudoku.itemCount -> { //selected field
+                        if (notesEnabled){
+                            sudoku[newSelected].notes.clear()
+                        } else {
+                            sudoku[newSelected].value = null
+                        }
+                        gameAdapter.updateFieldView(newSelected)
+                    }
+                    sudoku.itemCount + sudoku.size + 1 -> { //selected hint button
+                        selectButton(newSelected - sudoku.itemCount)
+                    }
+                    else -> { //selected nothing
+                        selectButton(null)
+                    }
+                }
+            }
+            sudoku.itemCount + 1 -> { // hint button is selected
+                when (newSelected) {
+                    null -> { //selected nothing
+                        selectButton(null)
+                    }
+                    selected -> { //selected same button
+                        selected = null
+                        selectButton(null)
+                        return
+                    }
+                    in 0 until sudoku.itemCount -> { //selected field
+                        sudoku[newSelected].setHint()
+                        gameAdapter.updateFieldView(newSelected)
+                    }
+                    sudoku.itemCount + sudoku.size -> { //selected delete button
+                        selectButton(newSelected - sudoku.itemCount)
+                    }
+                    else -> { //selected nothing
+                        selectButton(null)
+                    }
+                }
+            }
+        }
+        selected = newSelected
+    }
+
+    private fun selectButton(i: Int?) {
+        for (button in selectButtons) {
+            button.backgroundTintList = ColorStateList.valueOf(resources.getColor(android.R.color.transparent,theme))
+        }
+        if (i != null) {
+            selectButtons[i].backgroundTintList = ColorStateList.valueOf(resources.getColor(R.color.primary_color, theme))
+        }
+    }
+
+    private fun toggleOrSetNote(enabled: Boolean? = null) {
+        notesEnabled = enabled ?: !notesEnabled
+        noteButton.backgroundTintList = ColorStateList.valueOf(
+            if (notesEnabled) resources.getColor(R.color.primary_color, theme)
+            else resources.getColor(android.R.color.transparent, theme)
+        )
     }
 
     @Suppress("unused_parameter")

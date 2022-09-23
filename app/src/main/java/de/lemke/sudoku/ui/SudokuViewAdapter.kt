@@ -22,6 +22,13 @@ class SudokuViewAdapter(
 
     fun updateFieldView(position: Int) = fieldViews[position]?.init(sudoku, position, this)
 
+    fun selectFieldView(position: Int?) {
+        fieldViews.forEach { it?.isSelected = false }
+        if (position != null) {
+            fieldViews[position]?.isSelected = true
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))
 
     override fun onBindViewHolder(holder: ViewHolder, index: Int) {

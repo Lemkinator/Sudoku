@@ -25,11 +25,14 @@ interface SudokuDao {
     suspend fun insert(sudoku: SudokuDb): Long
 
     @Transaction
-    @Query("SELECT * FROM sudoku")
+    @Query("SELECT * FROM sudoku ORDER BY updated DESC")
     suspend fun getAll(): List<SudokuWithFields>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?
+
+    @Delete
+    fun delete(sudoku: SudokuDb)
 
 }

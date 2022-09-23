@@ -19,13 +19,9 @@ class SudokusRepository @Inject constructor(
         }
     }
 
-    suspend fun saveSudokus(sudokus: List<Sudoku>) {
-        sudokuDao.upsert(sudokus.map { sudokuToDb(it) })
-        sudokus.forEach { sudoku ->
-            sudoku.fields.forEach { field ->
-                fieldDao.upsert(fieldToDb(field))
-            }
-        }
+    suspend fun deleteSudoku(sudoku: Sudoku) {
+        sudokuDao.delete(sudokuToDb(sudoku))
+        fieldDao.delete(sudoku.id.value)
     }
 
 }

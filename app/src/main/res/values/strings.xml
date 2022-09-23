@@ -65,5 +65,8 @@
     <string name="completed_error_message">You filled the sudoku, but there are errors.</string>
     <string name="dismiss">Dismiss</string>
     <string name="show_errors">Show Errors</string>
+    <string name="delete">Löschen</string>
+    <string name="note">Notizen</string>
+    <string name="hint">Hinweis</string>
 
 </resources>

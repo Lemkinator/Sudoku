@@ -2,7 +2,7 @@ package de.lemke.sudoku.data.database
 
 import androidx.room.*
 import de.lemke.sudoku.domain.model.*
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 
 @Entity(tableName = "sudoku")
 data class SudokuDb(
@@ -13,8 +13,8 @@ data class SudokuDb(
     var hintsUsed: Int,
     var errorsMade: Int,
     val seconds: Int,
-    val created: ZonedDateTime,
-    val updated: ZonedDateTime,
+    val created: LocalDateTime,
+    val updated: LocalDateTime,
 )
 
 data class SudokuWithFields(

@@ -12,15 +12,16 @@ data class Field(
     val error: Boolean
         get() = value != null && value != solution
 
-    fun addNote(note: Int) {
-        if (!notes.contains(note)) {
+    fun toggleNote(note: Int) {
+        if (!notes.remove(note)) {
             notes.add(note)
             notes.sort()
         }
     }
 
-    fun removeNote(note: Int) {
-        notes.remove(note)
+    fun setHint() {
+        hint = true
+        value = solution
     }
 
     fun clone(
