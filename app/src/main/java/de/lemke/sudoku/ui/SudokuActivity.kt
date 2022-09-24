@@ -3,6 +3,7 @@ package de.lemke.sudoku.ui
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -205,7 +206,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                     in 0 until sudoku.itemCount -> { //selected field
                         gameAdapter.selectFieldView(newSelected)
                     }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
                         selectButton(newSelected - sudoku.itemCount)
                     }
                     else -> {} //selected nothing
@@ -225,7 +226,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         gameAdapter.selectFieldView(newSelected)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
-                        if (notesEnabled){
+                        if (notesEnabled) {
                             sudoku[selected!!].toggleNote(newSelected - sudoku.itemCount + 1)
                         } else {
                             sudoku[selected!!].value = newSelected - sudoku.itemCount + 1
@@ -233,7 +234,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         gameAdapter.updateFieldView(selected!!)
                     }
                     sudoku.itemCount + sudoku.size -> { //selected delete
-                        if (notesEnabled){
+                        if (notesEnabled) {
                             sudoku[selected!!].notes.clear()
                         } else {
                             sudoku[selected!!].value = null
@@ -257,18 +258,18 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        if (notesEnabled){
+                        if (notesEnabled) {
                             sudoku[selected!!].toggleNote(selected!! - sudoku.itemCount + 1)
                         } else {
                             sudoku[selected!!].value = selected!! - sudoku.itemCount + 1
                         }
                     }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
                         selectButton(newSelected - sudoku.itemCount)
                     }
                 }
             }
-            sudoku.itemCount -> { // delete button is selected
+            sudoku.itemCount + sudoku.size -> { // delete button is selected
                 when (newSelected) {
                     null -> { //selected nothing
                         selectButton(null)
@@ -279,14 +280,14 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        if (notesEnabled){
+                        if (notesEnabled) {
                             sudoku[newSelected].notes.clear()
                         } else {
                             sudoku[newSelected].value = null
                         }
                         gameAdapter.updateFieldView(newSelected)
                     }
-                    sudoku.itemCount + sudoku.size + 1 -> { //selected hint button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button(not delete)
                         selectButton(newSelected - sudoku.itemCount)
                     }
                     else -> { //selected nothing
@@ -294,7 +295,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                     }
                 }
             }
-            sudoku.itemCount + 1 -> { // hint button is selected
+            sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
                 when (newSelected) {
                     null -> { //selected nothing
                         selectButton(null)
@@ -308,7 +309,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         sudoku[newSelected].setHint()
                         gameAdapter.updateFieldView(newSelected)
                     }
-                    sudoku.itemCount + sudoku.size -> { //selected delete button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button(not hint)
                         selectButton(newSelected - sudoku.itemCount)
                     }
                     else -> { //selected nothing
@@ -322,7 +323,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun selectButton(i: Int?) {
         for (button in selectButtons) {
-            button.backgroundTintList = ColorStateList.valueOf(resources.getColor(android.R.color.transparent,theme))
+            button.backgroundTintList = ColorStateList.valueOf(resources.getColor(android.R.color.transparent, theme))
         }
         if (i != null) {
             selectButtons[i].backgroundTintList = ColorStateList.valueOf(resources.getColor(R.color.primary_color, theme))

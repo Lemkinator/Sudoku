@@ -15,7 +15,6 @@ import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
-import androidx.core.view.allViews
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,7 +40,7 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var rootView: View
     private lateinit var sudokuHistory: List<Pair<Sudoku?, LocalDateTime>>
     private lateinit var listView: RecyclerView
-    private lateinit var sudokuAdapter: SudokuAdapter
+    private lateinit var sudokuListAdapter: SudokuListAdapter
 
     //private lateinit var drawerLayout: DrawerLayout
     private lateinit var toolbarLayout: ToolbarLayout
@@ -87,8 +86,8 @@ class MainActivityTabHistory : Fragment() {
         selected = HashMap()
         sudokuHistory.indices.forEach { i -> selected[i] = false }
         listView.layoutManager = LinearLayoutManager(context)
-        sudokuAdapter = SudokuAdapter()
-        listView.adapter = sudokuAdapter
+        sudokuListAdapter = SudokuListAdapter()
+        listView.adapter = sudokuListAdapter
         listView.itemAnimator = null
         listView.addItemDecoration(ItemDecoration(requireContext()))
         listView.seslSetFastScrollerEnabled(true)
@@ -99,7 +98,7 @@ class MainActivityTabHistory : Fragment() {
         listView.seslSetSmoothScrollEnabled(true)
         listView.seslSetLongPressMultiSelectionListener(object : RecyclerView.SeslLongPressMultiSelectionListener {
             override fun onItemSelected(view: RecyclerView, child: View, position: Int, id: Long) {
-                if (sudokuAdapter.getItemViewType(position) == 0) toggleItemSelected(position)
+                if (sudokuListAdapter.getItemViewType(position) == 0) toggleItemSelected(position)
             }
 
             override fun onLongPressMultiSelectionStarted(x: Int, y: Int) {}
@@ -110,7 +109,7 @@ class MainActivityTabHistory : Fragment() {
     fun setSelecting(enabled: Boolean) {
         if (enabled) {
             selecting = true
-            sudokuAdapter.notifyItemRangeChanged(0, sudokuAdapter.itemCount)
+            sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             toolbarLayout.actionModeBottomMenu.clear()
             toolbarLayout.setActionModeBottomMenu(R.menu.remove_menu)
             toolbarLayout.setActionModeBottomMenuListener { item: MenuItem ->
@@ -137,17 +136,17 @@ class MainActivityTabHistory : Fragment() {
             toolbarLayout.setActionModeCheckboxListener { _, isChecked ->
                 if (checkAllListening) {
                     selected.replaceAll { _, _ -> isChecked }
-                    selected.forEach { (index, _) -> sudokuAdapter.notifyItemChanged(index) }
+                    selected.forEach { (index, _) -> sudokuListAdapter.notifyItemChanged(index) }
                 }
-                toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuAdapter.itemCount)
+                toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuListAdapter.itemCount)
             }
             mainTabs.isEnabled = false
             onBackPressedCallback.isEnabled = true
         } else {
             selecting = false
-            for (i in 0 until sudokuAdapter.itemCount) selected[i] = false
-            sudokuAdapter.notifyItemRangeChanged(0, sudokuAdapter.itemCount)
-            toolbarLayout.setActionModeCount(0, sudokuAdapter.itemCount)
+            for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
+            sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
+            toolbarLayout.setActionModeCount(0, sudokuListAdapter.itemCount)
             toolbarLayout.dismissActionMode()
             mainTabs.isEnabled = true
             onBackPressedCallback.isEnabled = false
@@ -156,14 +155,14 @@ class MainActivityTabHistory : Fragment() {
 
     fun toggleItemSelected(position: Int) {
         selected[position] = !selected[position]!!
-        sudokuAdapter.notifyItemChanged(position)
+        sudokuListAdapter.notifyItemChanged(position)
         checkAllListening = false
-        toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuAdapter.itemCount)
+        toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuListAdapter.itemCount)
         checkAllListening = true
     }
 
     //Adapter for the Icon RecyclerView
-    inner class SudokuAdapter : RecyclerView.Adapter<SudokuAdapter.ViewHolder>(), SectionIndexer {
+    inner class SudokuListAdapter : RecyclerView.Adapter<SudokuListAdapter.ViewHolder>(), SectionIndexer {
         private var sections: MutableList<String> = mutableListOf()
         private var positionForSection: MutableList<Int> = mutableListOf()
         private var sectionForPosition: MutableList<Int> = mutableListOf()
@@ -250,7 +249,7 @@ class MainActivityTabHistory : Fragment() {
             super.onDraw(c, parent, state)
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: SudokuAdapter.ViewHolder = listView.getChildViewHolder(child) as SudokuAdapter.ViewHolder
+                val holder: SudokuListAdapter.ViewHolder = listView.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
                 if (holder.isItem) {
                     val top = (child.bottom + (child.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin)
                     val bottom = divider!!.intrinsicHeight + top
@@ -263,7 +262,7 @@ class MainActivityTabHistory : Fragment() {
         override fun seslOnDispatchDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: SudokuAdapter.ViewHolder = listView.getChildViewHolder(child) as SudokuAdapter.ViewHolder
+                val holder: SudokuListAdapter.ViewHolder = listView.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
                 if (!holder.isItem) roundedCorner.drawRoundedCorner(child, c)
             }
         }

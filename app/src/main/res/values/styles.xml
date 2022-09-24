@@ -50,9 +50,7 @@
     </style>
 
     <style name="ButtonStyle.NumberButton" parent="ButtonStyle.SudokuButton">
-        <item name="android:layout_margin">1dp</item>
         <item name="android:padding">0dp</item>
-
         <item name="android:textSize">25sp</item>
         <item name="android:ellipsize">none</item>
 
