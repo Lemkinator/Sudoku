@@ -12,10 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -28,9 +25,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivityTabMain : Fragment() {
     private lateinit var rootView: View
+    private lateinit var difficultySeekbar: HapticSeekBar
+    private lateinit var continueGameButton: AppCompatButton
     private lateinit var toolbarLayout: ToolbarLayout
     private var mainMenuLayout: LinearLayout? = null
-    private lateinit var difficultySeekbar: HapticSeekBar
 
 
     @Inject
@@ -45,16 +43,23 @@ class MainActivityTabMain : Fragment() {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
+    @Inject
+    lateinit var getRecentSudoku: GetRecentSudokuUseCase
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         rootView = inflater.inflate(R.layout.fragment_tab_main, container, false)
         return rootView
     }
 
-    @SuppressLint("RtlHardcoded")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         difficultySeekbar = rootView.findViewById(R.id.difficulty_seekbar)
+        SeekBarUtils.showTickMark(difficultySeekbar, true)
+        difficultySeekbar.setSeamless(true)
+        difficultySeekbar.max = 4
+        difficultySeekbar.progress = difficultySeekbar.max / 2
+        continueGameButton = rootView.findViewById(R.id.continue_game_button)
         rootView.findViewById<AppCompatButton>(R.id.new_game_button).setOnClickListener {
             val size = 9
             val mLoadingDialog = ProgressDialog(context)
@@ -68,11 +73,27 @@ class MainActivityTabMain : Fragment() {
                 mLoadingDialog.dismiss()
             }
         }
-        rootView.findViewById<AppCompatButton>(R.id.continue_game_button)
-        SeekBarUtils.showTickMark(difficultySeekbar, true)
-        difficultySeekbar.setSeamless(true)
-        difficultySeekbar.max = 4
+    }
+
+    override fun onResume() {
+        super.onResume()
         difficultySeekbar.progress = difficultySeekbar.max / 2
+        lifecycleScope.launch {
+            val sudoku = getRecentSudoku()
+            if (sudoku != null && !sudoku.completed) {
+                continueGameButton.visibility = View.VISIBLE
+                continueGameButton.text = getString(
+                    R.string.continue_game,
+                    resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal],
+                    sudoku.getTimeString()
+                )
+                continueGameButton.setOnClickListener {
+                    startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
+                }
+            } else {
+                continueGameButton.visibility = View.GONE
+            }
+        }
     }
 
 }

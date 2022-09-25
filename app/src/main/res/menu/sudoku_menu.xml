@@ -3,7 +3,8 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <group>
+    <group
+        android:id="@+id/sudoku_resumed">
         <item
             android:id="@+id/menu_undo"
             android:icon="@drawable/ic_oui_undo"
@@ -17,5 +18,15 @@
             android:title="@string/pause"
             app:showAsAction="always"
             tools:ignore="AppCompatResource" />
+    </group>
+    <group
+        android:id="@+id/sudoku_completed"
+        android:visible="false">
+        <item
+            android:id="@+id/menu_reset"
+            android:icon="@drawable/ic_oui_refresh"
+            android:title="@string/reset"
+            app:showAsAction="always"
+            tools:ignore="AlwaysShowAction,AppCompatResource" />
     </group>
 </menu>

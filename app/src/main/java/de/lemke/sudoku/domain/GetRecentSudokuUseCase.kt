@@ -6,12 +6,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
 import javax.inject.Inject
+import kotlin.collections.List
 import kotlin.math.pow
 
-class GetSudokuUseCase @Inject constructor(
+class GetRecentSudokuUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(sudokuId: SudokuId): Sudoku? = withContext(Dispatchers.Default) {
-        sudokusRepository.getSudokuById(sudokuId)
+    suspend operator fun invoke(): Sudoku? = withContext(Dispatchers.Default) {
+        sudokusRepository.getRecentSudoku()
     }
 }

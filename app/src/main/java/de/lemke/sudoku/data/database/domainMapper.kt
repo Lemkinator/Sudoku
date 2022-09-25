@@ -5,9 +5,10 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 
-fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku =
-    Sudoku(
-        id = SudokuId(sudokuWithFields!!.sudoku.id),
+fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
+    if (sudokuWithFields == null) null
+    else Sudoku(
+        id = SudokuId(sudokuWithFields.sudoku.id),
         size = sudokuWithFields.sudoku.size,
         history = mutableListOf(),
         difficulty = sudokuWithFields.sudoku.difficulty,
@@ -19,7 +20,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku =
         gameListener = null,
         created = sudokuWithFields.sudoku.created,
         updated = sudokuWithFields.sudoku.updated,
-        fields = sudokuWithFields.fields.map { fieldFromDb(it) }.toMutableList()
+        fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList()
     )
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -34,9 +35,10 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         updated = sudoku.updated
     )
 
-fun fieldFromDb(fieldDb: FieldDb?): Field =
-    Field(
-        sudokuId = SudokuId(fieldDb!!.sudokuId),
+fun fieldFromDb(fieldDb: FieldDb?): Field? =
+    if (fieldDb == null) null
+    else Field(
+        sudokuId = SudokuId(fieldDb.sudokuId),
         position = Position.create(fieldDb.gameSize, fieldDb.index),
         value = fieldDb.value,
         solution = fieldDb.solution,

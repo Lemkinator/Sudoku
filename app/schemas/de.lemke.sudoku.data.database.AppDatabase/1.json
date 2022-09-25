@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "504c7840a2928c0748c1547f5e6ec67b",
+    "identityHash": "0f1cde9189c10f0d37f5ccfe59b8409f",
     "entities": [
       {
         "tableName": "sudoku",
@@ -68,7 +68,7 @@
       },
       {
         "tableName": "field",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sudokuId` TEXT NOT NULL, `gameSize` INTEGER NOT NULL, `index` INTEGER NOT NULL, `value` INTEGER, `solution` INTEGER, `notes` TEXT NOT NULL, `given` INTEGER NOT NULL, `hint` INTEGER NOT NULL, PRIMARY KEY(`sudokuId`, `index`), FOREIGN KEY(`sudokuId`) REFERENCES `sudoku`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sudokuId` TEXT NOT NULL, `gameSize` INTEGER NOT NULL, `index` INTEGER NOT NULL, `value` INTEGER, `solution` INTEGER, `notes` TEXT NOT NULL, `given` INTEGER NOT NULL, `hint` INTEGER NOT NULL, PRIMARY KEY(`sudokuId`, `index`), FOREIGN KEY(`sudokuId`) REFERENCES `sudoku`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "sudokuId",
@@ -130,7 +130,7 @@
         "foreignKeys": [
           {
             "table": "sudoku",
-            "onDelete": "NO ACTION",
+            "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
               "sudokuId"
@@ -145,7 +145,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '504c7840a2928c0748c1547f5e6ec67b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0f1cde9189c10f0d37f5ccfe59b8409f')"
     ]
   }
 }

@@ -32,6 +32,10 @@ interface SudokuDao {
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?
 
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE updated = (SELECT MAX(updated) FROM sudoku)")
+    suspend fun getRecent(): SudokuWithFields?
+
     @Delete
     fun delete(sudoku: SudokuDb)
 

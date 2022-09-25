@@ -19,7 +19,7 @@
     <string name="statistics">Statistiken</string>
 
     <string name="new_game">Neues Spiel</string>
-    <string name="continue_game">Weiter</string>
+    <string name="continue_game">Weiter (%1$s, %2$s)</string>
 
     <!--Menu TODO-->
     <string name="undo">Undo</string>
@@ -52,7 +52,7 @@
     <string name="easy">Einfach</string>
     <string name="medium">Mittel</string>
     <string name="hard">Schwer</string>
-    <string name="expert">Expert</string>
+    <string name="expert">Experte</string>
 
     <!--Game-->
     <string name="elapsed_time">Elapsed time: %1$s</string>
@@ -68,5 +68,7 @@
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>
+    <string name="noGamePlayed">Noch kein Spiel gespielt</string>
+    <string name="reset">Zurücksetzen</string>
 
 </resources>

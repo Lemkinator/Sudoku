@@ -9,6 +9,22 @@
         android:layout_height="match_parent"
         android:background="@color/oui_background_color"
         android:scrollbars="vertical"
-        />
+        android:visibility="gone" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/noEntryView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textAlignment="center"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/noGamePlayed"
+            android:textAlignment="center"/>
+
+    </androidx.core.widget.NestedScrollView>
 
 </FrameLayout>

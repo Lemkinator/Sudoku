@@ -12,8 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="30dp"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -26,7 +25,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="start"
-                android:text="@string/easy" />
+                android:text="@string/very_easy" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -55,8 +54,8 @@
             style="@style/ButtonStyle.Filled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             android:height="50dp"
-            android:layout_marginBottom="40dp"
             android:text="@string/new_game" />
 
         <androidx.appcompat.widget.AppCompatButton
@@ -65,7 +64,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:height="50dp"
-            android:text="@string/continue_game" />
+            android:text="@string/continue_game"
+            android:visibility="gone" />
 
     </LinearLayout>
 

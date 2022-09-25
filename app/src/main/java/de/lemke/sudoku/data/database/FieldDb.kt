@@ -9,7 +9,7 @@ import androidx.room.*
             entity = SudokuDb::class,
             parentColumns = arrayOf("id"),
             childColumns = arrayOf("sudokuId"),
-            onDelete = ForeignKey.NO_ACTION,
+            onDelete = ForeignKey.CASCADE,
         )
     ],
 )

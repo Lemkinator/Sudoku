@@ -15,6 +15,8 @@ import android.widget.*
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
+import androidx.core.content.ContextCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,6 +42,7 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var rootView: View
     private lateinit var sudokuHistory: List<Pair<Sudoku?, LocalDateTime>>
     private lateinit var listView: RecyclerView
+    private lateinit var noEntryView: NestedScrollView
     private lateinit var sudokuListAdapter: SudokuListAdapter
 
     //private lateinit var drawerLayout: DrawerLayout
@@ -65,6 +68,7 @@ class MainActivityTabHistory : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         listView = rootView.findViewById(R.id.sudokuList)
+        noEntryView = rootView.findViewById(R.id.noEntryView)
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
         mainTabs = activity.findViewById(R.id.main_tabs)
         lifecycleScope.launch { initList() }
@@ -83,6 +87,14 @@ class MainActivityTabHistory : Fragment() {
 
     private suspend fun initList() {
         sudokuHistory = getSudokuHistory()
+        if (sudokuHistory.isEmpty()) {
+            noEntryView.visibility = View.VISIBLE
+            listView.visibility = View.GONE
+            return
+        } else {
+            noEntryView.visibility = View.GONE
+            listView.visibility = View.VISIBLE
+        }
         selected = HashMap()
         sudokuHistory.indices.forEach { i -> selected[i] = false }
         listView.layoutManager = LinearLayoutManager(context)
@@ -185,8 +197,8 @@ class MainActivityTabHistory : Fragment() {
                 holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
                 holder.textView.text = "Sudoku (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")"
-                holder.textViewSmall.text =
-                    getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
+                holder.textViewSmall.text = getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
+                if (sudoku.completed) holder.imageView.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_oui_crown_outline))
                 holder.parentView.setOnClickListener {
                     if (selecting) toggleItemSelected(position)
                     else {
@@ -227,6 +239,7 @@ class MainActivityTabHistory : Fragment() {
             lateinit var textView: TextView
             lateinit var textViewSmall: TextView
             lateinit var checkBox: CheckBox
+            lateinit var imageView: ImageView
 
             init {
                 when {
@@ -235,6 +248,7 @@ class MainActivityTabHistory : Fragment() {
                         textView = parentView.findViewById(R.id.item_text)
                         textViewSmall = parentView.findViewById(R.id.item_text_small)
                         checkBox = parentView.findViewById(R.id.checkbox)
+                        imageView = parentView.findViewById(R.id.item_icon)
                     }
                     isSeparator -> textView = itemView as TextView
                 }

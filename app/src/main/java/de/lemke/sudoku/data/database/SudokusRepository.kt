@@ -8,9 +8,11 @@ class SudokusRepository @Inject constructor(
     private val sudokuDao: SudokuDao,
     private val fieldDao: FieldDao,
 ) {
-    suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().map { sudokuFromDb(it) }
+    suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
 
-    suspend fun getSudokuById(sudokuId: SudokuId): Sudoku = sudokuFromDb(sudokuDao.getById(sudokuId.value))
+    suspend fun getRecentSudoku(): Sudoku? = sudokuFromDb(sudokuDao.getRecent())
+
+    suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = sudokuFromDb(sudokuDao.getById(sudokuId.value))
 
     suspend fun saveSudoku(sudoku: Sudoku) {
         sudokuDao.upsert(sudokuToDb(sudoku))
@@ -21,7 +23,6 @@ class SudokusRepository @Inject constructor(
 
     suspend fun deleteSudoku(sudoku: Sudoku) {
         sudokuDao.delete(sudokuToDb(sudoku))
-        fieldDao.delete(sudoku.id.value)
     }
 
 }

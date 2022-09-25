@@ -1,6 +1,8 @@
 package de.lemke.sudoku.domain.model
 
 import android.util.Log
+import androidx.appcompat.app.AlertDialog
+import de.lemke.sudoku.R
 import de.lemke.sudoku.ui.SudokuViewAdapter
 import java.time.LocalDateTime
 import java.util.*
@@ -25,7 +27,7 @@ class Sudoku(
     var timer: Timer?,
     var gameListener: GameListener?,
     val created: LocalDateTime,
-    val updated: LocalDateTime,
+    var updated: LocalDateTime,
     val fields: MutableList<Field>,
 ) {
     companion object {
@@ -108,6 +110,8 @@ class Sudoku(
     private fun getBlock(block: Int): List<Field> =
         fields.filter { it.position.block == block }
 
+    fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
+
     fun setRow(row: Int, fields: List<Field>) {
         fields.forEachIndexed { index, field -> set(row = row, column = index, field = field) }
     }
@@ -159,12 +163,50 @@ class Sudoku(
         fields = fields.toMutableList()
     )
 
-    fun move(position: Position, value: Int?) {
+    fun reset() {
+        fields.forEach { it.reset() }
+        history.clear()
+        hintsUsed = 0
+        errorsMade = 0
+        seconds = 0
+        resumed = false
+        timer?.cancel()
+        timer = null
+        gameListener = null
+        updated = LocalDateTime.now()
+    }
+
+    fun move(position: Position, value: Int?, isNote: Boolean = false) {
+        updated = LocalDateTime.now()
         val field = get(position)
-        if (field.value == value) return
-        history.add(HistoryItem(position, if (value == null) field.value else null))
-        field.value = value
-        gameListener?.onHistoryChange(history.size)
+        if (isNote) {
+            if (value != null) field.toggleNote(value)
+            else field.notes.clear()
+            gameListener?.onFieldChanged(position)
+        } else {
+            if (field.value == value) return
+            history.add(HistoryItem(position, if (value == null) field.value else null))
+            field.value = value
+            gameListener?.onFieldChanged(position)
+            gameListener?.onHistoryChange(history.size)
+            if (value != null) {
+                if (field.error) {
+                    errorsMade++
+                    //show errors count
+                    //errors > max errors?
+                }
+                if (completed) {
+                    stopTimer()
+                    gameListener?.onCompleted()
+                }
+            }
+        }
+    }
+
+    fun setHint(position: Position) {
+        hintsUsed++
+        get(position).setHint()
+        gameListener?.onFieldChanged(position)
     }
 
     fun revertLastChange(adapter: SudokuViewAdapter) {
@@ -198,10 +240,13 @@ class Sudoku(
     fun getTimeString(): String =
         if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
         else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+
 }
 
 interface GameListener {
     fun onHistoryChange(length: Int)
+    fun onFieldClicked(position: Position)
+    fun onFieldChanged(position: Position)
     fun onCompleted()
     fun onTimeChanged(time: String?)
 }

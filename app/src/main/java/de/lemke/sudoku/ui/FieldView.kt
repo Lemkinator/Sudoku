@@ -24,6 +24,8 @@ class FieldView(context: Context) : LinearLayout(context) {
     private lateinit var field: Field
     private lateinit var position: Position
     private var isColored = false
+    var isHighlighted = false
+    var isHighlightedNumber = false
 
     init {
         val asyncLayoutInflater = AsyncLayoutInflater(context)
@@ -46,54 +48,42 @@ class FieldView(context: Context) : LinearLayout(context) {
         field = sudoku[position.index]
         if (fieldViewContainer == null) return
 
-        //init view
+        //init appearance
+        val typedValue = TypedValue()
+        if (field.given) {
+            context.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
+            fieldViewValue?.setTextColor(typedValue.data)
+        } else {
+            fieldViewValue?.setTextColor(context.getColor(dev.oneuiproject.oneui.R.color.oui_primary_text_color))
+        }
+
+        val rm = position.row % (sudoku.blockSize * 2)
+        val cm = position.column % (sudoku.blockSize * 2)
+        isColored = (rm >= sudoku.blockSize && rm < sudoku.blockSize * 2) != (cm >= sudoku.blockSize && cm < sudoku.blockSize * 2)
+        update()
+    }
+
+    fun update() {
         fieldViewValue?.text = if (field.value == null) null else field.value.toString()
         fieldViewValue?.visibility = if (field.value == null) GONE else VISIBLE
-        if (!field.given && !field.hint && !sudoku.completed) {
+        if (field.hint) {
+            isEnabled = false
+            fieldViewValue?.setTextColor(context.getColor(R.color.primary_dark_color))
+        }
+        updateNotes()
+        setBackground()
+        if (!field.given && !field.hint && sudoku?.completed != true) {
             setOnClickListener {
-                //showMainPopup()
+                sudoku?.gameListener?.onFieldClicked(position)
             }
             setOnLongClickListener {
                 if (field.value != null) {
-                    move(null)
+                    sudoku?.move(position, null)
                     return@setOnLongClickListener true
                 }
                 false
             }
         }
-        updateNotes()
-
-        //init appearance
-        val typedValue = TypedValue()
-        context.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
-        fieldViewValue?.setTextColor(typedValue.data)
-        if (field.hint) {
-            fieldViewValue?.setTextColor(context.getColor(R.color.secondary_color))
-        }
-        val rm = position.row % (sudoku.blockSize * 2)
-        val cm = position.column % (sudoku.blockSize * 2)
-        isColored = (rm >= sudoku.blockSize && rm < sudoku.blockSize * 2) != (cm >= sudoku.blockSize && cm < sudoku.blockSize * 2)
-        setBackground()
-    }
-
-    private fun move(value: Int?) {
-        if (value == field.value) return
-        sudoku?.move(position, value) ?: return
-        fieldViewValue?.text = value?.toString()
-        fieldViewValue?.visibility = if (value == null) View.GONE else View.VISIBLE
-        setBackground()
-        if (value != null) {
-            if (field.error) sudoku!!.errorsMade++
-            checkSudoku()
-        }
-    }
-
-    private fun setHint() {
-        sudoku!!.hintsUsed++
-        field.hint = true
-        isEnabled = false
-        fieldViewValue?.setTextColor(context.getColor(R.color.secondary_color))
-        move(field.solution)
     }
 
     private fun updateNotes() {
@@ -103,22 +93,11 @@ class FieldView(context: Context) : LinearLayout(context) {
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
     }
 
-    private fun checkSudoku() {
-        if (sudoku?.completed == true) {
-            sudoku!!.gameListener?.onCompleted()
-            AlertDialog.Builder(context)
-                .setTitle(R.string.completed_no_error_title)
-                .setPositiveButton(R.string.dismiss, null)
-                .show()
-        }
-        //show errors count
-        //errors > max errors?
-
-    }
-
-    private fun setBackground() {
+    fun setBackground() {
         if (field.error) setBackgroundColor(context.getColor(androidx.appcompat.R.color.sesl_error_color))
         else if (isColored) setBackgroundColor(resources.getColor(R.color.control_color_normal, context.theme))
+        else if (isHighlighted) setBackgroundColor(resources.getColor(R.color.control_color_highlighted, context.theme))
+        else if (isHighlightedNumber) setBackgroundColor(resources.getColor(R.color.control_color_highlighted_number, context.theme))
         else setBackgroundColor(Color.TRANSPARENT)
     }
 

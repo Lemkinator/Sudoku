@@ -58,4 +58,10 @@ data class Field(
         notes = mutableListOf(),
         hint = false,
     )
+
+    fun reset() {
+        if (!given) value = null
+        hint = false
+        notes.clear()
+    }
 }

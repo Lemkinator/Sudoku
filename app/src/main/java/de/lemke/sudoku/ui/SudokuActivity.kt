@@ -3,13 +3,13 @@ package de.lemke.sudoku.ui
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
@@ -24,12 +24,14 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.GameListener
+import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -88,7 +90,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         selectButtons.add(findViewById(R.id.hint_button))
 
         noteButton = findViewById(R.id.note_button)
-        noteButton.setOnClickListener { toggleOrSetNote() }
+        noteButton.setOnClickListener { toggleOrSetNoteButton() }
         drawerLayout = findViewById(R.id.drawer_layout_sudoku)
         drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, R.drawable.ic_baseline_oui_back_24))
         drawerLayout.setNavigationButtonOnClickListener { onBackPressed() }
@@ -118,15 +120,17 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             finish()
             return
         }
-        val sudokuId = SudokuId(id)
         lifecycleScope.launch {
-            sudoku = getSudoku(sudokuId)
+            val nullableSudoku = getSudoku(SudokuId(id))
+            if (nullableSudoku == null) finish()
+            else sudoku = nullableSudoku
             drawerLayout.setTitle(
                 getString(R.string.app_name) + " (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")"
             )
             setSubtitle(
                 getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
             )
+
 
             for (index in selectButtons.indices) {
                 selectButtons[index].setOnClickListener {
@@ -146,8 +150,24 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                     toolbarMenu.findItem(R.id.menu_undo).isEnabled = sudoku.history.isNotEmpty()
                 }
 
+                override fun onFieldClicked(position: Position) {
+                    select(position.index)
+                }
+
+                override fun onFieldChanged(position: Position) {
+                    gameAdapter.updateFieldView(position.index)
+                    lifecycleScope.launch {
+                        saveSudoku(sudoku)
+                    }
+                }
+
                 override fun onCompleted() {
-                    //TODO
+                    toolbarMenu.setGroupVisible(R.id.sudoku_resumed, false)
+                    toolbarMenu.setGroupVisible(R.id.sudoku_completed, true)
+                    AlertDialog.Builder(this@SudokuActivity)
+                        .setTitle(R.string.completed_no_error_title)
+                        .setPositiveButton(R.string.dismiss, null)
+                        .show()
                 }
 
                 override fun onTimeChanged(time: String?) {
@@ -156,15 +176,24 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                     }
                 }
             }
+
             resumeGame()
             loadingDialog.dismiss()
+            if (sudoku.completed) {
+                toolbarMenu.setGroupVisible(R.id.sudoku_resumed, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_completed, true)
+            }
+            sudoku.updated = LocalDateTime.now()
         }
 
 
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                finish()
+                lifecycleScope.launch {
+                    saveSudoku(sudoku)
+                    finish()
+                }
             }
         })
     }
@@ -213,6 +242,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 }
             }
             in 0 until sudoku.itemCount -> { //field is selected
+                val position = Position.create(sudoku.size, selected!!)
                 when (newSelected) {
                     null -> { //selected nothing
                         gameAdapter.selectFieldView(null)
@@ -226,24 +256,20 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         gameAdapter.selectFieldView(newSelected)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
-                        if (notesEnabled) {
-                            sudoku[selected!!].toggleNote(newSelected - sudoku.itemCount + 1)
-                        } else {
-                            sudoku[selected!!].value = newSelected - sudoku.itemCount + 1
-                        }
-                        gameAdapter.updateFieldView(selected!!)
+                        sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
+                        selected = null
+                        gameAdapter.selectFieldView(null)
+                        return
                     }
                     sudoku.itemCount + sudoku.size -> { //selected delete
-                        if (notesEnabled) {
-                            sudoku[selected!!].notes.clear()
-                        } else {
-                            sudoku[selected!!].value = null
-                        }
-                        gameAdapter.updateFieldView(selected!!)
+                        sudoku.move(position, null, notesEnabled)
+                        gameAdapter.selectFieldView(selected)
+                        return
                     }
                     sudoku.itemCount + sudoku.size + 1 -> { //selected hint
-                        sudoku[selected!!].setHint()
-                        gameAdapter.updateFieldView(selected!!)
+                        sudoku.setHint(position)
+                        selected = null
+                        return
                     }
                 }
             }
@@ -258,11 +284,9 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        if (notesEnabled) {
-                            sudoku[selected!!].toggleNote(selected!! - sudoku.itemCount + 1)
-                        } else {
-                            sudoku[selected!!].value = selected!! - sudoku.itemCount + 1
-                        }
+                        sudoku.move(Position.create(sudoku.size, newSelected), selected!! - sudoku.itemCount + 1, notesEnabled)
+                        selected = null
+                        return
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
                         selectButton(newSelected - sudoku.itemCount)
@@ -280,12 +304,8 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        if (notesEnabled) {
-                            sudoku[newSelected].notes.clear()
-                        } else {
-                            sudoku[newSelected].value = null
-                        }
-                        gameAdapter.updateFieldView(newSelected)
+                        sudoku.move(Position.create(sudoku.size, newSelected), null, notesEnabled)
+                        return
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button(not delete)
                         selectButton(newSelected - sudoku.itemCount)
@@ -306,8 +326,8 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        sudoku[newSelected].setHint()
-                        gameAdapter.updateFieldView(newSelected)
+                        sudoku.setHint(Position.create(sudoku.size, newSelected))
+                        return
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button(not hint)
                         selectButton(newSelected - sudoku.itemCount)
@@ -330,7 +350,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
-    private fun toggleOrSetNote(enabled: Boolean? = null) {
+    private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
         notesEnabled = enabled ?: !notesEnabled
         noteButton.backgroundTintList = ColorStateList.valueOf(
             if (notesEnabled) resources.getColor(R.color.primary_color, theme)
