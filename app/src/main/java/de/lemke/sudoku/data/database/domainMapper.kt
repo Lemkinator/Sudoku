@@ -15,12 +15,13 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         hintsUsed = sudokuWithFields.sudoku.hintsUsed,
         errorsMade = sudokuWithFields.sudoku.errorsMade,
         seconds = sudokuWithFields.sudoku.seconds,
-        resumed = false,
         timer = null,
         gameListener = null,
         created = sudokuWithFields.sudoku.created,
         updated = sudokuWithFields.sudoku.updated,
-        fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList()
+        fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList(),
+        neighborHighlightingUsed = sudokuWithFields.sudoku.neighborHighlightingUsed,
+        numberHighlightingUsed = sudokuWithFields.sudoku.numberHighlightingUsed,
     )
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -32,7 +33,9 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         errorsMade = sudoku.errorsMade,
         seconds = sudoku.seconds,
         created = sudoku.created,
-        updated = sudoku.updated
+        updated = sudoku.updated,
+        neighborHighlightingUsed = sudoku.neighborHighlightingUsed,
+        numberHighlightingUsed = sudoku.numberHighlightingUsed,
     )
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? =

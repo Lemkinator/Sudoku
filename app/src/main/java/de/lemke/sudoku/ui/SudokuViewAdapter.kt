@@ -7,42 +7,43 @@ import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 
-class SudokuViewAdapter(
-    private val context: Context,
-    private val sudoku: Sudoku,
-) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
-    private val fieldViews: MutableList<FieldView?>
+class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
+    private val fieldViews: MutableList<FieldView?> = MutableList(itemCount) { FieldView((context)) }
     private var selectedfield: Int? = null
-
-    init {
-        fieldViews = MutableList(itemCount) { FieldView((context)) }
-    }
 
     override fun getItemCount(): Int = sudoku.itemCount
 
-    fun getFieldView(position: Int): FieldView? = fieldViews[position]
-
     fun updateFieldView(position: Int) = fieldViews[position]?.update()//init(sudoku, position, this)
 
-    fun selectFieldView(position: Int?, highlightNeighbors: Boolean = true) {
-        if (highlightNeighbors && position != selectedfield) {
-            fieldViews.forEach { it?.isHighlighted = false }
-            if (position != null) {
+    fun selectFieldView(position: Int?, highlightNeighbors: Boolean, highlightNumber: Boolean) {
+        if (position != selectedfield && highlightNeighbors) {
+            sudoku.neighborHighlightingUsed = true
+            selectedfield = position
+            fieldViews.forEach {
+                it?.isHighlighted = false
+                it?.isHighlightedNumber = false
+            }
+            if (position != null && fieldViews[position]?.field?.hint == false && fieldViews[position]?.field?.given == false) {
                 sudoku.getNeighbors(Position.create(sudoku.size, position)).map { it.position.index }
                     .forEach { fieldViews[it]?.isHighlighted = true }
             }
-
         }
+
         fieldViews.forEach { it?.isSelected = false }
         if (position != null) {
             fieldViews[position]?.isSelected = true
-            fieldViews[position]?.isHighlightedNumber = true
+            if (highlightNumber) highlightNumber(fieldViews[position]?.field?.value)
         }
+        else if (highlightNumber) highlightNumber(null)
         fieldViews.forEach { it?.setBackground() }
     }
 
-    fun highightNumber(number: Int?) {
-        TODO()
+    fun highlightNumber(number: Int?) {
+        sudoku.numberHighlightingUsed = true
+        fieldViews.forEach {
+            it?.isHighlightedNumber = number != null && it?.field?.value == number
+            it?.setBackground()
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))

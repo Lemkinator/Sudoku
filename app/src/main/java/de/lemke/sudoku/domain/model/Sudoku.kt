@@ -23,12 +23,13 @@ class Sudoku(
     var hintsUsed: Int,
     var errorsMade: Int,
     var seconds: Int,
-    var resumed: Boolean,
     var timer: Timer?,
     var gameListener: GameListener?,
     val created: LocalDateTime,
     var updated: LocalDateTime,
     val fields: MutableList<Field>,
+    var neighborHighlightingUsed: Boolean,
+    var numberHighlightingUsed: Boolean,
 ) {
     companion object {
         fun create(
@@ -39,12 +40,13 @@ class Sudoku(
             hintsUsed: Int = 0,
             errorsMade: Int = 0,
             seconds: Int = 0,
-            resumed: Boolean = false,
             timer: Timer? = null,
             gameListener: GameListener? = null,
             created: LocalDateTime = LocalDateTime.now(),
             updated: LocalDateTime = LocalDateTime.now(),
             fields: MutableList<Field>,
+            neighborHighlightingUsed: Boolean = false,
+            numberHighlightingUsed: Boolean = false,
         ): Sudoku = Sudoku(
             id = sudokuId,
             size = size,
@@ -53,12 +55,13 @@ class Sudoku(
             hintsUsed = hintsUsed,
             errorsMade = errorsMade,
             seconds = seconds,
-            resumed = resumed,
             timer = timer,
             gameListener = gameListener,
             created = created,
             updated = updated,
             fields = fields,
+            neighborHighlightingUsed = neighborHighlightingUsed,
+            numberHighlightingUsed = numberHighlightingUsed,
         )
     }
 
@@ -79,6 +82,9 @@ class Sudoku(
 
     val completed: Boolean
         get() = fields.all { !it.error && it.value != null }
+
+    val resumed: Boolean
+        get() = timer != null
 
     val itemCount: Int
         get() = (this.size * this.size)
@@ -135,6 +141,17 @@ class Sudoku(
         return values
     }
 
+    fun getCompletedNumbers(): List<Pair<Int, Boolean>> {
+        val numbers = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        for (field in fields) {
+            if (field.value != null && field.value!! == field.solution) {
+                numbers[field.value!! - 1]++
+            }
+        }
+        return numbers.mapIndexed { index, i -> Pair(index + 1, i > 8) }
+
+    }
+
     fun copy(
         id: SudokuId = this.id,
         size: Int = this.size,
@@ -143,10 +160,11 @@ class Sudoku(
         hints: Int = this.hintsUsed,
         errors: Int = this.errorsMade,
         seconds: Int = this.seconds,
-        resumed: Boolean = this.resumed,
         created: LocalDateTime = this.created,
         updated: LocalDateTime = this.updated,
         fields: MutableList<Field> = this.fields,
+        neighborHighlightingUsed: Boolean = this.neighborHighlightingUsed,
+        numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
     ): Sudoku = Sudoku(
         id = id,
         size = size,
@@ -155,12 +173,13 @@ class Sudoku(
         hintsUsed = hints,
         errorsMade = errors,
         seconds = seconds,
-        resumed = resumed,
         timer = null,
         gameListener = null,
         created = created,
         updated = updated,
-        fields = fields.toMutableList()
+        fields = fields.toMutableList(),
+        neighborHighlightingUsed = neighborHighlightingUsed,
+        numberHighlightingUsed = numberHighlightingUsed,
     )
 
     fun reset() {
@@ -169,22 +188,22 @@ class Sudoku(
         hintsUsed = 0
         errorsMade = 0
         seconds = 0
-        resumed = false
         timer?.cancel()
         timer = null
         gameListener = null
         updated = LocalDateTime.now()
     }
 
-    fun move(position: Position, value: Int?, isNote: Boolean = false) {
+    fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
         updated = LocalDateTime.now()
         val field = get(position)
+        if (field.given || field.hint) return false
         if (isNote) {
             if (value != null) field.toggleNote(value)
             else field.notes.clear()
             gameListener?.onFieldChanged(position)
         } else {
-            if (field.value == value) return
+            if (field.value == value) return false
             history.add(HistoryItem(position, if (value == null) field.value else null))
             field.value = value
             gameListener?.onFieldChanged(position)
@@ -201,6 +220,7 @@ class Sudoku(
                 }
             }
         }
+        return true
     }
 
     fun setHint(position: Position) {
@@ -215,12 +235,12 @@ class Sudoku(
             get(item.position.index).value = item.deletedNumber
             adapter.updateFieldView(item.position.index)
             gameListener?.onHistoryChange(history.size)
+            gameListener?.onFieldChanged(item.position)
         }
     }
 
-    fun startTimer(delay: Long) {
+    fun startTimer(delay: Long = 1500) {
         if (completed) return
-        resumed = true
         timer?.cancel()
         timer = Timer()
         timer!!.scheduleAtFixedRate(object : TimerTask() {
@@ -232,7 +252,6 @@ class Sudoku(
     }
 
     fun stopTimer() {
-        resumed = false
         timer?.cancel()
         timer = null
     }

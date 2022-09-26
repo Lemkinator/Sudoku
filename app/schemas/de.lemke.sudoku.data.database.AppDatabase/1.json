@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0f1cde9189c10f0d37f5ccfe59b8409f",
+    "identityHash": "9aa6527780c35426bc6efdc2204cde12",
     "entities": [
       {
         "tableName": "sudoku",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `size` INTEGER NOT NULL, `difficulty` TEXT NOT NULL, `hintsUsed` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `created` TEXT NOT NULL, `updated` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `size` INTEGER NOT NULL, `difficulty` TEXT NOT NULL, `hintsUsed` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `created` TEXT NOT NULL, `updated` TEXT NOT NULL, `neighborHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -54,6 +54,18 @@
             "fieldPath": "updated",
             "columnName": "updated",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neighborHighlightingUsed",
+            "columnName": "neighborHighlightingUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numberHighlightingUsed",
+            "columnName": "numberHighlightingUsed",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -145,7 +157,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0f1cde9189c10f0d37f5ccfe59b8409f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9aa6527780c35426bc6efdc2204cde12')"
     ]
   }
 }

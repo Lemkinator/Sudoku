@@ -6,7 +6,7 @@
     <string name="privacy_website" translatable="false">https://www.leonard-lemke.com/sudoku-privacy-policy</string>
     <string name="playstore_app_link" translatable="false">market://details?id=</string>
     <string name="playstore_link" translatable="false">https://play.google.com/store/apps/details?id=</string>
-    <string name="oneui_library_github">OneUI-Project Github</string>
+    <string name="oneui_library_github" translatable="false">OneUI-Project Github</string>
     <string name="oneui_github_link" translatable="false">https://github.com/OneUIProject</string>
     <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
 
@@ -21,10 +21,10 @@
     <string name="new_game">Neues Spiel</string>
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
 
-    <!--Menu TODO-->
-    <string name="undo">Undo</string>
+    <!--Menu-->
+    <string name="undo">Rückgangig machen</string>
     <string name="pause">Pause</string>
-    <string name="resume">Resume</string>
+    <string name="resume">Weiter</string>
 
     <!--About-->
     <string name="help">Hilfe</string>
@@ -36,6 +36,9 @@
     <string name="system_default">Systemeinstellung</string>
     <string name="design">Design</string>
     <string name="general">Allgemein</string>
+    <string name="game">Spiel</string>
+    <string name="highlightNeighbors">Ausgewähltes Feld und Nachbarn hervorheben</string>
+    <string name="highlightSelectedNumber">Ausgewählte Zahl hervorheben</string>
     <string name="confirm_exit">Verlassen bestätigen</string>
     <string name="press_again_to_exit">Zurück-Taste erneut drücken um zu Beenden.</string>
     <string name="delete_appdata_and_exit">App-Daten löschen und Beenden</string>
@@ -55,16 +58,13 @@
     <string name="expert">Experte</string>
 
     <!--Game-->
-    <string name="elapsed_time">Elapsed time: %1$s</string>
-    <string name="current_time">Time: %1$s</string>
-    <string name="current_errors">Errors: %1$d</string>
+    <string name="elapsed_time">Vergangene Zeit: %1$s</string>
+    <string name="current_time">Zeit: %1$s</string>
+    <string name="current_errors">Fehler: %1$d</string>
+    <string name="current_hints">Hinweise: %1$d</string>
 
-    <!--Others TODO-->
-    <string name="completed_no_error_title">Finished</string>
-    <string name="completed_error_title">Completed with Errors</string>
-    <string name="completed_error_message">You filled the sudoku, but there are errors.</string>
-    <string name="dismiss">Dismiss</string>
-    <string name="show_errors">Show Errors</string>
+    <!--Others-->
+    <string name="completed_no_error_title">Fertig</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>

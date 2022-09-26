@@ -24,7 +24,10 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_LAST_VERSION_CODE] = newSettings.lastVersionCode
             it[KEY_LAST_VERSION_NAME] = newSettings.lastVersionName
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
+            it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
             it[KEY_CONFIRM_EXIT] = newSettings.confirmExit
+            it[KEY_HIGHLIGHT_SUDOKU_NEIGHBORS] = newSettings.highlightSudokuNeighbors
+            it[KEY_HIGHLIGHT_SELECTED_NUMBER] = newSettings.highlightSelectedNumber
         }
         return settingsFromPreferences(prefs)
     }
@@ -34,7 +37,10 @@ class UserSettingsRepository @Inject constructor(
         lastVersionCode = prefs[KEY_LAST_VERSION_CODE] ?: -1,
         lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
+        difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: -1,
         confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
+        highlightSudokuNeighbors = prefs[KEY_HIGHLIGHT_SUDOKU_NEIGHBORS] ?: true,
+        highlightSelectedNumber = prefs[KEY_HIGHLIGHT_SELECTED_NUMBER] ?: true,
     )
 
 
@@ -42,18 +48,27 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_LAST_VERSION_CODE = intPreferencesKey("lastVersionCode")
         private val KEY_LAST_VERSION_NAME = stringPreferencesKey("lastVersionName")
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
+        private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
         private val KEY_CONFIRM_EXIT = booleanPreferencesKey("confirmExit")
+        private val KEY_HIGHLIGHT_SUDOKU_NEIGHBORS = booleanPreferencesKey("highlightSudokuNeighbors")
+        private val KEY_HIGHLIGHT_SELECTED_NUMBER = booleanPreferencesKey("highlightSelectedNumber")
     }
 }
 
 /** Settings associated with the current user. */
 data class UserSettings(
-    /** devMode enabled */
-    val devModeEnabled: Boolean,
-    /** confirm Exit*/
-    val confirmExit: Boolean,
     /** Last App-Version-Code */
     val lastVersionCode: Int,
     /** Last App-Version-Name */
     val lastVersionName: String,
+    /** devMode enabled */
+    val devModeEnabled: Boolean,
+    /** value of difficulty slider*/
+    val difficultySliderValue: Int,
+    /** confirm Exit*/
+    val confirmExit: Boolean,
+    /** highlight sudoku neighbors*/
+    val highlightSudokuNeighbors: Boolean,
+    /** highlight selected Number*/
+    val highlightSelectedNumber: Boolean,
 )

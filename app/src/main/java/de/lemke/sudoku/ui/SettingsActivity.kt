@@ -49,6 +49,8 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
         private lateinit var confirmExitPref: SwitchPreference
+        private lateinit var highlightSudokuNeighborsPref: SwitchPreference
+        private lateinit var highlightSelectedNumberPref: SwitchPreference
         //private var tipCard: TipsCardViewPreference? = null
         //private var tipCardSpacing: PreferenceCategory? = null
         private var relatedCard: PreferenceRelatedCard? = null
@@ -81,7 +83,11 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref = findPreference("dark_mode_pref")!!
             autoDarkModePref = findPreference("dark_mode_auto")!!
             confirmExitPref = findPreference("confirmExit")!!
-
+            highlightSudokuNeighborsPref = findPreference("highlightSudokuNeighbors")!!
+            highlightSelectedNumberPref = findPreference("highlightNumber")!!
+            confirmExitPref.onPreferenceChangeListener = this
+            highlightSudokuNeighborsPref.onPreferenceChangeListener = this
+            highlightSelectedNumberPref.onPreferenceChangeListener = this
             autoDarkModePref.onPreferenceChangeListener = this
             autoDarkModePref.isChecked = darkMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM ||
                     darkMode == AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY ||
@@ -92,25 +98,6 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref.setTouchEffectEnabled(false)
             darkModePref.isEnabled = !autoDarkModePref.isChecked
             darkModePref.value = if (SeslMisc.isLightTheme(settingsActivity)) "0" else "1"
-
-
-            /*
-            lifecycleScope.launch {
-                val recentColors = getRecentColors().toMutableList()
-                for (recent_color in recentColors) colorPickerPref.onColorSet(recent_color)
-                colorPickerPref.onPreferenceChangeListener =
-                    Preference.OnPreferenceChangeListener { _: Preference?, colorInt: Any ->
-                        recentColors.add(colorInt as Int)
-                        lifecycleScope.launch { setRecentColors(recentColors) }
-                        val color = Color.valueOf(colorInt)
-                        ThemeUtil.setColor(settingsActivity, color.red(), color.green(), color.blue())
-                        MainActivity.refreshView = true
-                        true
-                    }
-            }
-            */
-            confirmExitPref.onPreferenceChangeListener = this
-
             findPreference<PreferenceScreen>("privacy")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.privacy_website))))
@@ -171,6 +158,8 @@ class SettingsActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val userSettings = getUserSettings()
                 confirmExitPref.isChecked = userSettings.confirmExit
+                highlightSudokuNeighborsPref.isChecked = userSettings.highlightSudokuNeighbors
+                highlightSelectedNumberPref.isChecked = userSettings.highlightSelectedNumber
                 //tipCard?.isVisible = showTipCard
                 //tipCardSpacing?.isVisible = showTipCard
             }
@@ -180,7 +169,6 @@ class SettingsActivity : AppCompatActivity() {
         @SuppressLint("WrongConstant", "RestrictedApi")
         @Suppress("UNCHECKED_CAST")
         override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
-            //val currentDarkMode = ThemeUtil.getDarkMode(settingsActivity).toString()
             when (preference.key) {
                 "dark_mode_pref" -> {
                     AppCompatDelegate.setDefaultNightMode(
@@ -201,6 +189,14 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 "confirmExit" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(confirmExit = newValue as Boolean) } }
+                    return true
+                }
+                "highlightSudokuNeighbors" -> {
+                    lifecycleScope.launch { updateUserSettings { it.copy(highlightSudokuNeighbors = newValue as Boolean) } }
+                    return true
+                }
+                "highlightNumber" -> {
+                    lifecycleScope.launch { updateUserSettings { it.copy(highlightSelectedNumber = newValue as Boolean) } }
                     return true
                 }
             }

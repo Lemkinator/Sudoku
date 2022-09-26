@@ -2,6 +2,7 @@ package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -120,73 +121,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             finish()
             return
         }
-        lifecycleScope.launch {
-            val nullableSudoku = getSudoku(SudokuId(id))
-            if (nullableSudoku == null) finish()
-            else sudoku = nullableSudoku
-            drawerLayout.setTitle(
-                getString(R.string.app_name) + " (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")"
-            )
-            setSubtitle(
-                getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
-            )
-
-
-            for (index in selectButtons.indices) {
-                selectButtons[index].setOnClickListener {
-                    select(sudoku.itemCount + index)
-                }
-            }
-
-            //recycler
-            gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
-            gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
-            gameRecycler.adapter = gameAdapter
-            gameRecycler.seslSetFillBottomEnabled(true)
-            gameRecycler.seslSetLastRoundedCorner(true)
-
-            sudoku.gameListener = object : GameListener {
-                override fun onHistoryChange(length: Int) {
-                    toolbarMenu.findItem(R.id.menu_undo).isEnabled = sudoku.history.isNotEmpty()
-                }
-
-                override fun onFieldClicked(position: Position) {
-                    select(position.index)
-                }
-
-                override fun onFieldChanged(position: Position) {
-                    gameAdapter.updateFieldView(position.index)
-                    lifecycleScope.launch {
-                        saveSudoku(sudoku)
-                    }
-                }
-
-                override fun onCompleted() {
-                    toolbarMenu.setGroupVisible(R.id.sudoku_resumed, false)
-                    toolbarMenu.setGroupVisible(R.id.sudoku_completed, true)
-                    AlertDialog.Builder(this@SudokuActivity)
-                        .setTitle(R.string.completed_no_error_title)
-                        .setPositiveButton(R.string.dismiss, null)
-                        .show()
-                }
-
-                override fun onTimeChanged(time: String?) {
-                    lifecycleScope.launch {
-                        setSubtitle(getString(R.string.current_time, time) + " | " + getString(R.string.current_errors, sudoku.errorsMade))
-                    }
-                }
-            }
-
-            resumeGame()
-            loadingDialog.dismiss()
-            if (sudoku.completed) {
-                toolbarMenu.setGroupVisible(R.id.sudoku_resumed, false)
-                toolbarMenu.setGroupVisible(R.id.sudoku_completed, true)
-            }
-            sudoku.updated = LocalDateTime.now()
-        }
-
-
+        lifecycleScope.launch { initSudoku(SudokuId(id)) }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -209,34 +144,106 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     override fun onPause() {
         super.onPause()
         pauseGame()
-        lifecycleScope.launch {
-            saveSudoku(sudoku)
-        }
+        lifecycleScope.launch { saveSudoku(sudoku) }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_undo -> sudoku.revertLastChange(gameAdapter)
             R.id.menu_pause_play -> toggleGameResumed()
+            R.id.menu_reset -> {
+                lifecycleScope.launch {
+                    sudoku.reset()
+                    saveSudoku(sudoku)
+                    toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, false)
+                    toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, true)
+                    initSudoku(sudoku.id)
+                }
+            }
         }
         return true
     }
 
-    private fun setSubtitle(subtitle: CharSequence) {
+    private suspend fun initSudoku(id: SudokuId) {
+        val nullableSudoku = getSudoku(id)
+        if (nullableSudoku == null) finish()
+        else sudoku = nullableSudoku
+        drawerLayout.setTitle(getString(R.string.app_name) + " (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")")
+        setSubtitle()
+        for (index in selectButtons.indices) {
+            selectButtons[index].setOnClickListener {
+                lifecycleScope.launch {
+                    select(sudoku.itemCount + index)
+                }
+            }
+        }
+        gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
+        gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
+        gameRecycler.adapter = gameAdapter
+        gameRecycler.seslSetFillBottomEnabled(true)
+        gameRecycler.seslSetLastRoundedCorner(true)
+        sudoku.gameListener = object : GameListener {
+            override fun onHistoryChange(length: Int) {
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
+            }
+
+            override fun onFieldClicked(position: Position) {
+                lifecycleScope.launch { select(position.index) }
+            }
+
+            override fun onFieldChanged(position: Position) {
+                gameAdapter.updateFieldView(position.index)
+                checkAnyNumberCompleted(position)
+                lifecycleScope.launch { saveSudoku(sudoku) }
+            }
+
+            override fun onCompleted() {
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
+                AlertDialog.Builder(this@SudokuActivity)
+                    .setTitle(R.string.completed_no_error_title)
+                    .setPositiveButton(R.string.ok, null)
+                    .show()
+            }
+
+            override fun onTimeChanged(time: String?) {
+                lifecycleScope.launch { setSubtitle() }
+            }
+        }
+
+        resumeGame()
+        loadingDialog.dismiss()
+        if (sudoku.completed) {
+            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
+            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
+            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
+        }
+        sudoku.updated = LocalDateTime.now()
+        checkAnyNumberCompleted(null)
+    }
+
+    private fun setSubtitle() {
+        val subtitle = getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(
+            R.string.current_errors,
+            sudoku.errorsMade
+        ) + " | " + getString(R.string.current_hints, sudoku.hintsUsed)
         drawerLayout.setExpandedSubtitle(subtitle)
         drawerLayout.setCollapsedSubtitle(subtitle)
     }
 
-    private fun select(newSelected: Int?) {
+    private suspend fun select(newSelected: Int?) {
+        val highlightSudokuNeighbors = getUserSettings().highlightSudokuNeighbors
+        val highlightSelectedNumber = getUserSettings().highlightSelectedNumber
         when (selected) {
             null -> {//nothing is selected
                 when (newSelected) {
                     null -> {} //selected nothing
                     in 0 until sudoku.itemCount -> { //selected field
-                        gameAdapter.selectFieldView(newSelected)
+                        gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
-                        selectButton(newSelected - sudoku.itemCount)
+                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
                     }
                     else -> {} //selected nothing
                 }
@@ -245,25 +252,25 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 val position = Position.create(sudoku.size, selected!!)
                 when (newSelected) {
                     null -> { //selected nothing
-                        gameAdapter.selectFieldView(null)
+                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
                     }
                     selected -> { //selected same field
                         selected = null
-                        gameAdapter.selectFieldView(null)
+                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        gameAdapter.selectFieldView(newSelected)
+                        gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
+                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
                         sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
                         selected = null
-                        gameAdapter.selectFieldView(null)
                         return
                     }
                     sudoku.itemCount + sudoku.size -> { //selected delete
+                        gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
                         sudoku.move(position, null, notesEnabled)
-                        gameAdapter.selectFieldView(selected)
                         return
                     }
                     sudoku.itemCount + sudoku.size + 1 -> { //selected hint
@@ -276,31 +283,32 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
                 when (newSelected) {
                     null -> { //selected nothing
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                     }
                     selected -> { //selected same button
                         selected = null
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
+                        val number = selected!! - sudoku.itemCount + 1
                         sudoku.move(Position.create(sudoku.size, newSelected), selected!! - sudoku.itemCount + 1, notesEnabled)
-                        selected = null
+                        if (highlightSelectedNumber) gameAdapter.highlightNumber(number)
                         return
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
-                        selectButton(newSelected - sudoku.itemCount)
+                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
                     }
                 }
             }
             sudoku.itemCount + sudoku.size -> { // delete button is selected
                 when (newSelected) {
                     null -> { //selected nothing
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                     }
                     selected -> { //selected same button
                         selected = null
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
@@ -308,21 +316,21 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button(not delete)
-                        selectButton(newSelected - sudoku.itemCount)
+                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
                     }
                     else -> { //selected nothing
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                     }
                 }
             }
             sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
                 when (newSelected) {
                     null -> { //selected nothing
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                     }
                     selected -> { //selected same button
                         selected = null
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                         return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
@@ -330,10 +338,10 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         return
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button(not hint)
-                        selectButton(newSelected - sudoku.itemCount)
+                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
                     }
                     else -> { //selected nothing
-                        selectButton(null)
+                        selectButton(null, highlightSelectedNumber)
                     }
                 }
             }
@@ -341,12 +349,41 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         selected = newSelected
     }
 
-    private fun selectButton(i: Int?) {
+    private fun checkAnyNumberCompleted(position: Position?) {
+        sudoku.getCompletedNumbers().forEach { pair ->
+            selectButtons[pair.first - 1].isEnabled = !pair.second
+            if (pair.second) {
+                selectButtons[pair.first - 1].setTextColor(Color.GRAY)
+                if (position != null && sudoku[position].value == pair.first) {
+                    selected = null
+                    lifecycleScope.launch {
+                        selectButton(null, getUserSettings().highlightSelectedNumber)
+                    }
+                }
+            } else {
+                selectButtons[pair.first - 1].setTextColor(
+                    resources.getColor(
+                        dev.oneuiproject.oneui.R.color.oui_primary_text_color,
+                        theme
+                    )
+                )
+            }
+        }
+    }
+
+    private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
         for (button in selectButtons) {
             button.backgroundTintList = ColorStateList.valueOf(resources.getColor(android.R.color.transparent, theme))
         }
         if (i != null) {
             selectButtons[i].backgroundTintList = ColorStateList.valueOf(resources.getColor(R.color.primary_color, theme))
+            if (highlightSelectedNumber) {
+                if (i in 0 until sudoku.size) {
+                    gameAdapter.highlightNumber(i + 1)
+                } else {
+                    gameAdapter.highlightNumber(null)
+                }
+            }
         }
     }
 
@@ -362,11 +399,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     fun resumeGame(view: View? = null) {
         resumeButtonLayout.visibility = View.GONE
         if (!sudoku.completed) {
-            sudoku.startTimer(1500)
+            sudoku.startTimer()
             val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
             itemPausePlay.icon = getDrawable(R.drawable.ic_oui_control_pause)
             itemPausePlay.title = getString(R.string.pause)
-            toolbarMenu.findItem(R.id.menu_undo).isEnabled = sudoku.history.isNotEmpty()
+            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
         }
         gameLayout.visibility = View.VISIBLE
     }
@@ -378,8 +415,8 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
         itemPausePlay.icon = getDrawable(R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
-        toolbarMenu.findItem(R.id.menu_undo).isEnabled = false
         resumeButtonLayout.visibility = View.VISIBLE
+        toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
     }
 
     private fun toggleGameResumed() {

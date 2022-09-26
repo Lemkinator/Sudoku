@@ -3,12 +3,10 @@ package de.lemke.sudoku.ui
 import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
-import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.*
@@ -21,7 +19,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     private var fieldViewContainer: View? = null
     private var sudoku: Sudoku? = null
     private lateinit var adapter: SudokuViewAdapter
-    private lateinit var field: Field
+    lateinit var field: Field
     private lateinit var position: Position
     private var isColored = false
     var isHighlighted = false
@@ -48,7 +46,13 @@ class FieldView(context: Context) : LinearLayout(context) {
         field = sudoku[position.index]
         if (fieldViewContainer == null) return
 
-        //init appearance
+        if (position.row == 2 || position.row == 5) foreground = context.getDrawable(
+            if (position.column == 2 || position.column == 5) R.drawable.sudoku_view_item_fg_border_bottom_right
+            else R.drawable.sudoku_view_item_fg_border_bottom
+        )
+        else if (position.column == 2 || position.column == 5)
+            foreground = context.getDrawable(R.drawable.sudoku_view_item_fg_border_right)
+
         val typedValue = TypedValue()
         if (field.given) {
             context.theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
@@ -66,16 +70,11 @@ class FieldView(context: Context) : LinearLayout(context) {
     fun update() {
         fieldViewValue?.text = if (field.value == null) null else field.value.toString()
         fieldViewValue?.visibility = if (field.value == null) GONE else VISIBLE
-        if (field.hint) {
-            isEnabled = false
-            fieldViewValue?.setTextColor(context.getColor(R.color.primary_dark_color))
-        }
+        if (field.hint) fieldViewValue?.setTextColor(Color.GRAY)
         updateNotes()
         setBackground()
-        if (!field.given && !field.hint && sudoku?.completed != true) {
-            setOnClickListener {
-                sudoku?.gameListener?.onFieldClicked(position)
-            }
+        if (sudoku?.completed != true) {
+            setOnClickListener { sudoku?.gameListener?.onFieldClicked(position) }
             setOnLongClickListener {
                 if (field.value != null) {
                     sudoku?.move(position, null)
@@ -95,9 +94,10 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     fun setBackground() {
         if (field.error) setBackgroundColor(context.getColor(androidx.appcompat.R.color.sesl_error_color))
-        else if (isColored) setBackgroundColor(resources.getColor(R.color.control_color_normal, context.theme))
-        else if (isHighlighted) setBackgroundColor(resources.getColor(R.color.control_color_highlighted, context.theme))
+        else if (isSelected) setBackgroundColor(resources.getColor(R.color.control_color_selected, context.theme))
         else if (isHighlightedNumber) setBackgroundColor(resources.getColor(R.color.control_color_highlighted_number, context.theme))
+        else if (isHighlighted) setBackgroundColor(resources.getColor(R.color.control_color_highlighted, context.theme))
+        else if (isColored) setBackgroundColor(resources.getColor(R.color.control_color_normal, context.theme))
         else setBackgroundColor(Color.TRANSPARENT)
     }
 

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.appcompat.widget.AppCompatButton
+import androidx.appcompat.widget.SeslSeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,9 +28,6 @@ class MainActivityTabMain : Fragment() {
     private lateinit var rootView: View
     private lateinit var difficultySeekbar: HapticSeekBar
     private lateinit var continueGameButton: AppCompatButton
-    private lateinit var toolbarLayout: ToolbarLayout
-    private var mainMenuLayout: LinearLayout? = null
-
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -58,7 +56,13 @@ class MainActivityTabMain : Fragment() {
         SeekBarUtils.showTickMark(difficultySeekbar, true)
         difficultySeekbar.setSeamless(true)
         difficultySeekbar.max = 4
-        difficultySeekbar.progress = difficultySeekbar.max / 2
+        difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
+                lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
+            }
+            override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+        })
         continueGameButton = rootView.findViewById(R.id.continue_game_button)
         rootView.findViewById<AppCompatButton>(R.id.new_game_button).setOnClickListener {
             val size = 9
@@ -77,8 +81,9 @@ class MainActivityTabMain : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        difficultySeekbar.progress = difficultySeekbar.max / 2
         lifecycleScope.launch {
+            val sliderValue = getUserSettings().difficultySliderValue
+            difficultySeekbar.progress = if (sliderValue == -1) (difficultySeekbar.max / 2) else sliderValue
             val sudoku = getRecentSudoku()
             if (sudoku != null && !sudoku.completed) {
                 continueGameButton.visibility = View.VISIBLE
@@ -90,9 +95,7 @@ class MainActivityTabMain : Fragment() {
                 continueGameButton.setOnClickListener {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
-            } else {
-                continueGameButton.visibility = View.GONE
-            }
+            } else continueGameButton.visibility = View.GONE
         }
     }
 

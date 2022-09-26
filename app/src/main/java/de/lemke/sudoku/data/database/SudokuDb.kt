@@ -15,6 +15,8 @@ data class SudokuDb(
     val seconds: Int,
     val created: LocalDateTime,
     val updated: LocalDateTime,
+    val neighborHighlightingUsed: Boolean,
+    val numberHighlightingUsed: Boolean,
 )
 
 data class SudokuWithFields(
