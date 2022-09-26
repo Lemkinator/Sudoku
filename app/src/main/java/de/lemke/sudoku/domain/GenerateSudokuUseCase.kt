@@ -15,42 +15,23 @@ class GenerateSudokuUseCase @Inject constructor(
     //TODO cleanup
     private var random: Random = Random()
     private var size: Int = 9
-    private var difficulty: Difficulty = Difficulty.EASY
     private var numbersToRemove: Int = -1
-    private var tries: Int = 40
+    private var tries: Int = 60
 
 
     suspend operator fun invoke(size: Int = 9, difficulty: Difficulty): Sudoku = withContext(Dispatchers.Default) {
-        this@GenerateSudokuUseCase.difficulty = difficulty
         this@GenerateSudokuUseCase.size = size
         this@GenerateSudokuUseCase.numbersToRemove = difficulty.numbersToRemove(size)
         this@GenerateSudokuUseCase.tries = 40
-        return@withContext generateSudoku()
-    }
 
-    //new Game
-    private fun generateSudoku(): Sudoku {
-        var output = Array(size) { arrayOfNulls<Int>(size) }
-
-        //add random numbers
-        run {
-            var i = 0
-            while (i < size.toDouble().pow(2.0) / 3) {
-                addRandomNumberTo(output)
-                i++
-            }
+        var solutions: MutableList<Array<Array<Int?>>> = mutableListOf()
+        while (solutions.isEmpty()) {
+            val fields = generateFields()
+            solutions = findSolutions(fields)
         }
+        val solution = solutions.random()
+        val output = removeRandomNumbers(solution)
 
-        //generate solutions and retry if there aren't
-        val solutions = ArrayList<Array<Array<Int?>>>()
-        solveFieldForSolutionGame(cloneArray(output), 0, 0, solutions)
-        if (solutions.isEmpty()) return generateSudoku()
-
-        //remove random numbers while there is one solution
-        val solution = solutions[random.nextInt(solutions.size)]
-        output = removeRandomNumbers(solution)
-
-        //create Sudoku from fields
         val sudokuId = SudokuId.generate()
         val sudoku = Sudoku.create(
             sudokuId = sudokuId,
@@ -66,8 +47,21 @@ class GenerateSudokuUseCase @Inject constructor(
                     given = output[position.row][position.column] != null,
                 )
             })
-        return sudoku
+        return@withContext sudoku
     }
+
+    private fun generateFields(): Array<Array<Int?>> {
+        val fields = Array(size) { arrayOfNulls<Int>(size) }
+        for (i in 0 until (size * size / 3)) addRandomNumberTo(fields)
+        return fields
+    }
+
+    private fun findSolutions(fields: Array<Array<Int?>>): MutableList<Array<Array<Int?>>> {
+        val solutions = mutableListOf<Array<Array<Int?>>>()
+        solveFieldForSolutionGame(cloneArray(fields), 0, 0, solutions)
+        return solutions
+    }
+
 
     private fun addRandomNumberTo(input: Array<Array<Int?>>) {
         val row = random.nextInt(size)
@@ -81,7 +75,7 @@ class GenerateSudokuUseCase @Inject constructor(
     }
 
     private fun isValid(input: Array<Array<Int?>>, i: Int, row: Int, column: Int): Boolean {
-        val size = sqrt(this.size.toDouble()).toInt()
+        val size = sqrt(size.toDouble()).toInt()
         for (number in input[row]) if (i == number) return false
         for (rows in input) if (i == rows[column]) return false
         val sRow = row / size * size
@@ -100,7 +94,7 @@ class GenerateSudokuUseCase @Inject constructor(
         return output
     }
 
-    private fun solveFieldForSolutionGame(input: Array<Array<Int?>>, row: Int, column: Int, solutions: ArrayList<Array<Array<Int?>>>) {
+    private fun solveFieldForSolutionGame(input: Array<Array<Int?>>, row: Int, column: Int, solutions: MutableList<Array<Array<Int?>>>) {
         var newRow = row
         var newColumn = column
         if (newColumn == size) { //go to next row
@@ -136,7 +130,10 @@ class GenerateSudokuUseCase @Inject constructor(
                     Log.d("removeRandomNumbers", "numbersToRemove: 0, tries: $tries, got one solution, return newField")
                     newField
                 } else {
-                    Log.d("removeRandomNumbers", "numbersToRemove: $numbersToRemove, tries: $tries, got one solution, continue to removeRandomNumbers")
+                    Log.d(
+                        "removeRandomNumbers",
+                        "numbersToRemove: $numbersToRemove, tries: $tries, got one solution, continue to removeRandomNumbers"
+                    )
                     removeRandomNumbers(newField)
                 }
             } else { //try to remove more numbers
@@ -153,7 +150,6 @@ class GenerateSudokuUseCase @Inject constructor(
             removeRandomNumbers(input)
         }
     }
-
 
 
     /*

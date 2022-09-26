@@ -1,6 +1,7 @@
 package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
@@ -33,6 +34,9 @@ import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -201,9 +205,30 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
+                val completedMessage = getString(
+                    R.string.completed_message,
+                    sudoku.size,
+                    resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal],
+                    sudoku.getTimeString(),
+                    sudoku.errorsMade,
+                    sudoku.hintsUsed,
+                    getString(if (sudoku.neighborHighlightingUsed) R.string.yes else R.string.no),
+                    getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
+                    sudoku.created.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
+                    sudoku.updated.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
+                )
                 AlertDialog.Builder(this@SudokuActivity)
-                    .setTitle(R.string.completed_no_error_title)
-                    .setPositiveButton(R.string.ok, null)
+                    .setTitle(R.string.completed_title)
+                    .setMessage(completedMessage)
+                    .setPositiveButton(R.string.share) { _, _ ->
+                        val sendIntent = Intent(Intent.ACTION_SEND)
+                        sendIntent.type = "text/plain"
+                        sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.textShare) + completedMessage)
+                        sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.shareResult))
+                        sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        startActivity(Intent.createChooser(sendIntent, "Share Via"))
+                    }
+                    .setNeutralButton(R.string.ok, null)
                     .show()
             }
 
@@ -377,13 +402,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         }
         if (i != null) {
             selectButtons[i].backgroundTintList = ColorStateList.valueOf(resources.getColor(R.color.primary_color, theme))
-            if (highlightSelectedNumber) {
-                if (i in 0 until sudoku.size) {
-                    gameAdapter.highlightNumber(i + 1)
-                } else {
-                    gameAdapter.highlightNumber(null)
-                }
+            if (highlightSelectedNumber && i in 0 until sudoku.size) {
+                gameAdapter.highlightNumber(i + 1)
             }
+        } else if (highlightSelectedNumber) {
+            gameAdapter.highlightNumber(null)
         }
     }
 

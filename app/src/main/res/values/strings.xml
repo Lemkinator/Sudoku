@@ -37,6 +37,7 @@
     <string name="design">Design</string>
     <string name="general">Allgemein</string>
     <string name="game">Spiel</string>
+    <string name="games">Spiele</string>
     <string name="highlightNeighbors">Ausgewähltes Feld und Nachbarn hervorheben</string>
     <string name="highlightSelectedNumber">Ausgewählte Zahl hervorheben</string>
     <string name="confirm_exit">Verlassen bestätigen</string>
@@ -62,13 +63,24 @@
     <string name="current_time">Zeit: %1$s</string>
     <string name="current_errors">Fehler: %1$d</string>
     <string name="current_hints">Hinweise: %1$d</string>
+    <string name="completed_title">Fertig</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNachbarn hervorgehoben: %6$s \nGewählte Nummer hervorgehoben: %7$s \nErstellt: %8$s \nZuletzt geändert: %9$s</string>
 
     <!--Others-->
-    <string name="completed_no_error_title">Fertig</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>
     <string name="noGamePlayed">Noch kein Spiel gespielt</string>
     <string name="reset">Zurücksetzen</string>
+    <string name="share">Teilen</string>
+    <string name="shareResult">Ergebnis teilen</string>
+    <string name="textShare">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
+    <string name="games_started">Spiele gestartet</string>
+    <string name="games_completed">Spiele gewonnen</string>
+    <string name="win_rate">Siegesrate</string>
+    <string name="time">Zeit</string>
+    <string name="streak">Serie</string>
 
 </resources>

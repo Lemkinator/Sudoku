@@ -206,6 +206,7 @@ class Sudoku(
             if (field.value == value) return false
             history.add(HistoryItem(position, if (value == null) field.value else null))
             field.value = value
+            field.notes.clear()
             gameListener?.onFieldChanged(position)
             gameListener?.onHistoryChange(history.size)
             if (value != null) {

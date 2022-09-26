@@ -13,7 +13,7 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
 
     override fun getItemCount(): Int = sudoku.itemCount
 
-    fun updateFieldView(position: Int) = fieldViews[position]?.update()//init(sudoku, position, this)
+    fun updateFieldView(position: Int) = fieldViews[position]?.update()
 
     fun selectFieldView(position: Int?, highlightNeighbors: Boolean, highlightNumber: Boolean) {
         if (position != selectedfield && highlightNeighbors) {
