@@ -103,7 +103,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     }
 
     suspend fun flash(milliseconds: Long) {
-        setBackgroundColor(resources.getColor(dev.oneuiproject.oneui.R.color.sesl_btn_background_color_dark, context.theme))
+        setBackgroundColor(resources.getColor(dev.oneuiproject.oneui.R.color.oui_primary_text_color, context.theme))
         delay(milliseconds)
         setBackground()
     }

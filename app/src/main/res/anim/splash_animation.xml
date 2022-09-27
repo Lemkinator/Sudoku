@@ -5,6 +5,13 @@
 
     <rotate
         android:duration="200"
+        android:fromDegrees="0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:toDegrees="220" />
+
+    <rotate
+        android:duration="200"
         android:fromDegrees="180"
         android:pivotX="50%"
         android:pivotY="50%"

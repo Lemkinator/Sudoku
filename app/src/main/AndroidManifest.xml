@@ -20,7 +20,7 @@
         android:resizeableActivity="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.Sudoku"
-        tools:targetApi="32">
+        tools:targetApi="33">
 
         <activity android:name=".ui.SettingsActivity" />
         <activity android:name=".ui.AboutActivity" />
