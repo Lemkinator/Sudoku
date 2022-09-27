@@ -6,6 +6,8 @@
 
     <color name="sesl_thumb_control_color_activated">@color/primary_color</color>
 
+    <color name="field_animation_highlight">#C1C1C1</color>
+
     <!--color name="red">#ffD50000</color>
     <color name="yellow">#ffFFD600</color>
     <color name="green">#ff009808</color>
