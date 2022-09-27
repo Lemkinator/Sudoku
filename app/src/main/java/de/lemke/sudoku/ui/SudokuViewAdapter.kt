@@ -46,6 +46,11 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         }
     }
 
+    suspend fun flashRow(row: Int, milliseconds: Long) = fieldViews.filter { it?.position?.row == row }.forEach { it?.flash(milliseconds) }
+    suspend fun flashColumn(column: Int, milliseconds: Long) = fieldViews.filter { it?.position?.column == column }.forEach { it?.flash(milliseconds) }
+    suspend fun flashBlock(block: Int, milliseconds: Long) = fieldViews.filter { it?.position?.block == block }.forEach { it?.flash(milliseconds) }
+    suspend fun flashSudoku(milliseconds: Long) = fieldViews.forEach { it?.flash(milliseconds) }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))
 
     override fun onBindViewHolder(holder: ViewHolder, index: Int) {

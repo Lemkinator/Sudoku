@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.*
+import kotlinx.coroutines.delay
 import java.util.stream.Collectors
 
 
@@ -20,7 +21,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     private var sudoku: Sudoku? = null
     private lateinit var adapter: SudokuViewAdapter
     lateinit var field: Field
-    private lateinit var position: Position
+    lateinit var position: Position
     private var isColored = false
     var isHighlighted = false
     var isHighlightedNumber = false
@@ -99,6 +100,12 @@ class FieldView(context: Context) : LinearLayout(context) {
         else if (isHighlighted) setBackgroundColor(resources.getColor(R.color.control_color_highlighted, context.theme))
         else if (isColored) setBackgroundColor(resources.getColor(R.color.control_color_normal, context.theme))
         else setBackgroundColor(Color.TRANSPARENT)
+    }
+
+    suspend fun flash(milliseconds: Long) {
+        setBackgroundColor(resources.getColor(dev.oneuiproject.oneui.R.color.sesl_btn_background_color_dark, context.theme))
+        delay(milliseconds)
+        setBackground()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

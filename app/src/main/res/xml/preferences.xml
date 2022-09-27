@@ -24,13 +24,22 @@
 
     <PreferenceCategory android:title="@string/game">
         <SwitchPreference
-            android:key="highlightSudokuNeighbors"
-            android:title="@string/highlightNeighbors"
+            android:key="highlightRegionalSwitch"
+            android:title="@string/RegionalHighlight"
+            android:summary="@string/RegionalHighlightSummary"
             app:icon="@drawable/ic_baseline_oui_settings_outline_24" />
         <SwitchPreference
-            android:key="highlightNumber"
-            android:title="@string/highlightSelectedNumber"
+            android:key="highlightNumberSwitch"
+            android:title="@string/numberHighlight"
+            android:summary="@string/numberHighlightSummary"
             app:icon="@drawable/ic_baseline_oui_settings_outline_24" />
+        <DropDownPreference
+            android:key="errorLimitDropDown"
+            android:entries="@array/error_limit_entries"
+            android:entryValues="@array/error_limit_values"
+            android:title="@string/error_limit"
+            app:icon="@drawable/ic_baseline_oui_settings_outline_24" />
+
     </PreferenceCategory>
 
     <PreferenceCategory

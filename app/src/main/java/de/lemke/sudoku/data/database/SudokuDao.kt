@@ -1,6 +1,7 @@
 package de.lemke.sudoku.data.database
 
 import androidx.room.*
+import de.lemke.sudoku.domain.model.Difficulty
 
 @Dao
 interface SudokuDao {
@@ -27,6 +28,10 @@ interface SudokuDao {
     @Transaction
     @Query("SELECT * FROM sudoku ORDER BY updated DESC")
     suspend fun getAll(): List<SudokuWithFields>
+
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE difficulty = :difficulty ORDER BY updated DESC")
+    suspend fun getAllWithDifficulty(difficulty: Int): List<SudokuWithFields>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")

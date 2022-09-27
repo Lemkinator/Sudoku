@@ -38,8 +38,10 @@
     <string name="general">Allgemein</string>
     <string name="game">Spiel</string>
     <string name="games">Spiele</string>
-    <string name="highlightNeighbors">Ausgewähltes Feld und Nachbarn hervorheben</string>
-    <string name="highlightSelectedNumber">Ausgewählte Zahl hervorheben</string>
+    <string name="RegionalHighlight">Regionales Highlight</string>
+    <string name="RegionalHighlightSummary">Wenn ein Feld ausgewählt wird, werden die Reihe, Zeile und der Block hervorgehoben.</string>
+    <string name="numberHighlight">Ausgewählte Zahl hervorheben</string>
+    <string name="numberHighlightSummary">Wenn eine Zahl ausgewählt wird, werden alle anderen Felder mit der selben Zahl markiert.</string>
     <string name="confirm_exit">Verlassen bestätigen</string>
     <string name="press_again_to_exit">Zurück-Taste erneut drücken um zu Beenden.</string>
     <string name="delete_appdata_and_exit">App-Daten löschen und Beenden</string>
@@ -62,6 +64,7 @@
     <string name="elapsed_time">Vergangene Zeit: %1$s</string>
     <string name="current_time">Zeit: %1$s</string>
     <string name="current_errors">Fehler: %1$d</string>
+    <string name="current_errors_with_limit">Fehler: %1$d/%2$d</string>
     <string name="current_hints">Hinweise: %1$d</string>
     <string name="completed_title">Fertig</string>
     <string name="yes">Ja</string>
@@ -73,14 +76,30 @@
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>
     <string name="noGamePlayed">Noch kein Spiel gespielt</string>
-    <string name="reset">Zurücksetzen</string>
+    <string name="restart">Neustart</string>
     <string name="share">Teilen</string>
     <string name="shareResult">Ergebnis teilen</string>
     <string name="textShare">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
     <string name="games_started">Spiele gestartet</string>
     <string name="games_completed">Spiele gewonnen</string>
     <string name="win_rate">Siegesrate</string>
+    <string name="wins_without_error">Siege ohne Fehler</string>
     <string name="time">Zeit</string>
     <string name="streak">Serie</string>
+    <string name="current_streak">Aktuelle Siegesserie</string>
+    <string name="best_streak">Längste Siegesserie</string>
+    <string name="best_time">Beste Zeit</string>
+    <string name="average_time">Durchschnittliche Zeit</string>
+    <string name="wins_without_hint">Siege ohne Hinweis</string>
+    <string name="most_errors">Meiste Fehler</string>
+    <string name="average_errors">Durchschnittliche Fehler</string>
+    <string name="most_hints">Meiste Hinweise</string>
+    <string name="average_hints">Durchschnittliche Hinweise</string>
+    <string name="errors">Fehler</string>
+    <string name="hints">Hinweise</string>
+    <string name="error_limit">Fehlerlimit</string>
+    <string name="no_limit">Kein Limit</string>
+    <string name="gameover">Spiel zuende</string>
+    <string name="error_limit_reached">Fehlerlimit von %1$d erreicht.</string>
 
 </resources>

@@ -25,6 +25,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.GetSudokuHistoryUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -58,6 +59,9 @@ class MainActivityTabHistory : Fragment() {
 
     @Inject
     lateinit var deleteSudoku: DeleteSudokusUseCase
+
+    @Inject
+    lateinit var getUserSettings: GetUserSettingsUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         rootView = inflater.inflate(R.layout.fragment_tab_history, container, false)
@@ -197,8 +201,31 @@ class MainActivityTabHistory : Fragment() {
                 holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
                 holder.textView.text = "Sudoku (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")"
-                holder.textViewSmall.text = getString(R.string.current_time, sudoku.getTimeString()) + " | " + getString(R.string.current_errors, sudoku.errorsMade)
-                if (sudoku.completed) holder.imageView.setImageDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.ic_oui_crown_outline))
+                if (sudoku.completed) holder.imageView.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        requireContext(),
+                        R.drawable.ic_oui_crown_outline
+                    )
+                )
+                lifecycleScope.launch {
+                    val errorLimit = getUserSettings().errorLimit
+                    if (errorLimit != 0 && sudoku.errorsMade >= errorLimit) holder.imageView.setImageDrawable(
+                        ContextCompat.getDrawable(
+                            requireContext(),
+                            R.drawable.ic_oui_error
+                        )
+                    )
+                    holder.textViewSmall.text = getString(R.string.current_time, sudoku.getTimeString()) + " | " +
+                            if (errorLimit == 0) {
+                                getString(
+                                    R.string.current_errors,
+                                    sudoku.errorsMade
+                                )
+                            } else {
+                                getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+                            } +
+                            " | " + getString(R.string.current_hints, sudoku.hintsUsed)
+                }
                 holder.parentView.setOnClickListener {
                     if (selecting) toggleItemSelected(position)
                     else {

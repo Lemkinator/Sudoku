@@ -9,7 +9,7 @@ data class SudokuDb(
     @PrimaryKey
     val id: String,
     val size: Int,
-    val difficulty: Difficulty,
+    val difficulty: Int,
     var hintsUsed: Int,
     var errorsMade: Int,
     val seconds: Int,

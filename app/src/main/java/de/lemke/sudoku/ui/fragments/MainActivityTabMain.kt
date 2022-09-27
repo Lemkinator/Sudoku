@@ -85,6 +85,8 @@ class MainActivityTabMain : Fragment() {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
                 mLoadingDialog.dismiss()
+                preloadedSudokus = null
+                preloadedSudokus = preloadSudokus()
             }
         }
         lifecycleScope.launch { preloadedSudokus = preloadSudokus() }

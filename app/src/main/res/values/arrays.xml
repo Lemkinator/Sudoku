@@ -32,4 +32,21 @@
         <item>@string/hard</item>
         <item>@string/expert</item>
     </string-array>
+
+    <string-array name="error_limit_entries">
+        <item>@string/no_limit</item>
+        <item>1</item>
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+    </string-array>
+
+    <string-array name="error_limit_values">
+        <item>0</item>
+        <item>1</item>
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+    </string-array>
+
 </resources>

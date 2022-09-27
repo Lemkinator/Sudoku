@@ -113,8 +113,7 @@ class Sudoku(
     fun getColumn(column: Int): List<Field> =
         fields.filter { it.position.column == column }
 
-    private fun getBlock(block: Int): List<Field> =
-        fields.filter { it.position.block == block }
+    private fun getBlock(block: Int): List<Field> = fields.filter { it.position.block == block }
 
     fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
 
@@ -129,6 +128,10 @@ class Sudoku(
     fun rowContainsValue(row: Int, value: Int): Boolean = getRow(row).any { it.value == value }
     fun columnContainsValue(column: Int, value: Int): Boolean = getColumn(column).any { it.value == value }
     fun blockContainsValue(block: Int, value: Int): Boolean = getBlock(block).any { it.value == value }
+
+    fun isRowCompleted(row: Int): Boolean = getRow(row).all { it.value != null }
+    fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.value != null }
+    fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.value != null }
 
     fun getPossibleValues(position: Position): List<Int> {
         val row = getRow(position.row)
@@ -212,8 +215,7 @@ class Sudoku(
             if (value != null) {
                 if (field.error) {
                     errorsMade++
-                    //show errors count
-                    //errors > max errors?
+                    gameListener?.onError()
                 }
                 if (completed) {
                     stopTimer()
@@ -268,6 +270,7 @@ interface GameListener {
     fun onFieldClicked(position: Position)
     fun onFieldChanged(position: Position)
     fun onCompleted()
+    fun onError()
     fun onTimeChanged(time: String?)
 }
 

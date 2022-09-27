@@ -25,9 +25,10 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_LAST_VERSION_NAME] = newSettings.lastVersionName
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
+            it[KEY_ERROR_LIMIT] = newSettings.errorLimit
             it[KEY_CONFIRM_EXIT] = newSettings.confirmExit
-            it[KEY_HIGHLIGHT_SUDOKU_NEIGHBORS] = newSettings.highlightSudokuNeighbors
-            it[KEY_HIGHLIGHT_SELECTED_NUMBER] = newSettings.highlightSelectedNumber
+            it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
+            it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
         }
         return settingsFromPreferences(prefs)
     }
@@ -38,9 +39,10 @@ class UserSettingsRepository @Inject constructor(
         lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: -1,
+        errorLimit = prefs[KEY_ERROR_LIMIT] ?: 0,
         confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
-        highlightSudokuNeighbors = prefs[KEY_HIGHLIGHT_SUDOKU_NEIGHBORS] ?: true,
-        highlightSelectedNumber = prefs[KEY_HIGHLIGHT_SELECTED_NUMBER] ?: true,
+        highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
+        highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
     )
 
 
@@ -49,9 +51,10 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_LAST_VERSION_NAME = stringPreferencesKey("lastVersionName")
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
+        private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
         private val KEY_CONFIRM_EXIT = booleanPreferencesKey("confirmExit")
-        private val KEY_HIGHLIGHT_SUDOKU_NEIGHBORS = booleanPreferencesKey("highlightSudokuNeighbors")
-        private val KEY_HIGHLIGHT_SELECTED_NUMBER = booleanPreferencesKey("highlightSelectedNumber")
+        private val KEY_REGIONAL_HIGHLIGHT = booleanPreferencesKey("regionalHighlight")
+        private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
     }
 }
 
@@ -68,7 +71,9 @@ data class UserSettings(
     /** confirm Exit*/
     val confirmExit: Boolean,
     /** highlight sudoku neighbors*/
-    val highlightSudokuNeighbors: Boolean,
+    val highlightRegional: Boolean,
     /** highlight selected Number*/
-    val highlightSelectedNumber: Boolean,
+    val highlightNumber: Boolean,
+    /** error limit*/
+    val errorLimit: Int,
 )

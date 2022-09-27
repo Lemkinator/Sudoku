@@ -49,8 +49,10 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
         private lateinit var confirmExitPref: SwitchPreference
-        private lateinit var highlightSudokuNeighborsPref: SwitchPreference
-        private lateinit var highlightSelectedNumberPref: SwitchPreference
+        private lateinit var regionalHighlightPref: SwitchPreference
+        private lateinit var numberHighlightPref: SwitchPreference
+        private lateinit var errorLimitPref: DropDownPreference
+
         //private var tipCard: TipsCardViewPreference? = null
         //private var tipCardSpacing: PreferenceCategory? = null
         private var relatedCard: PreferenceRelatedCard? = null
@@ -83,11 +85,13 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref = findPreference("dark_mode_pref")!!
             autoDarkModePref = findPreference("dark_mode_auto")!!
             confirmExitPref = findPreference("confirmExit")!!
-            highlightSudokuNeighborsPref = findPreference("highlightSudokuNeighbors")!!
-            highlightSelectedNumberPref = findPreference("highlightNumber")!!
+            regionalHighlightPref = findPreference("highlightRegionalSwitch")!!
+            numberHighlightPref = findPreference("highlightNumberSwitch")!!
+            errorLimitPref = findPreference("errorLimitDropDown")!!
             confirmExitPref.onPreferenceChangeListener = this
-            highlightSudokuNeighborsPref.onPreferenceChangeListener = this
-            highlightSelectedNumberPref.onPreferenceChangeListener = this
+            regionalHighlightPref.onPreferenceChangeListener = this
+            numberHighlightPref.onPreferenceChangeListener = this
+            errorLimitPref.onPreferenceChangeListener = this
             autoDarkModePref.onPreferenceChangeListener = this
             autoDarkModePref.isChecked = darkMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM ||
                     darkMode == AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY ||
@@ -158,8 +162,10 @@ class SettingsActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val userSettings = getUserSettings()
                 confirmExitPref.isChecked = userSettings.confirmExit
-                highlightSudokuNeighborsPref.isChecked = userSettings.highlightSudokuNeighbors
-                highlightSelectedNumberPref.isChecked = userSettings.highlightSelectedNumber
+                regionalHighlightPref.isChecked = userSettings.highlightRegional
+                numberHighlightPref.isChecked = userSettings.highlightNumber
+                errorLimitPref.summary =
+                    if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 //tipCard?.isVisible = showTipCard
                 //tipCardSpacing?.isVisible = showTipCard
             }
@@ -191,12 +197,18 @@ class SettingsActivity : AppCompatActivity() {
                     lifecycleScope.launch { updateUserSettings { it.copy(confirmExit = newValue as Boolean) } }
                     return true
                 }
-                "highlightSudokuNeighbors" -> {
-                    lifecycleScope.launch { updateUserSettings { it.copy(highlightSudokuNeighbors = newValue as Boolean) } }
+                "highlightRegionalSwitch" -> {
+                    lifecycleScope.launch { updateUserSettings { it.copy(highlightRegional = newValue as Boolean) } }
                     return true
                 }
-                "highlightNumber" -> {
-                    lifecycleScope.launch { updateUserSettings { it.copy(highlightSelectedNumber = newValue as Boolean) } }
+                "highlightNumberSwitch" -> {
+                    lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = newValue as Boolean) } }
+                    return true
+                }
+                "errorLimitDropDown" -> {
+                    val errorLimit = (newValue as String).toIntOrNull() ?: 0
+                        lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = errorLimit) } }
+                    errorLimitPref.summary = if (errorLimit == 0) getString(R.string.no_limit) else errorLimit.toString()
                     return true
                 }
             }

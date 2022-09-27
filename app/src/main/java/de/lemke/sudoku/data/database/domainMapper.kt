@@ -1,9 +1,6 @@
 package de.lemke.sudoku.data.database
 
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.*
 
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
     if (sudokuWithFields == null) null
@@ -11,7 +8,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         id = SudokuId(sudokuWithFields.sudoku.id),
         size = sudokuWithFields.sudoku.size,
         history = mutableListOf(),
-        difficulty = sudokuWithFields.sudoku.difficulty,
+        difficulty = Difficulty.fromInt(sudokuWithFields.sudoku.difficulty),
         hintsUsed = sudokuWithFields.sudoku.hintsUsed,
         errorsMade = sudokuWithFields.sudoku.errorsMade,
         seconds = sudokuWithFields.sudoku.seconds,
@@ -28,7 +25,7 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
     SudokuDb(
         id = sudoku.id.value,
         size = sudoku.size,
-        difficulty = sudoku.difficulty,
+        difficulty = sudoku.difficulty.ordinal,
         hintsUsed = sudoku.hintsUsed,
         errorsMade = sudoku.errorsMade,
         seconds = sudoku.seconds,

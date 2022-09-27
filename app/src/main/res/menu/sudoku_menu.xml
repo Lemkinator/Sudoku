@@ -27,7 +27,7 @@
         <item
             android:id="@+id/menu_reset"
             android:icon="@drawable/ic_oui_refresh"
-            android:title="@string/reset"
+            android:title="@string/restart"
             app:showAsAction="always"
             tools:ignore="AlwaysShowAction,AppCompatResource" />
     </group>

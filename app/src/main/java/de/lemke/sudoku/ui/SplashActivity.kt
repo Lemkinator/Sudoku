@@ -2,6 +2,7 @@ package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.text.Spannable
 import android.text.SpannableString
