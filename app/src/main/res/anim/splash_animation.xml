@@ -3,19 +3,6 @@
     android:fillAfter="true"
     android:interpolator="@android:anim/linear_interpolator">
 
-    <alpha
-        android:duration="33"
-        android:fromAlpha="0.0"
-        android:startOffset="0"
-        android:toAlpha="1.0" />
-
-    <rotate
-        android:duration="200"
-        android:fromDegrees="0"
-        android:pivotX="50%"
-        android:pivotY="50%"
-        android:toDegrees="220" />
-
     <rotate
         android:duration="200"
         android:fromDegrees="180"
