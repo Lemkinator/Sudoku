@@ -44,18 +44,18 @@ import kotlin.math.abs
 @AndroidEntryPoint
 class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     lateinit var sudoku: Sudoku
-    lateinit var gameRecycler: RecyclerView
+    private lateinit var gameRecycler: RecyclerView
     lateinit var gameAdapter: SudokuViewAdapter
-    lateinit var drawerLayout: DrawerLayout
+    private lateinit var drawerLayout: DrawerLayout
     lateinit var toolbarMenu: Menu
-    lateinit var loadingDialog: ProgressDialog
-    lateinit var resumeButtonLayout: LinearLayout
-    lateinit var gameLayout: LinearLayout
-    lateinit var noteButton: AppCompatButton
+    private lateinit var loadingDialog: ProgressDialog
+    private lateinit var resumeButtonLayout: LinearLayout
+    private lateinit var gameLayout: LinearLayout
+    private lateinit var noteButton: AppCompatButton
     private val selectButtons: MutableList<AppCompatButton> = mutableListOf()
     private var notesEnabled = false
 
-    var selected: Int? = null
+    private var selected: Int? = null
 
     companion object {
         var refreshView = false
@@ -212,7 +212,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                             sudoku.getTimeString(),
                             sudoku.errorsMade,
                             sudoku.hintsUsed,
-                            getString(if (sudoku.neighborHighlightingUsed) R.string.yes else R.string.no),
+                            getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
                             getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
                             sudoku.created.format(
                                 DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
@@ -224,7 +224,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         AlertDialog.Builder(this@SudokuActivity)
                             .setTitle(R.string.completed_title)
                             .setMessage(completedMessage)
-                            .setPositiveButton(R.string.share) { _, _ ->
+                            .setPositiveButton(R.string.shareResult) { _, _ ->
                                 val sendIntent = Intent(Intent.ACTION_SEND)
                                 sendIntent.type = "text/plain"
                                 sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.textShare) + completedMessage)

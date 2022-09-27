@@ -1,43 +1,26 @@
 package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
-import android.app.SearchManager
-import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.view.inputmethod.InputMethodManager
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.tabs.TabLayout
-import com.google.android.play.core.appupdate.AppUpdateInfo
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.sudoku.PersistenceModule
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.*
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.layout.DrawerLayout
-import dev.oneuiproject.oneui.layout.ToolbarLayout
-import dev.oneuiproject.oneui.utils.DialogUtils
-import dev.oneuiproject.oneui.utils.internal.ReflectUtils
+import de.lemke.sudoku.domain.AppStart
+import de.lemke.sudoku.domain.CheckAppStartUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.abs
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
@@ -78,7 +61,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
 
         // TabLayout
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.main_menu)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.app_name)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.history)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.statistics)))
         tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {

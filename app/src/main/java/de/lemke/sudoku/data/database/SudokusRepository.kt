@@ -25,7 +25,7 @@ class SudokusRepository @Inject constructor(
         }
     }
 
-    suspend fun deleteSudoku(sudoku: Sudoku) {
+    fun deleteSudoku(sudoku: Sudoku) {
         sudokuDao.delete(sudokuToDb(sudoku))
     }
 

@@ -1,13 +1,12 @@
 package de.lemke.sudoku.data.database
 
 import androidx.room.*
-import de.lemke.sudoku.domain.model.Difficulty
 
 @Dao
 interface SudokuDao {
 
     @Transaction
-    open suspend fun upsert(sudoku: SudokuDb) {
+    suspend fun upsert(sudoku: SudokuDb) {
         val rowId = insert(sudoku)
         if (rowId == -1L) {
             update(sudoku)
@@ -15,7 +14,7 @@ interface SudokuDao {
     }
 
     @Transaction
-    open suspend fun upsert(sudokus: List<SudokuDb>) {
+    suspend fun upsert(sudokus: List<SudokuDb>) {
         sudokus.forEach { upsert(it) }
     }
 

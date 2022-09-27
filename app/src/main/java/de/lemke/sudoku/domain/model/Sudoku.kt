@@ -1,8 +1,5 @@
 package de.lemke.sudoku.domain.model
 
-import android.util.Log
-import androidx.appcompat.app.AlertDialog
-import de.lemke.sudoku.R
 import de.lemke.sudoku.ui.SudokuViewAdapter
 import java.time.LocalDateTime
 import java.util.*
@@ -28,7 +25,7 @@ class Sudoku(
     val created: LocalDateTime,
     var updated: LocalDateTime,
     val fields: MutableList<Field>,
-    var neighborHighlightingUsed: Boolean,
+    var regionalHighlightingUsed: Boolean,
     var numberHighlightingUsed: Boolean,
 ) {
     companion object {
@@ -45,7 +42,7 @@ class Sudoku(
             created: LocalDateTime = LocalDateTime.now(),
             updated: LocalDateTime = LocalDateTime.now(),
             fields: MutableList<Field>,
-            neighborHighlightingUsed: Boolean = false,
+            regionalHighlightingUsed: Boolean = false,
             numberHighlightingUsed: Boolean = false,
         ): Sudoku = Sudoku(
             id = sudokuId,
@@ -60,7 +57,7 @@ class Sudoku(
             created = created,
             updated = updated,
             fields = fields,
-            neighborHighlightingUsed = neighborHighlightingUsed,
+            regionalHighlightingUsed = regionalHighlightingUsed,
             numberHighlightingUsed = numberHighlightingUsed,
         )
     }
@@ -166,7 +163,7 @@ class Sudoku(
         created: LocalDateTime = this.created,
         updated: LocalDateTime = this.updated,
         fields: MutableList<Field> = this.fields,
-        neighborHighlightingUsed: Boolean = this.neighborHighlightingUsed,
+        regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
         numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
     ): Sudoku = Sudoku(
         id = id,
@@ -181,7 +178,7 @@ class Sudoku(
         created = created,
         updated = updated,
         fields = fields.toMutableList(),
-        neighborHighlightingUsed = neighborHighlightingUsed,
+        regionalHighlightingUsed = regionalHighlightingUsed,
         numberHighlightingUsed = numberHighlightingUsed,
     )
 
@@ -229,6 +226,7 @@ class Sudoku(
     fun setHint(position: Position) {
         hintsUsed++
         get(position).setHint()
+        get(position).notes.clear()
         gameListener?.onFieldChanged(position)
     }
 

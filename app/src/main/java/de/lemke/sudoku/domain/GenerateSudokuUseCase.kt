@@ -6,11 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
 import javax.inject.Inject
-import kotlin.math.pow
 import kotlin.math.sqrt
 
 class GenerateSudokuUseCase @Inject constructor(
-    private val validateNumber: ValidateNumberUseCase,
+
 ) {
     //TODO cleanup
     private var random: Random = Random()

@@ -1,13 +1,11 @@
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.domain.model.*
+import de.lemke.sudoku.domain.model.Sudoku
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
 import javax.inject.Inject
-import kotlin.collections.List
 
 class GetSudokuHistoryUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase

@@ -34,31 +34,6 @@ data class Field(
         hint: Boolean = this.hint,
     ): Field = Field(sudokuId, position, value, solution, notes, preNumber, hint)
 
-    fun cloneInitial(
-        sudokuId: SudokuId,
-        position: Position = this.position,
-        value: Int? = this.value,
-        solution: Int? = this.solution,
-        preNumber: Boolean = this.given,
-    ): Field = if (this.given) Field(
-        sudokuId = sudokuId,
-        position = position,
-        value = value,
-        solution = solution,
-        given = preNumber,
-        notes = mutableListOf(),
-        hint = false,
-    )
-    else Field(
-        sudokuId = sudokuId,
-        position = position,
-        value = null,
-        solution = solution,
-        given = preNumber,
-        notes = mutableListOf(),
-        hint = false,
-    )
-
     fun reset() {
         if (!given) value = null
         hint = false

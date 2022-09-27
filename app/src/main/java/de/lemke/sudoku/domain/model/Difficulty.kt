@@ -7,7 +7,7 @@ enum class Difficulty(val value: Int) {
     HARD(3),
     EXPERT(4);
 
-    fun givenNumbers(size: Int): Int = when (size) {
+    private fun givenNumbers(size: Int): Int = when (size) {
         4 -> when (this) {
             VERY_EASY -> 10
             EASY -> 9

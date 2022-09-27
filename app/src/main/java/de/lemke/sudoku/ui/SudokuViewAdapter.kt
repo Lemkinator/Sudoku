@@ -17,7 +17,7 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
 
     fun selectFieldView(position: Int?, highlightNeighbors: Boolean, highlightNumber: Boolean) {
         if (position != selectedfield && highlightNeighbors) {
-            sudoku.neighborHighlightingUsed = true
+            sudoku.regionalHighlightingUsed = true
             selectedfield = position
             fieldViews.forEach {
                 it?.isHighlighted = false

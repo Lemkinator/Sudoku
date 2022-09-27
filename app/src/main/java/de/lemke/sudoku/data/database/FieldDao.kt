@@ -6,7 +6,7 @@ import androidx.room.*
 interface FieldDao {
 
     @Transaction
-    open suspend fun upsert(field: FieldDb) {
+    suspend fun upsert(field: FieldDb) {
         val rowId = insert(field)
         if (rowId == -1L) {
             update(field)
@@ -14,7 +14,7 @@ interface FieldDao {
     }
 
     @Transaction
-    open suspend fun upsert(fields: List<FieldDb>) {
+    suspend fun upsert(fields: List<FieldDb>) {
         fields.forEach { upsert(it) }
     }
 

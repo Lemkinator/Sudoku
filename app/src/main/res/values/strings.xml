@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--General-->
-    <string name="app_name">Sudoku</string>
+    <string name="app_name" translatable="false">Sudoku</string>
     <string name="email" translatable="false">sudoku@leonard-lemke.com</string>
     <string name="my_website" translatable="false">https://www.leonard-lemke.com</string>
     <string name="privacy_website" translatable="false">https://www.leonard-lemke.com/sudoku-privacy-policy</string>
@@ -11,95 +11,94 @@
     <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
 
     <string name="ok" translatable="false" tools:ignore="ButtonCase,Typos">Ok</string>
-    <string name="sesl_cancel">Abbrechen</string>
-    <string name="sesl_navigate_up">Zurück</string>
-    <string name="settings">Einstellungen</string>
-    <string name="main_menu">Hauptmenü</string>
-    <string name="history">Verlauf</string>
-    <string name="statistics">Statistiken</string>
+    <string name="sesl_cancel">Cancel</string>
+    <string name="sesl_navigate_up">Back</string>
+    <string name="settings">Settings</string>
+    <string name="history">History</string>
+    <string name="statistics">Statistics</string>
 
-    <string name="new_game">Neues Spiel</string>
-    <string name="continue_game">Weiter (%1$s, %2$s)</string>
+    <string name="new_game">New Game</string>
+    <string name="continue_game">Continue (%1$s, %2$s)</string>
 
     <!--Menu-->
-    <string name="undo">Rückgangig machen</string>
+    <string name="undo">Undo</string>
     <string name="pause">Pause</string>
-    <string name="resume">Weiter</string>
+    <string name="resume">Resume</string>
 
     <!--About-->
-    <string name="help">Hilfe</string>
-    <string name="about_app">Über Sudoku</string>
-    <string name="about_page_optional_text">Eine Sudoku App im schönen OneUI-Design</string>
-    <string name="open_in_playstore">In Play Store öffnen</string>
+    <string name="help">Help</string>
+    <string name="about_app">About Sudoku</string>
+    <string name="about_page_optional_text">A Sudoku app with OneUI-Design</string>
+    <string name="open_in_playstore">Open in Play Store</string>
 
     <!--Settings-->
-    <string name="system_default">Systemeinstellung</string>
+    <string name="system_default">System default</string>
     <string name="design">Design</string>
-    <string name="general">Allgemein</string>
-    <string name="game">Spiel</string>
-    <string name="games">Spiele</string>
-    <string name="RegionalHighlight">Regionales Highlight</string>
-    <string name="RegionalHighlightSummary">Wenn ein Feld ausgewählt wird, werden die Reihe, Zeile und der Block hervorgehoben.</string>
-    <string name="numberHighlight">Ausgewählte Zahl hervorheben</string>
-    <string name="numberHighlightSummary">Wenn eine Zahl ausgewählt wird, werden alle anderen Felder mit der selben Zahl markiert.</string>
-    <string name="confirm_exit">Verlassen bestätigen</string>
-    <string name="press_again_to_exit">Zurück-Taste erneut drücken um zu Beenden.</string>
-    <string name="delete_appdata_and_exit">App-Daten löschen und Beenden</string>
-    <string name="delete_appdata_and_exit_warning">Achtung: Dadurch werden alle persönlichen Daten gelöscht. Fortfahren? </string>
+    <string name="general">General</string>
+    <string name="game">Game</string>
+    <string name="games">Games</string>
+    <string name="RegionalHighlight">Regional Highlight</string>
+    <string name="RegionalHighlightSummary">When a field is selected, the row, line and block will be highlighted.</string>
+    <string name="numberHighlight">Highlight selected number</string>
+    <string name="numberHighlightSummary">When a number is selected, all other fields with the same number will be highlighted.</string>
+    <string name="confirm_exit">Confirm exit</string>
+    <string name="press_again_to_exit">Press again to exit.</string>
+    <string name="delete_appdata_and_exit">Delete App-Data and exit</string>
+    <string name="delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue? </string>
+    <string name="error_limit">Error limit</string>
+    <string name="no_limit">No limit</string>
+    <string name="error_limit_reached" tools:ignore="PluralsCandidate">Error limit of %1$d reached.</string>
 
     <string name="dev_options">Developer options</string>
 
-    <string name="about">Über</string>
-    <string name="privacy_information">Informationen zum Datenschutz</string>
-    <string name="privacy">Datenschutz</string>
+    <string name="about">About</string>
+    <string name="privacy_information">Privacy information</string>
+    <string name="privacy">Privacy</string>
 
     <!--Difficuilties-->
-    <string name="very_easy"> Sehr Einfach</string>
-    <string name="easy">Einfach</string>
-    <string name="medium">Mittel</string>
-    <string name="hard">Schwer</string>
-    <string name="expert">Experte</string>
+    <string name="very_easy">Very easy</string>
+    <string name="easy">Easy</string>
+    <string name="medium">Medium</string>
+    <string name="hard">Hard</string>
+    <string name="expert">Expert</string>
 
     <!--Game-->
-    <string name="elapsed_time">Vergangene Zeit: %1$s</string>
-    <string name="current_time">Zeit: %1$s</string>
-    <string name="current_errors">Fehler: %1$d</string>
-    <string name="current_errors_with_limit">Fehler: %1$d/%2$d</string>
-    <string name="current_hints">Hinweise: %1$d</string>
-    <string name="completed_title">Fertig</string>
-    <string name="yes">Ja</string>
-    <string name="no">Nein</string>
-    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNachbarn hervorgehoben: %6$s \nGewählte Nummer hervorgehoben: %7$s \nErstellt: %8$s \nZuletzt geändert: %9$s</string>
+    <string name="current_time">Time: %1$s</string>
+    <string name="current_errors">Errors: %1$d</string>
+    <string name="current_errors_with_limit">Errors: %1$d/%2$d</string>
+    <string name="current_hints">Hints: %1$d</string>
+    <string name="completed_title">Completed</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="completed_message">Size: %1$d×%1$d \nDifficulty: %2$s \nTime: %3$s \nErrors: %4$d \nHints: %5$d \nRegional highlight used: %6$s \nNumber highlight used: %7$s \nCreated: %8$s \nUpdated: %9$s</string>
+    <string name="shareResult">Share result</string>
+    <string name="textShare">Look, I have successfully completed a Sudoku:\n</string>
+    <string name="delete">Delete</string>
+    <string name="note">Note</string>
+    <string name="hint">Hint</string>
+    <string name="restart">Restart</string>
+    <string name="gameover">Gameover</string>
+
+    <!--Statistics-->
+    <string name="games_started">Games started</string>
+    <string name="games_completed">Games won</string>
+    <string name="win_rate">Win rate</string>
+    <string name="wins_without_error">Wins without errors</string>
+    <string name="time">Time</string>
+    <string name="streak">Streal</string>
+    <string name="current_streak">Current winning streak</string>
+    <string name="best_streak">Longest winning streak</string>
+    <string name="best_time">Best time</string>
+    <string name="average_time">Average Time</string>
+    <string name="wins_without_hint">Wins without hint</string>
+    <string name="most_errors">Most errors</string>
+    <string name="average_errors">Average Errors</string>
+    <string name="most_hints">Most hints</string>
+    <string name="average_hints">Average hints</string>
+    <string name="errors">Errors</string>
+    <string name="hints">Hints</string>
 
     <!--Others-->
-    <string name="delete">Löschen</string>
-    <string name="note">Notizen</string>
-    <string name="hint">Hinweis</string>
-    <string name="noGamePlayed">Noch kein Spiel gespielt</string>
-    <string name="restart">Neustart</string>
-    <string name="share">Teilen</string>
-    <string name="shareResult">Ergebnis teilen</string>
-    <string name="textShare">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
-    <string name="games_started">Spiele gestartet</string>
-    <string name="games_completed">Spiele gewonnen</string>
-    <string name="win_rate">Siegesrate</string>
-    <string name="wins_without_error">Siege ohne Fehler</string>
-    <string name="time">Zeit</string>
-    <string name="streak">Serie</string>
-    <string name="current_streak">Aktuelle Siegesserie</string>
-    <string name="best_streak">Längste Siegesserie</string>
-    <string name="best_time">Beste Zeit</string>
-    <string name="average_time">Durchschnittliche Zeit</string>
-    <string name="wins_without_hint">Siege ohne Hinweis</string>
-    <string name="most_errors">Meiste Fehler</string>
-    <string name="average_errors">Durchschnittliche Fehler</string>
-    <string name="most_hints">Meiste Hinweise</string>
-    <string name="average_hints">Durchschnittliche Hinweise</string>
-    <string name="errors">Fehler</string>
-    <string name="hints">Hinweise</string>
-    <string name="error_limit">Fehlerlimit</string>
-    <string name="no_limit">Kein Limit</string>
-    <string name="gameover">Spiel zuende</string>
-    <string name="error_limit_reached">Fehlerlimit von %1$d erreicht.</string>
+    <string name="noGamePlayed">No game played yet</string>
 
 </resources>

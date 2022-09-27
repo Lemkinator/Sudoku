@@ -17,7 +17,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         created = sudokuWithFields.sudoku.created,
         updated = sudokuWithFields.sudoku.updated,
         fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList(),
-        neighborHighlightingUsed = sudokuWithFields.sudoku.neighborHighlightingUsed,
+        regionalHighlightingUsed = sudokuWithFields.sudoku.neighborHighlightingUsed,
         numberHighlightingUsed = sudokuWithFields.sudoku.numberHighlightingUsed,
     )
 
@@ -31,7 +31,7 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         seconds = sudoku.seconds,
         created = sudoku.created,
         updated = sudoku.updated,
-        neighborHighlightingUsed = sudoku.neighborHighlightingUsed,
+        neighborHighlightingUsed = sudoku.regionalHighlightingUsed,
         numberHighlightingUsed = sudoku.numberHighlightingUsed,
     )
 
