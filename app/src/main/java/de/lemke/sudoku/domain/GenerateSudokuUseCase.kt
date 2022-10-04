@@ -37,7 +37,7 @@ class GenerateSudokuUseCase @Inject constructor(
             size = size,
             difficulty = difficulty,
             fields = MutableList(size * size) { index ->
-                val position = Position.create(size, index)
+                val position = Position.create(index, size)
                 Field(
                     sudokuId = sudokuId,
                     position = position,

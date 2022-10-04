@@ -58,14 +58,6 @@ class MainActivityTabMain : Fragment() {
         SeekBarUtils.showTickMark(difficultySeekbar, true)
         difficultySeekbar.setSeamless(true)
         difficultySeekbar.max = 4
-        difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
-        })
         continueGameButton = rootView.findViewById(R.id.continue_game_button)
         rootView.findViewById<AppCompatButton>(R.id.new_game_button).setOnClickListener {
             val mLoadingDialog = ProgressDialog(context)
@@ -89,14 +81,23 @@ class MainActivityTabMain : Fragment() {
                 preloadedSudokus = preloadSudokus()
             }
         }
-        lifecycleScope.launch { preloadedSudokus = preloadSudokus() }
+        lifecycleScope.launch {
+            val sliderValue = getUserSettings().difficultySliderValue
+            difficultySeekbar.progress = if (sliderValue == -1) (difficultySeekbar.max / 2) else sliderValue
+            difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
+                    lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+            })
+            preloadedSudokus = preloadSudokus() }
     }
 
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch {
-            val sliderValue = getUserSettings().difficultySliderValue
-            difficultySeekbar.progress = if (sliderValue == -1) (difficultySeekbar.max / 2) else sliderValue
             val sudoku = getRecentSudoku()
             if (sudoku != null && !sudoku.completed) {
                 continueGameButton.visibility = View.VISIBLE

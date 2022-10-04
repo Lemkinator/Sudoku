@@ -24,8 +24,7 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
                 it?.isHighlightedNumber = false
             }
             if (position != null && fieldViews[position]?.field?.hint == false && fieldViews[position]?.field?.given == false) {
-                sudoku.getNeighbors(Position.create(sudoku.size, position)).map { it.position.index }
-                    .forEach { fieldViews[it]?.isHighlighted = true }
+                sudoku.getNeighbors(position).map { it.position.index }.forEach { fieldViews[it]?.isHighlighted = true }
             }
         }
 
@@ -33,8 +32,7 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         if (position != null) {
             fieldViews[position]?.isSelected = true
             if (highlightNumber) highlightNumber(fieldViews[position]?.field?.value)
-        }
-        else if (highlightNumber) highlightNumber(null)
+        } else if (highlightNumber) highlightNumber(null)
         fieldViews.forEach { it?.setBackground() }
     }
 
@@ -46,10 +44,16 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         }
     }
 
-    suspend fun flashRow(row: Int, milliseconds: Long) = fieldViews.filter { it?.position?.row == row }.forEach { it?.flash(milliseconds) }
-    suspend fun flashColumn(column: Int, milliseconds: Long) = fieldViews.filter { it?.position?.column == column }.forEach { it?.flash(milliseconds) }
-    suspend fun flashBlock(block: Int, milliseconds: Long) = fieldViews.filter { it?.position?.block == block }.forEach { it?.flash(milliseconds) }
-    suspend fun flashSudoku(milliseconds: Long) = fieldViews.forEach { it?.flash(milliseconds) }
+    suspend fun flashRow(position: Position, milliseconds: Long) =
+        fieldViews.filter { it?.position?.row == position.row }.forEach { it?.flash(milliseconds) }
+
+    suspend fun flashColumn(position: Position, milliseconds: Long) =
+        fieldViews.filter { it?.position?.column == position.column }.forEach { it?.flash(milliseconds) }
+
+    suspend fun flashBlock(position: Position, milliseconds: Long) =
+        fieldViews.filter { it?.position?.block == position.block }.shuffled().forEach { it?.flash(milliseconds) }
+
+    suspend fun flashSudoku(milliseconds: Long) = fieldViews.shuffled().forEach { it?.flash(milliseconds) }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))
 

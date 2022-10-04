@@ -3,8 +3,8 @@ package de.lemke.sudoku.ui
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -147,8 +147,10 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onPause() {
         super.onPause()
-        pauseGame()
-        lifecycleScope.launch { saveSudoku(sudoku) }
+        if (this::sudoku.isInitialized) {
+            pauseGame()
+            lifecycleScope.launch { saveSudoku(sudoku) }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -203,7 +205,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             }
 
             override fun onCompleted() {
-                lifecycleScope.launch { gameAdapter.flashSudoku(20) }.invokeOnCompletion {
+                lifecycleScope.launch { gameAdapter.flashSudoku(10) }.invokeOnCompletion {
                     lifecycleScope.launch {
                         val completedMessage = getString(
                             R.string.completed_message,
@@ -315,12 +317,14 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     private suspend fun select(newSelected: Int?) {
         val highlightSudokuNeighbors = getUserSettings().highlightRegional
         val highlightSelectedNumber = getUserSettings().highlightNumber
+        Log.d("test", "selected: $selected, newSelected: $newSelected")
         when (selected) {
             null -> {//nothing is selected
                 when (newSelected) {
                     null -> {} //selected nothing
                     in 0 until sudoku.itemCount -> { //selected field
                         gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
+                        selected = newSelected
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
@@ -329,34 +333,32 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 }
             }
             in 0 until sudoku.itemCount -> { //field is selected
-                val position = Position.create(sudoku.size, selected!!)
+                val position = Position.create(selected!!, sudoku.size)
                 when (newSelected) {
                     null -> { //selected nothing
                         gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
+                        selected = null
                     }
                     selected -> { //selected same field
-                        selected = null
                         gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
-                        return
+                        selected = null
                     }
                     in 0 until sudoku.itemCount -> { //selected field
                         gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
+                        selected = newSelected
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
-                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
                         sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                        selected = null
-                        return
+                        gameAdapter.highlightNumber(newSelected - sudoku.itemCount + 1)
                     }
                     sudoku.itemCount + sudoku.size -> { //selected delete
-                        gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
                         sudoku.move(position, null, notesEnabled)
-                        return
+                        gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
                     }
                     sudoku.itemCount + sudoku.size + 1 -> { //selected hint
-                        sudoku.setHint(position)
-                        selected = null
-                        return
+                        if (!sudoku[position].given) {
+                            sudoku.setHint(position)
+                        }
                     }
                 }
             }
@@ -366,18 +368,17 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         selectButton(null, highlightSelectedNumber)
                     }
                     selected -> { //selected same button
-                        selected = null
                         selectButton(null, highlightSelectedNumber)
-                        return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        val number = selected!! - sudoku.itemCount + 1
-                        sudoku.move(Position.create(sudoku.size, newSelected), selected!! - sudoku.itemCount + 1, notesEnabled)
-                        if (highlightSelectedNumber) gameAdapter.highlightNumber(number)
-                        return
+                        sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
+                        if (highlightSelectedNumber) gameAdapter.highlightNumber(selected!! - sudoku.itemCount + 1)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
+                    }
+                    else -> { //selected nothing
+                        selectButton(null, highlightSelectedNumber)
                     }
                 }
             }
@@ -387,13 +388,10 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         selectButton(null, highlightSelectedNumber)
                     }
                     selected -> { //selected same button
-                        selected = null
                         selectButton(null, highlightSelectedNumber)
-                        return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        sudoku.move(Position.create(sudoku.size, newSelected), null, notesEnabled)
-                        return
+                        sudoku.move(newSelected, null, notesEnabled)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button(not delete)
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
@@ -409,13 +407,12 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         selectButton(null, highlightSelectedNumber)
                     }
                     selected -> { //selected same button
-                        selected = null
                         selectButton(null, highlightSelectedNumber)
-                        return
                     }
                     in 0 until sudoku.itemCount -> { //selected field
-                        sudoku.setHint(Position.create(sudoku.size, newSelected))
-                        return
+                        if (!sudoku[newSelected].given) {
+                            sudoku.setHint(newSelected)
+                        }
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button(not hint)
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
@@ -426,35 +423,48 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 }
             }
         }
-        selected = newSelected
     }
 
     private fun checkAnyNumberCompleted(position: Position?) {
-        sudoku.getCompletedNumbers().forEach { pair ->
+        val completedNumbers = sudoku.getCompletedNumbers()
+        completedNumbers.forEach { pair ->
             selectButtons[pair.first - 1].isEnabled = !pair.second
             if (pair.second) {
-                selectButtons[pair.first - 1].setTextColor(Color.GRAY)
+                selectButtons[pair.first - 1].setTextColor(getColor(R.color.number_button_disabled_text_color))
                 if (position != null && sudoku[position].value == pair.first) {
-                    selected = null
                     lifecycleScope.launch {
-                        selectButton(null, getUserSettings().highlightNumber)
+                        if(selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(pair.first, completedNumbers)
+                        else {
+                            selected = null
+                            selectButton(null, getUserSettings().highlightNumber)
+                        }
                     }
                 }
             } else {
-                selectButtons[pair.first - 1].setTextColor(
-                    resources.getColor(
-                        dev.oneuiproject.oneui.R.color.oui_primary_text_color,
-                        theme
-                    )
-                )
+                selectButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.R.color.oui_primary_text_color))
             }
         }
     }
 
+    private suspend fun selectNextButton(n: Int, completedNumbers: List<Pair<Int, Boolean>>) {
+        var number = n
+        while (completedNumbers[number - 1].second) {
+            number++
+            if (number > completedNumbers.size) number = 1 //wrap around
+            if (number == n) { //all numbers are completed
+                    selected = null
+                    selectButton(null, getUserSettings().highlightNumber)
+                return
+            }
+        }
+        selected = sudoku.itemCount + number - 1
+        selectButton(number - 1, getUserSettings().highlightNumber)
+    }
+
     private fun checkRowColumnBlockCompleted(position: Position) {
-        if (sudoku.isRowCompleted(position.row)) lifecycleScope.launch { gameAdapter.flashRow(position.row, 50) }
-        if (sudoku.isColumnCompleted(position.column)) lifecycleScope.launch { gameAdapter.flashColumn(position.column, 50) }
-        if (sudoku.isBlockCompleted(position.block)) lifecycleScope.launch { gameAdapter.flashBlock(position.block, 50) }
+        if (sudoku.isRowCompleted(position.row)) lifecycleScope.launch { gameAdapter.flashRow(position, 50) }
+        if (sudoku.isColumnCompleted(position.column)) lifecycleScope.launch { gameAdapter.flashColumn(position, 50) }
+        if (sudoku.isBlockCompleted(position.block)) lifecycleScope.launch { gameAdapter.flashBlock(position, 50) }
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
@@ -466,8 +476,12 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             if (highlightSelectedNumber && i in 0 until sudoku.size) {
                 gameAdapter.highlightNumber(i + 1)
             }
-        } else if (highlightSelectedNumber) {
-            gameAdapter.highlightNumber(null)
+            selected = sudoku.itemCount + i
+        } else {
+            selected = null
+            if (highlightSelectedNumber) {
+                gameAdapter.highlightNumber(null)
+            }
         }
     }
 

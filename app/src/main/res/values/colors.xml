@@ -2,18 +2,19 @@
 <resources>
     <color name="primary_color">#ff009808</color>
     <color name="primary_dark_color">#8D009808</color>
-    <color name="secondary_color">#00DA95</color>
+    <color name="secondary_color">#CF8D3C</color>
+    <color name="secondary_dark_color">#8CCF8D3C</color>
 
     <color name="sesl_thumb_control_color_activated">@color/primary_color</color>
 
-    <color name="field_animation_highlight">#C1C1C1</color>
+    <color name="number_button_disabled_text_color">#808080</color>
 
-    <!--color name="red">#ffD50000</color>
-    <color name="yellow">#ffFFD600</color>
-    <color name="green">#ff009808</color>
-    <color name="blue">#ff304FFE</color>
-    <color name="orange">#ffFF6D00</color>
-    <color name="cyan">#ff00BFA5</color>
-    <color name="magenta">#ffC51162</color>
-    <color name="white">#ffffffff</color-->
+    <color name="field_userinput_text_color">@color/oui_primary_text_color</color>
+    <color name="field_given_text_color">@color/primary_color</color>
+    <color name="field_hint_text_color">@color/secondary_color</color>
+    <color name="field_animation_highlight">#C1C1C1</color>
+    <color name="field_selected_color">#B3009808</color>
+    <color name="field_highlighted_number_color">#66009808</color>
+    <color name="field_highlighted_color">#40009808</color>
+    <color name="field_colored_color">#0D009808</color>
 </resources>

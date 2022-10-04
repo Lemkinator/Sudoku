@@ -39,7 +39,7 @@ fun fieldFromDb(fieldDb: FieldDb?): Field? =
     if (fieldDb == null) null
     else Field(
         sudokuId = SudokuId(fieldDb.sudokuId),
-        position = Position.create(fieldDb.gameSize, fieldDb.index),
+        position = Position.create(fieldDb.index, fieldDb.gameSize),
         value = fieldDb.value,
         solution = fieldDb.solution,
         notes = fieldDb.notes.map { it.digitToInt() }.toMutableList(),

@@ -112,6 +112,8 @@ class Sudoku(
 
     private fun getBlock(block: Int): List<Field> = fields.filter { it.position.block == block }
 
+    fun getNeighbors(index: Int): List<Field> = getNeighbors(Position.create(index, size))
+
     fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
 
     fun setRow(row: Int, fields: List<Field>) {
@@ -142,7 +144,7 @@ class Sudoku(
     }
 
     fun getCompletedNumbers(): List<Pair<Int, Boolean>> {
-        val numbers = mutableListOf(0, 0, 0, 0, 0, 0, 0, 0, 0)
+        val numbers = MutableList(size) { 0 }
         for (field in fields) {
             if (field.value != null && field.value!! == field.solution) {
                 numbers[field.value!! - 1]++
@@ -194,6 +196,7 @@ class Sudoku(
         updated = LocalDateTime.now()
     }
 
+    fun move(index: Int, value: Int?, isNote: Boolean = false) = move(Position.create(index,size), value, isNote)
     fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
         updated = LocalDateTime.now()
         val field = get(position)
@@ -222,6 +225,8 @@ class Sudoku(
         }
         return true
     }
+
+    fun setHint(index: Int) = setHint(Position.create(index, size))
 
     fun setHint(position: Position) {
         hintsUsed++

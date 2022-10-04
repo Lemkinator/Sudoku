@@ -22,12 +22,12 @@ class Position private constructor(
 
     override fun hashCode(): Int = 31 * size + index
 
-    fun next(): Position? = if (index < size * size - 1) create(size, index + 1) else null
+    fun next(): Position? = if (index < size * size - 1) create(index + 1, size) else null
 
-    fun previous(): Position? = if (index > 0) create(size, index - 1) else null
+    fun previous(): Position? = if (index > 0) create(index - 1, size) else null
 
     companion object {
-        fun create(size: Int, index: Int): Position {
+        fun create(index: Int, size: Int): Position {
             val blockSize = sqrt(size.toDouble()).toInt()
             return Position(
                 size = size,
@@ -51,7 +51,7 @@ class Position private constructor(
 
         fun first(sudoku: Sudoku): Position = first(sudoku.size)
         fun last(sudoku: Sudoku): Position = last(sudoku.size)
-        fun first(size: Int): Position = create(size, 0)
-        fun last(size: Int): Position = create(size, size * size - 1)
+        fun first(size: Int): Position = create(0, size)
+        fun last(size: Int): Position = create(size * size - 1, size)
     }
 }

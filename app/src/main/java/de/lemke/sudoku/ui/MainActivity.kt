@@ -72,7 +72,17 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {
+                if (tab.text == getString(R.string.statistics)) {
+                    try {
+                        val subTabs: TabLayout = findViewById(R.id.fragment_statistics_sub_tabs)
+                        val newTabIndex = subTabs.selectedTabPosition + 1
+                        if (newTabIndex < subTabs.tabCount) subTabs.getTabAt(newTabIndex)?.select()
+                        else subTabs.getTabAt(0)?.select()
+                    } catch (_: Exception) {
+                    }
+                }
+            }
         })
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

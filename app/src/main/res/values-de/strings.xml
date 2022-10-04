@@ -59,14 +59,14 @@
     <string name="completed_title">Fertig</string>
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
-    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nRegionales Highlight benutzt: %6$s \nGewählte Nummer hervorgehoben: %7$s \nErstellt: %8$s \nZuletzt geändert: %9$s</string>
+    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nRegionales Highlight benutzt: %6$s \nGewählte Nummer hervorgehoben: %7$s \nErstellt: %8$s \nGeändert: %9$s</string>
     <string name="shareResult">Ergebnis teilen</string>
     <string name="textShare">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>
     <string name="restart">Neustart</string>
-    <string name="gameover">Spiel zuende</string>
+    <string name="gameover">Spiel zu Ende</string>
 
     <!--Statistics-->
     <string name="games_started">Spiele gestartet</string>
