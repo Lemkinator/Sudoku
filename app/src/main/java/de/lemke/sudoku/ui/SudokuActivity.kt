@@ -371,8 +371,9 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         selectButton(null, highlightSelectedNumber)
                     }
                     in 0 until sudoku.itemCount -> { //selected field
+                        val number = selected!! - sudoku.itemCount + 1
                         sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
-                        if (highlightSelectedNumber) gameAdapter.highlightNumber(selected!! - sudoku.itemCount + 1)
+                        if (highlightSelectedNumber) gameAdapter.highlightNumber(number)
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
@@ -436,8 +437,14 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         if(selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(pair.first, completedNumbers)
                         else {
                             selected = null
+                            gameAdapter.selectFieldView(null, getUserSettings().highlightRegional, getUserSettings().highlightNumber)
                             selectButton(null, getUserSettings().highlightNumber)
                         }
+                        sudoku.fields.forEach { field ->
+                            field.notes.remove(pair.first)
+                            gameAdapter.updateFieldView(position.index)
+                        }
+                        saveSudoku(sudoku)
                     }
                 }
             } else {
