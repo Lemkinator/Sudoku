@@ -31,6 +31,6 @@
   
   ### Stargazers over time
 
-  [![Stargazers over time](https://starchart.cc/Lemkinator/NAK-Buch.svg)](https://starchart.cc/Lemkinator/NAK-Buch)
+  [![Stargazers over time](https://starchart.cc/Lemkinator/Sudoku.svg)](https://starchart.cc/Lemkinator/Sudoku)
   
 </div>
