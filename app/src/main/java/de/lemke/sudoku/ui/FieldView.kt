@@ -3,7 +3,8 @@ package de.lemke.sudoku.ui
 import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
-import android.util.TypedValue
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.TransitionDrawable
 import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -62,11 +63,13 @@ class FieldView(context: Context) : LinearLayout(context) {
     fun update() {
         fieldViewValue?.text = if (field.value == null) null else field.value.toString()
         fieldViewValue?.visibility = if (field.value == null) GONE else VISIBLE
-        fieldViewValue?.setTextColor(context.getColor(
-            if (field.hint) R.color.field_hint_text_color
-            else if (field.given) R.color.field_given_text_color
-            else R.color.field_userinput_text_color
-        ))
+        fieldViewValue?.setTextColor(
+            context.getColor(
+                if (field.hint) R.color.field_hint_text_color
+                else if (field.given) R.color.field_given_text_color
+                else R.color.field_userinput_text_color
+            )
+        )
         updateNotes()
         setBackground()
         if (sudoku?.completed != true) {
@@ -91,17 +94,17 @@ class FieldView(context: Context) : LinearLayout(context) {
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
     }
 
-    fun setBackground() {
-        if (field.error) setBackgroundColor(context.getColor(androidx.appcompat.R.color.sesl_error_color))
-        else if (isSelected) setBackgroundColor(context.getColor(R.color.control_color_selected))
-        else if (isHighlightedNumber) setBackgroundColor(context.getColor(R.color.control_color_highlighted_number))
-        else if (isHighlighted) setBackgroundColor(context.getColor(R.color.control_color_highlighted))
-        else if (isColored) setBackgroundColor(context.getColor(R.color.control_color_normal))
-        else setBackgroundColor(Color.TRANSPARENT)
-    }
+    fun setBackground() = setBackgroundColor(getCurrentBackgroundColor())
+
+    private fun getCurrentBackgroundColor(): Int = if (field.error) context.getColor(androidx.appcompat.R.color.sesl_error_color)
+    else if (isSelected) context.getColor(R.color.control_color_selected)
+    else if (isHighlightedNumber) context.getColor(R.color.control_color_highlighted_number)
+    else if (isHighlighted) context.getColor(R.color.control_color_highlighted)
+    else if (isColored) context.getColor(R.color.control_color_normal)
+    else Color.TRANSPARENT
 
     suspend fun flash(milliseconds: Long) {
-        setBackgroundColor(resources.getColor(R.color.field_animation_highlight, context.theme))
+        setBackgroundColor(context.getColor(R.color.field_animation_highlight))
         delay(milliseconds)
         setBackground()
     }

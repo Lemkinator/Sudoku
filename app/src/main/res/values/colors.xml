@@ -12,7 +12,7 @@
     <color name="field_userinput_text_color">@color/oui_primary_text_color</color>
     <color name="field_given_text_color">@color/primary_color</color>
     <color name="field_hint_text_color">@color/secondary_color</color>
-    <color name="field_animation_highlight">#C1C1C1</color>
+    <color name="field_animation_highlight">#CCCCCC</color>
     <color name="field_selected_color">#B3009808</color>
     <color name="field_highlighted_number_color">#66009808</color>
     <color name="field_highlighted_color">#40009808</color>

@@ -32,6 +32,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -44,17 +45,17 @@ import kotlin.math.abs
 @AndroidEntryPoint
 class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     lateinit var sudoku: Sudoku
-    private lateinit var gameRecycler: RecyclerView
     lateinit var gameAdapter: SudokuViewAdapter
-    private lateinit var drawerLayout: DrawerLayout
     lateinit var toolbarMenu: Menu
+    private lateinit var gameRecycler: RecyclerView
+    private lateinit var drawerLayout: DrawerLayout
     private lateinit var loadingDialog: ProgressDialog
     private lateinit var resumeButtonLayout: LinearLayout
     private lateinit var gameLayout: LinearLayout
     private lateinit var noteButton: AppCompatButton
     private val selectButtons: MutableList<AppCompatButton> = mutableListOf()
     private var notesEnabled = false
-
+    private val animationDuration = 50L
     private var selected: Int? = null
 
     companion object {
@@ -110,11 +111,8 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 getSystemService(INPUT_METHOD_SERVICE),
                 "getInputMethodWindowVisibleHeight"
             ) as Int
-            if (totalScrollRange != 0) {
-                resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-            } else {
-                resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
-            }
+            if (totalScrollRange != 0) resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+            else resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
         drawerLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = drawerLayout.toolbar.menu
@@ -200,12 +198,14 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             override fun onFieldChanged(position: Position) {
                 gameAdapter.updateFieldView(position.index)
                 checkAnyNumberCompleted(position)
-                checkRowColumnBlockCompleted(position)
-                lifecycleScope.launch { saveSudoku(sudoku) }
+                lifecycleScope.launch {
+                    checkRowColumnBlockCompleted(position)
+                    saveSudoku(sudoku)
+                }
             }
 
-            override fun onCompleted() {
-                lifecycleScope.launch { gameAdapter.flashSudoku(10) }.invokeOnCompletion {
+            override fun onCompleted(position: Position) {
+                animateSudoku(position).invokeOnCompletion {
                     lifecycleScope.launch {
                         val completedMessage = getString(
                             R.string.completed_message,
@@ -349,7 +349,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
                         sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                        gameAdapter.highlightNumber(newSelected - sudoku.itemCount + 1)
+                        if (highlightSelectedNumber) gameAdapter.highlightNumber(newSelected - sudoku.itemCount + 1)
                     }
                     sudoku.itemCount + sudoku.size -> { //selected delete
                         sudoku.move(position, null, notesEnabled)
@@ -434,7 +434,10 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 selectButtons[pair.first - 1].setTextColor(getColor(R.color.number_button_disabled_text_color))
                 if (position != null && sudoku[position].value == pair.first) {
                     lifecycleScope.launch {
-                        if(selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(pair.first, completedNumbers)
+                        if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
+                            pair.first,
+                            completedNumbers
+                        )
                         else {
                             selected = null
                             gameAdapter.selectFieldView(null, getUserSettings().highlightRegional, getUserSettings().highlightNumber)
@@ -459,8 +462,8 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             number++
             if (number > completedNumbers.size) number = 1 //wrap around
             if (number == n) { //all numbers are completed
-                    selected = null
-                    selectButton(null, getUserSettings().highlightNumber)
+                selected = null
+                selectButton(null, getUserSettings().highlightNumber)
                 return
             }
         }
@@ -468,10 +471,56 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         selectButton(number - 1, getUserSettings().highlightNumber)
     }
 
-    private fun checkRowColumnBlockCompleted(position: Position) {
-        if (sudoku.isRowCompleted(position.row)) lifecycleScope.launch { gameAdapter.flashRow(position, 50) }
-        if (sudoku.isColumnCompleted(position.column)) lifecycleScope.launch { gameAdapter.flashColumn(position, 50) }
-        if (sudoku.isBlockCompleted(position.block)) lifecycleScope.launch { gameAdapter.flashBlock(position, 50) }
+    private suspend fun checkRowColumnBlockCompleted(position: Position) {
+        if (getUserSettings().animationsEnabled) {
+            if (sudoku.isRowCompleted(position.row)) animateRow(position)
+            if (sudoku.isColumnCompleted(position.column)) animateColumn(position)
+            if (sudoku.isBlockCompleted(position.block)) animateBlock(position)
+        }
+    }
+
+    private fun animateRow(position: Position) {
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.row == position.row && it.position.column <= position.column }.reversed()
+                .forEach { it?.flash(animationDuration) }
+        }
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.row == position.row && it.position.column >= position.column }
+                .forEach { it?.flash(animationDuration) }
+        }
+    }
+
+    private fun animateColumn(position: Position) {
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.column == position.column && it.position.row <= position.row }.reversed()
+                .forEach { it?.flash(animationDuration) }
+        }
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.column == position.column && it.position.row >= position.row }
+                .forEach { it?.flash(animationDuration) }
+        }
+    }
+
+    private fun animateBlock(position: Position) {
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.block == position.block && it.position.index <= position.index }.reversed()
+                .forEach { it?.flash(animationDuration) }
+        }
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.block == position.block && it.position.index >= position.index }
+                .forEach { it?.flash(animationDuration) }
+        }
+    }
+
+    private fun animateSudoku(position: Position): Job {
+        lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.index!! <= position.index }.reversed()
+                .forEach { it?.flash(20) }
+        }
+        return lifecycleScope.launch {
+            gameAdapter.fieldViews.filter { it?.position?.index!! >= position.index }
+                .forEach { it?.flash(20) }
+        }
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
@@ -480,15 +529,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         }
         if (i != null) {
             selectButtons[i].backgroundTintList = ColorStateList.valueOf(resources.getColor(R.color.primary_color, theme))
-            if (highlightSelectedNumber && i in 0 until sudoku.size) {
-                gameAdapter.highlightNumber(i + 1)
-            }
+            if (highlightSelectedNumber && i in 0 until sudoku.size) gameAdapter.highlightNumber(i + 1)
             selected = sudoku.itemCount + i
         } else {
             selected = null
-            if (highlightSelectedNumber) {
-                gameAdapter.highlightNumber(null)
-            }
+            if (highlightSelectedNumber) gameAdapter.highlightNumber(null)
         }
     }
 
@@ -503,8 +548,9 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     @Suppress("unused_parameter")
     fun resumeGame(view: View? = null) {
         lifecycleScope.launch {
-            val errorLimit = getUserSettings().errorLimit
             resumeButtonLayout.visibility = View.GONE
+            gameLayout.visibility = View.VISIBLE
+            val errorLimit = getUserSettings().errorLimit
             if (!sudoku.completed && !(errorLimit != 0 && sudoku.errorsMade >= errorLimit)) {
                 sudoku.startTimer()
                 val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
@@ -512,18 +558,17 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 itemPausePlay.title = getString(R.string.pause)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
             }
-            gameLayout.visibility = View.VISIBLE
         }
     }
 
     private fun pauseGame() {
         if (sudoku.completed) return
         gameLayout.visibility = View.GONE
+        resumeButtonLayout.visibility = View.VISIBLE
         sudoku.stopTimer()
         val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
         itemPausePlay.icon = getDrawable(R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
-        resumeButtonLayout.visibility = View.VISIBLE
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
     }
 

@@ -35,7 +35,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-        val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout)
+        val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout_settings)
         drawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, R.drawable.ic_baseline_oui_back_24))
         drawerLayout.setNavigationButtonOnClickListener { onBackPressed() }
@@ -51,6 +51,7 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var confirmExitPref: SwitchPreference
         private lateinit var regionalHighlightPref: SwitchPreference
         private lateinit var numberHighlightPref: SwitchPreference
+        private lateinit var animationsPref: SwitchPreference
         private lateinit var errorLimitPref: DropDownPreference
 
         //private var tipCard: TipsCardViewPreference? = null
@@ -87,10 +88,12 @@ class SettingsActivity : AppCompatActivity() {
             confirmExitPref = findPreference("confirmExit")!!
             regionalHighlightPref = findPreference("highlightRegionalSwitch")!!
             numberHighlightPref = findPreference("highlightNumberSwitch")!!
+            animationsPref = findPreference("animationsSwitch")!!
             errorLimitPref = findPreference("errorLimitDropDown")!!
             confirmExitPref.onPreferenceChangeListener = this
             regionalHighlightPref.onPreferenceChangeListener = this
             numberHighlightPref.onPreferenceChangeListener = this
+            animationsPref.onPreferenceChangeListener = this
             errorLimitPref.onPreferenceChangeListener = this
             autoDarkModePref.onPreferenceChangeListener = this
             autoDarkModePref.isChecked = darkMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM ||
@@ -164,6 +167,7 @@ class SettingsActivity : AppCompatActivity() {
                 confirmExitPref.isChecked = userSettings.confirmExit
                 regionalHighlightPref.isChecked = userSettings.highlightRegional
                 numberHighlightPref.isChecked = userSettings.highlightNumber
+                animationsPref.isChecked = userSettings.animationsEnabled
                 errorLimitPref.summary =
                     if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 //tipCard?.isVisible = showTipCard
@@ -203,6 +207,10 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 "highlightNumberSwitch" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = newValue as Boolean) } }
+                    return true
+                }
+                "animationsSwitch" -> {
+                    lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = newValue as Boolean) } }
                     return true
                 }
                 "errorLimitDropDown" -> {

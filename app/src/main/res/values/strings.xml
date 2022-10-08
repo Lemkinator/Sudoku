@@ -37,10 +37,11 @@
     <string name="general">General</string>
     <string name="game">Game</string>
     <string name="games">Games</string>
-    <string name="RegionalHighlight">Regional Highlight</string>
-    <string name="RegionalHighlightSummary">When a field is selected, the row, line and block will be highlighted.</string>
-    <string name="numberHighlight">Highlight selected number</string>
-    <string name="numberHighlightSummary">When a number is selected, all other fields with the same number will be highlighted.</string>
+    <string name="animations">Animations</string>
+    <string name="regional_highlight">Regional Highlight</string>
+    <string name="regional_highlight_summary">When a field is selected, the row, line and block will be highlighted.</string>
+    <string name="number_highlight">Highlight selected number</string>
+    <string name="number_highlight_summary">When a number is selected, all other fields with the same number will be highlighted.</string>
     <string name="confirm_exit">Confirm exit</string>
     <string name="press_again_to_exit">Press again to exit.</string>
     <string name="delete_appdata_and_exit">Delete App-Data and exit</string>
@@ -97,6 +98,24 @@
     <string name="average_hints">Average hints</string>
     <string name="errors">Errors</string>
     <string name="hints">Hints</string>
+
+    <!--About Me Page-->
+    <string name="tiktok" translatable="false">TikTok</string>
+    <string name="about_me">About me</string>
+    <string name="website">Website</string>
+    <string name="task_failed">Oops, something went wrong…</string>
+    <string name="share">Share</string>
+    <string name="share_app">Share this app</string>
+    <string name="share_app_text">Check this out, a Sudoku app with OneUI-Design: https://play.google.com/store/apps/details?id=</string>
+    <string name="write_review">Write a review</string>
+    <string name="rate_app">Rate app in Play Store</string>
+    <string name="write_email">Write an e-mail</string>
+    <string name="support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
+    <string name="support_me">Support me</string>
+    <string name="no_email_app_installed">No e-mail app installed…</string>
+    <string name="to_play_store">To Play Store</string>
+    <string name="review_comment">To ensure an optimal user experience, Google Play manages when and how often the integrated rating dialog can be displayed to a user. Therefore, this button may not perform any action in some cases.\nAlternatively, the rating can then be written in the Play Store.</string>
+    <string name="error">Error</string>
 
     <!--Others-->
     <string name="noGamePlayed">No game played yet</string>

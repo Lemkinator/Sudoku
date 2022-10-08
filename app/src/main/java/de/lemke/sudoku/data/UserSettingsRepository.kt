@@ -25,10 +25,11 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_LAST_VERSION_NAME] = newSettings.lastVersionName
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
-            it[KEY_ERROR_LIMIT] = newSettings.errorLimit
             it[KEY_CONFIRM_EXIT] = newSettings.confirmExit
+            it[KEY_ANIMATIONS_ENABLED] = newSettings.animationsEnabled
             it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
+            it[KEY_ERROR_LIMIT] = newSettings.errorLimit
         }
         return settingsFromPreferences(prefs)
     }
@@ -39,10 +40,11 @@ class UserSettingsRepository @Inject constructor(
         lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: -1,
-        errorLimit = prefs[KEY_ERROR_LIMIT] ?: 0,
         confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
+        animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
+        errorLimit = prefs[KEY_ERROR_LIMIT] ?: 0,
     )
 
 
@@ -51,10 +53,11 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_LAST_VERSION_NAME = stringPreferencesKey("lastVersionName")
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
-        private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
         private val KEY_CONFIRM_EXIT = booleanPreferencesKey("confirmExit")
+        private val KEY_ANIMATIONS_ENABLED = booleanPreferencesKey("animationsEnabled")
         private val KEY_REGIONAL_HIGHLIGHT = booleanPreferencesKey("regionalHighlight")
         private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
+        private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
     }
 }
 
@@ -70,6 +73,8 @@ data class UserSettings(
     val difficultySliderValue: Int,
     /** confirm Exit*/
     val confirmExit: Boolean,
+    /** animations enabled */
+    val animationsEnabled: Boolean,
     /** highlight sudoku neighbors*/
     val highlightRegional: Boolean,
     /** highlight selected Number*/

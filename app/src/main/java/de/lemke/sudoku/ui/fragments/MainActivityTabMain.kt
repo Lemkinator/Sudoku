@@ -1,30 +1,42 @@
 package de.lemke.sudoku.ui.fragments
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.sudoku.PersistenceModule.getSystemService
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.layout.DrawerLayout
+import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.utils.SeekBarUtils
+import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import dev.oneuiproject.oneui.widget.HapticSeekBar
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class MainActivityTabMain : Fragment() {
     private lateinit var rootView: View
+    private lateinit var toolbarLayout: ToolbarLayout
+    private lateinit var mainMenuLayout: LinearLayout
     private lateinit var difficultySeekbar: HapticSeekBar
     private lateinit var continueGameButton: AppCompatButton
     private var preloadedSudokus: List<Sudoku>? = null
@@ -52,8 +64,22 @@ class MainActivityTabMain : Fragment() {
         return rootView
     }
 
+    @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val activity = requireActivity()
+        toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
+        mainMenuLayout = rootView.findViewById(R.id.main_menu_layout)
+        toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
+            val totalScrollRange = layout.totalScrollRange
+            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
+                InputMethodManager::class.java,
+                activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
+                "getInputMethodWindowVisibleHeight"
+            ) as Int
+            if (totalScrollRange != 0) mainMenuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+            else mainMenuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
+        }
         difficultySeekbar = rootView.findViewById(R.id.difficulty_seekbar)
         SeekBarUtils.showTickMark(difficultySeekbar, true)
         difficultySeekbar.setSeamless(true)
@@ -92,7 +118,8 @@ class MainActivityTabMain : Fragment() {
                 override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
             })
-            preloadedSudokus = preloadSudokus() }
+            preloadedSudokus = preloadSudokus()
+        }
     }
 
     override fun onResume() {

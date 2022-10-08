@@ -219,7 +219,7 @@ class Sudoku(
                 }
                 if (completed) {
                     stopTimer()
-                    gameListener?.onCompleted()
+                    gameListener?.onCompleted(position)
                 }
             }
         }
@@ -272,7 +272,7 @@ interface GameListener {
     fun onHistoryChange(length: Int)
     fun onFieldClicked(position: Position)
     fun onFieldChanged(position: Position)
-    fun onCompleted()
+    fun onCompleted(position: Position)
     fun onError()
     fun onTimeChanged(time: String?)
 }

@@ -6,9 +6,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import kotlinx.coroutines.delay
 
 class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
-    private val fieldViews: MutableList<FieldView?> = MutableList(itemCount) { FieldView((context)) }
+    val fieldViews: MutableList<FieldView?> = MutableList(itemCount) { FieldView((context)) }
     private var selectedfield: Int? = null
 
     override fun getItemCount(): Int = sudoku.itemCount
@@ -43,29 +44,6 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
             it?.setBackground()
         }
     }
-
-    suspend fun flashRowTo(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.row == position.row }.forEach { it?.flash(milliseconds) }
-
-    suspend fun flashRowFrom(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.row == position.row }.forEach { it?.flash(milliseconds) }
-
-    suspend fun flashRow(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.row == position.row }.forEach { it?.flash(milliseconds) }
-
-    suspend fun flashColumn(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.column == position.column }.forEach { it?.flash(milliseconds) }
-
-    suspend fun flashColumnTo(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.column == position.column }.forEach { it?.flash(milliseconds) }
-
-    suspend fun flashColumnFrom(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.column == position.column }.forEach { it?.flash(milliseconds) }
-
-    suspend fun flashBlock(position: Position, milliseconds: Long) =
-        fieldViews.filter { it?.position?.block == position.block }.shuffled().forEach { it?.flash(milliseconds) }
-
-    suspend fun flashSudoku(milliseconds: Long) = fieldViews.forEach { it?.flash(milliseconds) }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))
 

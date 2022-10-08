@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="field_animation_highlight">#666666</color>
+    <color name="field_animation_highlight">#444444</color>
 </resources>

@@ -24,21 +24,25 @@
 
     <PreferenceCategory android:title="@string/game">
         <SwitchPreference
+            android:key="animationsSwitch"
+            android:title="@string/animations"
+            app:icon="@drawable/ic_oui_speed_player" />
+        <SwitchPreference
             android:key="highlightRegionalSwitch"
-            android:title="@string/RegionalHighlight"
-            android:summary="@string/RegionalHighlightSummary"
-            app:icon="@drawable/ic_baseline_oui_settings_outline_24" />
+            android:title="@string/regional_highlight"
+            android:summary="@string/regional_highlight_summary"
+            app:icon="@drawable/ic_oui_vision" />
         <SwitchPreference
             android:key="highlightNumberSwitch"
-            android:title="@string/numberHighlight"
-            android:summary="@string/numberHighlightSummary"
-            app:icon="@drawable/ic_baseline_oui_settings_outline_24" />
+            android:title="@string/number_highlight"
+            android:summary="@string/number_highlight_summary"
+            app:icon="@drawable/ic_oui_vision" />
         <DropDownPreference
             android:key="errorLimitDropDown"
             android:entries="@array/error_limit_entries"
             android:entryValues="@array/error_limit_values"
             android:title="@string/error_limit"
-            app:icon="@drawable/ic_baseline_oui_settings_outline_24" />
+            app:icon="@drawable/ic_oui_error" />
 
     </PreferenceCategory>
 
