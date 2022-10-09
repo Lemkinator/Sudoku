@@ -3,14 +3,15 @@ package de.lemke.sudoku.ui
 import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.TransitionDrawable
-import android.view.*
+import android.view.Gravity
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.model.*
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
 import kotlinx.coroutines.delay
 import java.util.stream.Collectors
 

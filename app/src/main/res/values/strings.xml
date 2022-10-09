@@ -26,7 +26,6 @@
     <string name="resume">Resume</string>
 
     <!--About-->
-    <string name="help">Help</string>
     <string name="about_app">About Sudoku</string>
     <string name="about_page_optional_text">A Sudoku app with OneUI-Design</string>
     <string name="open_in_playstore">Open in Play Store</string>

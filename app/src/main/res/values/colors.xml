@@ -3,7 +3,6 @@
     <color name="primary_color">#ff009808</color>
     <color name="primary_dark_color">#8D009808</color>
     <color name="secondary_color">#CF8D3C</color>
-    <color name="secondary_dark_color">#8CCF8D3C</color>
 
     <color name="sesl_thumb_control_color_activated">@color/primary_color</color>
 
@@ -13,8 +12,4 @@
     <color name="field_given_text_color">@color/primary_color</color>
     <color name="field_hint_text_color">@color/secondary_color</color>
     <color name="field_animation_highlight">#CCCCCC</color>
-    <color name="field_selected_color">#B3009808</color>
-    <color name="field_highlighted_number_color">#66009808</color>
-    <color name="field_highlighted_color">#40009808</color>
-    <color name="field_colored_color">#0D009808</color>
 </resources>

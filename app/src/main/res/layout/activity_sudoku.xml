@@ -37,7 +37,6 @@
                     android:scrollbars="none" />
 
                 <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                    android:id="@+id/buttons_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"

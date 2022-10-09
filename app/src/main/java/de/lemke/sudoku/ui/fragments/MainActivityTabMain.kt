@@ -16,14 +16,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.sudoku.PersistenceModule.getSystemService
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.utils.SeekBarUtils
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils

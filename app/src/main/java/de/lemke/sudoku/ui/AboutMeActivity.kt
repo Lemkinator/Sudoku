@@ -10,13 +10,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.lifecycle.lifecycleScope
 import com.google.android.play.core.review.ReviewManagerFactory
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.OpenAppUseCase
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint

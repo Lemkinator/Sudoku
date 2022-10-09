@@ -14,7 +14,6 @@
         android:layout_marginHorizontal="17dp">
 
         <LinearLayout
-            android:id="@+id/games_statistic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -89,7 +88,6 @@
                         app:layout_constraintTop_toBottomOf="@+id/games_statistic_total_completed" />
 
                     <TextView
-                        android:id="@+id/games_statistic_win_rate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
@@ -114,7 +112,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/error_statistic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -189,7 +186,6 @@
                         app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_errors" />
 
                     <TextView
-                        android:id="@+id/games_statistic_average_errors"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
@@ -214,7 +210,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/hint_statistic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -289,7 +284,6 @@
                         app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_hints" />
 
                     <TextView
-                        android:id="@+id/games_statistic_average_hints"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
@@ -314,7 +308,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/time_statistic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -363,7 +356,6 @@
                         app:layout_constraintTop_toBottomOf="@+id/time_statistic_best_time" />
 
                     <TextView
-                        android:id="@+id/time_statistic_average_time"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
@@ -388,7 +380,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/streak_statistic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -437,7 +428,6 @@
                         app:layout_constraintTop_toBottomOf="@+id/streak_statistic_current_streak" />
 
                     <TextView
-                        android:id="@+id/streak_statistic_best_streak"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
