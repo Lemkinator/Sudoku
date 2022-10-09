@@ -68,6 +68,9 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
         findViewById<View>(R.id.about_btn_open_oneui_github).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
         }
+        findViewById<View>(R.id.about_btn_about_me).setOnClickListener {
+            startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
+        }
         checkUpdate()
     }
 

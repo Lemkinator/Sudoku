@@ -91,20 +91,20 @@
     <!--About Me Page-->
     <string name="tiktok" translatable="false">TikTok</string>
     <string name="about_me">Über mich</string>
-    <string name="website">Website</string>
+    <string name="website">Webseite</string>
     <string name="task_failed">Hoppla, da ist etwas schiefgelaufen…</string>
     <string name="share">Teilen</string>
     <string name="share_app">App Teilen</string>
     <string name="share_app_text">Schau mal hier, eine Sudoku App im schönen OneUI-Design: https://play.google.com/store/apps/details?id=</string>
     <string name="write_review">Bewertung schreiben</string>
     <string name="rate_app">App im Play-Store Bewerten</string>
-    <string name="write_email">Write an e-mail</string>
-    <string name="support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
-    <string name="support_me">Support me</string>
-    <string name="no_email_app_installed">No e-mail app installed…</string>
-    <string name="to_play_store">To Play Store</string>
+    <string name="write_email">E-mail schreiben</string>
+    <string name="support_me_text">Falls du mich in irgendeiner Weise unterstützen möchtest, dann sende mir gerne eine E-mail</string>
+    <string name="support_me">Unterstütz mich</string>
+    <string name="no_email_app_installed">Keie e-mail App installiert…</string>
+    <string name="to_play_store">Zum Play Store</string>
     <string name="review_comment">Um ein optimales Nutzererlebnis zu gewährleisten, verwaltet Google Play wann und wie oft einem Nutzer der integrierte Bewertungsdialog angezeigt werden kann. Deshalb kann es vorkommen, dass diese Schaltfläche in manchen Fällen keine Aktion durchführt.\nAlternativ kann die Bewertung dann im Play Store geschrieben werden.</string>
-    <string name="error">Error</string>
+    <string name="error">Fehler</string>
 
     <!--Others-->
     <string name="noGamePlayed">Noch kein Spiel gespielt</string>

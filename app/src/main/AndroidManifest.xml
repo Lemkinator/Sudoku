@@ -4,7 +4,9 @@
 
     <!--
     TODO / Ideas
+        show numbers left on button
         daily challenges
+        size 16?
 
         (new Android 12 Splashscreen)
     -->
@@ -23,6 +25,7 @@
 
         <activity android:name=".ui.SettingsActivity" />
         <activity android:name=".ui.AboutActivity" />
+        <activity android:name=".ui.AboutMeActivity" />
         <activity android:name=".ui.SudokuActivity" />
         <activity
             android:name=".ui.MainActivity"
