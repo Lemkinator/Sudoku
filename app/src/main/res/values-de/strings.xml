@@ -6,7 +6,7 @@
     <string name="history">Verlauf</string>
     <string name="statistics">Statistiken</string>
 
-    <string name="new_game">Neues Spiel</string>
+    <string name="new_game">Neues Spiel (%1$s)</string>
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
 
     <!--Menu-->
@@ -59,12 +59,13 @@
     <string name="completed_title">Fertig</string>
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
-    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nRegionales Highlight benutzt: %6$s \nGewählte Nummer hervorgehoben: %7$s \nErstellt: %8$s \nGeändert: %9$s</string>
+    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNotizen: %6$d \nRegionales Highlight benutzt: %7$s \nGewählte Nummer hervorgehoben: %8$s \nErstellt: %9$s \nGeändert: %10$s</string>
     <string name="shareResult">Ergebnis teilen</string>
     <string name="textShare">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>
+    <string name="auto_hints">Auto Hinweise</string>
     <string name="restart">Neustart</string>
     <string name="gameover">Spiel zu Ende</string>
 
@@ -86,6 +87,13 @@
     <string name="average_hints">Durchschnittliche Hinweise</string>
     <string name="errors">Fehler</string>
     <string name="hints">Hinweise</string>
+    <string name="difficulty">Schwierigkeit</string>
+    <string name="most_games_started">Meiste Spiele gestartet</string>
+    <string name="most_games_won">Meiste Spiele gewonnen</string>
+    <string name="notes">Notizen</string>
+    <string name="wins_without_notes">Siege ohne Notizen</string>
+    <string name="most_notes">Meiste Notizen</string>
+    <string name="average_notes">Durchschnittliche Notizen</string>
 
     <!--About Me Page-->
     <string name="about_me">Über mich</string>

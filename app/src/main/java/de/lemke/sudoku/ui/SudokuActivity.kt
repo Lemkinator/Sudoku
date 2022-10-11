@@ -95,6 +95,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         selectButtons.add(findViewById(R.id.delete_button))
         selectButtons.add(findViewById(R.id.hint_button))
 
+        findViewById<AppCompatButton>(R.id.auto_hints_button).setOnClickListener { sudoku.autoHints() }
         noteButton = findViewById(R.id.note_button)
         noteButton.setOnClickListener { toggleOrSetNoteButton() }
         drawerLayout = findViewById(R.id.drawer_layout_sudoku)
@@ -211,9 +212,10 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                             R.string.completed_message,
                             sudoku.size,
                             resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal],
-                            sudoku.getTimeString(),
+                            sudoku.timeString,
                             sudoku.errorsMade,
                             sudoku.hintsUsed,
+                            sudoku.notesMade,
                             getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
                             getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
                             sudoku.created.format(
@@ -299,7 +301,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     private fun setSubtitle() {
         lifecycleScope.launch {
             val errorLimit = getUserSettings().errorLimit
-            val subtitle = getString(R.string.current_time, sudoku.getTimeString()) + " | " +
+            val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " +
                     if (errorLimit == 0) {
                         getString(
                             R.string.current_errors,
@@ -315,6 +317,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private suspend fun select(newSelected: Int?) {
+        if (drawerLayout.isExpanded) drawerLayout.setExpanded(false, true)
         val highlightSudokuNeighbors = getUserSettings().highlightRegional
         val highlightSelectedNumber = getUserSettings().highlightNumber
         Log.d("test", "selected: $selected, newSelected: $newSelected")

@@ -215,7 +215,7 @@ class MainActivityTabHistory : Fragment() {
                             R.drawable.ic_oui_error
                         )
                     )
-                    holder.textViewSmall.text = getString(R.string.current_time, sudoku.getTimeString()) + " | " +
+                    holder.textViewSmall.text = getString(R.string.current_time, sudoku.timeString) + " | " +
                             if (errorLimit == 0) {
                                 getString(
                                     R.string.current_errors,

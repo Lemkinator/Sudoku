@@ -39,7 +39,7 @@ class UserSettingsRepository @Inject constructor(
         lastVersionCode = prefs[KEY_LAST_VERSION_CODE] ?: -1,
         lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
-        difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: -1,
+        difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
         confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,

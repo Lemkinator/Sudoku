@@ -34,7 +34,7 @@ class MainActivityTabStatistics : Fragment() {
             override fun onPageScrollStateChanged(state: Int) {}
         })
         val tlm = TabLayoutMediator(subTabs, viewPager2) { tab, position ->
-            tab.text = resources.getStringArray(R.array.difficuilty)[position]
+            tab.text = if (position == 0) getString(R.string.general) else resources.getStringArray(R.array.difficuilty)[position - 1]
         }
         tlm.attach()
     }
@@ -42,10 +42,10 @@ class MainActivityTabStatistics : Fragment() {
 
 class ViewPager2AdapterTabListSubtabs(fragment: Fragment) : FragmentStateAdapter(fragment) {
     override fun createFragment(position: Int): Fragment {
-        return TabStatisticsSubtab.newInstance(position)
+        return TabStatisticsSubtab.newInstance(position - 1)
     }
 
     override fun getItemCount(): Int {
-        return Difficulty.values().size
+        return Difficulty.values().size + 1
     }
 }

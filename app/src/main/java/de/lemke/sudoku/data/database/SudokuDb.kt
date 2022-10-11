@@ -13,6 +13,7 @@ data class SudokuDb(
     val size: Int,
     val difficulty: Int,
     var hintsUsed: Int,
+    var notesMade: Int,
     var errorsMade: Int,
     val seconds: Int,
     val created: LocalDateTime,

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -18,6 +19,8 @@ import de.lemke.sudoku.domain.AppStart
 import de.lemke.sudoku.domain.CheckAppStartUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import dev.oneuiproject.oneui.layout.ToolbarLayout
+import dev.oneuiproject.oneui.widget.HapticSeekBar
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -73,14 +76,24 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
-                if (tab.text == getString(R.string.statistics)) {
-                    try {
-                        val subTabs: TabLayout = findViewById(R.id.fragment_statistics_sub_tabs)
-                        val newTabIndex = subTabs.selectedTabPosition + 1
-                        if (newTabIndex < subTabs.tabCount) subTabs.getTabAt(newTabIndex)?.select()
-                        else subTabs.getTabAt(0)?.select()
-                    } catch (_: Exception) {
+                try {
+                    when (tab.text) {
+                        getString(R.string.app_name) -> {
+                            val toolbarLayout: ToolbarLayout = findViewById(R.id.main_toolbarlayout)
+                            toolbarLayout.setExpanded(!toolbarLayout.isExpanded, true)
+                        }
+                        getString(R.string.history) -> {
+                            val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuList)
+                            historyRecyclerView.smoothScrollToPosition(0)
+                        }
+                        getString(R.string.statistics) -> {
+                            val subTabs: TabLayout = findViewById(R.id.fragment_statistics_sub_tabs)
+                            val newTabIndex = subTabs.selectedTabPosition + 1
+                            if (newTabIndex < subTabs.tabCount) subTabs.getTabAt(newTabIndex)?.select()
+                            else subTabs.getTabAt(0)?.select()
+                        }
                     }
+                } catch (_: Exception) { //no required functionality -> ignore errors
                 }
             }
         })
@@ -94,7 +107,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                         if (getUserSettings().confirmExit) {
                             if (System.currentTimeMillis() - time < 3000) finishAffinity()
                             else {
-                                Toast.makeText(this@MainActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT)
+                                    .show()
                                 time = System.currentTimeMillis()
                             }
                         } else finishAffinity()

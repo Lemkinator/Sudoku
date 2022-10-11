@@ -5,12 +5,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetAllSudokusWithDifficultyUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
@@ -35,14 +37,23 @@ class TabStatisticsSubtab : Fragment() {
     private lateinit var textViewGamesWithoutHints: TextView
     private lateinit var textViewMostHints: TextView
     private lateinit var textViewAverageHints: TextView
+    private lateinit var textViewGamesWithoutNotes: TextView
+    private lateinit var textViewMostNotes: TextView
+    private lateinit var textViewAverageNotes: TextView
     private lateinit var textViewBestTime: TextView
     private lateinit var textViewAverageTime: TextView
     private lateinit var textViewCurrentStreak: TextView
     private lateinit var textViewBestStreak: TextView
-    private var difficulty: Difficulty = Difficulty.EASY
+    private lateinit var generalStatisticsLayout: LinearLayout
+    private lateinit var textViewMostGamesStarted: TextView
+    private lateinit var textViewMostGamesWon: TextView
+    private var difficulty: Difficulty? = null
 
     @Inject
     lateinit var getAllSudokusWithDifficulty: GetAllSudokusWithDifficultyUseCase
+
+    @Inject
+    lateinit var getAllSudokus: GetAllSudokusUseCase
 
     companion object {
         fun newInstance(position: Int): TabStatisticsSubtab {
@@ -56,7 +67,8 @@ class TabStatisticsSubtab : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         rootView = inflater.inflate(R.layout.fragment_tab_statistics_subtab, container, false)
-        difficulty = Difficulty.fromInt(arguments?.getInt("position") ?: 0)
+        val intDifficulty = arguments?.getInt("position") ?: -1
+        if (intDifficulty in 0..Difficulty.max) difficulty = Difficulty.fromInt(intDifficulty)
         return rootView
     }
 
@@ -75,12 +87,19 @@ class TabStatisticsSubtab : Fragment() {
         textViewGamesWithoutHints = rootView.findViewById(R.id.games_statistic_wins_without_hint_value)
         textViewMostHints = rootView.findViewById(R.id.games_statistic_most_hints_value)
         textViewAverageHints = rootView.findViewById(R.id.games_statistic_average_hints_value)
+        textViewGamesWithoutNotes = rootView.findViewById(R.id.games_statistic_wins_without_notes_value)
+        textViewMostNotes = rootView.findViewById(R.id.games_statistic_most_notes_value)
+        textViewAverageNotes = rootView.findViewById(R.id.games_statistic_average_notes_value)
         textViewBestTime = rootView.findViewById(R.id.time_statistic_best_time_value)
         textViewAverageTime = rootView.findViewById(R.id.time_statistic_average_time_value)
         textViewCurrentStreak = rootView.findViewById(R.id.streak_statistic_current_streak_value)
         textViewBestStreak = rootView.findViewById(R.id.streak_statistic_best_streak_value)
+        generalStatisticsLayout = rootView.findViewById(R.id.general_statistics_layout)
+        generalStatisticsLayout.visibility = if (difficulty != null) View.GONE else View.VISIBLE
+        textViewMostGamesStarted = rootView.findViewById(R.id.difficulty_statistic_most_games_started_value)
+        textViewMostGamesWon = rootView.findViewById(R.id.difficulty_statistic_most_games_won_value)
         lifecycleScope.launch {
-            sudokus = getAllSudokusWithDifficulty(difficulty)
+            sudokus = if (difficulty != null) getAllSudokusWithDifficulty(difficulty!!) else getAllSudokus()
             updateStatistics()
         }
     }
@@ -96,10 +115,19 @@ class TabStatisticsSubtab : Fragment() {
         val gamesWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
         val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
         val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted
+        val gamesWithoutNotes = sudokus.filter { it.completed && it.notesMade == 0 }.size
+        val mostNotes = sudokus.maxByOrNull { it.notesMade }?.notesMade ?: 0
+        val averageNotes = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.notesMade } / gamesCompleted
         val bestTime = sudokus.filter { it.completed }.minByOrNull { it.seconds }?.seconds ?: 0
         val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
         val currentStreak = sudokus.takeWhile { it.completed }.size
         val bestStreak = if (gamesCompleted == 0) 0 else sudokus.windowed(2, 1).count { it[0].completed && it[1].completed } + 1
+        val mostGamesStartedDifficultyInt = sudokus.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
+        val mostGamesStartedDifficulty =
+            if (mostGamesStartedDifficultyInt == null) "-" else resources.getStringArray(R.array.difficuilty)[mostGamesStartedDifficultyInt]
+        val mostGamesWonDifficultyInt = sudokus.filter { it.completed }.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
+        val mostGamesWonDifficulty =
+            if (mostGamesWonDifficultyInt == null) "-" else resources.getStringArray(R.array.difficuilty)[mostGamesWonDifficultyInt]
         textViewGamesStarted.text = gamesStarted.toString()
         textViewGamesCompleted.text = gamesCompleted.toString()
         textViewWinRate.text = "$winRate%"
@@ -109,10 +137,15 @@ class TabStatisticsSubtab : Fragment() {
         textViewGamesWithoutHints.text = gamesWithoutHints.toString()
         textViewMostHints.text = mostHints.toString()
         textViewAverageHints.text = averageHints.toString()
+        textViewGamesWithoutNotes.text = gamesWithoutNotes.toString()
+        textViewMostNotes.text = mostNotes.toString()
+        textViewAverageNotes.text = averageNotes.toString()
         textViewBestTime.text = secondsToTimeString(bestTime)
         textViewAverageTime.text = secondsToTimeString(averageTime)
         textViewCurrentStreak.text = currentStreak.toString()
         textViewBestStreak.text = bestStreak.toString()
+        textViewMostGamesStarted.text = mostGamesStartedDifficulty
+        textViewMostGamesWon.text = mostGamesWonDifficulty
     }
 
     private fun secondsToTimeString(seconds: Int): String =

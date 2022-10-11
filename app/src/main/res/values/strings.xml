@@ -17,7 +17,7 @@
     <string name="history">History</string>
     <string name="statistics">Statistics</string>
 
-    <string name="new_game">New Game</string>
+    <string name="new_game">New Game (%1$s)</string>
     <string name="continue_game">Continue (%1$s, %2$s)</string>
 
     <!--Menu-->
@@ -70,12 +70,13 @@
     <string name="completed_title">Completed</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    <string name="completed_message">Size: %1$d×%1$d \nDifficulty: %2$s \nTime: %3$s \nErrors: %4$d \nHints: %5$d \nRegional highlight used: %6$s \nNumber highlight used: %7$s \nCreated: %8$s \nUpdated: %9$s</string>
+    <string name="completed_message">Size: %1$d×%1$d \nDifficulty: %2$s \nTime: %3$s \nErrors: %4$d \nHints: %5$d \nNotes: %6$d \nRegional highlight used: %7$s \nNumber highlight used: %8$s \nCreated: %9$s \nUpdated: %10$s</string>
     <string name="shareResult">Share result</string>
     <string name="textShare">Look, I have successfully completed a Sudoku:\n</string>
     <string name="delete">Delete</string>
     <string name="note">Note</string>
     <string name="hint">Hint</string>
+    <string name="auto_hints">Auto hints</string>
     <string name="restart">Restart</string>
     <string name="gameover">Gameover</string>
 
@@ -85,7 +86,7 @@
     <string name="win_rate">Win rate</string>
     <string name="wins_without_error">Wins without errors</string>
     <string name="time">Time</string>
-    <string name="streak">Streal</string>
+    <string name="streak">Streak</string>
     <string name="current_streak">Current winning streak</string>
     <string name="best_streak">Longest winning streak</string>
     <string name="best_time">Best time</string>
@@ -97,6 +98,13 @@
     <string name="average_hints">Average hints</string>
     <string name="errors">Errors</string>
     <string name="hints">Hints</string>
+    <string name="difficulty">Difficulty</string>
+    <string name="most_games_started">Most games started</string>
+    <string name="most_games_won">Most games won</string>
+    <string name="notes">Notes</string>
+    <string name="wins_without_notes">Wins without notes</string>
+    <string name="most_notes">Most notes</string>
+    <string name="average_notes">Average notes</string>
 
     <!--About Me Page-->
     <string name="tiktok" translatable="false">TikTok</string>

@@ -18,6 +18,7 @@ class Sudoku(
     val history: MutableList<HistoryItem>,
     val difficulty: Difficulty,
     var hintsUsed: Int,
+    var notesMade: Int,
     var errorsMade: Int,
     var seconds: Int,
     var timer: Timer?,
@@ -35,6 +36,7 @@ class Sudoku(
             history: MutableList<HistoryItem> = mutableListOf(),
             difficulty: Difficulty,
             hintsUsed: Int = 0,
+            notesMade: Int = 0,
             errorsMade: Int = 0,
             seconds: Int = 0,
             timer: Timer? = null,
@@ -50,6 +52,7 @@ class Sudoku(
             history = history,
             difficulty = difficulty,
             hintsUsed = hintsUsed,
+            notesMade = notesMade,
             errorsMade = errorsMade,
             seconds = seconds,
             timer = timer,
@@ -87,6 +90,128 @@ class Sudoku(
         get() = (this.size * this.size)
     val blockSize: Int
         get() = sqrt(this.size.toDouble()).toInt()
+
+    val timeString: String
+        get() = if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+        else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+
+    fun copy(
+        id: SudokuId = this.id,
+        size: Int = this.size,
+        history: MutableList<HistoryItem> = this.history,
+        difficulty: Difficulty = this.difficulty,
+        hintsUsed: Int = this.hintsUsed,
+        notesMade: Int = this.notesMade,
+        errorsMade: Int = this.errorsMade,
+        seconds: Int = this.seconds,
+        created: LocalDateTime = this.created,
+        updated: LocalDateTime = this.updated,
+        fields: MutableList<Field> = this.fields,
+        regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
+        numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
+    ): Sudoku = Sudoku(
+        id = id,
+        size = size,
+        history = history.toMutableList(),
+        difficulty = difficulty,
+        hintsUsed = hintsUsed,
+        notesMade = notesMade,
+        errorsMade = errorsMade,
+        seconds = seconds,
+        timer = null,
+        gameListener = null,
+        created = created,
+        updated = updated,
+        fields = fields.toMutableList(),
+        regionalHighlightingUsed = regionalHighlightingUsed,
+        numberHighlightingUsed = numberHighlightingUsed,
+    )
+
+    fun reset() {
+        fields.forEach { it.reset() }
+        history.clear()
+        hintsUsed = 0
+        errorsMade = 0
+        seconds = 0
+        timer?.cancel()
+        timer = null
+        gameListener = null
+        updated = LocalDateTime.now()
+    }
+
+    fun startTimer(delay: Long = 1500) {
+        if (completed) return
+        timer?.cancel()
+        timer = Timer()
+        timer!!.scheduleAtFixedRate(object : TimerTask() {
+            override fun run() {
+                seconds++
+                gameListener?.onTimeChanged(timeString)
+            }
+        }, delay, 1000)
+    }
+    fun stopTimer() {
+        timer?.cancel()
+        timer = null
+    }
+
+    fun move(index: Int, value: Int?, isNote: Boolean = false) = move(Position.create(index, size), value, isNote)
+
+    fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
+        updated = LocalDateTime.now()
+        val field = get(position)
+        if (field.given || field.hint) return false
+        if (isNote) {
+            if (value != null) {
+                if (field.toggleNote(value)) notesMade++
+            } else field.notes.clear()
+            gameListener?.onFieldChanged(position)
+        } else {
+            if (field.value == value) return false
+            history.add(HistoryItem(position, if (value == null) field.value else null))
+            field.value = value
+            removeNumberNotesFromNeighbors(position, value)
+            gameListener?.onFieldChanged(position)
+            gameListener?.onHistoryChange(history.size)
+            if (value != null) {
+                if (field.error) {
+                    errorsMade++
+                    gameListener?.onError()
+                }
+                if (completed) {
+                    stopTimer()
+                    gameListener?.onCompleted(position)
+                }
+            }
+        }
+        return true
+    }
+
+    private fun removeNumberNotesFromNeighbors(position: Position, value: Int?) {
+        get(position).notes.clear()
+        getNeighbors(position).forEach {
+            if (it.notes.remove(value)) gameListener?.onFieldChanged(it.position)
+        }
+    }
+
+    fun setHint(index: Int) = setHint(Position.create(index, size))
+
+    fun setHint(position: Position) {
+        hintsUsed++
+        get(position).setHint()
+        gameListener?.onFieldChanged(position)
+        removeNumberNotesFromNeighbors(position, get(position).value)
+    }
+
+    fun revertLastChange(adapter: SudokuViewAdapter) {
+        if (history.size != 0) {
+            val item = history.removeAt(history.lastIndex)
+            get(item.position.index).value = item.deletedNumber
+            adapter.updateFieldView(item.position.index)
+            gameListener?.onHistoryChange(history.size)
+            gameListener?.onFieldChanged(item.position)
+        }
+    }
 
     operator fun get(position: Position): Field = fields[position.index]
     operator fun set(position: Position, field: Field) {
@@ -145,127 +270,30 @@ class Sudoku(
 
     fun getCompletedNumbers(): List<Pair<Int, Boolean>> {
         val numbers = MutableList(size) { 0 }
-        for (field in fields) {
+        fields.forEach { field ->
             if (field.value != null && field.value!! == field.solution) {
                 numbers[field.value!! - 1]++
             }
         }
         return numbers.mapIndexed { index, i -> Pair(index + 1, i > 8) }
-
     }
 
-    fun copy(
-        id: SudokuId = this.id,
-        size: Int = this.size,
-        history: MutableList<HistoryItem> = this.history,
-        difficulty: Difficulty = this.difficulty,
-        hints: Int = this.hintsUsed,
-        errors: Int = this.errorsMade,
-        seconds: Int = this.seconds,
-        created: LocalDateTime = this.created,
-        updated: LocalDateTime = this.updated,
-        fields: MutableList<Field> = this.fields,
-        regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
-        numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
-    ): Sudoku = Sudoku(
-        id = id,
-        size = size,
-        history = history.toMutableList(),
-        difficulty = difficulty,
-        hintsUsed = hints,
-        errorsMade = errors,
-        seconds = seconds,
-        timer = null,
-        gameListener = null,
-        created = created,
-        updated = updated,
-        fields = fields.toMutableList(),
-        regionalHighlightingUsed = regionalHighlightingUsed,
-        numberHighlightingUsed = numberHighlightingUsed,
-    )
-
-    fun reset() {
-        fields.forEach { it.reset() }
-        history.clear()
-        hintsUsed = 0
-        errorsMade = 0
-        seconds = 0
-        timer?.cancel()
-        timer = null
-        gameListener = null
-        updated = LocalDateTime.now()
+    fun autoHints() {
+        fields.forEach { field ->
+            if (field.value == null) {
+                field.notes.clear()
+                field.notes.addAll(getPossibleValues(field.position))
+                gameListener?.onFieldChanged(field.position)
+            }
+        }
     }
 
-    fun move(index: Int, value: Int?, isNote: Boolean = false) = move(Position.create(index,size), value, isNote)
-    fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
-        updated = LocalDateTime.now()
-        val field = get(position)
-        if (field.given || field.hint) return false
-        if (isNote) {
-            if (value != null) field.toggleNote(value)
-            else field.notes.clear()
-            gameListener?.onFieldChanged(position)
-        } else {
-            if (field.value == value) return false
-            history.add(HistoryItem(position, if (value == null) field.value else null))
-            field.value = value
+    fun clearAllNotes() {
+        fields.forEach { field ->
             field.notes.clear()
-            gameListener?.onFieldChanged(position)
-            gameListener?.onHistoryChange(history.size)
-            if (value != null) {
-                if (field.error) {
-                    errorsMade++
-                    gameListener?.onError()
-                }
-                if (completed) {
-                    stopTimer()
-                    gameListener?.onCompleted(position)
-                }
-            }
-        }
-        return true
-    }
-
-    fun setHint(index: Int) = setHint(Position.create(index, size))
-
-    fun setHint(position: Position) {
-        hintsUsed++
-        get(position).setHint()
-        get(position).notes.clear()
-        gameListener?.onFieldChanged(position)
-    }
-
-    fun revertLastChange(adapter: SudokuViewAdapter) {
-        if (history.size != 0) {
-            val item = history.removeAt(history.lastIndex)
-            get(item.position.index).value = item.deletedNumber
-            adapter.updateFieldView(item.position.index)
-            gameListener?.onHistoryChange(history.size)
-            gameListener?.onFieldChanged(item.position)
+            gameListener?.onFieldChanged(field.position)
         }
     }
-
-    fun startTimer(delay: Long = 1500) {
-        if (completed) return
-        timer?.cancel()
-        timer = Timer()
-        timer!!.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                seconds++
-                gameListener?.onTimeChanged(getTimeString())
-            }
-        }, delay, 1000)
-    }
-
-    fun stopTimer() {
-        timer?.cancel()
-        timer = null
-    }
-
-    fun getTimeString(): String =
-        if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-        else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
-
 }
 
 interface GameListener {

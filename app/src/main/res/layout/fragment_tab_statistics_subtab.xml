@@ -10,17 +10,507 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_marginHorizontal="17dp">
+        android:layout_marginHorizontal="17dp"
+        android:orientation="vertical">
 
-        <LinearLayout
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:text="@string/games" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
             android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="7dp"
+                android:layout_marginBottom="17dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/games_statistic_total_started"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/games_started"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/games_statistic_total_started_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/games_divider1"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_total_started" />
+
+                <TextView
+                    android:id="@+id/games_statistic_total_completed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/games_completed"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/games_divider1" />
+
+                <TextView
+                    android:id="@+id/games_statistic_total_completed_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/games_divider1" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/games_divider2"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_total_completed" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/win_rate"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/games_divider2" />
+
+                <TextView
+                    android:id="@+id/games_statistic_win_rate_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/games_divider2" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:text="@string/errors" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="7dp"
+                android:layout_marginBottom="17dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/games_statistic_wins_without_error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/wins_without_error"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/games_statistic_wins_without_error_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/error_divider1"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_error" />
+
+                <TextView
+                    android:id="@+id/games_statistic_most_errors"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/most_errors"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/error_divider1" />
+
+                <TextView
+                    android:id="@+id/games_statistic_most_errors_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/error_divider1" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/error_divider2"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_errors" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/average_errors"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/error_divider2" />
+
+                <TextView
+                    android:id="@+id/games_statistic_average_errors_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/error_divider2" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:text="@string/hints" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="7dp"
+                android:layout_marginBottom="17dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/wins_without_hint"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/games_statistic_wins_without_hint_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/hint_divider1"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_hint_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/most_hints"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/hint_divider1" />
+
+                <TextView
+                    android:id="@+id/games_statistic_most_hints_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/hint_divider1" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/hint_divider2"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_hints_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/average_hints"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/hint_divider2" />
+
+                <TextView
+                    android:id="@+id/games_statistic_average_hints_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/hint_divider2" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:text="@string/notes" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="7dp"
+                android:layout_marginBottom="17dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/wins_without_notes"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/games_statistic_wins_without_notes_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/notes_divider1"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_notes_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/most_notes"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/notes_divider1" />
+
+                <TextView
+                    android:id="@+id/games_statistic_most_notes_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/notes_divider1" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/note_divider2"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_notes_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/average_notes"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/note_divider2" />
+
+                <TextView
+                    android:id="@+id/games_statistic_average_notes_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/note_divider2" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:text="@string/time" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="7dp"
+                android:layout_marginBottom="17dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/best_time"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/time_statistic_best_time_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/time_divider1"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/time_statistic_best_time_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/average_time"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/time_divider1" />
+
+                <TextView
+                    android:id="@+id/time_statistic_average_time_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/time_divider1" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:text="@string/streak" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
+            android:orientation="vertical">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="7dp"
+                android:layout_marginBottom="17dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/current_streak"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/streak_statistic_current_streak_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/streak_divider1"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/streak_statistic_current_streak_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/best_streak"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/streak_divider1" />
+
+                <TextView
+                    android:id="@+id/streak_statistic_best_streak_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/streak_divider1" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <LinearLayout
+            android:id="@+id/general_statistics_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <com.google.android.material.textview.MaterialTextView
                 style="?android:listSeparatorTextViewStyle"
-                android:text="@string/games" />
+                android:text="@string/difficulty" />
 
             <dev.oneuiproject.oneui.widget.RoundLinearLayout
                 android:layout_width="match_parent"
@@ -36,115 +526,16 @@
                     android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/games_statistic_total_started"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
-                        android:text="@string/games_started"
+                        android:text="@string/most_games_started"
                         android:textAppearance="?android:attr/textAppearanceListItem"
                         app:layout_constraintLeft_toLeftOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
-                        android:id="@+id/games_statistic_total_started_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/games_divider1"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/games_statistic_total_started" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_total_completed"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/games_completed"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/games_divider1" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_total_completed_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/games_divider1" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/games_divider2"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/games_statistic_total_completed" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/win_rate"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/games_divider2" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_win_rate_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/games_divider2" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <com.google.android.material.textview.MaterialTextView
-                style="?android:listSeparatorTextViewStyle"
-                android:text="@string/errors" />
-
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/oui_background_color"
-                android:orientation="vertical">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="7dp"
-                    android:layout_marginBottom="17dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/games_statistic_wins_without_error"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/wins_without_error"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_wins_without_error_value"
+                        android:id="@+id/difficulty_statistic_most_games_started_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
@@ -153,297 +544,29 @@
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/error_divider1"
+                        android:id="@+id/difficulty_divider1"
                         android:layout_width="match_parent"
                         android:layout_height="2dp"
                         android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_error" />
+                        app:layout_constraintTop_toBottomOf="@+id/difficulty_statistic_most_games_started_value" />
 
                     <TextView
-                        android:id="@+id/games_statistic_most_errors"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
-                        android:text="@string/most_errors"
+                        android:text="@string/most_games_won"
                         android:textAppearance="?android:attr/textAppearanceListItem"
                         app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/error_divider1" />
+                        app:layout_constraintTop_toBottomOf="@+id/difficulty_divider1" />
 
                     <TextView
-                        android:id="@+id/games_statistic_most_errors_value"
+                        android:id="@+id/difficulty_statistic_most_games_won_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_margin="17dp"
                         android:textAppearance="?android:attr/textAppearanceListItem"
                         app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/error_divider1" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/error_divider2"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_errors" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/average_errors"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/error_divider2" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_average_errors_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/error_divider2" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <com.google.android.material.textview.MaterialTextView
-                style="?android:listSeparatorTextViewStyle"
-                android:text="@string/hints" />
-
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/oui_background_color"
-                android:orientation="vertical">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="7dp"
-                    android:layout_marginBottom="17dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/games_statistic_wins_without_hint"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/wins_without_hint"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_wins_without_hint_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/hint_divider1"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_hint" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_most_hints"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/most_hints"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/hint_divider1" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_most_hints_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/hint_divider1" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/hint_divider2"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_hints" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/average_hints"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/hint_divider2" />
-
-                    <TextView
-                        android:id="@+id/games_statistic_average_hints_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/hint_divider2" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <com.google.android.material.textview.MaterialTextView
-                style="?android:listSeparatorTextViewStyle"
-                android:text="@string/time" />
-
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/oui_background_color"
-                android:orientation="vertical">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="7dp"
-                    android:layout_marginBottom="17dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/time_statistic_best_time"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/best_time"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/time_statistic_best_time_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/time_divider1"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/time_statistic_best_time" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/average_time"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/time_divider1" />
-
-                    <TextView
-                        android:id="@+id/time_statistic_average_time_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/time_divider1" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <com.google.android.material.textview.MaterialTextView
-                style="?android:listSeparatorTextViewStyle"
-                android:text="@string/streak" />
-
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/oui_background_color"
-                android:orientation="vertical">
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="7dp"
-                    android:layout_marginBottom="17dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/streak_statistic_current_streak"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/current_streak"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <TextView
-                        android:id="@+id/streak_statistic_current_streak_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <androidx.appcompat.widget.SeslMenuDivider
-                        android:id="@+id/streak_divider1"
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:layout_margin="17dp"
-                        app:layout_constraintTop_toBottomOf="@+id/streak_statistic_current_streak" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:text="@string/best_streak"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/streak_divider1" />
-
-                    <TextView
-                        android:id="@+id/streak_statistic_best_streak_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/streak_divider1" />
+                        app:layout_constraintTop_toBottomOf="@id/difficulty_divider1" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 

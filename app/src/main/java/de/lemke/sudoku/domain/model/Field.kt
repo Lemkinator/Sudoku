@@ -11,12 +11,16 @@ data class Field(
 ) {
     val error: Boolean
         get() = value != null && value != solution
+    val correct: Boolean
+        get() = value != null && value == solution
 
-    fun toggleNote(note: Int) {
+    fun toggleNote(note: Int): Boolean {
         if (!notes.remove(note)) {
             notes.add(note)
             notes.sort()
+            return true
         }
+        return false
     }
 
     fun setHint() {

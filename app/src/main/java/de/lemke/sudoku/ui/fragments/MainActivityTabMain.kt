@@ -37,6 +37,7 @@ class MainActivityTabMain : Fragment() {
     private lateinit var mainMenuLayout: LinearLayout
     private lateinit var difficultySeekbar: HapticSeekBar
     private lateinit var continueGameButton: AppCompatButton
+    private lateinit var newGameButton: AppCompatButton
     private var preloadedSudokus: List<Sudoku>? = null
 
     @Inject
@@ -83,7 +84,8 @@ class MainActivityTabMain : Fragment() {
         difficultySeekbar.setSeamless(true)
         difficultySeekbar.max = 4
         continueGameButton = rootView.findViewById(R.id.continue_game_button)
-        rootView.findViewById<AppCompatButton>(R.id.new_game_button).setOnClickListener {
+        newGameButton = rootView.findViewById(R.id.new_game_button)
+        newGameButton.setOnClickListener {
             val mLoadingDialog = ProgressDialog(context)
             mLoadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
             mLoadingDialog.setCancelable(false)
@@ -107,9 +109,13 @@ class MainActivityTabMain : Fragment() {
         }
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
-            difficultySeekbar.progress = if (sliderValue == -1) (difficultySeekbar.max / 2) else sliderValue
+            difficultySeekbar.progress = sliderValue
+            newGameButton.text = getString(R.string.new_game, resources.getStringArray(R.array.difficuilty)[sliderValue])
+            toolbarLayout.setExpandedSubtitle(resources.getStringArray(R.array.difficuilty)[sliderValue])
             difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
+                    newGameButton.text = getString(R.string.new_game, resources.getStringArray(R.array.difficuilty)[progress])
+                    toolbarLayout.setExpandedSubtitle(resources.getStringArray(R.array.difficuilty)[progress])
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }
 
@@ -129,7 +135,7 @@ class MainActivityTabMain : Fragment() {
                 continueGameButton.text = getString(
                     R.string.continue_game,
                     resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal],
-                    sudoku.getTimeString()
+                    sudoku.timeString
                 )
                 continueGameButton.setOnClickListener {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
