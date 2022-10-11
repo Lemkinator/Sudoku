@@ -34,7 +34,7 @@ class MainActivityTabStatistics : Fragment() {
             override fun onPageScrollStateChanged(state: Int) {}
         })
         val tlm = TabLayoutMediator(subTabs, viewPager2) { tab, position ->
-            tab.text = if (position == 0) getString(R.string.general) else resources.getStringArray(R.array.difficuilty)[position - 1]
+            tab.text = if (position == 0) getString(R.string.general) else Difficulty.getLocalString(position - 1, resources)
         }
         tlm.attach()
     }

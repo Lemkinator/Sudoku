@@ -34,6 +34,7 @@ class TabStatisticsSubtab : Fragment() {
     private lateinit var textViewGamesWithoutErrors: TextView
     private lateinit var textViewMostErrors: TextView
     private lateinit var textViewAverageErrors: TextView
+    private lateinit var textViewGamesWithoutAutoHints: TextView
     private lateinit var textViewGamesWithoutHints: TextView
     private lateinit var textViewMostHints: TextView
     private lateinit var textViewAverageHints: TextView
@@ -84,6 +85,7 @@ class TabStatisticsSubtab : Fragment() {
         textViewGamesWithoutErrors = rootView.findViewById(R.id.games_statistic_wins_without_error_value)
         textViewMostErrors = rootView.findViewById(R.id.games_statistic_most_errors_value)
         textViewAverageErrors = rootView.findViewById(R.id.games_statistic_average_errors_value)
+        textViewGamesWithoutAutoHints = rootView.findViewById(R.id.games_statistic_wins_without_auto_hint_value)
         textViewGamesWithoutHints = rootView.findViewById(R.id.games_statistic_wins_without_hint_value)
         textViewMostHints = rootView.findViewById(R.id.games_statistic_most_hints_value)
         textViewAverageHints = rootView.findViewById(R.id.games_statistic_average_hints_value)
@@ -112,35 +114,38 @@ class TabStatisticsSubtab : Fragment() {
         val gamesWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
         val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
         val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
+        val gamesWithoutAutoHints = sudokus.filter { it.completed && !it.autoHintsUsed }.size
         val gamesWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
         val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
         val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted
         val gamesWithoutNotes = sudokus.filter { it.completed && it.notesMade == 0 }.size
         val mostNotes = sudokus.maxByOrNull { it.notesMade }?.notesMade ?: 0
         val averageNotes = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.notesMade } / gamesCompleted
-        val bestTime = sudokus.filter { it.completed }.minByOrNull { it.seconds }?.seconds ?: 0
+        val bestTimeSudoku = sudokus.filter { it.completed }.minByOrNull { it.seconds }
+        val bestTime = bestTimeSudoku?.seconds ?: 0
         val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
         val currentStreak = sudokus.takeWhile { it.completed }.size
         val bestStreak = if (gamesCompleted == 0) 0 else sudokus.windowed(2, 1).count { it[0].completed && it[1].completed } + 1
         val mostGamesStartedDifficultyInt = sudokus.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
         val mostGamesStartedDifficulty =
-            if (mostGamesStartedDifficultyInt == null) "-" else resources.getStringArray(R.array.difficuilty)[mostGamesStartedDifficultyInt]
+            if (mostGamesStartedDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesStartedDifficultyInt, resources)
         val mostGamesWonDifficultyInt = sudokus.filter { it.completed }.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
         val mostGamesWonDifficulty =
-            if (mostGamesWonDifficultyInt == null) "-" else resources.getStringArray(R.array.difficuilty)[mostGamesWonDifficultyInt]
+            if (mostGamesWonDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesWonDifficultyInt, resources)
         textViewGamesStarted.text = gamesStarted.toString()
         textViewGamesCompleted.text = gamesCompleted.toString()
         textViewWinRate.text = "$winRate%"
         textViewGamesWithoutErrors.text = gamesWithoutErrors.toString()
         textViewMostErrors.text = mostErrors.toString()
         textViewAverageErrors.text = averageErrors.toString()
+        textViewGamesWithoutAutoHints.text = gamesWithoutAutoHints.toString()
         textViewGamesWithoutHints.text = gamesWithoutHints.toString()
         textViewMostHints.text = mostHints.toString()
         textViewAverageHints.text = averageHints.toString()
         textViewGamesWithoutNotes.text = gamesWithoutNotes.toString()
         textViewMostNotes.text = mostNotes.toString()
         textViewAverageNotes.text = averageNotes.toString()
-        textViewBestTime.text = secondsToTimeString(bestTime)
+        textViewBestTime.text = secondsToTimeString(bestTime) + if (bestTimeSudoku != null && difficulty == null) " (${bestTimeSudoku.difficulty.getLocalString(resources)})" else ""
         textViewAverageTime.text = secondsToTimeString(averageTime)
         textViewCurrentStreak.text = currentStreak.toString()
         textViewBestStreak.text = bestStreak.toString()

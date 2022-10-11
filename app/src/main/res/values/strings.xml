@@ -63,20 +63,23 @@
     <string name="expert">Expert</string>
 
     <!--Game-->
-    <string name="current_time">Time: %1$s</string>
+    <string name="current_time">%1$s</string>
     <string name="current_errors">Errors: %1$d</string>
     <string name="current_errors_with_limit">Errors: %1$d/%2$d</string>
     <string name="current_hints">Hints: %1$d</string>
+    <string name="current_progress">%1$d\%%</string>
     <string name="completed_title">Completed</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    <string name="completed_message">Size: %1$d×%1$d \nDifficulty: %2$s \nTime: %3$s \nErrors: %4$d \nHints: %5$d \nNotes: %6$d \nRegional highlight used: %7$s \nNumber highlight used: %8$s \nCreated: %9$s \nUpdated: %10$s</string>
+    <string name="completed_message">Size: %1$d×%1$d \nDifficulty: %2$s \nTime: %3$s \nErrors: %4$d \nHints: %5$d \nNotes: %6$d \nRegional highlight used: %7$s \nNumber highlight used: %8$s \nAuto hints used: %9$s \nCreated: %10$s \nUpdated: %11$s</string>
     <string name="shareResult">Share result</string>
     <string name="textShare">Look, I have successfully completed a Sudoku:\n</string>
     <string name="delete">Delete</string>
     <string name="note">Note</string>
     <string name="hint">Hint</string>
     <string name="auto_hints">Auto hints</string>
+    <string name="use_auto_hints">Use auto hints?</string>
+    <string name="use_auto_hints_message">The activation of auto hints is noted in the statisics.</string>
     <string name="restart">Restart</string>
     <string name="gameover">Gameover</string>
 
@@ -92,6 +95,7 @@
     <string name="best_time">Best time</string>
     <string name="average_time">Average Time</string>
     <string name="wins_without_hint">Wins without hint</string>
+    <string name="wins_without_auto_hint">Wins without auto hint</string>
     <string name="most_errors">Most errors</string>
     <string name="average_errors">Average Errors</string>
     <string name="most_hints">Most hints</string>

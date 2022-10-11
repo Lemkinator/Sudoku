@@ -110,12 +110,12 @@ class MainActivityTabMain : Fragment() {
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
             difficultySeekbar.progress = sliderValue
-            newGameButton.text = getString(R.string.new_game, resources.getStringArray(R.array.difficuilty)[sliderValue])
-            toolbarLayout.setExpandedSubtitle(resources.getStringArray(R.array.difficuilty)[sliderValue])
+            newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(sliderValue, resources))
+            toolbarLayout.setExpandedSubtitle(Difficulty.getLocalString(sliderValue, resources))
             difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                    newGameButton.text = getString(R.string.new_game, resources.getStringArray(R.array.difficuilty)[progress])
-                    toolbarLayout.setExpandedSubtitle(resources.getStringArray(R.array.difficuilty)[progress])
+                    newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(progress, resources))
+                    toolbarLayout.setExpandedSubtitle(Difficulty.getLocalString(progress, resources))
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }
 
@@ -134,7 +134,7 @@ class MainActivityTabMain : Fragment() {
                 continueGameButton.visibility = View.VISIBLE
                 continueGameButton.text = getString(
                     R.string.continue_game,
-                    resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal],
+                    sudoku.difficulty.getLocalString(resources),
                     sudoku.timeString
                 )
                 continueGameButton.setOnClickListener {

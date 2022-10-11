@@ -1,11 +1,16 @@
 package de.lemke.sudoku.domain.model
 
+import android.content.res.Resources
+import de.lemke.sudoku.R
+
 enum class Difficulty(val value: Int) {
     VERY_EASY(0),
     EASY(1),
     MEDIUM(2),
     HARD(3),
     EXPERT(4);
+
+    fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficuilty)[this.ordinal]
 
     private fun givenNumbers(size: Int): Int = when (size) {
         4 -> when (this) {
@@ -40,6 +45,8 @@ enum class Difficulty(val value: Int) {
             4 -> EXPERT
             else -> VERY_EASY
         }
+
+        fun getLocalString(ordinal: Int, resources: Resources): String = fromInt(ordinal).getLocalString(resources)
 
         val max: Int
             get() = values().size - 1

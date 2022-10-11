@@ -95,7 +95,14 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         selectButtons.add(findViewById(R.id.delete_button))
         selectButtons.add(findViewById(R.id.hint_button))
 
-        findViewById<AppCompatButton>(R.id.auto_hints_button).setOnClickListener { sudoku.autoHints() }
+        findViewById<AppCompatButton>(R.id.auto_hints_button).setOnClickListener {
+            AlertDialog.Builder(this@SudokuActivity)
+                .setTitle(getString(R.string.use_auto_hints))
+                .setMessage(getString(R.string.use_auto_hints_message))
+                .setNegativeButton(getString(R.string.sesl_cancel), null)
+                .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoHints() }
+                .show()
+        }
         noteButton = findViewById(R.id.note_button)
         noteButton.setOnClickListener { toggleOrSetNoteButton() }
         drawerLayout = findViewById(R.id.drawer_layout_sudoku)
@@ -165,7 +172,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         val nullableSudoku = getSudoku(id)
         if (nullableSudoku == null) finish()
         else sudoku = nullableSudoku
-        drawerLayout.setTitle(getString(R.string.app_name) + " (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")")
+        drawerLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
         setSubtitle()
         for (index in selectButtons.indices) {
             selectButtons[index].setOnClickListener {
@@ -211,13 +218,14 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         val completedMessage = getString(
                             R.string.completed_message,
                             sudoku.size,
-                            resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal],
+                            sudoku.difficulty.getLocalString(resources),
                             sudoku.timeString,
                             sudoku.errorsMade,
                             sudoku.hintsUsed,
                             sudoku.notesMade,
                             getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
                             getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
+                            getString(if (sudoku.autoHintsUsed) R.string.yes else R.string.no),
                             sudoku.created.format(
                                 DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
                             ),
@@ -298,19 +306,18 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
+    @SuppressLint("StringFormatInvalid")
     private fun setSubtitle() {
         lifecycleScope.launch {
             val errorLimit = getUserSettings().errorLimit
             val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " +
+                    getString(R.string.current_progress, sudoku.progress) + " | " +
                     if (errorLimit == 0) {
-                        getString(
-                            R.string.current_errors,
-                            sudoku.errorsMade
-                        )
+                        getString(R.string.current_errors, sudoku.errorsMade)
                     } else {
                         getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
-                    } +
-                    " | " + getString(R.string.current_hints, sudoku.hintsUsed)
+                    } + " | " +
+                    getString(R.string.current_hints, sudoku.hintsUsed)
             drawerLayout.setExpandedSubtitle(subtitle)
             drawerLayout.setCollapsedSubtitle(subtitle)
         }
@@ -430,31 +437,29 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun checkAnyNumberCompleted(position: Position?) {
-        val completedNumbers = sudoku.getCompletedNumbers()
-        completedNumbers.forEach { pair ->
-            selectButtons[pair.first - 1].isEnabled = !pair.second
-            if (pair.second) {
-                selectButtons[pair.first - 1].setTextColor(getColor(R.color.number_button_disabled_text_color))
-                if (position != null && sudoku[position].value == pair.first) {
-                    lifecycleScope.launch {
+        lifecycleScope.launch {
+            val completedNumbers = sudoku.getCompletedNumbers()
+            completedNumbers.forEach { pair ->
+                if (pair.second) {
+                    selectButtons[pair.first - 1].isEnabled = false
+                    selectButtons[pair.first - 1].setTextColor(getColor(R.color.number_button_disabled_text_color))
+                    if (position != null && sudoku[position].value == pair.first) {
+
                         if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
                             pair.first,
                             completedNumbers
                         )
                         else {
                             selected = null
-                            gameAdapter.selectFieldView(null, getUserSettings().highlightRegional, getUserSettings().highlightNumber)
-                            selectButton(null, getUserSettings().highlightNumber)
+                            val userSettings = getUserSettings()
+                            gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
+                            selectButton(null, userSettings.highlightNumber)
                         }
-                        sudoku.fields.forEach { field ->
-                            field.notes.remove(pair.first)
-                            gameAdapter.updateFieldView(position.index)
-                        }
-                        saveSudoku(sudoku)
                     }
+                } else {
+                    selectButtons[pair.first - 1].isEnabled = true
+                    selectButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.R.color.oui_primary_text_color))
                 }
-            } else {
-                selectButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.R.color.oui_primary_text_color))
             }
         }
     }

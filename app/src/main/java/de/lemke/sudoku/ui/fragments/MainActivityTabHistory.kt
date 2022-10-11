@@ -194,13 +194,13 @@ class MainActivityTabHistory : Fragment() {
         }
 
 
-        @SuppressLint("SetTextI18n")
+        @SuppressLint("SetTextI18n", "StringFormatInvalid")
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val sudoku = sudokuHistory[position].first
             if (holder.isItem && sudoku != null) {
                 holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
-                holder.textView.text = "Sudoku (" + resources.getStringArray(R.array.difficuilty)[sudoku.difficulty.ordinal] + ")"
+                holder.textView.text = "Sudoku (" + sudoku.difficulty.getLocalString(resources) + ")"
                 if (sudoku.completed) holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         requireContext(),
@@ -216,6 +216,11 @@ class MainActivityTabHistory : Fragment() {
                         )
                     )
                     holder.textViewSmall.text = getString(R.string.current_time, sudoku.timeString) + " | " +
+                            if (!sudoku.completed) {
+                                getString(R.string.current_progress, sudoku.progress) + " | "
+                            } else {
+                                ""
+                            } +
                             if (errorLimit == 0) {
                                 getString(
                                     R.string.current_errors,
@@ -223,8 +228,9 @@ class MainActivityTabHistory : Fragment() {
                                 )
                             } else {
                                 getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
-                            } +
-                            " | " + getString(R.string.current_hints, sudoku.hintsUsed)
+                            } + " | " +
+                            getString(R.string.current_hints, sudoku.hintsUsed)
+
                 }
                 holder.parentView.setOnClickListener {
                     if (selecting) toggleItemSelected(position)

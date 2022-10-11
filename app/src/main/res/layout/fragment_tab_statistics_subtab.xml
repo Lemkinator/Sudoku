@@ -216,13 +216,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="17dp"
-                    android:text="@string/wins_without_hint"
+                    android:text="@string/wins_without_auto_hint"
                     android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/games_statistic_wins_without_hint_value"
+                    android:id="@+id/games_statistic_wins_without_auto_hint_value"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="17dp"
@@ -235,6 +235,31 @@
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
                     android:layout_margin="17dp"
+                    app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_auto_hint_value" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:text="@string/wins_without_hint"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/hint_divider1" />
+
+                <TextView
+                    android:id="@+id/games_statistic_wins_without_hint_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="17dp"
+                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    app:layout_constraintRight_toRightOf="parent"
+                    app:layout_constraintTop_toTopOf="@id/hint_divider1" />
+
+                <androidx.appcompat.widget.SeslMenuDivider
+                    android:id="@+id/hint_divider2"
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_margin="17dp"
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_hint_value" />
 
                 <TextView
@@ -244,7 +269,7 @@
                     android:text="@string/most_hints"
                     android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/hint_divider1" />
+                    app:layout_constraintTop_toBottomOf="@+id/hint_divider2" />
 
                 <TextView
                     android:id="@+id/games_statistic_most_hints_value"
@@ -253,10 +278,10 @@
                     android:layout_margin="17dp"
                     android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintRight_toRightOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/hint_divider1" />
+                    app:layout_constraintTop_toBottomOf="@id/hint_divider2" />
 
                 <androidx.appcompat.widget.SeslMenuDivider
-                    android:id="@+id/hint_divider2"
+                    android:id="@+id/hint_divider3"
                     android:layout_width="match_parent"
                     android:layout_height="2dp"
                     android:layout_margin="17dp"
@@ -269,7 +294,7 @@
                     android:text="@string/average_hints"
                     android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/hint_divider2" />
+                    app:layout_constraintTop_toBottomOf="@+id/hint_divider3" />
 
                 <TextView
                     android:id="@+id/games_statistic_average_hints_value"
@@ -278,7 +303,7 @@
                     android:layout_margin="17dp"
                     android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintRight_toRightOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/hint_divider2" />
+                    app:layout_constraintTop_toBottomOf="@id/hint_divider3" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

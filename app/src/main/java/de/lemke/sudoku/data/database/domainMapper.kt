@@ -20,6 +20,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList(),
         regionalHighlightingUsed = sudokuWithFields.sudoku.neighborHighlightingUsed,
         numberHighlightingUsed = sudokuWithFields.sudoku.numberHighlightingUsed,
+        autoHintsUsed = sudokuWithFields.sudoku.autoHintsUsed,
     )
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -35,6 +36,7 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         updated = sudoku.updated,
         neighborHighlightingUsed = sudoku.regionalHighlightingUsed,
         numberHighlightingUsed = sudoku.numberHighlightingUsed,
+        autoHintsUsed = sudoku.autoHintsUsed,
     )
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? =
