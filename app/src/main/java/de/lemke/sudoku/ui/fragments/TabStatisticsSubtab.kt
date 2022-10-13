@@ -114,7 +114,7 @@ class TabStatisticsSubtab : Fragment() {
         val gamesWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
         val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
         val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
-        val gamesWithoutAutoHints = sudokus.filter { it.completed && !it.autoHintsUsed }.size
+        val gamesWithoutAutoHints = sudokus.filter { it.completed && !it.autoNotesUsed }.size
         val gamesWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
         val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
         val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted

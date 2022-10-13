@@ -95,12 +95,12 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         selectButtons.add(findViewById(R.id.delete_button))
         selectButtons.add(findViewById(R.id.hint_button))
 
-        findViewById<AppCompatButton>(R.id.auto_hints_button).setOnClickListener {
+        findViewById<AppCompatButton>(R.id.auto_notes_button).setOnClickListener {
             AlertDialog.Builder(this@SudokuActivity)
-                .setTitle(getString(R.string.use_auto_hints))
-                .setMessage(getString(R.string.use_auto_hints_message))
+                .setTitle(getString(R.string.use_auto_notes))
+                .setMessage(getString(R.string.use_auto_notes_message))
                 .setNegativeButton(getString(R.string.sesl_cancel), null)
-                .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoHints() }
+                .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoNotes() }
                 .show()
         }
         noteButton = findViewById(R.id.note_button)
@@ -225,7 +225,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                             sudoku.notesMade,
                             getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
                             getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
-                            getString(if (sudoku.autoHintsUsed) R.string.yes else R.string.no),
+                            getString(if (sudoku.autoNotesUsed) R.string.yes else R.string.no),
                             sudoku.created.format(
                                 DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
                             ),

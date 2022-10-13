@@ -31,7 +31,7 @@ import javax.inject.Inject
 import kotlin.math.abs
 
 @AndroidEntryPoint
-class MainActivityTabMain : Fragment() {
+class MainActivityTabSudoku : Fragment() {
     private lateinit var rootView: View
     private lateinit var toolbarLayout: ToolbarLayout
     private lateinit var mainMenuLayout: LinearLayout
@@ -59,7 +59,7 @@ class MainActivityTabMain : Fragment() {
     lateinit var getRecentSudoku: GetRecentSudokuUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        rootView = inflater.inflate(R.layout.fragment_tab_main, container, false)
+        rootView = inflater.inflate(R.layout.fragment_tab_sudoku, container, false)
         return rootView
     }
 
@@ -68,7 +68,7 @@ class MainActivityTabMain : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
-        mainMenuLayout = rootView.findViewById(R.id.main_menu_layout)
+        mainMenuLayout = rootView.findViewById(R.id.new_sudoku_layout)
         toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
@@ -92,12 +92,12 @@ class MainActivityTabMain : Fragment() {
             mLoadingDialog.show()
             lifecycleScope.launch {
                 if (preloadedSudokus != null) {
-                    Log.d("MainActivityTabMain", "Using preloaded sudokus")
+                    Log.d("MainActivityTabSudoku", "Using preloaded sudokus")
                     val sudoku = preloadedSudokus!![difficultySeekbar.progress]
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 } else {
-                    Log.d("MainActivityTabMain", "generating new sudoku")
+                    Log.d("MainActivityTabSudoku", "generating new sudoku")
                     val sudoku = generateSudoku(9, Difficulty.fromInt(difficultySeekbar.progress))
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
@@ -110,11 +110,9 @@ class MainActivityTabMain : Fragment() {
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
             difficultySeekbar.progress = sliderValue
-            newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(sliderValue, resources))
             toolbarLayout.setExpandedSubtitle(Difficulty.getLocalString(sliderValue, resources))
             difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                    newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(progress, resources))
                     toolbarLayout.setExpandedSubtitle(Difficulty.getLocalString(progress, resources))
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }

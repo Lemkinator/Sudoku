@@ -17,7 +17,7 @@
     <string name="history">History</string>
     <string name="statistics">Statistics</string>
 
-    <string name="new_game">New Game (%1$s)</string>
+    <string name="new_game">New Game</string>
     <string name="continue_game">Continue (%1$s, %2$s)</string>
 
     <!--Menu-->
@@ -77,9 +77,9 @@
     <string name="delete">Delete</string>
     <string name="note">Note</string>
     <string name="hint">Hint</string>
-    <string name="auto_hints">Auto hints</string>
-    <string name="use_auto_hints">Use auto hints?</string>
-    <string name="use_auto_hints_message">The activation of auto hints is noted in the statisics.</string>
+    <string name="auto_notes">Auto notes</string>
+    <string name="use_auto_notes">Use auto notes?</string>
+    <string name="use_auto_notes_message">The activation of auto notes will be noted in the statistics.</string>
     <string name="restart">Restart</string>
     <string name="gameover">Gameover</string>
 
@@ -130,5 +130,7 @@
 
     <!--Others-->
     <string name="noGamePlayed">No game played yet</string>
+    <string name="daily_sudoku">Daily Sudoku</string>
+    <string name="levels">Levels</string>
 
 </resources>

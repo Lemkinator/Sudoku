@@ -44,7 +44,7 @@ class UserSettingsRepository @Inject constructor(
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
-        errorLimit = prefs[KEY_ERROR_LIMIT] ?: 0,
+        errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
     )
 
 

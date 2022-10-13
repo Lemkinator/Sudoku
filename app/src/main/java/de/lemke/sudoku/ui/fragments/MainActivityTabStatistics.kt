@@ -27,7 +27,7 @@ class MainActivityTabStatistics : Fragment() {
         subTabs.seslSetSubTabStyle()
         subTabs.tabMode = TabLayout.SESL_MODE_WEIGHT_AUTO
         val viewPager2: ViewPager2 = rootView.findViewById(R.id.statistics_viewpager)
-        viewPager2.adapter = ViewPager2AdapterTabListSubtabs(this)
+        viewPager2.adapter = ViewPager2AdapterTabStatisticsSubtabs(this)
         viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
             override fun onPageSelected(position: Int) {}
@@ -40,7 +40,7 @@ class MainActivityTabStatistics : Fragment() {
     }
 }
 
-class ViewPager2AdapterTabListSubtabs(fragment: Fragment) : FragmentStateAdapter(fragment) {
+class ViewPager2AdapterTabStatisticsSubtabs(fragment: Fragment) : FragmentStateAdapter(fragment) {
     override fun createFragment(position: Int): Fragment {
         return TabStatisticsSubtab.newInstance(position - 1)
     }

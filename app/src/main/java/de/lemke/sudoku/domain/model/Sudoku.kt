@@ -28,7 +28,7 @@ class Sudoku(
     val fields: MutableList<Field>,
     var regionalHighlightingUsed: Boolean,
     var numberHighlightingUsed: Boolean,
-    var autoHintsUsed: Boolean,
+    var autoNotesUsed: Boolean,
 ) {
     companion object {
         fun create(
@@ -47,7 +47,7 @@ class Sudoku(
             fields: MutableList<Field>,
             regionalHighlightingUsed: Boolean = false,
             numberHighlightingUsed: Boolean = false,
-            autoHintsUsed: Boolean = false,
+            autoNotessUsed: Boolean = false,
         ): Sudoku = Sudoku(
             id = sudokuId,
             size = size,
@@ -64,7 +64,7 @@ class Sudoku(
             fields = fields,
             regionalHighlightingUsed = regionalHighlightingUsed,
             numberHighlightingUsed = numberHighlightingUsed,
-            autoHintsUsed = autoHintsUsed,
+            autoNotesUsed = autoNotessUsed,
         )
     }
 
@@ -118,7 +118,7 @@ class Sudoku(
         fields: MutableList<Field> = this.fields,
         regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
         numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
-        autoHintsUsed: Boolean = this.autoHintsUsed,
+        autoNotesUsed: Boolean = this.autoNotesUsed,
     ): Sudoku = Sudoku(
         id = id,
         size = size,
@@ -135,7 +135,7 @@ class Sudoku(
         fields = fields.toMutableList(),
         regionalHighlightingUsed = regionalHighlightingUsed,
         numberHighlightingUsed = numberHighlightingUsed,
-        autoHintsUsed = autoHintsUsed,
+        autoNotesUsed = autoNotesUsed,
     )
 
     fun reset() {
@@ -147,7 +147,7 @@ class Sudoku(
         notesMade = 0
         regionalHighlightingUsed = false
         numberHighlightingUsed = false
-        autoHintsUsed = false
+        autoNotesUsed = false
         timer?.cancel()
         timer = null
         gameListener = null
@@ -294,8 +294,8 @@ class Sudoku(
         return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size) }
     }
 
-    fun autoHints() {
-        autoHintsUsed = true
+    fun autoNotes() {
+        autoNotesUsed = true
         fields.forEach { field ->
             if (field.value == null) {
                 field.notes.clear()
