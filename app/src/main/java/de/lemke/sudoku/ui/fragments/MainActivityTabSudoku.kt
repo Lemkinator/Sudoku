@@ -68,6 +68,7 @@ class MainActivityTabSudoku : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
+        toolbarLayout.setExpandedSubtitle(getString(R.string.new_game))
         mainMenuLayout = rootView.findViewById(R.id.new_sudoku_layout)
         toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
@@ -110,10 +111,8 @@ class MainActivityTabSudoku : Fragment() {
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
             difficultySeekbar.progress = sliderValue
-            toolbarLayout.setExpandedSubtitle(Difficulty.getLocalString(sliderValue, resources))
             difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                    toolbarLayout.setExpandedSubtitle(Difficulty.getLocalString(progress, resources))
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }
 

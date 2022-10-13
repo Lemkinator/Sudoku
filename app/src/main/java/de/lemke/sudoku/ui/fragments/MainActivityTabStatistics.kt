@@ -12,6 +12,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
+import dev.oneuiproject.oneui.layout.ToolbarLayout
 
 @AndroidEntryPoint
 class MainActivityTabStatistics : Fragment() {
@@ -23,6 +24,7 @@ class MainActivityTabStatistics : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        requireActivity().findViewById<ToolbarLayout>(R.id.main_toolbarlayout).setExpandedSubtitle(getString(R.string.statistics))
         val subTabs: TabLayout = rootView.findViewById(R.id.fragment_statistics_sub_tabs)
         subTabs.seslSetSubTabStyle()
         subTabs.tabMode = TabLayout.SESL_MODE_WEIGHT_AUTO

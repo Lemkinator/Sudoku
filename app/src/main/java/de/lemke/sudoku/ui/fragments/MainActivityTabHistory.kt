@@ -74,6 +74,7 @@ class MainActivityTabHistory : Fragment() {
         listView = rootView.findViewById(R.id.sudokuList)
         noEntryView = rootView.findViewById(R.id.noEntryView)
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
+        toolbarLayout.setExpandedSubtitle(getString(R.string.history))
         mainTabs = activity.findViewById(R.id.main_tabs)
         lifecycleScope.launch { initList() }
         onBackPressedCallback = object : OnBackPressedCallback(false) {
