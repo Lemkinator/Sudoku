@@ -23,6 +23,7 @@ class UserSettingsRepository @Inject constructor(
             val newSettings = f(settingsFromPreferences(it))
             it[KEY_LAST_VERSION_CODE] = newSettings.lastVersionCode
             it[KEY_LAST_VERSION_NAME] = newSettings.lastVersionName
+            it[KEY_TOS_ACCEPTED] = newSettings.tosAccepted
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
             it[KEY_CONFIRM_EXIT] = newSettings.confirmExit
@@ -30,6 +31,9 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
             it[KEY_ERROR_LIMIT] = newSettings.errorLimit
+            it[KEY_STATISTICS_FILTER_DIFFICULTY] = newSettings.statisticsFilterDifficulty
+            it[KEY_STATISTICS_FILTER_INCLUDE_DAILY] = newSettings.statisticsFilterIncludeDaily
+            it[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] = newSettings.statisticsFilterIncludeLevels
         }
         return settingsFromPreferences(prefs)
     }
@@ -38,6 +42,7 @@ class UserSettingsRepository @Inject constructor(
     private fun settingsFromPreferences(prefs: Preferences) = UserSettings(
         lastVersionCode = prefs[KEY_LAST_VERSION_CODE] ?: -1,
         lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
+        tosAccepted = prefs[KEY_TOS_ACCEPTED] ?: false,
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
         confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
@@ -45,12 +50,16 @@ class UserSettingsRepository @Inject constructor(
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
+        statisticsFilterDifficulty = prefs[KEY_STATISTICS_FILTER_DIFFICULTY] ?: -1,
+        statisticsFilterIncludeDaily = prefs[KEY_STATISTICS_FILTER_INCLUDE_DAILY] ?: false,
+        statisticsFilterIncludeLevels = prefs[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] ?: false,
     )
 
 
     private companion object {
         private val KEY_LAST_VERSION_CODE = intPreferencesKey("lastVersionCode")
         private val KEY_LAST_VERSION_NAME = stringPreferencesKey("lastVersionName")
+        private val KEY_TOS_ACCEPTED = booleanPreferencesKey("tosAccepted")
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
         private val KEY_CONFIRM_EXIT = booleanPreferencesKey("confirmExit")
@@ -58,6 +67,9 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_REGIONAL_HIGHLIGHT = booleanPreferencesKey("regionalHighlight")
         private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
         private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
+        private val KEY_STATISTICS_FILTER_DIFFICULTY = intPreferencesKey("statisticsFilterDifficulty")
+        private val KEY_STATISTICS_FILTER_INCLUDE_DAILY = booleanPreferencesKey("statisticsFilterIncludeDaily")
+        private val KEY_STATISTICS_FILTER_INCLUDE_LEVELS = booleanPreferencesKey("statisticsFilterIncludeLevels")
     }
 }
 
@@ -67,6 +79,8 @@ data class UserSettings(
     val lastVersionCode: Int,
     /** Last App-Version-Name */
     val lastVersionName: String,
+    /** terms of service accepted by user */
+    val tosAccepted: Boolean,
     /** devMode enabled */
     val devModeEnabled: Boolean,
     /** value of difficulty slider*/
@@ -81,4 +95,11 @@ data class UserSettings(
     val highlightNumber: Boolean,
     /** error limit*/
     val errorLimit: Int,
-)
+    /** Statistics filter Difficulty*/
+    val statisticsFilterDifficulty: Int,
+    /** Statistics filter include daily */
+    val statisticsFilterIncludeDaily: Boolean,
+    /** Statistics filter include levels*/
+    val statisticsFilterIncludeLevels: Boolean,
+
+    )

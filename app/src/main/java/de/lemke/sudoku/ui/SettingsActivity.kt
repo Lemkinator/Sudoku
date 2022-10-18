@@ -37,8 +37,8 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
         val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout_settings)
         drawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, R.drawable.ic_baseline_oui_back_24))
-        drawerLayout.setNavigationButtonOnClickListener { onBackPressed() }
+        drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
+        drawerLayout.setNavigationButtonOnClickListener { finish() }
         if (savedInstanceState == null) supportFragmentManager.beginTransaction().replace(R.id.settings, SettingsFragment()).commit()
     }
 

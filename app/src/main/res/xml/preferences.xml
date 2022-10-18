@@ -19,7 +19,7 @@
             android:key="confirmExit"
             android:summary="@string/press_again_to_exit"
             android:title="@string/confirm_exit"
-            app:icon="@drawable/ic_baseline_oui_power_24" />
+            app:icon="@drawable/ic_oui_power" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/game">
@@ -52,14 +52,14 @@
         <PreferenceScreen
             android:key="delete_app_data"
             android:title="@string/delete_appdata_and_exit"
-            app:icon="@drawable/ic_baseline_oui_restart_24" />
+            app:icon="@drawable/ic_oui_restart" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/privacy">
         <PreferenceScreen
             android:key="privacy"
             android:title="@string/privacy_information"
-            app:icon="@drawable/ic_baseline_oui_security_24" />
+            app:icon="@drawable/ic_oui_security" />
 
     </PreferenceCategory>
 
@@ -67,7 +67,7 @@
         <PreferenceScreen
             android:key="about_app"
             android:title="@string/about_app"
-            app:icon="@drawable/ic_baseline_oui_info_outline_24">
+            app:icon="@drawable/ic_oui_info_outline">
             <intent
                 android:targetClass="de.lemke.sudoku.ui.AboutActivity"
                 android:targetPackage="de.lemke.sudoku" />

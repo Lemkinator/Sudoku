@@ -1,53 +1,152 @@
 package de.lemke.sudoku.ui.fragments
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.fragment.app.Fragment
-import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.GetAllSudokusWithDifficultyUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import dev.oneuiproject.oneui.layout.ToolbarLayout
+import kotlinx.coroutines.launch
+import java.util.*
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivityTabStatistics : Fragment() {
-    private lateinit var rootView: View
+    private lateinit var binding: FragmentTabStatisticsBinding
+    private lateinit var sudokus: List<Sudoku>
+
+    @Inject
+    lateinit var getAllSudokusWithDifficulty: GetAllSudokusWithDifficultyUseCase
+
+    @Inject
+    lateinit var getAllDailySudokusWithDifficulty: GetAllSudokusWithDifficultyUseCase
+
+    @Inject
+    lateinit var getAllSudokuLevelsWithDifficulty: GetAllSudokusWithDifficultyUseCase
+
+    @Inject
+    lateinit var getAllSudokus: GetAllSudokusUseCase
+
+    @Inject
+    lateinit var getAllDailySudokus: GetAllSudokusUseCase
+
+    @Inject
+    lateinit var getAllSudokuLevels: GetAllSudokusUseCase
+
+    @Inject
+    lateinit var getUserSettings: GetUserSettingsUseCase
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        rootView = inflater.inflate(R.layout.fragment_tab_statistics, container, false)
-        return rootView
+        binding = FragmentTabStatisticsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        requireActivity().findViewById<ToolbarLayout>(R.id.main_toolbarlayout).setExpandedSubtitle(getString(R.string.statistics))
-        val subTabs: TabLayout = rootView.findViewById(R.id.fragment_statistics_sub_tabs)
-        subTabs.seslSetSubTabStyle()
-        subTabs.tabMode = TabLayout.SESL_MODE_WEIGHT_AUTO
-        val viewPager2: ViewPager2 = rootView.findViewById(R.id.statistics_viewpager)
-        viewPager2.adapter = ViewPager2AdapterTabStatisticsSubtabs(this)
-        viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
-            override fun onPageSelected(position: Int) {}
-            override fun onPageScrollStateChanged(state: Int) {}
-        })
-        val tlm = TabLayoutMediator(subTabs, viewPager2) { tab, position ->
-            tab.text = if (position == 0) getString(R.string.general) else Difficulty.getLocalString(position - 1, resources)
+        lifecycleScope.launch { updateStatistics() }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.main_menu_statistics, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.main_menu_statistics_filter -> {
+                StatisticsFilterDialog { lifecycleScope.launch { updateStatistics() } }.show(childFragmentManager, "StatisticsFilterDialog")
+                return true
+            }
         }
-        tlm.attach()
-    }
-}
-
-class ViewPager2AdapterTabStatisticsSubtabs(fragment: Fragment) : FragmentStateAdapter(fragment) {
-    override fun createFragment(position: Int): Fragment {
-        return TabStatisticsSubtab.newInstance(position - 1)
+        return super.onOptionsItemSelected(item)
     }
 
-    override fun getItemCount(): Int {
-        return Difficulty.values().size + 1
+    @SuppressLint("SetTextI18n")
+    private suspend fun updateStatistics() {
+        val userSettings = getUserSettings()
+        val difficulty =
+            if (userSettings.statisticsFilterDifficulty == -1) null else Difficulty.fromInt(userSettings.statisticsFilterDifficulty)
+        binding.generalStatisticsLayout.visibility = if (difficulty != null) View.GONE else View.VISIBLE
+        sudokus = if (difficulty != null) getAllSudokusWithDifficulty(difficulty) else getAllSudokus()
+        /*
+        TODO sense?
+        if (userSettings.statisticsFilterIncludeDaily) sudokus = if (difficulty != null) {
+            sudokus + getAllDailySudokusWithDifficulty(difficulty)
+        } else {
+            sudokus + getAllSudokus()
+        }
+        if (userSettings.statisticsFilterIncludeLevels) sudokus = if (difficulty != null) {
+            sudokus + getAllSudokuLevelsWithDifficulty(difficulty)
+        } else {
+            sudokus + getAllSudokuLevels()
+        }*/
+
+        val gamesStarted = sudokus.size
+        val gamesCompleted = sudokus.filter { it.completed }.size
+        val winRate = if (gamesStarted == 0) 0 else (gamesCompleted.toFloat() / gamesStarted.toFloat() * 100).toInt()
+        val gamesWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
+        val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
+        val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
+        val gamesWithoutAutoHints = sudokus.filter { it.completed && !it.autoNotesUsed }.size
+        val gamesWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
+        val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
+        val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted
+        val gamesWithoutNotes = sudokus.filter { it.completed && it.notesMade == 0 }.size
+        val mostNotes = sudokus.maxByOrNull { it.notesMade }?.notesMade ?: 0
+        val averageNotes = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.notesMade } / gamesCompleted
+        val bestTimeSudoku = sudokus.filter { it.completed }.minByOrNull { it.seconds }
+        val bestTime = bestTimeSudoku?.seconds ?: 0
+        val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
+        val currentStreak = sudokus.takeWhile { it.completed }.size
+        val bestStreak = if (gamesCompleted == 0) 0 else sudokus.windowed(2, 1).count { it[0].completed && it[1].completed } + 1
+        val mostGamesStartedDifficultyInt = sudokus.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
+        val mostGamesStartedDifficulty =
+            if (mostGamesStartedDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesStartedDifficultyInt, resources)
+        val mostGamesWonDifficultyInt =
+            sudokus.filter { it.completed }.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
+        val mostGamesWonDifficulty =
+            if (mostGamesWonDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesWonDifficultyInt, resources)
+        binding.gamesStatisticTotalStartedValue.text = gamesStarted.toString()
+        binding.gamesStatisticTotalCompletedValue.text = gamesCompleted.toString()
+        binding.gamesStatisticWinRateValue.text = "$winRate%"
+        binding.gamesStatisticWinsWithoutErrorValue.text = gamesWithoutErrors.toString()
+        binding.gamesStatisticMostErrorsValue.text = mostErrors.toString()
+        binding.gamesStatisticAverageErrorsValue.text = averageErrors.toString()
+        binding.gamesStatisticWinsWithoutAutoHintValue.text = gamesWithoutAutoHints.toString()
+        binding.gamesStatisticWinsWithoutHintValue.text = gamesWithoutHints.toString()
+        binding.gamesStatisticMostHintsValue.text = mostHints.toString()
+        binding.gamesStatisticAverageHintsValue.text = averageHints.toString()
+        binding.gamesStatisticWinsWithoutNotesValue.text = gamesWithoutNotes.toString()
+        binding.gamesStatisticMostNotesValue.text = mostNotes.toString()
+        binding.gamesStatisticAverageNotesValue.text = averageNotes.toString()
+        binding.timeStatisticBestTimeValue.text =
+            secondsToTimeString(bestTime) + if (bestTimeSudoku != null && difficulty == null) " (${
+                bestTimeSudoku.difficulty.getLocalString(resources)
+            })" else ""
+        binding.timeStatisticAverageTimeValue.text = secondsToTimeString(averageTime)
+        binding.streakStatisticCurrentStreakValue.text = currentStreak.toString()
+        binding.streakStatisticBestStreakValue.text = bestStreak.toString()
+        binding.difficultyStatisticMostGamesStartedValue.text = mostGamesStartedDifficulty
+        binding.difficultyStatisticMostGamesWonValue.text = mostGamesWonDifficulty
     }
+
+    private fun secondsToTimeString(seconds: Int): String =
+        if (seconds == 0) "--:--"
+        else if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+        else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+
 }

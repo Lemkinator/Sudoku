@@ -9,7 +9,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -17,10 +16,10 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.ActivitySudokuBinding
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -29,8 +28,8 @@ import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -43,16 +42,12 @@ import kotlin.math.abs
 
 
 @AndroidEntryPoint
-class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
+class SudokuActivity : AppCompatActivity() {
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     lateinit var toolbarMenu: Menu
-    private lateinit var gameRecycler: RecyclerView
-    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
-    private lateinit var resumeButtonLayout: LinearLayout
-    private lateinit var gameLayout: LinearLayout
-    private lateinit var noteButton: AppCompatButton
     private val selectButtons: MutableList<AppCompatButton> = mutableListOf()
     private var notesEnabled = false
     private val animationDuration = 50L
@@ -77,25 +72,26 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     @SuppressLint("MissingInflatedId", "RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_sudoku)
+        binding = ActivitySudokuBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
 
-        selectButtons.add(findViewById(R.id.number_button_1))
-        selectButtons.add(findViewById(R.id.number_button_2))
-        selectButtons.add(findViewById(R.id.number_button_3))
-        selectButtons.add(findViewById(R.id.number_button_4))
-        selectButtons.add(findViewById(R.id.number_button_5))
-        selectButtons.add(findViewById(R.id.number_button_6))
-        selectButtons.add(findViewById(R.id.number_button_7))
-        selectButtons.add(findViewById(R.id.number_button_8))
-        selectButtons.add(findViewById(R.id.number_button_9))
-        selectButtons.add(findViewById(R.id.delete_button))
-        selectButtons.add(findViewById(R.id.hint_button))
+        selectButtons.add(binding.numberButton1)
+        selectButtons.add(binding.numberButton2)
+        selectButtons.add(binding.numberButton3)
+        selectButtons.add(binding.numberButton4)
+        selectButtons.add(binding.numberButton5)
+        selectButtons.add(binding.numberButton6)
+        selectButtons.add(binding.numberButton7)
+        selectButtons.add(binding.numberButton8)
+        selectButtons.add(binding.numberButton9)
+        selectButtons.add(binding.deleteButton)
+        selectButtons.add(binding.hintButton)
 
-        findViewById<AppCompatButton>(R.id.auto_notes_button).setOnClickListener {
+        binding.autoNotesButton.setOnClickListener {
             AlertDialog.Builder(this@SudokuActivity)
                 .setTitle(getString(R.string.use_auto_notes))
                 .setMessage(getString(R.string.use_auto_notes_message))
@@ -103,27 +99,22 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoNotes() }
                 .show()
         }
-        noteButton = findViewById(R.id.note_button)
-        noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        drawerLayout = findViewById(R.id.drawer_layout_sudoku)
-        drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, R.drawable.ic_baseline_oui_back_24))
-        drawerLayout.setNavigationButtonOnClickListener { onBackPressed() }
-        drawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        gameRecycler = findViewById(R.id.game_recycler)
-        gameLayout = findViewById(R.id.game_layout)
-        resumeButtonLayout = findViewById(R.id.resume_button_layout)
-        drawerLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
+        binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
+        binding.sudokuDrawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
+        binding.sudokuDrawerLayout.setNavigationButtonOnClickListener { saveAndExit() }
+        binding.sudokuDrawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
+        binding.sudokuDrawerLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
                 InputMethodManager::class.java,
                 getSystemService(INPUT_METHOD_SERVICE),
                 "getInputMethodWindowVisibleHeight"
             ) as Int
-            if (totalScrollRange != 0) resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-            else resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
+            if (totalScrollRange != 0) binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+            else binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
-        drawerLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
-        toolbarMenu = drawerLayout.toolbar.menu
+        binding.sudokuDrawerLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
+        toolbarMenu = binding.sudokuDrawerLayout.toolbar.menu
         setSupportActionBar(null)
 
         val id = intent.getStringExtra("sudokuId")
@@ -135,12 +126,16 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                lifecycleScope.launch {
-                    saveSudoku(sudoku)
-                    finish()
-                }
+                saveAndExit()
             }
         })
+    }
+
+    private fun saveAndExit() {
+        lifecycleScope.launch {
+            saveSudoku(sudoku)
+            finish()
+        }
     }
 
     override fun onResume() {
@@ -172,7 +167,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
         val nullableSudoku = getSudoku(id)
         if (nullableSudoku == null) finish()
         else sudoku = nullableSudoku
-        drawerLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
+        binding.sudokuDrawerLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
         setSubtitle()
         for (index in selectButtons.indices) {
             selectButtons[index].setOnClickListener {
@@ -185,11 +180,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                 }
             }
         }
-        gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
+        binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
-        gameRecycler.adapter = gameAdapter
-        gameRecycler.seslSetFillBottomEnabled(true)
-        gameRecycler.seslSetLastRoundedCorner(true)
+        binding.gameRecycler.adapter = gameAdapter
+        binding.gameRecycler.seslSetFillBottomEnabled(true)
+        binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = object : GameListener {
             override fun onHistoryChange(length: Int) {
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
@@ -213,6 +208,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             }
 
             override fun onCompleted(position: Position) {
+                setSubtitle()
                 animateSudoku(position).invokeOnCompletion {
                     lifecycleScope.launch {
                         val completedMessage = getString(
@@ -318,13 +314,13 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
                         getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
                     } + " | " +
                     getString(R.string.current_hints, sudoku.hintsUsed)
-            drawerLayout.setExpandedSubtitle(subtitle)
-            drawerLayout.setCollapsedSubtitle(subtitle)
+            binding.sudokuDrawerLayout.setExpandedSubtitle(subtitle)
+            binding.sudokuDrawerLayout.setCollapsedSubtitle(subtitle)
         }
     }
 
     private suspend fun select(newSelected: Int?) {
-        if (drawerLayout.isExpanded) drawerLayout.setExpanded(false, true)
+        if (binding.sudokuDrawerLayout.isExpanded) binding.sudokuDrawerLayout.setExpanded(false, true)
         val highlightSudokuNeighbors = getUserSettings().highlightRegional
         val highlightSelectedNumber = getUserSettings().highlightNumber
         Log.d("test", "selected: $selected, newSelected: $newSelected")
@@ -442,7 +438,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
             completedNumbers.forEach { pair ->
                 if (pair.second) {
                     selectButtons[pair.first - 1].isEnabled = false
-                    selectButtons[pair.first - 1].setTextColor(getColor(R.color.number_button_disabled_text_color))
+                    selectButtons[pair.first - 1].setTextColor(getColor(R.color.oui_secondary_text_color))
                     if (position != null && sudoku[position].value == pair.first) {
 
                         if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
@@ -547,7 +543,7 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
         notesEnabled = enabled ?: !notesEnabled
-        noteButton.backgroundTintList = ColorStateList.valueOf(
+        binding.noteButton.backgroundTintList = ColorStateList.valueOf(
             if (notesEnabled) resources.getColor(R.color.primary_color, theme)
             else resources.getColor(android.R.color.transparent, theme)
         )
@@ -556,13 +552,13 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
     @Suppress("unused_parameter")
     fun resumeGame(view: View? = null) {
         lifecycleScope.launch {
-            resumeButtonLayout.visibility = View.GONE
-            gameLayout.visibility = View.VISIBLE
+            binding.resumeButtonLayout.visibility = View.GONE
+            binding.gameLayout.visibility = View.VISIBLE
             val errorLimit = getUserSettings().errorLimit
             if (!sudoku.completed && !(errorLimit != 0 && sudoku.errorsMade >= errorLimit)) {
                 sudoku.startTimer()
                 val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
-                itemPausePlay.icon = getDrawable(R.drawable.ic_oui_control_pause)
+                itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
                 itemPausePlay.title = getString(R.string.pause)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
             }
@@ -571,11 +567,11 @@ class SudokuActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun pauseGame() {
         if (sudoku.completed) return
-        gameLayout.visibility = View.GONE
-        resumeButtonLayout.visibility = View.VISIBLE
+        binding.gameLayout.visibility = View.GONE
+        binding.resumeButtonLayout.visibility = View.VISIBLE
         sudoku.stopTimer()
         val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
-        itemPausePlay.icon = getDrawable(R.drawable.ic_oui_control_play)
+        itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
     }

@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.GetSudokuHistoryUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
@@ -40,10 +41,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivityTabHistory : Fragment() {
-    private lateinit var rootView: View
+    private lateinit var binding : FragmentTabHistoryBinding
     private lateinit var sudokuHistory: List<Pair<Sudoku?, LocalDateTime>>
-    private lateinit var listView: RecyclerView
-    private lateinit var noEntryView: NestedScrollView
     private lateinit var sudokuListAdapter: SudokuListAdapter
 
     //private lateinit var drawerLayout: DrawerLayout
@@ -64,18 +63,15 @@ class MainActivityTabHistory : Fragment() {
     lateinit var getUserSettings: GetUserSettingsUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        rootView = inflater.inflate(R.layout.fragment_tab_history, container, false)
-        return rootView
+        binding = FragmentTabHistoryBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
-        listView = rootView.findViewById(R.id.sudokuList)
-        noEntryView = rootView.findViewById(R.id.noEntryView)
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
-        toolbarLayout.setExpandedSubtitle(getString(R.string.history))
-        mainTabs = activity.findViewById(R.id.main_tabs)
+        mainTabs = activity.findViewById(R.id.main_margins_tab_layout)
         lifecycleScope.launch { initList() }
         onBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
@@ -93,27 +89,27 @@ class MainActivityTabHistory : Fragment() {
     private suspend fun initList() {
         sudokuHistory = getSudokuHistory()
         if (sudokuHistory.isEmpty()) {
-            noEntryView.visibility = View.VISIBLE
-            listView.visibility = View.GONE
+            binding.historyNoEntryView.visibility = View.VISIBLE
+            binding.sudokuHistoryList.visibility = View.GONE
             return
         } else {
-            noEntryView.visibility = View.GONE
-            listView.visibility = View.VISIBLE
+            binding.historyNoEntryView.visibility = View.GONE
+            binding.sudokuHistoryList.visibility = View.VISIBLE
         }
         selected = HashMap()
         sudokuHistory.indices.forEach { i -> selected[i] = false }
-        listView.layoutManager = LinearLayoutManager(context)
+        binding.sudokuHistoryList.layoutManager = LinearLayoutManager(context)
         sudokuListAdapter = SudokuListAdapter()
-        listView.adapter = sudokuListAdapter
-        listView.itemAnimator = null
-        listView.addItemDecoration(ItemDecoration(requireContext()))
-        listView.seslSetFastScrollerEnabled(true)
-        listView.seslSetIndexTipEnabled(true)
-        listView.seslSetFillBottomEnabled(true)
-        listView.seslSetGoToTopEnabled(true)
-        listView.seslSetLastRoundedCorner(true)
-        listView.seslSetSmoothScrollEnabled(true)
-        listView.seslSetLongPressMultiSelectionListener(object : RecyclerView.SeslLongPressMultiSelectionListener {
+        binding.sudokuHistoryList.adapter = sudokuListAdapter
+        binding.sudokuHistoryList.itemAnimator = null
+        binding.sudokuHistoryList.addItemDecoration(ItemDecoration(requireContext()))
+        binding.sudokuHistoryList.seslSetFastScrollerEnabled(true)
+        binding.sudokuHistoryList.seslSetIndexTipEnabled(true)
+        binding.sudokuHistoryList.seslSetFillBottomEnabled(true)
+        binding.sudokuHistoryList.seslSetGoToTopEnabled(true)
+        binding.sudokuHistoryList.seslSetLastRoundedCorner(true)
+        binding.sudokuHistoryList.seslSetSmoothScrollEnabled(true)
+        binding.sudokuHistoryList.seslSetLongPressMultiSelectionListener(object : RecyclerView.SeslLongPressMultiSelectionListener {
             override fun onItemSelected(view: RecyclerView, child: View, position: Int, id: Long) {
                 if (sudokuListAdapter.getItemViewType(position) == 0) toggleItemSelected(position)
             }
@@ -205,7 +201,7 @@ class MainActivityTabHistory : Fragment() {
                 if (sudoku.completed) holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         requireContext(),
-                        R.drawable.ic_oui_crown_outline
+                        dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
                     )
                 )
                 lifecycleScope.launch {
@@ -213,7 +209,7 @@ class MainActivityTabHistory : Fragment() {
                     if (errorLimit != 0 && sudoku.errorsMade >= errorLimit) holder.imageView.setImageDrawable(
                         ContextCompat.getDrawable(
                             requireContext(),
-                            R.drawable.ic_oui_error
+                            dev.oneuiproject.oneui.R.drawable.ic_oui_error
                         )
                     )
                     holder.textViewSmall.text = getString(R.string.current_time, sudoku.timeString) + " | " +
@@ -242,7 +238,7 @@ class MainActivityTabHistory : Fragment() {
                 holder.parentView.setOnLongClickListener {
                     if (!selecting) setSelecting(true)
                     toggleItemSelected(position)
-                    listView.seslStartLongPressMultiSelection()
+                    binding.sudokuHistoryList.seslStartLongPressMultiSelection()
                     true
                 }
             }
@@ -297,7 +293,7 @@ class MainActivityTabHistory : Fragment() {
             super.onDraw(c, parent, state)
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: SudokuListAdapter.ViewHolder = listView.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
+                val holder: SudokuListAdapter.ViewHolder = binding.sudokuHistoryList.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
                 if (holder.isItem) {
                     val top = (child.bottom + (child.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin)
                     val bottom = divider!!.intrinsicHeight + top
@@ -310,7 +306,7 @@ class MainActivityTabHistory : Fragment() {
         override fun seslOnDispatchDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: SudokuListAdapter.ViewHolder = listView.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
+                val holder: SudokuListAdapter.ViewHolder = binding.sudokuHistoryList.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
                 if (!holder.isItem) roundedCorner.drawRoundedCorner(child, c)
             }
         }

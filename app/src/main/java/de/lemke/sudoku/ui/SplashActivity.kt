@@ -12,6 +12,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.ActivitySplashBinding
+import de.lemke.sudoku.domain.AppStart
+import de.lemke.sudoku.domain.CheckAppStartUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import dev.oneuiproject.oneui.layout.SplashLayout
@@ -23,7 +26,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
-    private lateinit var splashView: SplashLayout
+    private lateinit var binding: ActivitySplashBinding
     private var launchCanceled = false
 
     @Inject
@@ -32,11 +35,17 @@ class SplashActivity : AppCompatActivity() {
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
 
+    @Inject
+    lateinit var checkAppStart: CheckAppStartUseCase
+
+    lateinit var appStart: AppStart
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
-        splashView = findViewById(R.id.splash)
+        binding = ActivitySplashBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         lifecycleScope.launch {
+            appStart = checkAppStart()
             if (getUserSettings().devModeEnabled) {
                 val devText: Spannable = SpannableString(" Dev")
                 devText.setSpan(
@@ -45,14 +54,14 @@ class SplashActivity : AppCompatActivity() {
                     devText.length,
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-                splashView.findViewById<TextView>(dev.oneuiproject.oneui.R.id.oui_splash_text).append(devText)
+                binding.splashLayout.findViewById<TextView>(dev.oneuiproject.oneui.R.id.oui_splash_text).append(devText)
             }
         }
-        splashView.setSplashAnimationListener(object : Animation.AnimationListener {
+        binding.splashLayout.setSplashAnimationListener(object : Animation.AnimationListener {
             override fun onAnimationStart(animation: Animation) {}
             override fun onAnimationRepeat(animation: Animation) {}
             override fun onAnimationEnd(animation: Animation) {
-                if (!launchCanceled) launchApp()
+                if (!launchCanceled) lifecycleScope.launch { launchApp() }
             }
         })
     }
@@ -67,12 +76,24 @@ class SplashActivity : AppCompatActivity() {
         launchCanceled = false
         lifecycleScope.launch {
             delay(400)
-            splashView.startSplashAnimation()
+            binding.splashLayout.startSplashAnimation()
         }
     }
 
-    private fun launchApp() {
-        startActivity(Intent().setClass(applicationContext, MainActivity::class.java))
+    private suspend fun launchApp() {
+        if (!getUserSettings().tosAccepted || true) { //TODO: remove true
+            startActivity(Intent(applicationContext, OOBEActivity::class.java))
+        }
+        else {
+            when (appStart) {
+                AppStart.FIRST_TIME, AppStart.NEW_TERMS_OF_USE -> {
+                    startActivity(Intent(applicationContext, OOBEActivity::class.java))
+                }
+                AppStart.NORMAL, AppStart.FIRST_TIME_VERSION -> {
+                    startActivity(Intent(applicationContext, MainActivity::class.java))
+                }
+            }
+        }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
     }

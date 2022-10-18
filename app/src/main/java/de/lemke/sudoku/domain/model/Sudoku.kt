@@ -1,6 +1,6 @@
 package de.lemke.sudoku.domain.model
 
-import de.lemke.sudoku.ui.SudokuViewAdapter
+import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.sqrt
@@ -31,6 +31,8 @@ class Sudoku(
     var autoNotesUsed: Boolean,
 ) {
     companion object {
+        val MODE_NORMAL = 0
+        val MODE_DAILY = -1
         fun create(
             sudokuId: SudokuId = SudokuId.generate(),
             size: Int,

@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
@@ -32,12 +33,8 @@ import kotlin.math.abs
 
 @AndroidEntryPoint
 class MainActivityTabSudoku : Fragment() {
-    private lateinit var rootView: View
+    private lateinit var binding: FragmentTabSudokuBinding
     private lateinit var toolbarLayout: ToolbarLayout
-    private lateinit var mainMenuLayout: LinearLayout
-    private lateinit var difficultySeekbar: HapticSeekBar
-    private lateinit var continueGameButton: AppCompatButton
-    private lateinit var newGameButton: AppCompatButton
     private var preloadedSudokus: List<Sudoku>? = null
 
     @Inject
@@ -59,8 +56,8 @@ class MainActivityTabSudoku : Fragment() {
     lateinit var getRecentSudoku: GetRecentSudokuUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        rootView = inflater.inflate(R.layout.fragment_tab_sudoku, container, false)
-        return rootView
+        binding = FragmentTabSudokuBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     @SuppressLint("RestrictedApi")
@@ -68,8 +65,6 @@ class MainActivityTabSudoku : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
-        toolbarLayout.setExpandedSubtitle(getString(R.string.new_game))
-        mainMenuLayout = rootView.findViewById(R.id.new_sudoku_layout)
         toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
@@ -77,16 +72,13 @@ class MainActivityTabSudoku : Fragment() {
                 activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
                 "getInputMethodWindowVisibleHeight"
             ) as Int
-            if (totalScrollRange != 0) mainMenuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-            else mainMenuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
+            if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+            else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
-        difficultySeekbar = rootView.findViewById(R.id.difficulty_seekbar)
-        SeekBarUtils.showTickMark(difficultySeekbar, true)
-        difficultySeekbar.setSeamless(true)
-        difficultySeekbar.max = 4
-        continueGameButton = rootView.findViewById(R.id.continue_game_button)
-        newGameButton = rootView.findViewById(R.id.new_game_button)
-        newGameButton.setOnClickListener {
+        SeekBarUtils.showTickMark(binding.difficultySeekbar, true)
+        binding.difficultySeekbar.setSeamless(true)
+        binding.difficultySeekbar.max = 4
+        binding.newGameButton.setOnClickListener {
             val mLoadingDialog = ProgressDialog(context)
             mLoadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
             mLoadingDialog.setCancelable(false)
@@ -94,12 +86,12 @@ class MainActivityTabSudoku : Fragment() {
             lifecycleScope.launch {
                 if (preloadedSudokus != null) {
                     Log.d("MainActivityTabSudoku", "Using preloaded sudokus")
-                    val sudoku = preloadedSudokus!![difficultySeekbar.progress]
+                    val sudoku = preloadedSudokus!![binding.difficultySeekbar.progress]
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 } else {
                     Log.d("MainActivityTabSudoku", "generating new sudoku")
-                    val sudoku = generateSudoku(9, Difficulty.fromInt(difficultySeekbar.progress))
+                    val sudoku = generateSudoku(9, Difficulty.fromInt(binding.difficultySeekbar.progress))
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
@@ -110,9 +102,11 @@ class MainActivityTabSudoku : Fragment() {
         }
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
-            difficultySeekbar.progress = sliderValue
-            difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
+            binding.difficultySeekbar.progress = sliderValue
+            binding.newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(sliderValue, resources))
+            binding.difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
+                    binding.newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(progress, resources))
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }
 
@@ -128,16 +122,16 @@ class MainActivityTabSudoku : Fragment() {
         lifecycleScope.launch {
             val sudoku = getRecentSudoku()
             if (sudoku != null && !sudoku.completed) {
-                continueGameButton.visibility = View.VISIBLE
-                continueGameButton.text = getString(
+                binding.continueGameButton.visibility = View.VISIBLE
+                binding.continueGameButton.text = getString(
                     R.string.continue_game,
                     sudoku.difficulty.getLocalString(resources),
                     sudoku.timeString
                 )
-                continueGameButton.setOnClickListener {
+                binding.continueGameButton.setOnClickListener {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
-            } else continueGameButton.visibility = View.GONE
+            } else binding.continueGameButton.visibility = View.GONE
         }
     }
 

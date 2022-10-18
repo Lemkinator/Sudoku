@@ -59,4 +59,42 @@
         <item name="android:ellipsize">none</item>
     </style>
 
+    <style name="DividerStyle">
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">3dp</item>
+        <item name="android:layout_marginStart">24dp</item>
+        <item name="android:layout_marginEnd">24dp</item>
+        <item name="android:foreground">@drawable/item_separator_bg</item>
+    </style>
+
+    <!-- OOBE -->
+    <style name="Widget.MyTickets.OOBE.TextView.Title" parent="TextAppearance.AppCompat">
+        <item name="android:layout_marginStart">24.0dp</item>
+        <item name="android:layout_marginEnd">24.0dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">36.0sp</item>
+        <item name="android:textColor">@color/oui_primary_text_color</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="Widget.MyTickets.OOBE.TextView.ToS" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">14.0sp</item>
+        <item name="android:textColor">@color/oui_primary_text_color</item>
+        <item name="android:textColorLink">@color/oui_relative_link_title_text_color</item>
+        <item name="android:lineSpacingExtra">3.0dp</item>
+        <item name="android:maxLines">3</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="Widget.MyTickets.OOBE.Button" parent="Widget.AppCompat.Button">
+        <item name="android:paddingStart">16.0dp</item>
+        <item name="android:paddingEnd">16.0dp</item>
+        <item name="android:background">@drawable/oobe_button_background</item>
+        <item name="android:backgroundTint">@color/primary_color</item>
+        <item name="android:textSize">18.0sp</item>
+        <item name="android:textColor">@color/oui_primary_text_color</item>
+    </style>
+
 </resources>

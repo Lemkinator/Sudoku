@@ -54,17 +54,18 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="30dp"
+            android:layout_marginBottom="20dp"
             android:orientation="horizontal">
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/new_game_button"
                 style="@style/ButtonStyle.Filled"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_marginRight="4dp"
-                android:layout_weight="5"
-                android:padding="15dp"
+                android:layout_weight="1"
+                android:drawableTop="@drawable/ic_oui_pen"
+                android:paddingVertical="10dp"
                 android:text="@string/new_game"
                 tools:ignore="RtlHardcoded" />
 
@@ -72,11 +73,45 @@
                 android:id="@+id/continue_game_button"
                 style="@style/ButtonStyle.Colored"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="6"
-                android:padding="15dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:drawableTop="@drawable/ic_oui_control_play"
+                android:drawableTint="@color/oui_round_and_bgcolor"
+                android:paddingVertical="10dp"
                 android:text="@string/continue_game"
                 android:visibility="gone" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:orientation="horizontal">
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/daily_button"
+                style="@style/ButtonStyle.Filled"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginRight="2dp"
+                android:layout_weight="1"
+                android:drawableTop="@drawable/ic_oui_calendar_task"
+                android:paddingVertical="10dp"
+                android:text="@string/daily_sudoku"
+                tools:ignore="RtlHardcoded" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/levels_button"
+                style="@style/ButtonStyle.Filled"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginLeft="2dp"
+                android:drawableTop="@drawable/ic_oui_list"
+                android:paddingVertical="10dp"
+                android:text="@string/levels"
+                tools:ignore="RtlHardcoded" />
 
         </LinearLayout>
 

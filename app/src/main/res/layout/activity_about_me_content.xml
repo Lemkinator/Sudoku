@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:overScrollMode="always"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:roundedCorners="top_left|top_right">
+
+        <dev.oneuiproject.oneui.widget.Separator
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/rate_app" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/oui_background_color"
+            android:layout_marginBottom="20dp"
+            android:orientation="vertical">
+
+            <de.lemke.sudoku.ui.utils.CardView
+                android:id="@+id/about_bottom_rate_app"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:TitleText="@string/write_review"
+                app:SummaryText="TODO" />
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <dev.oneuiproject.oneui.widget.RelatedCard
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:title="@string/useful_links">
+
+            <TextView
+                android:id="@+id/about_bottom_relative_website"
+                style="@style/OneUI.RelativeLinkTextViewStyle"
+                android:text="@string/website" />
+
+        </dev.oneuiproject.oneui.widget.RelatedCard>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

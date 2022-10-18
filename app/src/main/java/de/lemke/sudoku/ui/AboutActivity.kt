@@ -17,6 +17,7 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.tasks.Task
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.ActivityAboutBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
@@ -27,6 +28,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class AboutActivity : AppCompatActivity(), OnClickListener {
+    private lateinit var binding: ActivityAboutBinding
     private lateinit var appInfoLayout: AppInfoLayout
     private lateinit var appUpdateManager: AppUpdateManager
     private lateinit var appUpdateInfo: AppUpdateInfo
@@ -44,9 +46,10 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_about)
+        binding = ActivityAboutBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         appUpdateManager = AppUpdateManagerFactory.create(this)
-        appInfoLayout = findViewById(R.id.app_info_layout)
+        appInfoLayout = binding.appInfoLayout
         appInfoLayout.addOptionalText(getString(R.string.about_page_optional_text))
         appInfoLayout.isExpandable = true
         appInfoLayout.status = LOADING
@@ -64,11 +67,11 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
                 startActivity(Intent().setClass(applicationContext, SplashActivity::class.java))
             }
         }
-        findViewById<View>(R.id.about_btn_open_in_store).setOnClickListener { openApp(packageName, false) }
-        findViewById<View>(R.id.about_btn_open_oneui_github).setOnClickListener {
+        binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
+        binding.aboutBtnOpenOneuiGithub.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
         }
-        findViewById<View>(R.id.about_btn_about_me).setOnClickListener {
+        binding.aboutBtnAboutMe.setOnClickListener {
             startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
         }
         checkUpdate()

@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
         <item
             android:id="@+id/menuButtonRemove"
-            android:icon="@drawable/ic_baseline_oui_delete_outline_24"
+            android:icon="@drawable/ic_oui_delete_outline"
             android:title="@string/delete"
             app:showAsAction="always"
             tools:ignore="AppCompatResource" />

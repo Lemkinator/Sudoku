@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dev.oneuiproject.oneui.layout.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/support_me_drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:expanded="false"
+    app:title="@string/about_me">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="30dp"
+                android:layout_marginRight="30dp"
+                android:orientation="vertical">
+
+                <com.google.android.material.textview.MaterialTextView
+                    style="?android:listSeparatorTextViewStyle"
+                    android:text="@string/about_me" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginVertical="7dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/websiteButton"
+                        style="@style/ButtonStyle.Filled"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="@string/website"
+                        android:drawableStart="@drawable/ic_oui_website" />
+
+                    <View android:layout_width="2dp" android:layout_height="match_parent" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/ticktocktrollButton"
+                        style="@style/ButtonStyle.Filled"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="@string/tiktok"
+                        android:drawableStart="@drawable/ic_oui_open" />
+
+                </LinearLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    style="?android:listSeparatorTextViewStyle"
+                    android:text="@string/support_me" />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="25dp"
+                    android:text="@string/support_me_text" />
+
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/supportMeButton"
+                    style="@style/ButtonStyle.Filled"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginVertical="7dp"
+                    android:text="@string/write_email"
+                    android:drawableStart="@drawable/ic_oui_email_outline" />
+
+
+                <com.google.android.material.textview.MaterialTextView
+                    style="?android:listSeparatorTextViewStyle"
+                    android:text="@string/rate_app" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginVertical="7dp"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/writeReviewButton"
+                        style="@style/ButtonStyle.Filled"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:layout_weight="1"
+                        android:text="@string/write_review"
+                        android:drawableStart="@drawable/ic_oui_pen" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/reviewCommentButton"
+                        style="@style/ButtonStyle.Transparent"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:drawableStart="@drawable/ic_oui_help_outline" />
+
+                </LinearLayout>
+
+                <com.google.android.material.textview.MaterialTextView
+                    style="?android:listSeparatorTextViewStyle"
+                    android:text="@string/share" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/shareAppButton"
+                    style="@style/ButtonStyle.Filled"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginHorizontal="24dp"
+                    android:layout_marginVertical="7dp"
+                    android:text="@string/share_app"
+                    android:drawableStart="@drawable/ic_oui_share_outline" />
+
+            </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</dev.oneuiproject.oneui.layout.DrawerLayout>
+
+

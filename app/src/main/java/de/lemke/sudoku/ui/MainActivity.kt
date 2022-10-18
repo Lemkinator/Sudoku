@@ -8,22 +8,27 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.MenuCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.AppStart
-import de.lemke.sudoku.domain.CheckAppStartUseCase
+import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
+import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
+import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.layout.ToolbarLayout
-import dev.oneuiproject.oneui.widget.HapticSeekBar
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
@@ -31,12 +36,12 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         var refreshView = false
     }
 
-    private var currentTab = 0
-    private var previousTab = 0
-    private var currentFragment: Fragment? = null
-    private var time: Long = 0
+    private lateinit var binding: ActivityMainBinding
     private lateinit var fragmentManager: FragmentManager
-    private lateinit var tabLayout: MarginsTabLayout
+    private lateinit var marginsTabLayout: MarginsTabLayout
+    private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
+    private var selectedPosition = 0
+    private var time: Long = 0
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -44,34 +49,56 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     @Inject
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
-    @Inject
-    lateinit var checkAppStart: CheckAppStartUseCase
-
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         time = System.currentTimeMillis()
-        tabLayout = findViewById(R.id.main_tabs)
         fragmentManager = supportFragmentManager
+        initTabs()
+        initFragments()
+        initOnBackPressed()
+    }
 
-        lifecycleScope.launch {
-            when (checkAppStart()) {
-                AppStart.FIRST_TIME -> setCurrentItem()
-                AppStart.NORMAL -> setCurrentItem()
-                AppStart.FIRST_TIME_VERSION -> setCurrentItem()
+    override fun onResume() {
+        super.onResume()
+        if (refreshView) {
+            refreshView = false
+            recreate()
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.main_menu, menu)
+        MenuCompat.setGroupDividerEnabled(menu, true)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.menuitem_app_info -> {
+                startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                return true
+            }
+            R.id.menuitem_settings -> {
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                return true
             }
         }
+        return super.onOptionsItemSelected(item)
+    }
 
-        // TabLayout
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.app_name)))
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.history)))
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.statistics)))
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+    private fun initTabs() {
+        marginsTabLayout = binding.mainMarginsTabLayout
+        marginsTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
+        marginsTabLayout.addTab(marginsTabLayout.newTab().setText(getString(R.string.history)))
+        marginsTabLayout.addTab(marginsTabLayout.newTab().setText(getString(R.string.app_name)))
+        marginsTabLayout.addTab(marginsTabLayout.newTab().setText(getString(R.string.statistics)))
+        marginsTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
-                previousTab = currentTab
-                currentTab = tab.position
-                setCurrentItem()
+                onTabItemSelected(tab.position, tab)
             }
 
             override fun onTabUnselected(tab: TabLayout.Tab) {}
@@ -79,30 +106,54 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 try {
                     when (tab.text) {
                         getString(R.string.app_name) -> {
-                            val toolbarLayout: ToolbarLayout = findViewById(R.id.main_toolbarlayout)
-                            toolbarLayout.setExpanded(!toolbarLayout.isExpanded, true)
+                            binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
                         }
                         getString(R.string.history) -> {
-                            val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuList)
-                            historyRecyclerView.smoothScrollToPosition(0)
+                            val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuHistoryList)
+                            if (historyRecyclerView.canScrollVertically(-1)) historyRecyclerView.smoothScrollToPosition(0)
+                            else binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
                         }
                         getString(R.string.statistics) -> {
-                            val subTabs: TabLayout = findViewById(R.id.fragment_statistics_sub_tabs)
-                            val newTabIndex = subTabs.selectedTabPosition + 1
-                            if (newTabIndex < subTabs.tabCount) subTabs.getTabAt(newTabIndex)?.select()
-                            else subTabs.getTabAt(0)?.select()
+                            binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
+                            //TODO open filter dialog?
                         }
                     }
                 } catch (_: Exception) { //no required functionality -> ignore errors
                 }
             }
         })
+    }
+
+    private fun initFragments() {
+        val transaction: FragmentTransaction = fragmentManager.beginTransaction()
+        for (fragment in fragmentsInstance) transaction.add(R.id.fragment_container, fragment)
+        transaction.commit()
+        fragmentManager.executePendingTransactions()
+        onTabItemSelected(1)
+    }
+
+    fun onTabItemSelected(position: Int, tab: TabLayout.Tab? = null) {
+        var newTab = tab
+        if (selectedPosition != position) {
+            selectedPosition = position
+            val newFragment: Fragment = fragmentsInstance[position]
+            val transaction: FragmentTransaction = fragmentManager.beginTransaction()
+            for (fragment in fragmentManager.fragments) {
+                transaction.hide(fragment)
+            }
+            transaction.show(newFragment).commit()
+            fragmentManager.executePendingTransactions()
+            if (newTab == null) newTab = marginsTabLayout.getTabAt(position)
+            if (!newTab!!.isSelected) newTab.select()
+        }
+    }
+
+    private fun initOnBackPressed() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 lifecycleScope.launch {
-                    if (currentTab != 0) {
-                        currentTab = 0
-                        setCurrentItem()
+                    if (selectedPosition != 1) {
+                        onTabItemSelected(1)
                     } else {
                         if (getUserSettings().confirmExit) {
                             if (System.currentTimeMillis() - time < 3000) finishAffinity()
@@ -116,66 +167,5 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 }
             }
         })
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (refreshView) {
-            refreshView = false
-            recreate()
-        }
-    }
-
-    fun setCurrentItem() {
-        if (tabLayout.isEnabled && tabLayout.selectedTabPosition != currentTab) tabLayout.getTabAt(currentTab)?.select()
-        setFragment(currentTab)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        val inflater = menuInflater
-        inflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menuitem_app_info -> startActivity(Intent(this@MainActivity, AboutActivity::class.java))
-            R.id.menuitem_settings -> startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-        }
-        return true
-    }
-
-    private fun setFragment(tabPosition: Int) {
-        if (fragmentManager.isDestroyed) return
-        val mTabsTagName: Array<String> = resources.getStringArray(R.array.mainactivity_tab_tag)
-        val mTabsClassName: Array<String> = resources.getStringArray(R.array.mainactivity_tab_class)
-        val tabName = mTabsTagName[tabPosition]
-        val fragment = fragmentManager.findFragmentByTag(tabName)
-        try {
-            currentFragment?.let { fragmentManager.beginTransaction().detach(it).commit() }
-            //Fatal Exception: java.lang.IllegalStateException: Can not perform this action after onSaveInstanceState
-            //https://stackoverflow.com/questions/7469082/getting-exception-illegalstateexception-can-not-perform-this-action-after-onsa/10261438#10261438
-            //https://www.androiddesignpatterns.com/2013/08/fragment-transaction-commit-state-loss.html
-        } catch (e: IllegalStateException) {
-            currentFragment?.let { fragmentManager.beginTransaction().detach(it).commitAllowingStateLoss() }
-        }
-        if (fragment != null) {
-            fragmentManager.executePendingTransactions()
-            currentFragment = fragment
-            try {
-                fragmentManager.beginTransaction().attach(fragment).commit()
-                //see comment above
-            } catch (e: IllegalStateException) {
-                fragmentManager.beginTransaction().attach(fragment).commitAllowingStateLoss()
-            }
-        } else {
-            try {
-                currentFragment = Class.forName(mTabsClassName[tabPosition]).newInstance() as Fragment
-            } catch (e: Exception) {
-                Toast.makeText(applicationContext, e.toString(), Toast.LENGTH_LONG).show()
-                e.printStackTrace()
-            }
-            fragmentManager.beginTransaction().add(R.id.fragment_container, currentFragment!!, tabName).commit()
-        }
     }
 }
