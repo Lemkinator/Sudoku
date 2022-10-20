@@ -4,7 +4,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <group
-        android:id="@+id/sudoku_menu_group_undo">
+        android:id="@+id/sudoku_menu_group_undo"
+        android:visible="false">
         <item
             android:id="@+id/menu_undo"
             android:icon="@drawable/ic_oui_undo"
@@ -13,7 +14,8 @@
             tools:ignore="AlwaysShowAction,AppCompatResource" />
     </group>
     <group
-        android:id="@+id/sudoku_menu_group_pause_play">
+        android:id="@+id/sudoku_menu_group_pause_play"
+        android:visible="false">
         <item
             android:id="@+id/menu_pause_play"
             android:icon="@drawable/ic_oui_control_pause"

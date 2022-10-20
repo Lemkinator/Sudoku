@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "6efffe5c31c4aa459a7d86ca136254bc",
+    "identityHash": "7cd44ed26b973c99f5a1fb4df445efdd",
     "entities": [
       {
         "tableName": "sudoku",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `size` INTEGER NOT NULL, `difficulty` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `created` TEXT NOT NULL, `updated` TEXT NOT NULL, `neighborHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `autoNotesUsed` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `size` INTEGER NOT NULL, `difficulty` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `created` TEXT NOT NULL, `updated` TEXT NOT NULL, `neighborHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `autoNotesUsed` INTEGER NOT NULL, `modeLevel` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -77,6 +77,12 @@
           {
             "fieldPath": "autoNotesUsed",
             "columnName": "autoNotesUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeLevel",
+            "columnName": "modeLevel",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -169,7 +175,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6efffe5c31c4aa459a7d86ca136254bc')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7cd44ed26b973c99f5a1fb4df445efdd')"
     ]
   }
 }

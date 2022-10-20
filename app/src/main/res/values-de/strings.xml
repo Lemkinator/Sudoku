@@ -61,8 +61,8 @@
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
     <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNotizen: %6$d \nRegionales Highlight benutzt: %7$s \nGewählte Nummer hervorgehoben: %8$s \nAuto-Hinweise benutzt: %9$s \nErstellt: %10$s \nGeändert: %11$s</string>
-    <string name="shareResult">Ergebnis teilen</string>
-    <string name="textShare">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
+    <string name="share_result">Ergebnis teilen</string>
+    <string name="text_share">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis</string>
@@ -98,6 +98,23 @@
     <string name="wins_without_notes">Siege ohne Notizen</string>
     <string name="most_notes">Meiste Notizen</string>
     <string name="average_notes">Durchschnittliche Notizen</string>
+    <string name="filter">Filter</string>
+    <string name="statistics_filter">Statistik-Filter</string>
+    <string name="all">Alle</string>
+    <string name="include_daily_sudokus">Tägliche Sudokus miteinbeziehen</string>
+    <string name="include_sudoku_levels">Sudoku-Levels miteinbeziehen</string>
+
+    <!--OOBE-->
+    <string name="oobe_onboard_msg1_title">Schönes Design</string>
+    <string name="oobe_onboard_msg2_title">Kostenlos</string>
+    <string name="oobe_onboard_msg3_title">Keine Werbung</string>
+    <string name="oobe_onboard_msg1_summary">Eine Sudoku-App im schönen OneUI Design.</string>
+    <string name="oobe_onboard_msg2_summary">Keine Abos, keine In-App-Käufe, keinerlei Kosten.</string>
+    <string name="oobe_onboard_msg3_summary">Keine nervige Werbung nach jedem Sudoku.</string>
+    <string name="tos">Nutzungsbedingungen</string>
+    <string name="tos_content">Es ist nicht gestattet, diese App entgegen den guten Sitten oder den geltenden Gesetzen zu verwenden. \n\nSie verpflichten sich außerdem, diese App nicht für Zwecke zu verwenden, die nach dem Recht der Vereinigten Staaten verboten sind, insbesondere nicht für die Entwicklung, Konstruktion, Herstellung oder Produktion von Atomwaffen, Raketen oder chemischen oder biologischen Waffen. \nDiese Einschränkung gilt jedoch nicht für den Fall, dass eine weit verbreitete Virusinfektion auftritt (die von den United States Centers for Disease Control oder einer Nachfolgeorganisation bestätigt wurde), die durch Bisse oder Kontakt mit Körperflüssigkeiten übertragen wird und dazu führt, dass menschliche Leichen wiederbelebt werden und versuchen, lebendes menschliches Fleisch, Blut, Gehirn oder Nervengewebe zu verzehren, und die wahrscheinlich zum Untergang der organisierten Zivilisation führen wird. \n\nEine besondere Gegenleistung, die eine finanzielle Entschädigung beinhalten kann, wird einer begrenzten Anzahl von Nutzern angeboten, die diesen Abschnitt der Nutzungsbedingungen lesen und mich unter writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com kontaktieren. Dieses Angebot kann jederzeit und ohne Vorankündigung zurückgezogen werden. \n\nWeitere Fragen werden unter this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com beantwortet.</string>
+    <string name="oobe_tos_text">Durch die Nutzung der App stimmen Sie den %1$s zu.</string>
+    <string name="accept_tos">Weiter</string>
 
     <!--About Me Page-->
     <string name="about_me">Über mich</string>
@@ -115,27 +132,12 @@
     <string name="to_play_store">Zum Play Store</string>
     <string name="review_comment">Um ein optimales Nutzererlebnis zu gewährleisten, verwaltet Google Play wann und wie oft einem Nutzer der integrierte Bewertungsdialog angezeigt werden kann. Deshalb kann es vorkommen, dass diese Schaltfläche in manchen Fällen keine Aktion durchführt.\nAlternativ kann die Bewertung dann im Play Store geschrieben werden.</string>
     <string name="error">Fehler</string>
+    <string name="useful_links">Nützliche Links</string>
 
     <!--Others-->
     <string name="no_game_played">Noch kein Spiel gespielt</string>
     <string name="daily_sudoku">Tägliches Sudoku</string>
-    <string name="levels">Levels</string>
-    <string name="filter">Filter</string>
-    <string name="statistics_filter">Statistik-Filter</string>
-    <string name="all">Alle</string>
-    <string name="include_daily_sudokus">Tägliche Sudokus miteinbeziehen</string>
-    <string name="include_sudoku_levels">Sudoku-Levels miteinbeziehen</string>
-    <string name="oobe_onboard_msg1_title">Schönes Design</string>
-    <string name="oobe_onboard_msg2_title">Kostenlos</string>
-    <string name="oobe_onboard_msg3_title">Keine Werbung</string>
-    <string name="oobe_onboard_msg1_summary">Eine Sudoku-App im schönen OneUI Design.</string>
-    <string name="oobe_onboard_msg2_summary">Keine Abos, keine In-App-Käufe, keinerlei Kosten.</string>
-    <string name="oobe_onboard_msg3_summary">Keine nervige Werbung nach jedem Sudoku.</string>
-    <string name="tos">Nutzungsbedingungen</string>
-    <string name="tos_content">Es ist nicht gestattet, diese App entgegen den guten Sitten oder den geltenden Gesetzen zu verwenden. \n\nSie verpflichten sich außerdem, diese App nicht für Zwecke zu verwenden, die nach dem Recht der Vereinigten Staaten verboten sind, insbesondere nicht für die Entwicklung, Konstruktion, Herstellung oder Produktion von Atomwaffen, Raketen oder chemischen oder biologischen Waffen. \nDiese Einschränkung gilt jedoch nicht für den Fall, dass eine weit verbreitete Virusinfektion auftritt (die von den United States Centers for Disease Control oder einer Nachfolgeorganisation bestätigt wurde), die durch Bisse oder Kontakt mit Körperflüssigkeiten übertragen wird und dazu führt, dass menschliche Leichen wiederbelebt werden und versuchen, lebendes menschliches Fleisch, Blut, Gehirn oder Nervengewebe zu verzehren, und die wahrscheinlich zum Untergang der organisierten Zivilisation führen wird. \n\nEine besondere Gegenleistung, die eine finanzielle Entschädigung beinhalten kann, wird einer begrenzten Anzahl von Nutzern angeboten, die diesen Abschnitt der Nutzungsbedingungen lesen und mich unter writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com kontaktieren. Dieses Angebot kann jederzeit und ohne Vorankündigung zurückgezogen werden. \n\nWeitere Fragen werden unter this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com beantwortet.</string>
-    <string name="oobe_tos_text">Durch die Nutzung der App stimmen Sie den %1$s zu.</string>
-    <string name="accept_tos">Weiter</string>
-    <string name="useful_links">Nützliche Links</string>
-
+    <string name="level">Level</string>
+    <string name="next_level">Nächstes Level</string>
 
 </resources>

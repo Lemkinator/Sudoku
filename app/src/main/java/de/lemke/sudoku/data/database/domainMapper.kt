@@ -21,6 +21,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         regionalHighlightingUsed = sudokuWithFields.sudoku.neighborHighlightingUsed,
         numberHighlightingUsed = sudokuWithFields.sudoku.numberHighlightingUsed,
         autoNotesUsed = sudokuWithFields.sudoku.autoNotesUsed,
+        modeLevel = sudokuWithFields.sudoku.modeLevel,
     )
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -37,6 +38,7 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         neighborHighlightingUsed = sudoku.regionalHighlightingUsed,
         numberHighlightingUsed = sudoku.numberHighlightingUsed,
         autoNotesUsed = sudoku.autoNotesUsed,
+        modeLevel = sudoku.modeLevel,
     )
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? =

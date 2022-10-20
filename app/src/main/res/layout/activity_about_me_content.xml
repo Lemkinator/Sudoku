@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:overScrollMode="always"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:overScrollMode="always">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,21 +15,62 @@
         <dev.oneuiproject.oneui.widget.Separator
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/rate_app" />
+            android:text="@string/support_me" />
 
         <dev.oneuiproject.oneui.widget.RoundLinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/oui_background_color"
-            android:layout_marginBottom="20dp"
             android:orientation="vertical">
 
             <de.lemke.sudoku.ui.utils.CardView
-                android:id="@+id/about_bottom_rate_app"
+                android:id="@+id/about_bottom_write_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:TitleText="@string/write_review"
-                app:SummaryText="TODO" />
+                app:IconDrawable="@drawable/ic_oui_email_outline"
+                app:SummaryText="@string/support_me_text"
+                app:TitleText="@string/write_email" />
+
+            <de.lemke.sudoku.ui.utils.CardView
+                android:id="@+id/about_bottom_share_app"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:IconDrawable="@drawable/ic_oui_share_outline"
+                app:SummaryText="@string/share_app"
+                app:TitleText="@string/share"
+                app:isDividerViewVisible="true" />
+
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+        <dev.oneuiproject.oneui.widget.Separator
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/playstore" />
+
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@color/oui_background_color"
+            android:orientation="horizontal">
+
+            <de.lemke.sudoku.ui.utils.CardView
+                android:id="@+id/about_bottom_rate_app"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:IconDrawable="@drawable/ic_oui_galaxy_store_outline"
+                app:SummaryText="@string/rate_app"
+                app:TitleText="@string/write_review" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/reviewCommentButton"
+                style="@style/ButtonStyle.Transparent"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_gravity="center"
+                android:layout_marginEnd="16dp"
+                android:drawableStart="@drawable/ic_oui_help_outline" />
 
         </dev.oneuiproject.oneui.widget.RoundLinearLayout>
 
@@ -43,6 +84,16 @@
                 android:id="@+id/about_bottom_relative_website"
                 style="@style/OneUI.RelativeLinkTextViewStyle"
                 android:text="@string/website" />
+
+            <TextView
+                android:id="@+id/about_bottom_relative_github"
+                style="@style/OneUI.RelativeLinkTextViewStyle"
+                android:text="@string/github" />
+
+            <TextView
+                android:id="@+id/about_bottom_relative_play_store"
+                style="@style/OneUI.RelativeLinkTextViewStyle"
+                android:text="@string/playstore" />
 
         </dev.oneuiproject.oneui.widget.RelatedCard>
 

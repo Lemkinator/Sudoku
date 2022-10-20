@@ -110,7 +110,7 @@
                 android:layout_marginLeft="2dp"
                 android:drawableTop="@drawable/ic_oui_list"
                 android:paddingVertical="10dp"
-                android:text="@string/levels"
+                android:text="@string/level"
                 tools:ignore="RtlHardcoded" />
 
         </LinearLayout>

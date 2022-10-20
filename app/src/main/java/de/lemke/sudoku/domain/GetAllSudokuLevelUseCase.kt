@@ -6,10 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class GetAllSudokusUseCase @Inject constructor(
+class GetAllSudokuLevelUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(includeDaily: Boolean, includeLevel:Boolean): List<Sudoku> = withContext(Dispatchers.Default) {
-        sudokusRepository.getAllSudokus(includeDaily, includeLevel)
+    suspend operator fun invoke(): List<Sudoku> = withContext(Dispatchers.Default) {
+        sudokusRepository.getAllLevelSudokus()
     }
 }

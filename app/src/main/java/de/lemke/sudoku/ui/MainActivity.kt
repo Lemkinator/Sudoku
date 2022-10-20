@@ -49,7 +49,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     @Inject
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -145,6 +144,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             fragmentManager.executePendingTransactions()
             if (newTab == null) newTab = marginsTabLayout.getTabAt(position)
             if (!newTab!!.isSelected) newTab.select()
+            newFragment.onResume()
         }
     }
 

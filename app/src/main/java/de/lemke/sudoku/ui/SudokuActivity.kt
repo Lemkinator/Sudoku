@@ -20,10 +20,7 @@ import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
-import de.lemke.sudoku.domain.GetSudokuUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
@@ -44,6 +41,7 @@ import kotlin.math.abs
 @AndroidEntryPoint
 class SudokuActivity : AppCompatActivity() {
     lateinit var sudoku: Sudoku
+    lateinit var nextSudokuLevel: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     lateinit var toolbarMenu: Menu
     private lateinit var binding: ActivitySudokuBinding
@@ -67,9 +65,12 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var getSudoku: GetSudokuUseCase
 
     @Inject
+    lateinit var generateSudokuLevel: GenerateSudokuLevelUseCase
+
+    @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
-    @SuppressLint("MissingInflatedId", "RestrictedApi")
+    @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
@@ -91,24 +92,28 @@ class SudokuActivity : AppCompatActivity() {
         selectButtons.add(binding.deleteButton)
         selectButtons.add(binding.hintButton)
 
+        val id = intent.getStringExtra("sudokuId")
+        if (id == null) {
+            finish()
+            return
+        }
+        lifecycleScope.launch { initSudoku(SudokuId(id)) }
+
         binding.autoNotesButton.setOnClickListener {
-            AlertDialog.Builder(this@SudokuActivity)
-                .setTitle(getString(R.string.use_auto_notes))
-                .setMessage(getString(R.string.use_auto_notes_message))
-                .setNegativeButton(getString(R.string.sesl_cancel), null)
-                .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoNotes() }
-                .show()
+            AlertDialog.Builder(this@SudokuActivity).setTitle(getString(R.string.use_auto_notes))
+                .setMessage(getString(R.string.use_auto_notes_message)).setNegativeButton(getString(R.string.sesl_cancel), null)
+                .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoNotes() }.show()
         }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        binding.sudokuDrawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
+        binding.sudokuDrawerLayout.setNavigationButtonIcon(
+            AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back)
+        )
         binding.sudokuDrawerLayout.setNavigationButtonOnClickListener { saveAndExit() }
         binding.sudokuDrawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.sudokuDrawerLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
-                InputMethodManager::class.java,
-                getSystemService(INPUT_METHOD_SERVICE),
-                "getInputMethodWindowVisibleHeight"
+                InputMethodManager::class.java, getSystemService(INPUT_METHOD_SERVICE), "getInputMethodWindowVisibleHeight"
             ) as Int
             if (totalScrollRange != 0) binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
             else binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
@@ -116,13 +121,6 @@ class SudokuActivity : AppCompatActivity() {
         binding.sudokuDrawerLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = binding.sudokuDrawerLayout.toolbar.menu
         setSupportActionBar(null)
-
-        val id = intent.getStringExtra("sudokuId")
-        if (id == null) {
-            finish()
-            return
-        }
-        lifecycleScope.launch { initSudoku(SudokuId(id)) }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -167,19 +165,25 @@ class SudokuActivity : AppCompatActivity() {
         val nullableSudoku = getSudoku(id)
         if (nullableSudoku == null) finish()
         else sudoku = nullableSudoku
-        binding.sudokuDrawerLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
-        setSubtitle()
-        for (index in selectButtons.indices) {
-            selectButtons[index].setOnClickListener {
-                lifecycleScope.launch {
-                    lifecycleScope.launch {
-                        val errorLimit = getUserSettings().errorLimit
-                        if (errorLimit != 0 && sudoku.errorsMade >= errorLimit) errorLimitDialog(errorLimit)
-                        else select(sudoku.itemCount + index)
-                    }
-                }
+        when (sudoku.modeLevel) {
+            Sudoku.MODE_NORMAL -> {
+                binding.sudokuDrawerLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
+            }
+            Sudoku.MODE_DAILY -> {
+                binding.sudokuDrawerLayout.setTitle(
+                    getString(R.string.app_name) + " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
+                )
+                binding.hintButton.visibility = View.GONE
+                binding.autoNotesButton.visibility = View.GONE
+            }
+            else -> {
+                binding.sudokuDrawerLayout.setTitle(getString(R.string.app_name) + " (Level " + sudoku.modeLevel + ")")
+                binding.hintButton.visibility = View.GONE
+                binding.autoNotesButton.visibility = View.GONE
             }
         }
+
+        setSubtitle()
         binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
         binding.gameRecycler.adapter = gameAdapter
@@ -203,50 +207,61 @@ class SudokuActivity : AppCompatActivity() {
                 checkAnyNumberCompleted(position)
                 lifecycleScope.launch {
                     checkRowColumnBlockCompleted(position)
-                    saveSudoku(sudoku)
                 }
             }
 
             override fun onCompleted(position: Position) {
                 setSubtitle()
                 animateSudoku(position).invokeOnCompletion {
-                    lifecycleScope.launch {
-                        val completedMessage = getString(
-                            R.string.completed_message,
-                            sudoku.size,
-                            sudoku.difficulty.getLocalString(resources),
-                            sudoku.timeString,
-                            sudoku.errorsMade,
-                            sudoku.hintsUsed,
-                            sudoku.notesMade,
-                            getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
-                            getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
-                            getString(if (sudoku.autoNotesUsed) R.string.yes else R.string.no),
-                            sudoku.created.format(
-                                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
-                            ),
-                            sudoku.updated.format(
-                                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
-                            ),
-                        )
-                        AlertDialog.Builder(this@SudokuActivity)
-                            .setTitle(R.string.completed_title)
-                            .setMessage(completedMessage)
-                            .setPositiveButton(R.string.shareResult) { _, _ ->
+                    val completedMessage = getString(
+                        R.string.completed_message,
+                        sudoku.size,
+                        sudoku.difficulty.getLocalString(resources),
+                        sudoku.timeString,
+                        sudoku.errorsMade,
+                        sudoku.hintsUsed,
+                        sudoku.notesMade,
+                        getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
+                        getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
+                        getString(if (sudoku.autoNotesUsed) R.string.yes else R.string.no),
+                        sudoku.created.format(
+                            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
+                        ),
+                        sudoku.updated.format(
+                            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
+                        ),
+                    )
+                    val dialog = AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.completed_title).setMessage(completedMessage)
+                    dialog.setNeutralButton(R.string.ok, null)
+                    when (sudoku.modeLevel) {
+                        Sudoku.MODE_DAILY, Sudoku.MODE_NORMAL -> {
+                            dialog.setPositiveButton(R.string.share_result) { _, _ ->
                                 val sendIntent = Intent(Intent.ACTION_SEND)
                                 sendIntent.type = "text/plain"
-                                sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.textShare) + completedMessage)
-                                sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.shareResult))
+                                sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.text_share) + completedMessage)
+                                sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_result))
                                 sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
                                 startActivity(Intent.createChooser(sendIntent, "Share Via"))
                             }
-                            .setNeutralButton(R.string.ok, null)
-                            .show()
+                        }
+                        else -> {
+                            dialog.setPositiveButton(R.string.next_level) { _, _ ->
+                                lifecycleScope.launch {
+                                    loadingDialog.show()
+                                    saveSudoku(nextSudokuLevel)
+                                    saveSudoku(sudoku)
+                                    initSudoku(nextSudokuLevel.id)
+                                }
+                            }
+                        }
+                    }
+                    lifecycleScope.launch {
+                        dialog.show()
                     }
                 }
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
-                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, sudoku.modeLevel == Sudoku.MODE_NORMAL)
             }
 
             override fun onError() {
@@ -260,44 +275,40 @@ class SudokuActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onTimeChanged(time: String?) {
-                lifecycleScope.launch { setSubtitle() }
+            override fun onTimeChanged() {
+                lifecycleScope.launch {
+                    setSubtitle()
+                    saveSudoku(sudoku)
+                }
             }
         }
-
-
+        for (index in selectButtons.indices) {
+            selectButtons[index].setOnClickListener {
+                lifecycleScope.launch {
+                    val errorLimit = getUserSettings().errorLimit
+                    if (errorLimit != 0 && sudoku.errorsMade >= errorLimit) errorLimitDialog(errorLimit)
+                    else select(sudoku.itemCount + index)
+                }
+            }
+        }
         resumeGame()
         loadingDialog.dismiss()
-        if (sudoku.completed) {
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
-        }
-        sudoku.updated = LocalDateTime.now()
         checkAnyNumberCompleted(null)
+        if (sudoku.modeLevel > 0) lifecycleScope.launch { nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1) }
     }
 
     private fun errorLimitDialog(errorLimit: Int) {
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
-        AlertDialog.Builder(this@SudokuActivity)
-            .setTitle(R.string.gameover)
-            .setMessage(getString(R.string.error_limit_reached, errorLimit))
-            .setPositiveButton(R.string.restart) { _, _ ->
-                restartGame()
-            }
-            .setNeutralButton(R.string.ok, null)
-            .show()
+        AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.gameover).setMessage(getString(R.string.error_limit_reached, errorLimit))
+            .setPositiveButton(R.string.restart) { _, _ -> restartGame() }.setNeutralButton(R.string.ok, null).show()
     }
 
     private fun restartGame() {
         lifecycleScope.launch {
             sudoku.reset()
             saveSudoku(sudoku)
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, false)
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, true)
             initSudoku(sudoku.id)
         }
     }
@@ -306,14 +317,14 @@ class SudokuActivity : AppCompatActivity() {
     private fun setSubtitle() {
         lifecycleScope.launch {
             val errorLimit = getUserSettings().errorLimit
-            val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " +
-                    getString(R.string.current_progress, sudoku.progress) + " | " +
-                    if (errorLimit == 0) {
-                        getString(R.string.current_errors, sudoku.errorsMade)
-                    } else {
-                        getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
-                    } + " | " +
-                    getString(R.string.current_hints, sudoku.hintsUsed)
+            val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " + getString(
+                R.string.current_progress,
+                sudoku.progress
+            ) + " | " + if (errorLimit == 0) {
+                getString(R.string.current_errors, sudoku.errorsMade)
+            } else {
+                getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+            } + " | " + getString(R.string.current_hints, sudoku.hintsUsed)
             binding.sudokuDrawerLayout.setExpandedSubtitle(subtitle)
             binding.sudokuDrawerLayout.setCollapsedSubtitle(subtitle)
         }
@@ -323,7 +334,6 @@ class SudokuActivity : AppCompatActivity() {
         if (binding.sudokuDrawerLayout.isExpanded) binding.sudokuDrawerLayout.setExpanded(false, true)
         val highlightSudokuNeighbors = getUserSettings().highlightRegional
         val highlightSelectedNumber = getUserSettings().highlightNumber
-        Log.d("test", "selected: $selected, newSelected: $newSelected")
         when (selected) {
             null -> {//nothing is selected
                 when (newSelected) {
@@ -442,8 +452,7 @@ class SudokuActivity : AppCompatActivity() {
                     if (position != null && sudoku[position].value == pair.first) {
 
                         if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
-                            pair.first,
-                            completedNumbers
+                            pair.first, completedNumbers
                         )
                         else {
                             selected = null
@@ -518,12 +527,10 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun animateSudoku(position: Position): Job {
         lifecycleScope.launch {
-            gameAdapter.fieldViews.filter { it?.position?.index!! <= position.index }.reversed()
-                .forEach { it?.flash(20) }
+            gameAdapter.fieldViews.filter { it?.position?.index!! <= position.index }.reversed().forEach { it?.flash(20) }
         }
         return lifecycleScope.launch {
-            gameAdapter.fieldViews.filter { it?.position?.index!! >= position.index }
-                .forEach { it?.flash(20) }
+            gameAdapter.fieldViews.filter { it?.position?.index!! >= position.index }.forEach { it?.flash(20) }
         }
     }
 
@@ -555,12 +562,22 @@ class SudokuActivity : AppCompatActivity() {
             binding.resumeButtonLayout.visibility = View.GONE
             binding.gameLayout.visibility = View.VISIBLE
             val errorLimit = getUserSettings().errorLimit
-            if (!sudoku.completed && !(errorLimit != 0 && sudoku.errorsMade >= errorLimit)) {
+            if (sudoku.completed) {
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, sudoku.modeLevel == Sudoku.MODE_NORMAL)
+            } else if (errorLimit != 0 && sudoku.errorsMade >= errorLimit) {
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
+            } else {
                 sudoku.startTimer()
                 val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
                 itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
                 itemPausePlay.title = getString(R.string.pause)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, true)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, false)
             }
         }
     }
@@ -574,6 +591,8 @@ class SudokuActivity : AppCompatActivity() {
         itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
+        toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, true)
+        toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, false)
     }
 
     private fun toggleGameResumed() {

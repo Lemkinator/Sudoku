@@ -4,6 +4,7 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity(tableName = "sudoku")
@@ -21,6 +22,7 @@ data class SudokuDb(
     val neighborHighlightingUsed: Boolean,
     val numberHighlightingUsed: Boolean,
     val autoNotesUsed: Boolean,
+    val modeLevel: Int,
 )
 
 data class SudokuWithFields(

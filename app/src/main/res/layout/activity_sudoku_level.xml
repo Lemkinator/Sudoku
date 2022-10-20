@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dev.oneuiproject.oneui.layout.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/sudoku_level_drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:expanded="false"
+    app:title="@string/level"
+    app:subtitle="@string/app_name"
+    tools:context=".ui.SudokuLevelActivity">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/sudoku_levels_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/oui_background_color"
+        android:scrollbars="vertical" />
+
+</dev.oneuiproject.oneui.layout.DrawerLayout>

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -16,7 +17,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
-import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,11 +41,9 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivityTabHistory : Fragment() {
-    private lateinit var binding : FragmentTabHistoryBinding
+    private lateinit var binding: FragmentTabHistoryBinding
     private lateinit var sudokuHistory: List<Pair<Sudoku?, LocalDateTime>>
     private lateinit var sudokuListAdapter: SudokuListAdapter
-
-    //private lateinit var drawerLayout: DrawerLayout
     private lateinit var toolbarLayout: ToolbarLayout
     private lateinit var mainTabs: MarginsTabLayout
     private lateinit var onBackPressedCallback: OnBackPressedCallback
@@ -72,18 +70,18 @@ class MainActivityTabHistory : Fragment() {
         val activity = requireActivity()
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
         mainTabs = activity.findViewById(R.id.main_margins_tab_layout)
-        lifecycleScope.launch { initList() }
         onBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 if (selecting) setSelecting(false)
             }
         }
-        requireActivity().onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { initList() }
+        onBackPressedCallback.remove()
+        requireActivity().onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     private suspend fun initList() {
@@ -198,10 +196,11 @@ class MainActivityTabHistory : Fragment() {
                 holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
                 holder.textView.text = "Sudoku (" + sudoku.difficulty.getLocalString(resources) + ")"
-                if (sudoku.completed) holder.imageView.setImageDrawable(
+                holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         requireContext(),
-                        dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
+                        if (sudoku.completed) dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
+                        else dev.oneuiproject.oneui.R.drawable.ic_oui_time
                     )
                 )
                 lifecycleScope.launch {
@@ -293,7 +292,8 @@ class MainActivityTabHistory : Fragment() {
             super.onDraw(c, parent, state)
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: SudokuListAdapter.ViewHolder = binding.sudokuHistoryList.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
+                val holder: SudokuListAdapter.ViewHolder =
+                    binding.sudokuHistoryList.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
                 if (holder.isItem) {
                     val top = (child.bottom + (child.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin)
                     val bottom = divider!!.intrinsicHeight + top
@@ -306,7 +306,8 @@ class MainActivityTabHistory : Fragment() {
         override fun seslOnDispatchDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: SudokuListAdapter.ViewHolder = binding.sudokuHistoryList.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
+                val holder: SudokuListAdapter.ViewHolder =
+                    binding.sudokuHistoryList.getChildViewHolder(child) as SudokuListAdapter.ViewHolder
                 if (!holder.isItem) roundedCorner.drawRoundedCorner(child, c)
             }
         }

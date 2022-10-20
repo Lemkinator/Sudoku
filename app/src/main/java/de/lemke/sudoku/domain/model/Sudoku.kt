@@ -29,10 +29,14 @@ class Sudoku(
     var regionalHighlightingUsed: Boolean,
     var numberHighlightingUsed: Boolean,
     var autoNotesUsed: Boolean,
+    val modeLevel: Int,
 ) {
     companion object {
-        val MODE_NORMAL = 0
-        val MODE_DAILY = -1
+        const val MODE_NORMAL = 0
+        const val MODE_DAILY = -1
+        const val MODE_LEVEL_ERROR_LIMIT = 3
+        const val MODE_DAILY_ERROR_LIMIT = 3
+
         fun create(
             sudokuId: SudokuId = SudokuId.generate(),
             size: Int,
@@ -50,6 +54,7 @@ class Sudoku(
             regionalHighlightingUsed: Boolean = false,
             numberHighlightingUsed: Boolean = false,
             autoNotessUsed: Boolean = false,
+            modeLevel: Int,
         ): Sudoku = Sudoku(
             id = sudokuId,
             size = size,
@@ -67,6 +72,7 @@ class Sudoku(
             regionalHighlightingUsed = regionalHighlightingUsed,
             numberHighlightingUsed = numberHighlightingUsed,
             autoNotesUsed = autoNotessUsed,
+            modeLevel = modeLevel,
         )
     }
 
@@ -121,6 +127,7 @@ class Sudoku(
         regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
         numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
         autoNotesUsed: Boolean = this.autoNotesUsed,
+        modeLevel: Int = this.modeLevel,
     ): Sudoku = Sudoku(
         id = id,
         size = size,
@@ -138,6 +145,7 @@ class Sudoku(
         regionalHighlightingUsed = regionalHighlightingUsed,
         numberHighlightingUsed = numberHighlightingUsed,
         autoNotesUsed = autoNotesUsed,
+        modeLevel = modeLevel,
     )
 
     fun reset() {
@@ -153,7 +161,6 @@ class Sudoku(
         timer?.cancel()
         timer = null
         gameListener = null
-        updated = LocalDateTime.now()
     }
 
     fun startTimer(delay: Long = 1500) {
@@ -163,7 +170,8 @@ class Sudoku(
         timer!!.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
                 seconds++
-                gameListener?.onTimeChanged(timeString)
+                updated = LocalDateTime.now()
+                gameListener?.onTimeChanged()
             }
         }, delay, 1000)
     }
@@ -176,7 +184,6 @@ class Sudoku(
     fun move(index: Int, value: Int?, isNote: Boolean = false) = move(Position.create(index, size), value, isNote)
 
     fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
-        updated = LocalDateTime.now()
         val field = get(position)
         if (field.given || field.hint) return false
         if (isNote) {
@@ -321,6 +328,6 @@ interface GameListener {
     fun onFieldChanged(position: Position)
     fun onCompleted(position: Position)
     fun onError()
-    fun onTimeChanged(time: String?)
+    fun onTimeChanged()
 }
 

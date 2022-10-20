@@ -81,7 +81,7 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private suspend fun launchApp() {
-        if (!getUserSettings().tosAccepted || true) { //TODO: remove true
+        if (!getUserSettings().tosAccepted) {
             startActivity(Intent(applicationContext, OOBEActivity::class.java))
         }
         else {

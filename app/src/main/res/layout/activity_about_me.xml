@@ -68,6 +68,15 @@
                         app:srcCompat="@drawable/about_page_github" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/about_header_play_store"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="?attr/actionBarItemBackground"
+                        android:tint="@color/oui_secondary_text_color"
+                        app:srcCompat="@drawable/about_page_play_store" />
+
+                    <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/about_header_website"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
@@ -77,13 +86,13 @@
                         app:srcCompat="@drawable/ic_oui_website" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
-                        android:id="@+id/about_header_email"
+                        android:id="@+id/about_header_insta"
                         android:layout_width="48dp"
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
                         android:tint="@color/oui_secondary_text_color"
-                        app:srcCompat="@drawable/ic_oui_email_outline" />
+                        app:srcCompat="@drawable/about_page_insta" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/about_header_tiktok"
@@ -91,7 +100,7 @@
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
-                        app:srcCompat="@drawable/about_page_github" />
+                        app:srcCompat="@drawable/about_page_tiktok" />
 
                 </LinearLayout>
 

@@ -5,7 +5,7 @@
     android:id="@+id/splashLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:background_image="@drawable/ic_launcher_background"
+    app:background_image="@drawable/samsung_squircle"
     app:foreground_image="@drawable/ic_launcher_foreground"
     app:animation="@anim/splash_animation"
     tools:context=".ui.SplashActivity" />

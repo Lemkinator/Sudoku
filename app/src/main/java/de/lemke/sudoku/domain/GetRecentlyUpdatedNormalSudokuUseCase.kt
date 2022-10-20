@@ -6,10 +6,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class GetRecentSudokuUseCase @Inject constructor(
+class GetRecentlyUpdatedNormalSudokuUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
     suspend operator fun invoke(): Sudoku? = withContext(Dispatchers.Default) {
-        sudokusRepository.getRecentSudoku()
+        sudokusRepository.getRecentlyUpdatedNormalSudoku()
     }
 }

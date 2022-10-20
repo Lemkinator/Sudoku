@@ -8,9 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -21,12 +19,13 @@ import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
+import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.utils.SeekBarUtils
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
-import dev.oneuiproject.oneui.widget.HapticSeekBar
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -53,7 +52,7 @@ class MainActivityTabSudoku : Fragment() {
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Inject
-    lateinit var getRecentSudoku: GetRecentSudokuUseCase
+    lateinit var getRecentSudoku: GetRecentlyUpdatedNormalSudokuUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentTabSudokuBinding.inflate(inflater, container, false)
@@ -79,10 +78,10 @@ class MainActivityTabSudoku : Fragment() {
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = 4
         binding.newGameButton.setOnClickListener {
-            val mLoadingDialog = ProgressDialog(context)
-            mLoadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
-            mLoadingDialog.setCancelable(false)
-            mLoadingDialog.show()
+            val loadingDialog = ProgressDialog(context)
+            loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+            loadingDialog.setCancelable(false)
+            loadingDialog.show()
             lifecycleScope.launch {
                 if (preloadedSudokus != null) {
                     Log.d("MainActivityTabSudoku", "Using preloaded sudokus")
@@ -91,14 +90,21 @@ class MainActivityTabSudoku : Fragment() {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 } else {
                     Log.d("MainActivityTabSudoku", "generating new sudoku")
+
                     val sudoku = generateSudoku(9, Difficulty.fromInt(binding.difficultySeekbar.progress))
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
-                mLoadingDialog.dismiss()
+                loadingDialog.dismiss()
                 preloadedSudokus = null
                 preloadedSudokus = preloadSudokus()
             }
+        }
+        binding.dailyButton.setOnClickListener {
+            startActivity(Intent(activity, DailySudokuActivity::class.java))
+        }
+        binding.levelsButton.setOnClickListener {
+            startActivity(Intent(activity, SudokuLevelActivity::class.java))
         }
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
@@ -134,5 +140,4 @@ class MainActivityTabSudoku : Fragment() {
             } else binding.continueGameButton.visibility = View.GONE
         }
     }
-
 }

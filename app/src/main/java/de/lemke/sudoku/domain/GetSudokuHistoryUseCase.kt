@@ -11,7 +11,8 @@ class GetSudokuHistoryUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase
 ) {
     suspend operator fun invoke(): List<Pair<Sudoku?, LocalDateTime>> = withContext(Dispatchers.Default) {
-        val sudokuHistory: MutableList<Pair<Sudoku?, LocalDateTime>> = getAllSudokus().map { it to it.updated }.toMutableList()
+        val sudokuHistory: MutableList<Pair<Sudoku?, LocalDateTime>> =
+            getAllSudokus(includeDaily = false, includeLevel = false).map { it to it.updated }.toMutableList()
         val sudokuHistoryCopy = sudokuHistory.toMutableList()
         var offset = 0
         var oldDate: LocalDate? = null

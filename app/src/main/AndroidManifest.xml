@@ -4,18 +4,17 @@
 
     <!--
     TODO / Ideas
-        about me page
 
-        levels? 1. 10 10 15 20 25
-        daily challenges
+        filter 3 checkboxes
 
         play integration
         erfolge
         bestenlisten
-
         show numbers left on button
 
         multiplayer
+
+        (splash icon on non sammy devices squarish?) check splash icon on non sammy
 
         size 16?
         landscape mode?
@@ -50,6 +49,8 @@
         <activity android:name=".ui.SettingsActivity" />
         <activity android:name=".ui.AboutActivity" />
         <activity android:name=".ui.AboutMeActivity" />
+        <activity android:name=".ui.DailySudokuActivity" />
+        <activity android:name=".ui.SudokuLevelActivity" />
         <activity
             android:name=".ui.SudokuActivity"
             android:screenOrientation="portrait"

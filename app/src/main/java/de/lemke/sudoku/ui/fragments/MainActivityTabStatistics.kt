@@ -28,12 +28,6 @@ class MainActivityTabStatistics : Fragment() {
     lateinit var getAllSudokusWithDifficulty: GetAllSudokusWithDifficultyUseCase
 
     @Inject
-    lateinit var getAllDailySudokusWithDifficulty: GetAllSudokusWithDifficultyUseCase
-
-    @Inject
-    lateinit var getAllSudokuLevelsWithDifficulty: GetAllSudokusWithDifficultyUseCase
-
-    @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Inject
@@ -55,8 +49,8 @@ class MainActivityTabStatistics : Fragment() {
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onResume() {
+        super.onResume()
         lifecycleScope.launch { updateStatistics() }
     }
 
@@ -81,19 +75,14 @@ class MainActivityTabStatistics : Fragment() {
         val difficulty =
             if (userSettings.statisticsFilterDifficulty == -1) null else Difficulty.fromInt(userSettings.statisticsFilterDifficulty)
         binding.generalStatisticsLayout.visibility = if (difficulty != null) View.GONE else View.VISIBLE
-        sudokus = if (difficulty != null) getAllSudokusWithDifficulty(difficulty) else getAllSudokus()
-        /*
-        TODO sense?
-        if (userSettings.statisticsFilterIncludeDaily) sudokus = if (difficulty != null) {
-            sudokus + getAllDailySudokusWithDifficulty(difficulty)
-        } else {
-            sudokus + getAllSudokus()
-        }
-        if (userSettings.statisticsFilterIncludeLevels) sudokus = if (difficulty != null) {
-            sudokus + getAllSudokuLevelsWithDifficulty(difficulty)
-        } else {
-            sudokus + getAllSudokuLevels()
-        }*/
+        sudokus = if (difficulty != null) getAllSudokusWithDifficulty(
+            difficulty,
+            includeDaily = userSettings.statisticsFilterIncludeDaily,
+            includeLevel = userSettings.statisticsFilterIncludeLevels
+        ) else getAllSudokus(
+            includeDaily = userSettings.statisticsFilterIncludeDaily,
+            includeLevel = userSettings.statisticsFilterIncludeLevels
+        )
 
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size
