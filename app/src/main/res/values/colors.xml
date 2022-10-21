@@ -3,7 +3,6 @@
     <color name="primary_color">#8D009808</color>
     <color name="primary_dark_color">#8D009808</color>
     <color name="secondary_color">#CF8D3C</color>
-    <color name="secondary_dark_color">#CF8D3C</color>
 
     <color name="oui_secondary_text_color">@color/oui_appinfolayout_info_text_color</color>
     <color name="oui_primary_icon_color">@color/oui_primary_text_color</color>

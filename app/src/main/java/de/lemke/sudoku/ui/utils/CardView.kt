@@ -12,8 +12,8 @@ import android.widget.TextView
 import de.lemke.sudoku.R
 
 class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, attrs) {
-    var isIconView = false
-    var isDividerViewVisible = false
+    private var isIconView = false
+    private var isDividerViewVisible = false
     private val parentView: FrameLayout
     private val containerView: LinearLayout
     private val titleTextView: TextView
@@ -55,7 +55,7 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
             summaryTextView.text = summaryText1
             summaryTextView.visibility = View.VISIBLE
         }
-        dividerView = findViewById<View>(R.id.cardview_divider)
+        dividerView = findViewById(R.id.cardview_divider)
         val lp: MarginLayoutParams = dividerView!!.layoutParams as MarginLayoutParams
         lp.marginStart = if (isIconView) ((resources.getDimensionPixelSize(R.dimen.cardview_icon_divider_margin_end)
                 + resources.getDimensionPixelSize(R.dimen.cardview_icon_size)

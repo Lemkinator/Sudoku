@@ -5,7 +5,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import java.util.Calendar
 import javax.inject.Inject
 
 class GetAllDailySudokusUseCase @Inject constructor(

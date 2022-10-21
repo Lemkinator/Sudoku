@@ -11,13 +11,11 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySplashBinding
 import de.lemke.sudoku.domain.AppStart
 import de.lemke.sudoku.domain.CheckAppStartUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import dev.oneuiproject.oneui.layout.SplashLayout
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,6 +25,7 @@ import javax.inject.Inject
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySplashBinding
+    private lateinit var appStart: AppStart
     private var launchCanceled = false
 
     @Inject
@@ -37,8 +36,6 @@ class SplashActivity : AppCompatActivity() {
 
     @Inject
     lateinit var checkAppStart: CheckAppStartUseCase
-
-    lateinit var appStart: AppStart
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -1,9 +1,6 @@
 package de.lemke.sudoku.data.database
 
 import androidx.room.*
-import de.lemke.sudoku.domain.model.Sudoku
-import java.time.LocalDate
-import java.util.logging.Level
 
 @Dao
 interface SudokuDao {

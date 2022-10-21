@@ -41,6 +41,7 @@
             android:key="errorLimitDropDown"
             android:entries="@array/error_limit_entries"
             android:entryValues="@array/error_limit_values"
+            android:defaultValue="3"
             android:title="@string/error_limit"
             app:icon="@drawable/ic_oui_error" />
 

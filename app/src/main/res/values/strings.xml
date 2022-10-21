@@ -133,7 +133,6 @@
     <string name="accept_tos">Continue</string>
 
     <!--About Me Page-->
-    <string name="tiktok" translatable="false">TikTok</string>
     <string name="about_me">About me</string>
     <string name="website">Website</string>
     <string name="task_failed">Oops, something went wrong…</string>
