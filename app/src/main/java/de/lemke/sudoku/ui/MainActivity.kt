@@ -1,6 +1,5 @@
 package de.lemke.sudoku.ui
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
@@ -21,10 +20,10 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
-import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -113,8 +112,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                             else binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
                         }
                         getString(R.string.statistics) -> {
-                            binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
-                            //TODO open filter dialog?
+                            //binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
+                            StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(fragmentManager, "StatisticsFilterDialog")
                         }
                     }
                 } catch (_: Exception) { //no required functionality -> ignore errors

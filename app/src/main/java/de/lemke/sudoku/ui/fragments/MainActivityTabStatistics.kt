@@ -14,7 +14,6 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
-import dev.oneuiproject.oneui.layout.ToolbarLayout
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -62,7 +61,7 @@ class MainActivityTabStatistics : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.main_menu_statistics_filter -> {
-                StatisticsFilterDialog { lifecycleScope.launch { updateStatistics() } }.show(childFragmentManager, "StatisticsFilterDialog")
+                StatisticsFilterDialog { lifecycleScope.launch { onResume() } }.show(childFragmentManager, "StatisticsFilterDialog")
                 return true
             }
         }
@@ -77,9 +76,11 @@ class MainActivityTabStatistics : Fragment() {
         binding.generalStatisticsLayout.visibility = if (difficulty != null) View.GONE else View.VISIBLE
         sudokus = if (difficulty != null) getAllSudokusWithDifficulty(
             difficulty,
+            includeNormal = userSettings.statisticsFilterIncludeNormal,
             includeDaily = userSettings.statisticsFilterIncludeDaily,
             includeLevel = userSettings.statisticsFilterIncludeLevels
         ) else getAllSudokus(
+            includeNormal = userSettings.statisticsFilterIncludeNormal,
             includeDaily = userSettings.statisticsFilterIncludeDaily,
             includeLevel = userSettings.statisticsFilterIncludeLevels
         )
@@ -87,6 +88,9 @@ class MainActivityTabStatistics : Fragment() {
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size
         val winRate = if (gamesStarted == 0) 0 else (gamesCompleted.toFloat() / gamesStarted.toFloat() * 100).toInt()
+        val bestTimeSudoku = sudokus.filter { it.completed }.minByOrNull { it.seconds }
+        val bestTime = bestTimeSudoku?.seconds ?: 0
+        val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
         val gamesWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
         val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
         val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
@@ -97,11 +101,6 @@ class MainActivityTabStatistics : Fragment() {
         val gamesWithoutNotes = sudokus.filter { it.completed && it.notesMade == 0 }.size
         val mostNotes = sudokus.maxByOrNull { it.notesMade }?.notesMade ?: 0
         val averageNotes = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.notesMade } / gamesCompleted
-        val bestTimeSudoku = sudokus.filter { it.completed }.minByOrNull { it.seconds }
-        val bestTime = bestTimeSudoku?.seconds ?: 0
-        val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
-        val currentStreak = sudokus.takeWhile { it.completed }.size
-        val bestStreak = if (gamesCompleted == 0) 0 else sudokus.windowed(2, 1).count { it[0].completed && it[1].completed } + 1
         val mostGamesStartedDifficultyInt = sudokus.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
         val mostGamesStartedDifficulty =
             if (mostGamesStartedDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesStartedDifficultyInt, resources)
@@ -112,6 +111,11 @@ class MainActivityTabStatistics : Fragment() {
         binding.gamesStatisticTotalStartedValue.text = gamesStarted.toString()
         binding.gamesStatisticTotalCompletedValue.text = gamesCompleted.toString()
         binding.gamesStatisticWinRateValue.text = "$winRate%"
+        binding.timeStatisticBestTimeValue.text =
+            secondsToTimeString(bestTime) + if (bestTimeSudoku != null && difficulty == null) " (${
+                bestTimeSudoku.difficulty.getLocalString(resources)
+            })" else ""
+        binding.timeStatisticAverageTimeValue.text = secondsToTimeString(averageTime)
         binding.gamesStatisticWinsWithoutErrorValue.text = gamesWithoutErrors.toString()
         binding.gamesStatisticMostErrorsValue.text = mostErrors.toString()
         binding.gamesStatisticAverageErrorsValue.text = averageErrors.toString()
@@ -122,13 +126,6 @@ class MainActivityTabStatistics : Fragment() {
         binding.gamesStatisticWinsWithoutNotesValue.text = gamesWithoutNotes.toString()
         binding.gamesStatisticMostNotesValue.text = mostNotes.toString()
         binding.gamesStatisticAverageNotesValue.text = averageNotes.toString()
-        binding.timeStatisticBestTimeValue.text =
-            secondsToTimeString(bestTime) + if (bestTimeSudoku != null && difficulty == null) " (${
-                bestTimeSudoku.difficulty.getLocalString(resources)
-            })" else ""
-        binding.timeStatisticAverageTimeValue.text = secondsToTimeString(averageTime)
-        binding.streakStatisticCurrentStreakValue.text = currentStreak.toString()
-        binding.streakStatisticBestStreakValue.text = bestStreak.toString()
         binding.difficultyStatisticMostGamesStartedValue.text = mostGamesStartedDifficulty
         binding.difficultyStatisticMostGamesWonValue.text = mostGamesWonDifficulty
     }

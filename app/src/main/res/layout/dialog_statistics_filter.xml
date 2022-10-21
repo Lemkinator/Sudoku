@@ -2,7 +2,6 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
 
 
@@ -74,18 +73,25 @@
             android:text="@string/include" /-->
 
         <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_include_normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/normal_sudokus" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
             android:id="@+id/checkbox_statistics_filter_include_daily"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
-            android:text="@string/include_daily_sudokus" />
+            android:text="@string/daily_sudokus" />
 
         <androidx.appcompat.widget.AppCompatCheckBox
             android:id="@+id/checkbox_statistics_filter_include_levels"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
-            android:text="@string/include_sudoku_levels" />
+            android:text="@string/sudoku_level" />
 
         <View
             android:layout_width="match_parent"

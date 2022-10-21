@@ -96,9 +96,6 @@
     <string name="win_rate">Win rate</string>
     <string name="wins_without_error">Wins without errors</string>
     <string name="time">Time</string>
-    <string name="streak">Streak</string>
-    <string name="current_streak">Current winning streak</string>
-    <string name="best_streak">Longest winning streak</string>
     <string name="best_time">Best time</string>
     <string name="average_time">Average Time</string>
     <string name="wins_without_hint">Wins without hint</string>
@@ -119,8 +116,9 @@
     <string name="filter">Filter</string>
     <string name="statistics_filter">Statistics filter</string>
     <string name="all">All</string>
-    <string name="include_daily_sudokus">Include daily Sudokus</string>
-    <string name="include_sudoku_levels">Include Sudoku levels</string>
+    <string name="normal_sudokus">Normal Sudokus</string>
+    <string name="daily_sudokus">Daily Sudokus</string>
+    <string name="sudoku_level">Sudoku level</string>
 
     <!--OOBE-->
     <string name="oobe_onboard_msg1_title">Beautiful design</string>.
@@ -131,7 +129,7 @@
     <string name="oobe_onboard_msg3_summary">No annoying ads after each Sudoku.</string>
     <string name="tos">Terms of Service</string>
     <string name="tos_content">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of nuclear, missile, or chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
-    <string name="oobe_tos_text">By using the app, you agree to the %1$s.</string>
+    <string name="oobe_tos_text">By continuing, you agree to the %1$s.</string>
     <string name="accept_tos">Continue</string>
 
     <!--About Me Page-->

@@ -10,7 +10,7 @@ import javax.inject.Inject
 class GetAllSudokusWithDifficultyUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(difficulty: Difficulty, includeDaily: Boolean, includeLevel: Boolean): List<Sudoku> = withContext(Dispatchers.Default) {
-        sudokusRepository.getAllSudokusWithDifficulty(difficulty, includeDaily, includeLevel)
+    suspend operator fun invoke(difficulty: Difficulty, includeNormal: Boolean, includeDaily: Boolean, includeLevel: Boolean): List<Sudoku> = withContext(Dispatchers.Default) {
+        sudokusRepository.getAllSudokusWithDifficulty(difficulty, includeNormal, includeDaily, includeLevel)
     }
 }

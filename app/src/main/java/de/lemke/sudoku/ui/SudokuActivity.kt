@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -30,7 +29,7 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -570,6 +569,10 @@ class SudokuActivity : AppCompatActivity() {
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
                 toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, true)
+            } else if (sudoku.modeLevel == Sudoku.MODE_DAILY && sudoku.created.toLocalDate() != LocalDate.now()) {
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, false)
+                toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, false)
             } else {
                 sudoku.startTimer()
                 val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)

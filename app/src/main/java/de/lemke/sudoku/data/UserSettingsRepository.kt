@@ -32,6 +32,7 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
             it[KEY_ERROR_LIMIT] = newSettings.errorLimit
             it[KEY_STATISTICS_FILTER_DIFFICULTY] = newSettings.statisticsFilterDifficulty
+            it[KEY_STATISTICS_FILTER_INCLUDE_NORMAL] = newSettings.statisticsFilterIncludeNormal
             it[KEY_STATISTICS_FILTER_INCLUDE_DAILY] = newSettings.statisticsFilterIncludeDaily
             it[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] = newSettings.statisticsFilterIncludeLevels
         }
@@ -51,6 +52,7 @@ class UserSettingsRepository @Inject constructor(
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
         statisticsFilterDifficulty = prefs[KEY_STATISTICS_FILTER_DIFFICULTY] ?: -1,
+        statisticsFilterIncludeNormal = prefs[KEY_STATISTICS_FILTER_INCLUDE_NORMAL] ?: true,
         statisticsFilterIncludeDaily = prefs[KEY_STATISTICS_FILTER_INCLUDE_DAILY] ?: false,
         statisticsFilterIncludeLevels = prefs[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] ?: false,
     )
@@ -68,6 +70,7 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
         private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
         private val KEY_STATISTICS_FILTER_DIFFICULTY = intPreferencesKey("statisticsFilterDifficulty")
+        private val KEY_STATISTICS_FILTER_INCLUDE_NORMAL = booleanPreferencesKey("statisticsFilterIncludeNormal")
         private val KEY_STATISTICS_FILTER_INCLUDE_DAILY = booleanPreferencesKey("statisticsFilterIncludeDaily")
         private val KEY_STATISTICS_FILTER_INCLUDE_LEVELS = booleanPreferencesKey("statisticsFilterIncludeLevels")
     }
@@ -97,6 +100,8 @@ data class UserSettings(
     val errorLimit: Int,
     /** Statistics filter Difficulty*/
     val statisticsFilterDifficulty: Int,
+    /** Statistics filter include normal */
+    val statisticsFilterIncludeNormal: Boolean,
     /** Statistics filter include daily */
     val statisticsFilterIncludeDaily: Boolean,
     /** Statistics filter include levels*/

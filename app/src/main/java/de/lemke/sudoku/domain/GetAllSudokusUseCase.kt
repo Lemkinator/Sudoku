@@ -9,7 +9,7 @@ import javax.inject.Inject
 class GetAllSudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(includeDaily: Boolean, includeLevel:Boolean): List<Sudoku> = withContext(Dispatchers.Default) {
-        sudokusRepository.getAllSudokus(includeDaily, includeLevel)
+    suspend operator fun invoke(includeNormal: Boolean, includeDaily: Boolean, includeLevel:Boolean): List<Sudoku> = withContext(Dispatchers.Default) {
+        sudokusRepository.getAllSudokus(includeNormal, includeDaily, includeLevel)
     }
 }

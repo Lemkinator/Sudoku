@@ -43,6 +43,7 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
                     else -> R.id.radio_button_difficulty_all
                 }
             )
+            binding.checkboxStatisticsFilterIncludeNormal.isChecked = userSettings.statisticsFilterIncludeNormal
             binding.checkboxStatisticsFilterIncludeDaily.isChecked = userSettings.statisticsFilterIncludeDaily
             binding.checkboxStatisticsFilterIncludeLevels.isChecked = userSettings.statisticsFilterIncludeLevels
         }
@@ -58,6 +59,11 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
                     else -> -1
                 }
                 updateUserSettings { it.copy(statisticsFilterDifficulty = newDifficulty) }
+            }
+        }
+        binding.checkboxStatisticsFilterIncludeNormal.setOnCheckedChangeListener { _, isChecked ->
+            lifecycleScope.launch {
+                updateUserSettings { it.copy(statisticsFilterIncludeNormal = isChecked) }
             }
         }
         binding.checkboxStatisticsFilterIncludeDaily.setOnCheckedChangeListener { _, isChecked ->

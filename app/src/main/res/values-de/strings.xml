@@ -78,9 +78,6 @@
     <string name="win_rate">Siegesrate</string>
     <string name="wins_without_error">Siege ohne Fehler</string>
     <string name="time">Zeit</string>
-    <string name="streak">Serie</string>
-    <string name="current_streak">Aktuelle Siegesserie</string>
-    <string name="best_streak">Längste Siegesserie</string>
     <string name="best_time">Beste Zeit</string>
     <string name="average_time">Durchschnittliche Zeit</string>
     <string name="wins_without_hint">Siege ohne Hinweis</string>
@@ -101,8 +98,9 @@
     <string name="filter">Filter</string>
     <string name="statistics_filter">Statistik-Filter</string>
     <string name="all">Alle</string>
-    <string name="include_daily_sudokus">Tägliche Sudokus miteinbeziehen</string>
-    <string name="include_sudoku_levels">Sudoku-Levels miteinbeziehen</string>
+    <string name="normal_sudokus">Normale Sudokus</string>
+    <string name="daily_sudokus">Tägliche Sudokus</string>
+    <string name="sudoku_level">Sudoku-Level</string>
 
     <!--OOBE-->
     <string name="oobe_onboard_msg1_title">Schönes Design</string>
