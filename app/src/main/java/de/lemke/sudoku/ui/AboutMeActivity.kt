@@ -97,7 +97,7 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         ViewUtils.semSetRoundedCornerColor(
             binding.aboutBottomContent.root,
             ViewUtils.SEM_ROUNDED_CORNER_TOP_LEFT or ViewUtils.SEM_ROUNDED_CORNER_TOP_RIGHT,
-            getColor(dev.oneuiproject.oneui.R.color.oui_round_and_bgcolor)
+            getColor(dev.oneuiproject.oneui.design.R.color.oui_round_and_bgcolor)
         )
         val appIcon = getDrawable(R.drawable.me4_round)
         binding.aboutHeaderIcon.setImageDrawable(appIcon)

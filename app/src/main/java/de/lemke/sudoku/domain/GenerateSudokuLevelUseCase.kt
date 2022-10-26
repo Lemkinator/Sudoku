@@ -12,18 +12,16 @@ class GenerateSudokuLevelUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(size: Int = 9, level: Int): Sudoku = withContext(Dispatchers.Default) {
         val sudokuId = SudokuId.generate()
-        val veryEasy = 20
-        val easy = 60
-        val medium = 300
-        val hard = 400
-        val expert = 500
+        val easy = 20
+        val medium = 60
+        val hard = 300
+        val expert = 400
         val difficulty = when (level) {
-            in 1..veryEasy -> Difficulty.VERY_EASY
-            in veryEasy + 1..easy -> Difficulty.EASY
-            in easy + 1..medium -> Difficulty.MEDIUM
-            in medium + 1..hard -> Difficulty.HARD
-            in hard + 1..expert -> Difficulty.EXPERT
-            else -> Difficulty.MEDIUM
+            in 1..easy -> Difficulty.VERY_EASY
+            in easy + 1..medium -> Difficulty.EASY
+            in medium + 1..hard -> Difficulty.MEDIUM
+            in hard + 1..expert -> Difficulty.HARD
+            else -> Difficulty.EXPERT
         }
         return@withContext Sudoku.create(
             sudokuId = sudokuId,

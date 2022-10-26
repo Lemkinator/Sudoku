@@ -29,21 +29,29 @@
             app:icon="@drawable/ic_oui_speed_player" />
         <SwitchPreference
             android:key="highlightRegionalSwitch"
-            android:title="@string/regional_highlight"
             android:summary="@string/regional_highlight_summary"
+            android:title="@string/regional_highlight"
             app:icon="@drawable/ic_oui_vision" />
         <SwitchPreference
             android:key="highlightNumberSwitch"
-            android:title="@string/number_highlight"
             android:summary="@string/number_highlight_summary"
+            android:title="@string/number_highlight"
             app:icon="@drawable/ic_oui_vision" />
         <DropDownPreference
-            android:key="errorLimitDropDown"
+            android:defaultValue="3"
             android:entries="@array/error_limit_entries"
             android:entryValues="@array/error_limit_values"
-            android:defaultValue="3"
+            android:key="errorLimitDropDown"
             android:title="@string/error_limit"
             app:icon="@drawable/ic_oui_error" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/notifications">
+        <SwitchPreference
+            android:key="dailyNotificationSwitch"
+            android:summary="@string/daily_sudoku_notification_channel_description"
+            android:title="@string/daily_sudoku_notification_channel_name"
+            app:icon="@drawable/ic_oui_calendar_task" />
 
     </PreferenceCategory>
 

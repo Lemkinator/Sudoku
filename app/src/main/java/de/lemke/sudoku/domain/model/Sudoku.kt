@@ -88,6 +88,15 @@ class Sudoku(
 
     override fun hashCode(): Int = id.hashCode()
 
+    val isSudokuLevel: Boolean
+        get() = modeLevel > 0
+
+    val isDailySudoku: Boolean
+        get() = modeLevel == MODE_DAILY
+
+    val isNormalSudoku: Boolean
+        get() = modeLevel == MODE_NORMAL
+
     val errors: Int
         get() = fields.count { it.error }
 
@@ -105,12 +114,18 @@ class Sudoku(
 
     val itemCount: Int
         get() = (this.size * this.size)
+
     val blockSize: Int
         get() = sqrt(this.size.toDouble()).toInt()
 
     val timeString: String
         get() = if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
         else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+
+    val sizeString: String
+        get() = "$size×$size"
+
+    fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
     fun copy(
         id: SudokuId = this.id,
@@ -256,42 +271,21 @@ class Sudoku(
             field.clone(position = Position.create(size = size, row = row, column = column))
     }
 
-    fun getRow(row: Int): List<Field> =
-        fields.filter { it.position.row == row }
-
-    fun getColumn(column: Int): List<Field> =
-        fields.filter { it.position.column == column }
-
+    private fun getRow(row: Int): List<Field> = fields.filter { it.position.row == row }
+    private fun getColumn(column: Int): List<Field> = fields.filter { it.position.column == column }
     private fun getBlock(block: Int): List<Field> = fields.filter { it.position.block == block }
-
+    private fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
     fun getNeighbors(index: Int): List<Field> = getNeighbors(Position.create(index, size))
 
-    fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
+    fun isRowCompleted(row: Int): Boolean = getRow(row).all { it.correct }
+    fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.correct }
+    fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
 
-    fun setRow(row: Int, fields: List<Field>) {
-        fields.forEachIndexed { index, field -> set(row = row, column = index, field = field) }
-    }
-
-    fun setColumn(column: Int, fields: List<Field>) {
-        fields.forEachIndexed { index, field -> set(row = index, column = column, field = field) }
-    }
-
-    fun rowContainsValue(row: Int, value: Int): Boolean = getRow(row).any { it.value == value }
-    fun columnContainsValue(column: Int, value: Int): Boolean = getColumn(column).any { it.value == value }
-    fun blockContainsValue(block: Int, value: Int): Boolean = getBlock(block).any { it.value == value }
-
-    fun isRowCompleted(row: Int): Boolean = getRow(row).all { it.value != null }
-    fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.value != null }
-    fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.value != null }
-
-    fun getPossibleValues(position: Position): List<Int> {
-        val row = getRow(position.row)
-        val column = getColumn(position.column)
-        val block = getBlock(position.block)
+    private fun getPossibleValues(position: Position): List<Int> {
         val values = (1..size).toMutableList()
-        row.forEach { values.remove(it.value) }
-        column.forEach { values.remove(it.value) }
-        block.forEach { values.remove(it.value) }
+        getRow(position.row).forEach { values.remove(it.value) }
+        getColumn(position.column).forEach { values.remove(it.value) }
+        getBlock(position.block).forEach { values.remove(it.value) }
         return values
     }
 
@@ -320,6 +314,8 @@ class Sudoku(
             gameListener?.onFieldChanged(field.position)
         }
     }
+
+
 }
 
 interface GameListener {

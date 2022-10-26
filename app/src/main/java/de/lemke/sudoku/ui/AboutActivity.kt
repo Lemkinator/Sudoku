@@ -55,7 +55,7 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
         appInfoLayout.status = LOADING
         //status: LOADING NO_UPDATE UPDATE_AVAILABLE NOT_UPDATEABLE NO_CONNECTION
         appInfoLayout.setMainButtonClickListener(this)
-        val version: View = appInfoLayout.findViewById(dev.oneuiproject.oneui.R.id.app_info_version)
+        val version: View = appInfoLayout.findViewById(dev.oneuiproject.oneui.design.R.id.app_info_version)
         version.setOnClickListener {
             clicks++
             if (clicks > 5) {

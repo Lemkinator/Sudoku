@@ -35,6 +35,7 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_STATISTICS_FILTER_INCLUDE_NORMAL] = newSettings.statisticsFilterIncludeNormal
             it[KEY_STATISTICS_FILTER_INCLUDE_DAILY] = newSettings.statisticsFilterIncludeDaily
             it[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] = newSettings.statisticsFilterIncludeLevels
+            it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
         }
         return settingsFromPreferences(prefs)
     }
@@ -55,6 +56,7 @@ class UserSettingsRepository @Inject constructor(
         statisticsFilterIncludeNormal = prefs[KEY_STATISTICS_FILTER_INCLUDE_NORMAL] ?: true,
         statisticsFilterIncludeDaily = prefs[KEY_STATISTICS_FILTER_INCLUDE_DAILY] ?: false,
         statisticsFilterIncludeLevels = prefs[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] ?: false,
+        dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] ?: false,
     )
 
 
@@ -73,6 +75,7 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_STATISTICS_FILTER_INCLUDE_NORMAL = booleanPreferencesKey("statisticsFilterIncludeNormal")
         private val KEY_STATISTICS_FILTER_INCLUDE_DAILY = booleanPreferencesKey("statisticsFilterIncludeDaily")
         private val KEY_STATISTICS_FILTER_INCLUDE_LEVELS = booleanPreferencesKey("statisticsFilterIncludeLevels")
+        private val KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED = booleanPreferencesKey("dailySudokuNotificationEnabled")
     }
 }
 
@@ -106,5 +109,7 @@ data class UserSettings(
     val statisticsFilterIncludeDaily: Boolean,
     /** Statistics filter include levels*/
     val statisticsFilterIncludeLevels: Boolean,
+    /** daily Sudoku Notification enabled */
+    val dailySudokuNotificationEnabled: Boolean,
 
     )

@@ -1,6 +1,5 @@
 package de.lemke.sudoku.domain
 
-import android.util.Log
 import de.lemke.sudoku.domain.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -8,255 +7,188 @@ import java.util.*
 import javax.inject.Inject
 import kotlin.math.sqrt
 
-class GenerateFieldsUseCase @Inject constructor(
-
-) {
-    //TODO cleanup
-    private var random: Random = Random()
-    private var size: Int = 9
+class GenerateFieldsUseCase @Inject constructor() {
+    private val random: Random = Random()
+    private var tries: Int = 40
+    private var sudokuSize: Int = 9
+    private var sqrtSize: Int = 3
     private var numbersToRemove: Int = -1
-    private var tries: Int = 60
 
 
-    suspend operator fun invoke(size: Int = 9, difficulty: Difficulty, sudokuId: SudokuId): MutableList<Field> = withContext(Dispatchers.Default) {
-        this@GenerateFieldsUseCase.size = size
-        this@GenerateFieldsUseCase.numbersToRemove = difficulty.numbersToRemove(size)
-        this@GenerateFieldsUseCase.tries = 40
+    suspend operator fun invoke(size: Int, difficulty: Difficulty, sudokuId: SudokuId): MutableList<Field> =
+        withContext(Dispatchers.Default) {
+            this@GenerateFieldsUseCase.sudokuSize = size
+            this@GenerateFieldsUseCase.sqrtSize = sqrt(size.toDouble()).toInt()
+            this@GenerateFieldsUseCase.numbersToRemove = difficulty.numbersToRemove(size)
 
-        var solutions: MutableList<Array<Array<Int?>>> = mutableListOf()
-        while (solutions.isEmpty()) {
-            val fields = generateFields()
-            solutions = findSolutions(fields)
+            var solutions: MutableList<Array<Array<Int?>>>
+            //Generate fields until there is at least one solution
+            do {
+                solutions = generateFields().getSolutions()
+            } while (solutions.isEmpty())
+            val solution = solutions.random()
+            val output = solution.removeRandomNumbers()
+
+            return@withContext MutableList(size * size) { index ->
+                val position = Position.create(index, size)
+                Field(
+                    sudokuId = sudokuId,
+                    position = position,
+                    value = output[position.row][position.column],
+                    solution = solution[position.row][position.column],
+                    given = output[position.row][position.column] != null,
+                )
+            }
         }
-        val solution = solutions.random()
-        val output = removeRandomNumbers(solution)
-
-        return@withContext MutableList(size * size) { index ->
-            val position = Position.create(index, size)
-            Field(
-                sudokuId = sudokuId,
-                position = position,
-                value = output[position.row][position.column],
-                solution = solution[position.row][position.column],
-                given = output[position.row][position.column] != null,
-            )
-        }
-    }
 
     private fun generateFields(): Array<Array<Int?>> {
-        val fields = Array(size) { arrayOfNulls<Int>(size) }
-        for (i in 0 until (size * size / 3)) addRandomNumberTo(fields)
+        val fields = Array(sudokuSize) { arrayOfNulls<Int>(sudokuSize) }
+        for (i in 0 until (sudokuSize * sudokuSize / 3)) fields.addRandomNumber()
         return fields
     }
 
-    private fun findSolutions(fields: Array<Array<Int?>>): MutableList<Array<Array<Int?>>> {
-        val solutions = mutableListOf<Array<Array<Int?>>>()
-        solveFieldForSolutionGame(cloneArray(fields), 0, 0, solutions)
-        return solutions
-    }
-
-
-    private fun addRandomNumberTo(input: Array<Array<Int?>>) {
-        val row = random.nextInt(size)
-        val column = random.nextInt(size)
-        val number = random.nextInt(size) + 1
-        if (input[row][column] == null && isValid(input, number, row, column)) {
-            input[row][column] = number
+    private fun Array<Array<Int?>>.addRandomNumber() {
+        val (row, column) = getRandomFieldCoordinates(empty = true)
+        if (row == -1) return //no empty field found
+        val possibleValues = getPossibleValues(row, column)
+        if (possibleValues.isNotEmpty()) {
+            this[row][column] = possibleValues[random.nextInt(possibleValues.size)]
         } else {
-            addRandomNumberTo(input)
+            addRandomNumber()
         }
     }
 
-    private fun isValid(input: Array<Array<Int?>>, i: Int, row: Int, column: Int): Boolean {
-        val size = sqrt(size.toDouble()).toInt()
-        for (number in input[row]) if (i == number) return false
-        for (rows in input) if (i == rows[column]) return false
-        val sRow = row / size * size
-        val sColumn = column / size * size
-        for (r in sRow until sRow + size) for (c in sColumn until sColumn + size) if (i == input[r][c]) return false
+    private fun Array<Array<Int?>>.isValid(value: Int, row: Int, column: Int): Boolean {
+        for (number in this[row]) if (number == value) return false //check row
+        for (rows in this) if (value == rows[column]) return false //check column
+        //check square
+        val sRow = row / sqrtSize * sqrtSize
+        val sColumn = column / sqrtSize * sqrtSize
+        for (r in sRow until sRow + sqrtSize) for (c in sColumn until sColumn + sqrtSize) if (value == this[r][c]) return false
         return true
     }
 
-    private fun cloneArray(input: Array<Array<Int?>>): Array<Array<Int?>> {
-        val output = Array(size) { arrayOfNulls<Int>(size) }
-        for (i in 0 until size) {
-            for (j in 0 until size) {
-                output[i][j] = input[i][j]
-            }
-        }
-        return output
+    private fun Array<Array<Int?>>.getSolutions(): MutableList<Array<Array<Int?>>> {
+        val solutions = mutableListOf<Array<Array<Int?>>>()
+        solveFieldsForSolutions(solutions)
+        return solutions
     }
 
-    private fun solveFieldForSolutionGame(input: Array<Array<Int?>>, row: Int, column: Int, solutions: MutableList<Array<Array<Int?>>>) {
-        var newRow = row
-        var newColumn = column
-        if (newColumn == size) { //go to next row
-            newColumn = 0
-            newRow++
-        }
-        if (newRow == size) { //save the solution once reached the end
-            solutions.add(cloneArray(input))
-            return
-        }
-        if (input[newRow][newColumn] == null) {
-            for (n in 1..size) {
-                if (isValid(input, n, newRow, newColumn)) {
-                    input[newRow][newColumn] = n
-                    solveFieldForSolutionGame(input, newRow, newColumn + 1, solutions)
-                }
+    private fun Array<Array<Int?>>.solveFieldsForSolutions(solutions: MutableList<Array<Array<Int?>>>, row: Int = 0, column: Int = 0) {
+        when {
+            row == sudokuSize -> { //save the solution once reached the end
+                solutions.add(copy())
+                return
             }
-            input[newRow][newColumn] = null
-        } else solveFieldForSolutionGame(input, newRow, newColumn + 1, solutions)
-    }
-
-    private fun removeRandomNumbers(input: Array<Array<Int?>>): Array<Array<Int?>> {
-        val newField = cloneArray(input)
-        val row = random.nextInt(size)
-        val column = random.nextInt(size)
-        return if (newField[row][column] != null) {
-            newField[row][column] = null
-            val solutions = ArrayList<Array<Array<Int?>>>()
-            solveFieldForSolutionGame(newField, 0, 0, solutions)
-            if (solutions.size == 1) { //continue while solutions.size() is one
-                numbersToRemove--
-                if (numbersToRemove == 0) {
-                    Log.d("removeRandomNumbers", "numbersToRemove: 0, tries: $tries, got one solution, return newField")
-                    newField
-                } else {
-                    Log.d(
-                        "removeRandomNumbers",
-                        "numbersToRemove: $numbersToRemove, tries: $tries, got one solution, continue to removeRandomNumbers"
-                    )
-                    removeRandomNumbers(newField)
-                }
-            } else { //try to remove more numbers
-                tries--
-                if (tries > 0) {
-                    Log.d("removeRandomNumbers", "numbersToRemove: $numbersToRemove, tries: $tries, retry, continue to removeRandomNumbers")
-                    removeRandomNumbers(input)
-                } else {
-                    Log.d("removeRandomNumbers", "numbersToRemove: $numbersToRemove, tries: $tries, no more tries, return input")
-                    input
-                }
+            column == sudokuSize -> { //go to next row
+                solveFieldsForSolutions(solutions, row + 1, 0)
             }
-        } else { //skip already removed numbers
-            removeRandomNumbers(input)
+            this[row][column] == null -> {
+                for (n in 1..sudokuSize) {
+                    if (isValid(n, row, column)) {
+                        this[row][column] = n
+                        solveFieldsForSolutions(solutions, row, column + 1)
+                    }
+                }
+                this[row][column] = null
+            }
+            else -> solveFieldsForSolutions(solutions, row, column + 1)
         }
     }
-
 
     /*
-    suspend operator fun invoke(size: Int = 9, difficulty: Difficulty): Sudoku = withContext(Dispatchers.Default) {
-        this@GenerateSudokuUseCase.difficulty = if (difficulty.value == Difficulty.max) -1
-        else (size.toDouble().pow(2.0) * (difficulty.value * 0.35f / Difficulty.max + 0.4f)).toInt()
+    tailrec approach, that didn't work :/
 
-        val sudokuId = SudokuId.generate()
-        val sudoku = Sudoku.create(
-            sudokuId = sudokuId,
-            size = size,
-            difficulty = difficulty,
-            fields = MutableList(size * size) { index ->
-                Field(
-                    sudokuId = sudokuId,
-                    position = Position.create(size, index),
-                    value = null,
-                    solution = null,
-                    given = true,
+    private tailrec fun solveFieldsForSolutions(
+        solutions: MutableList<Array<Array<Int?>>>,
+        fields: Array<Array<Int?>>,
+        row: Int = 0,
+        column: Int = 0
+    ) {
+        when {
+            row == sudokuSize -> { //save the solution once reached the end
+                if (fields.none { ints -> ints.none { it == null } }) solutions.add(fields.copy())
+                return
+            }
+            column == sudokuSize -> { //go to next row
+                solveFieldsForSolutions(solutions, fields, row + 1, 0)
+            }
+            fields[row][column] == null -> {
+                solveFieldsForSolutions(
+                    solutions,
+                    fields.with(row, column, fields.getPossibleValues(row, column).firstOrNull()),
+                    row,
+                    column + 1
                 )
-            })
-
-        Log.d("GenerateSudokuUseCase", "difficulty: $difficulty, tries: $tries")
-        //add random numbers
-        for (field in 0..size * size / 3) {
-            addRandomNumberTo(sudoku)
-        }
-
-        Log.d("GenerateSudokuUseCase", "generate solution and retry if there arent")
-        //generate solutions and retry if there aren't
-        val solutions = mutableListOf<Sudoku>()
-        solveFieldForSolutionGame(sudoku.copy(), Position.first(sudoku), solutions)
-        if (solutions.isEmpty()) {
-            Log.d("GenerateSudokuUseCase", "no solution found, retry")
-            return@withContext this@GenerateSudokuUseCase(sudoku.size, difficulty)
-        }
-
-        Log.d("GenerateSudokuUseCase", "remove random numbers while there is a solution")
-        //remove random numbers while there is one solution
-        val solution = solutions[random.nextInt(solutions.size)]
-        return@withContext removeRandomNumber(solution)
-    }
-
-
-    private suspend fun addRandomNumberTo(sudoku: Sudoku) {
-        val index = random.nextInt(sudoku.itemCount)
-        val number = random.nextInt(sudoku.size) + 1
-        if (sudoku[index].value == null && validateNumber(sudoku, sudoku[index].position, number)) {
-            sudoku[index].value = number
-            sudoku[index].solution = number
-            sudoku[index].given = true
-        } else {
-            addRandomNumberTo(sudoku)
+            }
+            else -> solveFieldsForSolutions(solutions, fields, row, column + 1)
         }
     }
 
-    private suspend fun solveFieldForSolutionGame(sudoku: Sudoku, position: Position?, solutions: MutableList<Sudoku>) {
-        if (position == null) { //save the solution once reached the end
-            solutions.add(sudoku.copy())
-            return
+    private fun Array<Array<Int?>>.with(row: Int, column: Int, value: Int?): Array<Array<Int?>> {
+        val copy = copy()
+        copy[row][column] = value
+        return copy
+    }*/
+
+    private fun Array<Array<Int?>>.removeRandomNumbers(): Array<Array<Int?>> {
+        val newFields = copy()
+        val (row, column) = getRandomFieldCoordinates(false)
+        newFields[row][column] = null
+        return if (getSolutions().size == 1) { //continue while solutions.size() is one
+            numbersToRemove--
+            if (numbersToRemove == 0) { //done, enough numbers removed
+                newFields
+            } else { //continue removing numbers
+                newFields.removeRandomNumbers()
+            }
+        } else { //multiple or no solutions
+            tries--
+            if (tries > 0) { //try to remove other numbers
+                removeRandomNumbers()
+            } else { //give up and return fields
+                this
+            }
         }
-        if (sudoku[position].value == null) {
-            for (n in 1..sudoku.size) {
-                if (validateNumber(sudoku, position, n)) {
-                    sudoku[position].value = n
-                    sudoku[position].solution = n
-                    sudoku[position].given = true
-                    solveFieldForSolutionGame(sudoku, position.next(), solutions)
+    }
+
+    private fun Array<Array<Int?>>.sudokuString(): String {
+        val sb = StringBuilder()
+        for (i in 0 until sudokuSize) {
+            sb.append("\n")
+            for (j in 0 until sudokuSize) {
+                sb.append(this[i][j] ?: "0")
+                sb.append(" ")
+            }
+        }
+        return sb.toString()
+    }
+
+    private fun Array<Int?>.copy(): Array<Int?> = Array(sudokuSize) { this[it] }
+    private fun Array<Array<Int?>>.copy(): Array<Array<Int?>> = Array(sudokuSize) { this[it].copy() }
+    private fun Array<Array<Int?>>.getRow(row: Int): Array<Int?> = this[row].copy()
+    private fun Array<Array<Int?>>.getColumn(column: Int): Array<Int?> = Array(sudokuSize) { this[it][column] }
+    private fun Array<Array<Int?>>.getBlock(block: Int): Array<Int?> = Array(sudokuSize) {
+        val row = block / sqrtSize * sqrtSize + it / sqrtSize
+        val col = block % sqrtSize * sqrtSize + it % sqrtSize
+        this[row][col]
+    }
+    private fun Array<Array<Int?>>.getPossibleValues(row: Int, column: Int): List<Int> =
+        (1..sudokuSize).filter { it !in getRow(row) && it !in getColumn(column) && it !in getBlock(row / sqrtSize * sqrtSize + column / sqrtSize) }
+    private fun Array<Array<Int?>>.getRandomFieldCoordinates(empty: Boolean): Pair<Int, Int> {
+        val emptyCells = mutableListOf<Pair<Int, Int>>()
+        for (row in 0 until sudokuSize) {
+            for (column in 0 until sudokuSize) {
+                if (empty && this[row][column] == null) {
+                    emptyCells.add(Pair(row, column))
+                } else if (!empty && this[row][column] != null) {
+                    emptyCells.add(Pair(row, column))
                 }
             }
-            sudoku[position].value = null
-            sudoku[position].solution = null
-            sudoku[position].given = false
-        } else solveFieldForSolutionGame(sudoku, position.next(), solutions)
-    }
-
-    private suspend fun removeRandomNumber(sudoku: Sudoku): Sudoku {
-        Log.d("removeRandomNumber", "removeRandomNumber")
-        val newSudoku = sudoku.copy()
-        val index = random.nextInt(sudoku.itemCount)
-        return if (newSudoku[index].value != null) {
-            newSudoku[index].value = null
-            newSudoku[index].solution = null
-            newSudoku[index].given = false
-            val solutions = mutableListOf<Sudoku>()
-            solveFieldForSolutionGame(newSudoku, Position.first(sudoku), solutions)
-            if (solutions.size == 1) { //continue while solutions.size() is one
-                difficulty--
-                if (difficulty == 0) {
-                    Log.d("removeRandomNumber", "solutions.size == 1, difficulty: $difficulty, return sudoku")
-                    newSudoku
-                } else {
-                    Log.d("removeRandomNumber", "solutions.size == 1, difficulty: $difficulty, continue")
-                    removeRandomNumber(newSudoku)
-                }
-            } else { //try to remove more numbers
-                tries--
-                if (tries > 0) {
-                    Log.d("removeRandomNumber", "solutions.size != 1, tries: $tries, continue")
-                    removeRandomNumber(sudoku)
-                } else {
-                    Log.d("removeRandomNumber", "solutions.size != 1, tries: $tries, return sudoku")
-                    sudoku
-                }
-            }
-        } else { //skip already removed numbers
-            Log.d("removeRandomNumber", "skip already removed numbers")
-            removeRandomNumber(sudoku)
         }
+        return if (emptyCells.isNotEmpty()) emptyCells[random.nextInt(emptyCells.size)]
+        else -1 to -1
     }
-    */
-
-
-    //====================================================================================================
 
 
     /*
@@ -309,12 +241,14 @@ class GenerateFieldsUseCase @Inject constructor(
             fields = MutableList(initialSudoku.size) { index ->
                 Field(
                     sudokuId = sudokuId,
-                    position = Position.create(size, index),
+                    position = Position.create(index, size),
                     value = initialSudoku[index],
                     solution = initialSudoku[index],
                     given = true,
                 )
-            })
+            },
+            modeLevel = Sudoku.MODE_NORMAL
+        )
     }
 
     private fun getInitialSudoku(size: Int): List<Int> =

@@ -1,18 +1,25 @@
 package de.lemke.sudoku.ui
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslMisc
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
@@ -21,37 +28,40 @@ import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
 import dev.oneuiproject.oneui.preference.internal.PreferenceRelatedCard
 import dev.oneuiproject.oneui.utils.PreferenceUtils.createRelatedCard
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
+    private lateinit var binding: ActivitySettingsBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_settings)
-        val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout_settings)
-        drawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        drawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
-        drawerLayout.setNavigationButtonOnClickListener { finish() }
+        binding = ActivitySettingsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        binding.toolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
+        binding.toolbarLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
+        binding.toolbarLayout.setNavigationButtonOnClickListener { finish() }
         if (savedInstanceState == null) supportFragmentManager.beginTransaction().replace(R.id.settings, SettingsFragment()).commit()
     }
 
     @AndroidEntryPoint
     class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
         private lateinit var settingsActivity: SettingsActivity
-
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
         private lateinit var confirmExitPref: SwitchPreference
         private lateinit var regionalHighlightPref: SwitchPreference
         private lateinit var numberHighlightPref: SwitchPreference
         private lateinit var animationsPref: SwitchPreference
+        private lateinit var dailySudokuNotificationPref: SwitchPreference
         private lateinit var errorLimitPref: DropDownPreference
 
         //private var tipCard: TipsCardViewPreference? = null
@@ -64,6 +74,9 @@ class SettingsActivity : AppCompatActivity() {
 
         @Inject
         lateinit var updateUserSettings: UpdateUserSettingsUseCase
+
+        @Inject
+        lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
         override fun onAttach(context: Context) {
             super.onAttach(context)
@@ -89,11 +102,13 @@ class SettingsActivity : AppCompatActivity() {
             regionalHighlightPref = findPreference("highlightRegionalSwitch")!!
             numberHighlightPref = findPreference("highlightNumberSwitch")!!
             animationsPref = findPreference("animationsSwitch")!!
+            dailySudokuNotificationPref = findPreference("dailyNotificationSwitch")!!
             errorLimitPref = findPreference("errorLimitDropDown")!!
             confirmExitPref.onPreferenceChangeListener = this
             regionalHighlightPref.onPreferenceChangeListener = this
             numberHighlightPref.onPreferenceChangeListener = this
             animationsPref.onPreferenceChangeListener = this
+            dailySudokuNotificationPref.onPreferenceChangeListener = this
             errorLimitPref.onPreferenceChangeListener = this
             autoDarkModePref.onPreferenceChangeListener = this
             autoDarkModePref.isChecked = darkMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM ||
@@ -156,7 +171,7 @@ class SettingsActivity : AppCompatActivity() {
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
             requireView().setBackgroundColor(
-                resources.getColor(dev.oneuiproject.oneui.R.color.oui_background_color, settingsActivity.theme)
+                resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_background_color, settingsActivity.theme)
             )
         }
 
@@ -168,6 +183,8 @@ class SettingsActivity : AppCompatActivity() {
                 regionalHighlightPref.isChecked = userSettings.highlightRegional
                 numberHighlightPref.isChecked = userSettings.highlightNumber
                 animationsPref.isChecked = userSettings.animationsEnabled
+                dailySudokuNotificationPref.isChecked =
+                    userSettings.dailySudokuNotificationEnabled && areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
                 errorLimitPref.summary =
                     if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 //tipCard?.isVisible = showTipCard
@@ -213,9 +230,36 @@ class SettingsActivity : AppCompatActivity() {
                     lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = newValue as Boolean) } }
                     return true
                 }
+                "dailyNotificationSwitch" -> {
+                    if (newValue as Boolean) {
+                        when {
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
+                                requireContext(),
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED -> {
+                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                dailySudokuNotificationPref.isChecked = false
+                            }
+                            !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
+                                val settingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .putExtra(Settings.EXTRA_APP_PACKAGE, settingsActivity.packageName)
+                                //.putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
+                                startActivity(settingsIntent)
+                                dailySudokuNotificationPref.isChecked = false
+                            }
+                            else -> {
+                                setDailySudokuNotification(true)
+                            }
+                        }
+                    } else {
+                        setDailySudokuNotification(false)
+                    }
+                    return true
+                }
                 "errorLimitDropDown" -> {
                     val errorLimit = (newValue as String).toIntOrNull() ?: 0
-                        lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = errorLimit) } }
+                    lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = errorLimit) } }
                     errorLimitPref.summary = if (errorLimit == 0) getString(R.string.no_limit) else errorLimit.toString()
                     return true
                 }
@@ -226,10 +270,52 @@ class SettingsActivity : AppCompatActivity() {
         private fun setRelatedCardView() {
             if (relatedCard == null) {
                 relatedCard = createRelatedCard(settingsActivity)
-                relatedCard?.setTitleText(getString(dev.oneuiproject.oneui.R.string.oui_relative_description))
-                relatedCard?.addButton(getString(R.string.about_me)) { startActivity(Intent(settingsActivity, AboutMeActivity::class.java)) }
+                relatedCard?.setTitleText(getString(dev.oneuiproject.oneui.design.R.string.oui_relative_description))
+                relatedCard?.addButton(getString(R.string.about_me)) {
+                    startActivity(
+                        Intent(
+                            settingsActivity,
+                            AboutMeActivity::class.java
+                        )
+                    )
+                }
                     ?.show(this)
             }
         }
+
+        private val requestPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+                if (isGranted) {
+                    // Permission is granted. Continue the action or workflow in your app.
+                    setDailySudokuNotification(true)
+                } else {
+                    // Explain to the user that the feature is unavailable because the features requires a permission that the user has denied.
+                    // At the same time, respect the user's decision. Don't link to system settings in an effort to convince the user
+                    // to change their decision.
+                    setDailySudokuNotification(false)
+                }
+            }
+
+        private fun setDailySudokuNotification(enabled:Boolean) {
+            lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = enabled) } }
+            sendDailyNotification.setDailySudokuNotification(enable = enabled)
+        }
+
+        private fun areNotificationsEnabled(
+            channelId: String? = null,
+            notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext())
+        ): Boolean =
+            notificationManager.areNotificationsEnabled() &&
+                    if (channelId != null) {
+                        notificationManager.getNotificationChannel(channelId)?.importance != NotificationManagerCompat.IMPORTANCE_NONE &&
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    ContextCompat.checkSelfPermission(
+                                        requireContext(),
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                } else true
+                    } else true
+
     }
 }
+

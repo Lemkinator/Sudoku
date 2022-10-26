@@ -7,10 +7,14 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.TypedValue
-import android.view.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SectionIndexer
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -21,7 +25,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
-import de.lemke.sudoku.domain.GetAllSudokuLevelUseCase
+import de.lemke.sudoku.domain.GetSudokuLevelUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -37,7 +41,7 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var progressDialog: ProgressDialog
 
     @Inject
-    lateinit var getAllSudokuLevel: GetAllSudokuLevelUseCase
+    lateinit var getAllSudokuLevel: GetSudokuLevelUseCase
 
     @Inject
     lateinit var generateSudokuLevel: GenerateSudokuLevelUseCase
@@ -49,9 +53,6 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.sudokuLevelDrawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
-        binding.sudokuLevelDrawerLayout.setNavigationButtonOnClickListener { finish() }
-        binding.sudokuLevelDrawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)

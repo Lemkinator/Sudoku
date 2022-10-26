@@ -1,10 +1,13 @@
 package de.lemke.sudoku.ui
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
@@ -16,15 +19,19 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityOobeBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.ui.utils.TipsItemView
+import dev.oneuiproject.oneui.utils.DialogUtils
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -40,6 +47,10 @@ class OOBEActivity : AppCompatActivity() {
 
     @Inject
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
+
+    @Inject
+    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -125,13 +136,64 @@ class OOBEActivity : AppCompatActivity() {
             binding.oobeIntroFooterButton.visibility = View.GONE
             binding.oobeIntroFooterButtonProgress.visibility = View.VISIBLE
             lifecycleScope.launch {
-                openMainActivity()
+                updateUserSettings { it.copy(tosAccepted = true) }
+                notificationsDialog()
             }
         }
     }
 
-    private suspend fun openMainActivity() {
-        updateUserSettings { it.copy(tosAccepted = true) }
+    // Register the permissions callback, which handles the user's response to the system permissions dialog. Save the return value,
+    // an instance of ActivityResultLauncher. You can use either a val, as shown in this snippet,
+    // or a lateinit var in your onAttach() or onCreate() method.
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            // Permission is granted. Continue the action or workflow in your app.
+            lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) } }
+        } else {
+            // Explain to the user that the feature is unavailable because the features requires a permission that the user has denied.
+            // At the same time, respect the user's decision. Don't link to system settings in an effort to convince the user
+            // to change their decision.
+            lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) } }
+        }
+        openMainActivity()
+    }
+
+    @SuppressLint("InlinedApi")
+    private fun notificationsDialog() {
+        val dialog = AlertDialog.Builder(this).setTitle(getString(R.string.notifications_title))
+            .setMessage(getString(R.string.daily_sudoku_notification_channel_description))
+            .setNegativeButton(R.string.decline_notifications) { _: DialogInterface, _: Int ->
+                lifecycleScope.launch {
+                    updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
+                }
+                openMainActivity()
+            }
+            .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+                lifecycleScope.launch {
+                    //Enable Notifications when < Android 13 or permission is granted, else ask for permission
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(
+                            this@OOBEActivity,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
+                        openMainActivity()
+                    } else requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+            .setCancelable(false)
+            .create()
+        dialog.show()
+        DialogUtils.setDialogButtonTextColor(
+            dialog,
+            DialogInterface.BUTTON_NEGATIVE,
+            getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color)
+        )
+    }
+
+
+    private fun openMainActivity() {
+        lifecycleScope.launch { sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled) }
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }

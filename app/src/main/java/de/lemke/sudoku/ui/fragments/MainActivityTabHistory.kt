@@ -204,7 +204,7 @@ class MainActivityTabHistory : Fragment() {
                 )
                 lifecycleScope.launch {
                     val errorLimit = getUserSettings().errorLimit
-                    if (errorLimit != 0 && sudoku.errorsMade >= errorLimit) holder.imageView.setImageDrawable(
+                    if (sudoku.errorLimitReached(errorLimit)) holder.imageView.setImageDrawable(
                         ContextCompat.getDrawable(
                             requireContext(),
                             dev.oneuiproject.oneui.R.drawable.ic_oui_error

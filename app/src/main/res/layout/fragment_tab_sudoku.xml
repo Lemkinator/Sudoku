@@ -17,6 +17,43 @@
         android:gravity="center"
         android:orientation="vertical">
 
+        <!--LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="start"
+                android:text="4×4"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="9×9"
+                tools:ignore="HardcodedText"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="16×16"
+                tools:ignore="HardcodedText"/>
+
+        </LinearLayout>
+
+        <dev.oneuiproject.oneui.widget.HapticSeekBar
+            android:id="@+id/size_seekbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp" /-->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -90,27 +127,27 @@
             android:orientation="horizontal">
 
             <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/daily_button"
-                style="@style/ButtonStyle.Filled"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_marginRight="2dp"
-                android:layout_weight="1"
-                android:drawableTop="@drawable/ic_oui_calendar_task"
-                android:paddingVertical="10dp"
-                android:text="@string/daily_sudoku"
-                tools:ignore="RtlHardcoded" />
-
-            <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/levels_button"
                 style="@style/ButtonStyle.Filled"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
+                android:layout_marginEnd="2dp"
                 android:layout_weight="1"
-                android:layout_marginLeft="2dp"
                 android:drawableTop="@drawable/ic_oui_list"
                 android:paddingVertical="10dp"
                 android:text="@string/level"
+                tools:ignore="RtlHardcoded" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/daily_button"
+                style="@style/ButtonStyle.Filled"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="2dp"
+                android:layout_weight="1"
+                android:drawableTop="@drawable/ic_oui_calendar_task"
+                android:paddingVertical="10dp"
+                android:text="@string/daily_sudoku"
                 tools:ignore="RtlHardcoded" />
 
         </LinearLayout>

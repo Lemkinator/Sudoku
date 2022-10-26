@@ -8,7 +8,7 @@
     <string name="my_insta" translatable="false">https://www.instagram.com/lemkinator5/</string>
     <string name="my_github" translatable="false">https://github.com/Lemkinator</string>
     <string name="github" translatable="false">Github</string>
-    <string name="privacy_website" translatable="false">https://www.leonard-lemke.com/sudoku-privacy-policy</string>
+    <string name="privacy_website" translatable="false">https://www.leonard-lemke.com/apps/sudoku/privacy-policy</string>
     <string name="playstore" translatable="false">Play Store</string>
     <string name="playstore_developer_page_link" translatable="false">https://play.google.com/store/apps/dev?id=4759149701353957861</string>
     <string name="playstore_app_link" translatable="false">market://details?id=</string>
@@ -16,6 +16,7 @@
     <string name="oneui_library_github" translatable="false">OneUI-Project Github</string>
     <string name="oneui_github_link" translatable="false">https://github.com/OneUIProject</string>
     <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
+    <string name="daily_sudoku_notification_channel_id" translatable="false">Daily_Sudoku_Notification_Channel</string>
 
     <string name="ok" translatable="false" tools:ignore="ButtonCase,Typos">Ok</string>
     <string name="sesl_cancel">Cancel</string>
@@ -26,6 +27,10 @@
 
     <string name="new_game">New Game (%1$s)</string>
     <string name="continue_game">Continue (%1$s, %2$s)</string>
+
+    <string name="daily_sudoku">Daily Sudoku</string>
+    <string name="level">Level</string>
+    <string name="next_level">Next level</string>
 
     <!--Menu-->
     <string name="undo">Undo</string>
@@ -150,10 +155,15 @@
     <string name="error">Error</string>
     <string name="useful_links">Useful links</string>
 
+    <!--Notifications-->
+    <string name="notifications">Notifications</string>
+    <string name="notifications_title">Ring ring?</string>
+    <string name="decline_notifications">Nope</string>
+    <string name="daily_sudoku_notification_text">Hey, it is time for your daily Sudoku!</string>
+    <string name="daily_sudoku_notification_channel_name">Daily Sudoku Notification</string>
+    <string name="daily_sudoku_notification_channel_description">Get notified when a new daily sudoku is available.</string>
+
     <!--Others-->
     <string name="no_game_played">No game played yet</string>
-    <string name="daily_sudoku">Daily Sudoku</string>
-    <string name="level">Level</string>
-    <string name="next_level">Next level</string>
 
 </resources>

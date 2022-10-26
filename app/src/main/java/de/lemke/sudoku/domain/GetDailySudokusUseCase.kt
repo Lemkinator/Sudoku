@@ -7,12 +7,13 @@ import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
 
-class GetAllDailySudokusUseCase @Inject constructor(
+class GetDailySudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(): List<Pair<Sudoku?, LocalDate>> = withContext(Dispatchers.Default) {
+    suspend operator fun invoke(date: LocalDate = LocalDate.now()): List<Pair<Sudoku?, LocalDate>> = withContext(Dispatchers.Default) {
         val sudokuList: MutableList<Pair<Sudoku?, LocalDate>> =
-            sudokusRepository.getAllDailySudokus().map { it to it.created.toLocalDate() }.toMutableList()
+            sudokusRepository.getAllDailySudokus().filter { it.completed || it.created.toLocalDate() == date }
+                .map { it to it.created.toLocalDate() }.toMutableList()
         val sudokuListCopy = sudokuList.toMutableList()
         var offset = 0
         var oldDate: LocalDate? = null

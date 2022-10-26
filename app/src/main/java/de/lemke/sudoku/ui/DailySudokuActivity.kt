@@ -7,10 +7,14 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.TypedValue
-import android.view.*
-import android.widget.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SectionIndexer
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -20,9 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
-import de.lemke.sudoku.domain.GenerateDailySudokuUseCase
-import de.lemke.sudoku.domain.GetAllDailySudokusUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Sudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.widget.Separator
@@ -43,7 +45,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     private lateinit var progressDialog: ProgressDialog
 
     @Inject
-    lateinit var getAllDailySudokus: GetAllDailySudokusUseCase
+    lateinit var getAllDailySudokus: GetDailySudokusUseCase
 
     @Inject
     lateinit var generateDailySudoku: GenerateDailySudokuUseCase
@@ -51,13 +53,13 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
+    @Inject
+    lateinit var getUserSettings: GetUserSettingsUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.dailySudokuDrawerLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
-        binding.dailySudokuDrawerLayout.setNavigationButtonOnClickListener { finish() }
-        binding.dailySudokuDrawerLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)

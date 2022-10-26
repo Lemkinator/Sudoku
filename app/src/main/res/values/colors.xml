@@ -5,11 +5,11 @@
     <color name="secondary_color">#CF8D3C</color>
 
     <color name="oui_secondary_text_color">@color/oui_appinfolayout_info_text_color</color>
-    <color name="oui_primary_icon_color">@color/oui_primary_text_color</color>
-
+    <color name="ripple_color">@color/sesl_ripple_color_light</color>
 
     <color name="field_userinput_text_color">@color/oui_primary_text_color</color>
     <color name="field_given_text_color">@color/primary_color</color>
     <color name="field_hint_text_color">@color/secondary_color</color>
     <color name="field_animation_highlight">#CCCCCC</color>
+
 </resources>

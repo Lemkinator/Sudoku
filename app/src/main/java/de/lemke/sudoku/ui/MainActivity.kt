@@ -8,8 +8,8 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
@@ -24,7 +24,6 @@ import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
-import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,8 +35,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var fragmentManager: FragmentManager
-    private lateinit var marginsTabLayout: MarginsTabLayout
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
@@ -53,7 +50,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         time = System.currentTimeMillis()
-        fragmentManager = supportFragmentManager
         initTabs()
         initFragments()
         initOnBackPressed()
@@ -68,8 +64,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        val inflater = menuInflater
-        inflater.inflate(R.menu.main_menu, menu)
+        menuInflater.inflate(R.menu.main_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
         return true
     }
@@ -89,12 +84,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun initTabs() {
-        marginsTabLayout = binding.mainMarginsTabLayout
-        marginsTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
-        marginsTabLayout.addTab(marginsTabLayout.newTab().setText(getString(R.string.history)))
-        marginsTabLayout.addTab(marginsTabLayout.newTab().setText(getString(R.string.app_name)))
-        marginsTabLayout.addTab(marginsTabLayout.newTab().setText(getString(R.string.statistics)))
-        marginsTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
+        binding.mainMarginsTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
+        binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.history)))
+        binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.app_name)))
+        binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.statistics)))
+        binding.mainMarginsTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 onTabItemSelected(tab.position, tab)
             }
@@ -112,8 +106,13 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                             else binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
                         }
                         getString(R.string.statistics) -> {
-                            //binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
-                            StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(fragmentManager, "StatisticsFilterDialog")
+                            val statisticsScrollView: NestedScrollView = findViewById(R.id.statistics_scroll_view)
+                            if (binding.mainToolbarlayout.isExpanded) binding.mainToolbarlayout.setExpanded(false, true)
+                            else if (statisticsScrollView.canScrollVertically(-1)) statisticsScrollView.smoothScrollTo(0, 0)
+                            else StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(
+                                supportFragmentManager,
+                                "StatisticsFilterDialog"
+                            )
                         }
                     }
                 } catch (_: Exception) { //no required functionality -> ignore errors
@@ -123,10 +122,10 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun initFragments() {
-        val transaction: FragmentTransaction = fragmentManager.beginTransaction()
+        val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         for (fragment in fragmentsInstance) transaction.add(R.id.fragment_container, fragment)
         transaction.commit()
-        fragmentManager.executePendingTransactions()
+        supportFragmentManager.executePendingTransactions()
         onTabItemSelected(1)
     }
 
@@ -135,13 +134,13 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         if (selectedPosition != position) {
             selectedPosition = position
             val newFragment: Fragment = fragmentsInstance[position]
-            val transaction: FragmentTransaction = fragmentManager.beginTransaction()
-            for (fragment in fragmentManager.fragments) {
+            val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
+            for (fragment in supportFragmentManager.fragments) {
                 transaction.hide(fragment)
             }
             transaction.show(newFragment).commit()
-            fragmentManager.executePendingTransactions()
-            if (newTab == null) newTab = marginsTabLayout.getTabAt(position)
+            supportFragmentManager.executePendingTransactions()
+            if (newTab == null) newTab = binding.mainMarginsTabLayout.getTabAt(position)
             if (!newTab!!.isSelected) newTab.select()
             newFragment.onResume()
         }
@@ -151,9 +150,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 lifecycleScope.launch {
-                    if (selectedPosition != 1) {
-                        onTabItemSelected(1)
-                    } else {
+                    if (selectedPosition != 1) onTabItemSelected(1)
+                    else {
                         if (getUserSettings().confirmExit) {
                             if (System.currentTimeMillis() - time < 3000) finishAffinity()
                             else {

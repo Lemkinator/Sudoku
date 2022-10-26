@@ -26,7 +26,7 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
     private var summaryText1: String? = null
 
     init {
-        val styledAttr: TypedArray = mContext.obtainStyledAttributes(attrs, dev.oneuiproject.oneui.R.styleable.CardView)
+        val styledAttr: TypedArray = mContext.obtainStyledAttributes(attrs, dev.oneuiproject.oneui.design.R.styleable.CardView)
         iconDrawable = styledAttr.getDrawable(R.styleable.CardView_IconDrawable)
         iconColor = styledAttr.getColor(R.styleable.CardView_IconColor, -1)
         titleText1 = styledAttr.getString(R.styleable.CardView_TitleText)

@@ -12,12 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.databinding.ActivitySplashBinding
-import de.lemke.sudoku.domain.AppStart
-import de.lemke.sudoku.domain.CheckAppStartUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 
 
@@ -37,21 +35,25 @@ class SplashActivity : AppCompatActivity() {
     @Inject
     lateinit var checkAppStart: CheckAppStartUseCase
 
+    @Inject
+    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
         lifecycleScope.launch {
             appStart = checkAppStart()
+            sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             if (getUserSettings().devModeEnabled) {
                 val devText: Spannable = SpannableString(" Dev")
                 devText.setSpan(
-                    ForegroundColorSpan(getColor(dev.oneuiproject.oneui.R.color.oui_functional_orange_color)),
+                    ForegroundColorSpan(getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_orange_color)),
                     0,
                     devText.length,
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-                binding.splashLayout.findViewById<TextView>(dev.oneuiproject.oneui.R.id.oui_splash_text).append(devText)
+                binding.splashLayout.findViewById<TextView>(dev.oneuiproject.oneui.design.R.id.oui_splash_text).append(devText)
             }
         }
         binding.splashLayout.setSplashAnimationListener(object : Animation.AnimationListener {
@@ -80,10 +82,9 @@ class SplashActivity : AppCompatActivity() {
     private suspend fun launchApp() {
         if (!getUserSettings().tosAccepted) {
             startActivity(Intent(applicationContext, OOBEActivity::class.java))
-        }
-        else {
+        } else {
             when (appStart) {
-                AppStart.FIRST_TIME, AppStart.NEW_TERMS_OF_USE -> {
+                AppStart.FIRST_TIME -> {
                     startActivity(Intent(applicationContext, OOBEActivity::class.java))
                 }
                 AppStart.NORMAL, AppStart.FIRST_TIME_VERSION -> {

@@ -8,6 +8,9 @@
 
     <string name="new_game">Neues Spiel (%1$s)</string>
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
+    <string name="daily_sudoku">Tägliches Sudoku</string>
+    <string name="level">Level</string>
+    <string name="next_level">Nächstes Level</string>
 
     <!--Menu-->
     <string name="undo">Rückgangig machen</string>
@@ -68,7 +71,7 @@
     <string name="hint">Hinweis</string>
     <string name="auto_notes">Auto-Notizen</string>
     <string name="use_auto_notes">Auto-Notizen benutzen?</string>
-    <string name="use_auto_notes_message">Das Aktivieren der Auto-Notizen wird in der Statisik vermerkt.</string>
+    <string name="use_auto_notes_message">Das Aktivieren der Auto-Notizen wird in der Statistik vermerkt.</string>
     <string name="restart">Neustart</string>
     <string name="gameover">Spiel zu Ende</string>
 
@@ -126,16 +129,22 @@
     <string name="write_email">E-Mail schreiben</string>
     <string name="support_me_text">Falls du mich in irgendeiner Weise unterstützen möchtest, dann sende mir gerne eine E-Mail</string>
     <string name="support_me">Unterstütz mich</string>
-    <string name="no_email_app_installed">Keie E-Mail App installiert…</string>
+    <string name="no_email_app_installed">Keine E-Mail App installiert…</string>
     <string name="to_play_store">Zum Play Store</string>
     <string name="review_comment">Um ein optimales Nutzererlebnis zu gewährleisten, verwaltet Google Play wann und wie oft einem Nutzer der integrierte Bewertungsdialog angezeigt werden kann. Deshalb kann es vorkommen, dass diese Schaltfläche in manchen Fällen keine Aktion durchführt.\nAlternativ kann die Bewertung dann im Play Store geschrieben werden.</string>
     <string name="error">Fehler</string>
     <string name="useful_links">Nützliche Links</string>
 
+    <!--Notifications-->
+    <string name="notifications">Benachrichtigungen</string>
+    <string name="notifications_title">Ding Dong?</string>
+    <string name="decline_notifications">Nerv mich nicht</string>
+    <string name="daily_sudoku_notification_text">Hey, Zeit für dein tägliches Sudoku!</string>
+    <string name="daily_sudoku_notification_channel_name">Tägliches Sudoku</string>
+    <string name="daily_sudoku_notification_channel_description">Eine Benachrichtigung erhalten, wenn ein neues tägliches Sudoku verfügbar ist.</string>
+
     <!--Others-->
     <string name="no_game_played">Noch kein Spiel gespielt</string>
-    <string name="daily_sudoku">Tägliches Sudoku</string>
-    <string name="level">Level</string>
-    <string name="next_level">Nächstes Level</string>
+
 
 </resources>

@@ -22,10 +22,12 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
+import de.lemke.sudoku.ui.utils.ButtonUtils
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.utils.SeekBarUtils
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
+import dev.oneuiproject.oneui.widget.HapticSeekBar
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -54,6 +56,12 @@ class MainActivityTabSudoku : Fragment() {
     @Inject
     lateinit var getRecentSudoku: GetRecentlyUpdatedNormalSudokuUseCase
 
+    @Inject
+    lateinit var getAllSudokus: GetAllSudokusUseCase
+
+    @Inject
+    lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentTabSudokuBinding.inflate(inflater, container, false)
         return binding.root
@@ -74,9 +82,13 @@ class MainActivityTabSudoku : Fragment() {
             if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
             else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
+        /*SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
+        binding.sizeSeekbar.setSeamless(true)
+        binding.sizeSeekbar.max = 2
+        binding.sizeSeekbar.progress = 1*/
         SeekBarUtils.showTickMark(binding.difficultySeekbar, true)
         binding.difficultySeekbar.setSeamless(true)
-        binding.difficultySeekbar.max = 4
+        binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.setOnClickListener {
             val loadingDialog = ProgressDialog(context)
             loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
@@ -90,7 +102,6 @@ class MainActivityTabSudoku : Fragment() {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 } else {
                     Log.d("MainActivityTabSudoku", "generating new sudoku")
-
                     val sudoku = generateSudoku(9, Difficulty.fromInt(binding.difficultySeekbar.progress))
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
@@ -127,7 +138,7 @@ class MainActivityTabSudoku : Fragment() {
         super.onResume()
         lifecycleScope.launch {
             val sudoku = getRecentSudoku()
-            if (sudoku != null && !sudoku.completed) {
+            if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(getUserSettings().errorLimit)) {
                 binding.continueGameButton.visibility = View.VISIBLE
                 binding.continueGameButton.text = getString(
                     R.string.continue_game,
@@ -138,6 +149,22 @@ class MainActivityTabSudoku : Fragment() {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
             } else binding.continueGameButton.visibility = View.GONE
+
+            ButtonUtils.setButtonStyle(
+                requireContext(),
+                binding.dailyButton,
+                if (isDailySudokuCompleted()) R.style.ButtonStyle_Filled else R.style.ButtonStyle_Colored
+            )
         }
     }
 }
+
+private val HapticSeekBar.size: Int
+    get() {
+        return when (this.progress) {
+            0 -> 4
+            1 -> 9
+            2 -> 16
+            else -> 9
+        }
+    }

@@ -12,7 +12,7 @@ class GenerateDailySudokuUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(size: Int = 9): Sudoku = withContext(Dispatchers.Default) {
         val sudokuId = SudokuId.generate()
-        val difficulty = listOf(Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD).random()
+        val difficulty = listOf(Difficulty.VERY_EASY, Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD).random()
         return@withContext Sudoku.create(
             sudokuId = sudokuId,
             size = size,

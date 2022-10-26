@@ -31,6 +31,13 @@ enum class Difficulty(val value: Int) {
             HARD -> 28 //28-31
             EXPERT -> 23 //22-27
         }
+        16 -> when (this) { //TODO: check numbers
+            VERY_EASY -> 88
+            EASY -> 64
+            MEDIUM -> 53
+            HARD -> 47
+            EXPERT -> 38
+        }
         else -> givenNumbers(9)
     }
 
@@ -43,7 +50,7 @@ enum class Difficulty(val value: Int) {
             2 -> MEDIUM
             3 -> HARD
             4 -> EXPERT
-            else -> VERY_EASY
+            else -> MEDIUM
         }
 
         fun getLocalString(ordinal: Int, resources: Resources): String = fromInt(ordinal).getLocalString(resources)

@@ -10,7 +10,7 @@ import javax.inject.Inject
 class GenerateSudokuUseCase @Inject constructor(
     private val generateFields: GenerateFieldsUseCase,
 ) {
-    suspend operator fun invoke(size: Int = 9, difficulty: Difficulty): Sudoku = withContext(Dispatchers.Default) {
+    suspend operator fun invoke(size: Int, difficulty: Difficulty): Sudoku = withContext(Dispatchers.Default) {
         val sudokuId = SudokuId.generate()
         return@withContext Sudoku.create(
             sudokuId = sudokuId,
