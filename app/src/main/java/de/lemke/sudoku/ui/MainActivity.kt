@@ -130,20 +130,19 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     fun onTabItemSelected(position: Int, tab: TabLayout.Tab? = null) {
-        var newTab = tab
+        val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
-            val newFragment: Fragment = fragmentsInstance[position]
             val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
             for (fragment in supportFragmentManager.fragments) {
                 transaction.hide(fragment)
             }
             transaction.show(newFragment).commit()
             supportFragmentManager.executePendingTransactions()
-            if (newTab == null) newTab = binding.mainMarginsTabLayout.getTabAt(position)
-            if (!newTab!!.isSelected) newTab.select()
-            newFragment.onResume()
+            val newTab = tab ?: binding.mainMarginsTabLayout.getTabAt(position)
+            if (newTab?.isSelected == false) newTab.select()
         }
+        newFragment.onResume()
     }
 
     private fun initOnBackPressed() {

@@ -135,7 +135,7 @@ class GenerateFieldsUseCase @Inject constructor() {
         val newFields = copy()
         val (row, column) = getRandomFieldCoordinates(false)
         newFields[row][column] = null
-        return if (getSolutions().size == 1) { //continue while solutions.size() is one
+        return if (newFields.getSolutions().size == 1) { //continue while solutions.size() is one
             numbersToRemove--
             if (numbersToRemove == 0) { //done, enough numbers removed
                 newFields

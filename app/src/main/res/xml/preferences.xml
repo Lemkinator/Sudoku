@@ -64,15 +64,17 @@
             app:icon="@drawable/ic_oui_restart" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/privacy">
+    <PreferenceCategory android:title="@string/more_information">
+        <PreferenceScreen
+            android:key="tos_pref"
+            android:title="@string/tos"
+            app:icon="@drawable/ic_oui_privacy" />
+
         <PreferenceScreen
             android:key="privacy"
             android:title="@string/privacy_information"
             app:icon="@drawable/ic_oui_security" />
 
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/about">
         <PreferenceScreen
             android:key="about_app"
             android:title="@string/about_app"

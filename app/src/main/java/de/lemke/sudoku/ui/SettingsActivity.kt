@@ -126,6 +126,16 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
 
+            findPreference<PreferenceScreen>("tos_pref")!!.onPreferenceClickListener = OnPreferenceClickListener {
+                AlertDialog.Builder(requireContext())
+                    .setTitle(getString(R.string.tos))
+                    .setMessage(getString(R.string.tos_content))
+                    .setPositiveButton(R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
+                    .create()
+                    .show()
+                true
+            }
+
             AppUpdateManagerFactory.create(requireContext()).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
                 findPreference<Preference>("about_app")?.widgetLayoutResource =
                     if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) R.layout.sesl_preference_badge else 0

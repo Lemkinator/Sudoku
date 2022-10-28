@@ -37,14 +37,14 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
 
         removeAllViews()
         if (isIconView) {
-            View.inflate(mContext, R.layout.sample3_widget_cardview_icon, this)
+            View.inflate(mContext, R.layout.widget_cardview_icon, this)
             iconImageView = findViewById(R.id.cardview_icon)
             iconImageView.setImageDrawable(iconDrawable)
             if (iconColor != -1) {
                 iconImageView.drawable.setTint(iconColor)
             }
         } else {
-            View.inflate(mContext, R.layout.sample3_widget_cardview, this)
+            View.inflate(mContext, R.layout.widget_cardview, this)
         }
         parentView = findViewById(R.id.cardview_main_container)
         containerView = findViewById(R.id.cardview_container)
