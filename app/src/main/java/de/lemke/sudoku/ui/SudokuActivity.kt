@@ -77,7 +77,6 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
-        binding.gameRecycler.seslSetFillBottomEnabled(true)
         binding.gameRecycler.seslSetLastRoundedCorner(true)
 
         val id = intent.getStringExtra("sudokuId")
@@ -297,7 +296,6 @@ class SudokuActivity : AppCompatActivity() {
         lifecycleScope.launch {
             saveSudoku(sudoku)
             dialog.show()
-            if (sudoku.isDailySudoku && getUserSettings().dailySudokuNotificationEnabled) sendDailyNotification.enableDailySudokuNotification(skipToday = true)
         }
         setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
         binding.gameButtons.visibility = View.GONE
@@ -512,8 +510,10 @@ class SudokuActivity : AppCompatActivity() {
                         selected = newSelected
                     }
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
-                        sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                        if (highlightSelectedNumber) gameAdapter.highlightNumber(newSelected - sudoku.itemCount + 1)
+                        if (sudoku[position].value == null) {
+                            sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
+                            if (highlightSelectedNumber) gameAdapter.highlightNumber(newSelected - sudoku.itemCount + 1)
+                        }
                     }
                     sudoku.itemCount + sudoku.size -> { //selected delete
                         sudoku.move(position, null, notesEnabled)

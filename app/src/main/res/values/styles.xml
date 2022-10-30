@@ -25,29 +25,25 @@
     <style name="ButtonStyle.Colored" parent="OneUI.ButtonStyleColored">
         <item name="android:backgroundTint">@color/primary_color</item>
         <item name="android:textColor">@color/oui_round_and_bgcolor</item>
-        <item name="iconTint">@color/oui_round_and_bgcolor</item>
-        <item name="tint">@color/oui_round_and_bgcolor</item>
+        <item name="android:drawableTint">@color/oui_round_and_bgcolor</item>
     </style>
 
     <style name="ButtonStyle.Transparent" parent="OneUI.ButtonStyleTransparent">
         <item name="android:backgroundTint">@android:color/transparent</item>
         <item name="android:textColor">@color/primary_color</item>
-        <item name="iconTint">@color/primary_color</item>
-        <item name="tint">@color/primary_color</item>
+        <item name="android:drawableTint">@color/primary_color</item>
     </style>
 
     <style name="ButtonStyle.Filled" parent="Widget.AppCompat.Button">
         <item name="android:backgroundTint">?colorControlHighlight</item>
         <item name="android:textColor">@color/oui_primary_text_color</item>
-        <item name="iconTint">@color/oui_primary_text_color</item>
-        <item name="tint">@color/oui_primary_icon_color</item>
+        <item name="android:drawableTint">@color/oui_primary_text_color</item>
     </style>
 
     <style name="ButtonStyle.SudokuButton" parent="Widget.AppCompat.Button">
         <item name="android:backgroundTint">@android:color/transparent</item>
         <item name="android:textColor">@color/oui_primary_text_color</item>
-        <item name="iconTint">@color/oui_primary_text_color</item>
-        <item name="tint">@color/oui_primary_icon_color</item>
+        <item name="android:drawableTint">@color/oui_primary_text_color</item>
         <item name="android:layout_height">50dp</item>
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_weight">1</item>

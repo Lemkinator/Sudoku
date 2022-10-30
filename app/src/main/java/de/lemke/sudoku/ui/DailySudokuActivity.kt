@@ -15,6 +15,7 @@ import android.widget.LinearLayout
 import android.widget.SectionIndexer
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -60,6 +61,9 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         super.onCreate(savedInstanceState)
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.dailySudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
+        binding.dailySudokuToolbarLayout.setNavigationButtonIcon(AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_back))
+        binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)

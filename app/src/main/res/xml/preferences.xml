@@ -18,40 +18,34 @@
         <SwitchPreference
             android:key="confirmExit"
             android:summary="@string/press_again_to_exit"
-            android:title="@string/confirm_exit"
-            app:icon="@drawable/ic_oui_power" />
+            android:title="@string/confirm_exit" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/game">
         <SwitchPreference
             android:key="animationsSwitch"
-            android:title="@string/animations"
-            app:icon="@drawable/ic_oui_speed_player" />
+            android:title="@string/animations" />
         <SwitchPreference
             android:key="highlightRegionalSwitch"
             android:summary="@string/regional_highlight_summary"
-            android:title="@string/regional_highlight"
-            app:icon="@drawable/ic_oui_vision" />
+            android:title="@string/regional_highlight" />
         <SwitchPreference
             android:key="highlightNumberSwitch"
             android:summary="@string/number_highlight_summary"
-            android:title="@string/number_highlight"
-            app:icon="@drawable/ic_oui_vision" />
+            android:title="@string/number_highlight" />
         <DropDownPreference
             android:defaultValue="3"
             android:entries="@array/error_limit_entries"
             android:entryValues="@array/error_limit_values"
             android:key="errorLimitDropDown"
-            android:title="@string/error_limit"
-            app:icon="@drawable/ic_oui_error" />
+            android:title="@string/error_limit" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/notifications">
         <SwitchPreference
             android:key="dailyNotificationSwitch"
             android:summary="@string/daily_sudoku_notification_channel_description"
-            android:title="@string/daily_sudoku_notification_channel_name"
-            app:icon="@drawable/ic_oui_calendar_task" />
+            android:title="@string/daily_sudoku_notification_channel_name" />
 
     </PreferenceCategory>
 
@@ -60,25 +54,21 @@
         android:title="@string/dev_options">
         <PreferenceScreen
             android:key="delete_app_data"
-            android:title="@string/delete_appdata_and_exit"
-            app:icon="@drawable/ic_oui_restart" />
+            android:title="@string/delete_appdata_and_exit" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/more_information">
         <PreferenceScreen
             android:key="tos_pref"
-            android:title="@string/tos"
-            app:icon="@drawable/ic_oui_privacy" />
+            android:title="@string/tos" />
 
         <PreferenceScreen
             android:key="privacy"
-            android:title="@string/privacy_information"
-            app:icon="@drawable/ic_oui_security" />
+            android:title="@string/privacy_information" />
 
         <PreferenceScreen
             android:key="about_app"
-            android:title="@string/about_app"
-            app:icon="@drawable/ic_oui_info_outline">
+            android:title="@string/about_app">
             <intent
                 android:targetClass="de.lemke.sudoku.ui.AboutActivity"
                 android:targetPackage="de.lemke.sudoku" />

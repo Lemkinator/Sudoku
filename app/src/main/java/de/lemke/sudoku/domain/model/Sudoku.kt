@@ -200,14 +200,13 @@ class Sudoku(
 
     fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
         val field = get(position)
-        if (field.given || field.hint) return false
+        if (field.given || field.hint || field.value == value || field.value != null && value != null) return false
         if (isNote) {
             if (value != null) {
                 if (field.toggleNote(value)) notesMade++
             } else field.notes.clear()
             gameListener?.onFieldChanged(position)
         } else {
-            if (field.value == value) return false
             history.add(HistoryItem(position, if (value == null) field.value else null))
             field.value = value
             gameListener?.onFieldChanged(position)

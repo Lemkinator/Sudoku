@@ -29,13 +29,19 @@
                 android:animateLayoutChanges="true"
                 android:orientation="vertical">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/game_recycler"
+                <dev.oneuiproject.oneui.widget.RoundLinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/oui_background_color"
-                    android:foreground="@drawable/sudoku_view_fg"
-                    android:scrollbars="none" />
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/game_recycler"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@color/oui_background_color"
+                        android:foreground="@drawable/sudoku_view_fg"
+                        android:scrollbars="none" />
+
+                </dev.oneuiproject.oneui.widget.RoundLinearLayout>
 
                 <dev.oneuiproject.oneui.widget.RoundLinearLayout
                     android:id="@+id/game_buttons"

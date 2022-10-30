@@ -10,19 +10,16 @@
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/about_btn_open_in_store"
         style="@style/OneUI.AppInfoButton"
-        android:drawableStart="@drawable/ic_oui_galaxy_store_outline"
         android:text="@string/open_in_playstore" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/about_btn_open_oneui_github"
         style="@style/OneUI.AppInfoButton"
-        android:drawableStart="@drawable/ic_oui_web_search"
         android:text="@string/oneui_library_github" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/about_btn_about_me"
         style="@style/OneUI.AppInfoButton"
-        android:drawableStart="@drawable/ic_oui_contact_outline"
         android:text="@string/about_me" />
 
 </dev.oneuiproject.oneui.layout.AppInfoLayout>

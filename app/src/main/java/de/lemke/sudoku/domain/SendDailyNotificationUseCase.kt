@@ -23,8 +23,8 @@ class SendDailyNotificationUseCase @Inject constructor(
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
     private val notificationId = 5
     private val dailySudokuNotificationRequestCode = 55
-    private val hour = 21
-    private val minute = 50
+    private val hour = 10
+    private val minute = 0
 
     operator fun invoke() {
         createNotificationChannel()
@@ -73,7 +73,7 @@ class SendDailyNotificationUseCase @Inject constructor(
     fun setDailySudokuNotification(enable: Boolean) =
         if (enable) enableDailySudokuNotification() else disableDailySudokuNotification()
 
-    fun enableDailySudokuNotification(skipToday: Boolean = false) {
+    private fun enableDailySudokuNotification() {
         createNotificationChannel()
         initNotificationBuilder()
         val alarmIntent = Intent(context.applicationContext, AlarmReceiver::class.java).let { intent ->
@@ -91,7 +91,7 @@ class SendDailyNotificationUseCase @Inject constructor(
         // If the trigger time you specify is in the past, the alarm triggers immediately. if soo just add one day to required calendar
         // Note: also adding 1 min cuz if user clicks on notification as soon as received it it will reschedule the alarm to
         // fire another notification immediately
-        if (Calendar.getInstance().apply { add(Calendar.MINUTE, 1) }.timeInMillis - calendar.timeInMillis > 0 || skipToday) {
+        if (Calendar.getInstance().apply { add(Calendar.MINUTE, 1) }.timeInMillis - calendar.timeInMillis > 0) {
             calendar.add(Calendar.DATE, 1)
         }
         (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, alarmIntent)
