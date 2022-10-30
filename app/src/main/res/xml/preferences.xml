@@ -15,21 +15,21 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/general">
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="confirmExit"
             android:summary="@string/press_again_to_exit"
             android:title="@string/confirm_exit" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/game">
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="animationsSwitch"
             android:title="@string/animations" />
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="highlightRegionalSwitch"
             android:summary="@string/regional_highlight_summary"
             android:title="@string/regional_highlight" />
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="highlightNumberSwitch"
             android:summary="@string/number_highlight_summary"
             android:title="@string/number_highlight" />
@@ -42,7 +42,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/notifications">
-        <SwitchPreference
+        <SwitchPreferenceCompat
             android:key="dailyNotificationSwitch"
             android:summary="@string/daily_sudoku_notification_channel_description"
             android:title="@string/daily_sudoku_notification_channel_name" />

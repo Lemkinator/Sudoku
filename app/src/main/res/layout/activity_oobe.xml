@@ -27,7 +27,7 @@
                 app:layout_constraintTop_toTopOf="parent">
 
                 <androidx.appcompat.widget.AppCompatTextView
-                    style="@style/Widget.MyTickets.OOBE.TextView.Title"
+                    style="@style/OOBE.TextView.Title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -81,7 +81,7 @@
 
                 <androidx.appcompat.widget.AppCompatTextView
                     android:id="@+id/oobe_intro_footer_tos_text"
-                    style="@style/Widget.MyTickets.OOBE.TextView.ToS"
+                    style="@style/OOBE.TextView.ToS"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 
@@ -93,7 +93,7 @@
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/oobe_intro_footer_button"
-                    style="@style/Widget.MyTickets.OOBE.Button"
+                    style="@style/OOBE.Button"
                     android:layout_width="296.0dp"
                     android:layout_height="44.0dp"
                     android:text="@string/accept_tos"

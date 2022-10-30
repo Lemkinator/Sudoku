@@ -56,11 +56,11 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var settingsActivity: SettingsActivity
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
-        private lateinit var confirmExitPref: SwitchPreference
-        private lateinit var regionalHighlightPref: SwitchPreference
-        private lateinit var numberHighlightPref: SwitchPreference
-        private lateinit var animationsPref: SwitchPreference
-        private lateinit var dailySudokuNotificationPref: SwitchPreference
+        private lateinit var confirmExitPref: SwitchPreferenceCompat
+        private lateinit var regionalHighlightPref: SwitchPreferenceCompat
+        private lateinit var numberHighlightPref: SwitchPreferenceCompat
+        private lateinit var animationsPref: SwitchPreferenceCompat
+        private lateinit var dailySudokuNotificationPref: SwitchPreferenceCompat
         private lateinit var errorLimitPref: DropDownPreference
 
         //private var tipCard: TipsCardViewPreference? = null
