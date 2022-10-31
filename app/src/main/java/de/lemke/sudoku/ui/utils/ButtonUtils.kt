@@ -17,7 +17,7 @@ class ButtonUtils {
                     button.setTextColor(ContextCompat.getColor(context, dev.oneuiproject.oneui.design.R.color.oui_round_and_bgcolor))
                 }
                 R.style.ButtonStyle_Filled -> {
-                    button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.ripple_color)
+                    button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.filled_background_color)
                     button.compoundDrawableTintList =
                         ContextCompat.getColorStateList(context, dev.oneuiproject.oneui.design.R.color.oui_primary_text_color)
                     button.setTextColor(ContextCompat.getColor(context, dev.oneuiproject.oneui.design.R.color.oui_primary_text_color))

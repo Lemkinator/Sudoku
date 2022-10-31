@@ -8,6 +8,8 @@
 
         when generate level/daily? -> make statistics look better
 
+        when rotated: difficulty slider goes max? history empty???
+
         play integration (achievements, leaderboards, etc.)
         show numbers left on button
         multiplayer

@@ -31,13 +31,13 @@
 
     <style name="ButtonStyle.Transparent" parent="OneUI.ButtonStyleTransparent">
         <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/primary_color</item>
-        <item name="android:drawableTint">@color/primary_color</item>
-        <item name="tint">@color/primary_color</item>
+        <item name="android:textColor">@color/oui_primary_text_color</item>
+        <item name="android:drawableTint">@color/oui_primary_icon_color</item>
+        <item name="tint">@color/oui_primary_icon_color</item>
     </style>
 
     <style name="ButtonStyle.Filled" parent="Widget.AppCompat.Button">
-        <item name="android:backgroundTint">?colorControlHighlight</item>
+        <item name="android:backgroundTint">@color/filled_background_color</item>
         <item name="android:textColor">@color/oui_primary_text_color</item>
         <item name="android:drawableTint">@color/oui_primary_text_color</item>
         <item name="tint">@color/oui_primary_text_color</item>
@@ -56,6 +56,14 @@
         <item name="android:padding">0dp</item>
         <item name="android:textSize">25sp</item>
         <item name="android:ellipsize">none</item>
+    </style>
+
+    <style name="StatisticItem">
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_margin">17dp</item>
+        <item name="android:textAppearance">?android:attr/textAppearanceListItem</item>
+        <item name="android:textSize">18sp</item>
     </style>
 
     <style name="DividerStyle">

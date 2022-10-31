@@ -64,21 +64,24 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="start"
-                android:text="@string/very_easy" />
+                android:text="@string/very_easy"
+                android:textColor="@color/oui_secondary_text_color" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="@string/medium" />
+                android:text="@string/medium"
+                android:textColor="@color/oui_secondary_text_color" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="end"
-                android:text="@string/expert" />
+                android:text="@string/expert"
+                android:textColor="@color/oui_secondary_text_color" />
 
         </LinearLayout>
 

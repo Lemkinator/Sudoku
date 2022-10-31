@@ -33,20 +33,14 @@
 
                 <TextView
                     android:id="@+id/games_statistic_total_started"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/games_started"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/games_statistic_total_started_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -59,20 +53,14 @@
 
                 <TextView
                     android:id="@+id/games_statistic_total_completed"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/games_completed"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/games_divider1" />
 
                 <TextView
                     android:id="@+id/games_statistic_total_completed_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/games_divider1" />
 
@@ -84,20 +72,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_total_completed" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/win_rate"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/games_divider2" />
 
                 <TextView
                     android:id="@+id/games_statistic_win_rate_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/games_divider2" />
 
@@ -123,20 +105,14 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/best_time"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/time_statistic_best_time_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -148,20 +124,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/time_statistic_best_time_value" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/average_time"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/time_divider1" />
 
                 <TextView
                     android:id="@+id/time_statistic_average_time_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/time_divider1" />
 
@@ -188,20 +158,14 @@
 
                 <TextView
                     android:id="@+id/games_statistic_wins_without_error"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/wins_without_error"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/games_statistic_wins_without_error_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -214,20 +178,14 @@
 
                 <TextView
                     android:id="@+id/games_statistic_most_errors"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/most_errors"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/error_divider1" />
 
                 <TextView
                     android:id="@+id/games_statistic_most_errors_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/error_divider1" />
 
@@ -239,20 +197,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_errors" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/average_errors"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/error_divider2" />
 
                 <TextView
                     android:id="@+id/games_statistic_average_errors_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/error_divider2" />
 
@@ -278,20 +230,14 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/wins_without_auto_hint"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/games_statistic_wins_without_auto_hint_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -303,20 +249,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_auto_hint_value" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/wins_without_hint"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="@id/hint_divider1" />
 
                 <TextView
                     android:id="@+id/games_statistic_wins_without_hint_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="@id/hint_divider1" />
 
@@ -328,20 +268,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_hint_value" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/most_hints"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/hint_divider2" />
 
                 <TextView
                     android:id="@+id/games_statistic_most_hints_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/hint_divider2" />
 
@@ -353,20 +287,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_hints_value" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/average_hints"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/hint_divider3" />
 
                 <TextView
                     android:id="@+id/games_statistic_average_hints_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/hint_divider3" />
 
@@ -392,20 +320,14 @@
                 android:orientation="horizontal">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/wins_without_notes"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/games_statistic_wins_without_notes_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -417,20 +339,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_wins_without_notes_value" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/most_notes"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/notes_divider1" />
 
                 <TextView
                     android:id="@+id/games_statistic_most_notes_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/notes_divider1" />
 
@@ -442,20 +358,14 @@
                     app:layout_constraintTop_toBottomOf="@+id/games_statistic_most_notes_value" />
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
+                    style="@style/StatisticItem"
                     android:text="@string/average_notes"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/note_divider2" />
 
                 <TextView
                     android:id="@+id/games_statistic_average_notes_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="17dp"
-                    android:textAppearance="?android:attr/textAppearanceListItem"
+                    style="@style/StatisticItem"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/note_divider2" />
 
@@ -488,20 +398,14 @@
                     android:orientation="horizontal">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
+                        style="@style/StatisticItem"
                         android:text="@string/most_games_started"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
                         app:layout_constraintLeft_toLeftOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <TextView
                         android:id="@+id/difficulty_statistic_most_games_started_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
+                        style="@style/StatisticItem"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
@@ -513,20 +417,14 @@
                         app:layout_constraintTop_toBottomOf="@+id/difficulty_statistic_most_games_started_value" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
+                        style="@style/StatisticItem"
                         android:text="@string/most_games_won"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
                         app:layout_constraintLeft_toLeftOf="parent"
                         app:layout_constraintTop_toBottomOf="@+id/difficulty_divider1" />
 
                     <TextView
                         android:id="@+id/difficulty_statistic_most_games_won_value"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="17dp"
-                        android:textAppearance="?android:attr/textAppearanceListItem"
+                        style="@style/StatisticItem"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/difficulty_divider1" />
 
