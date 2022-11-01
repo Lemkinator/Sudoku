@@ -23,7 +23,7 @@ class SendDailyNotificationUseCase @Inject constructor(
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
     private val notificationId = 5
     private val dailySudokuNotificationRequestCode = 55
-    private val hour = 10
+    private val hour = 9
     private val minute = 0
 
     operator fun invoke() {

@@ -231,7 +231,7 @@ class SudokuActivity : AppCompatActivity() {
 
         override fun onFieldChanged(position: Position) {
             gameAdapter.updateFieldView(position.index)
-            checkAnyNumberCompleted(position)
+            checkAnyNumberCompleted(sudoku[position].value)
             lifecycleScope.launch { checkRowColumnBlockCompleted(position) }
         }
 
@@ -360,14 +360,14 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkAnyNumberCompleted(position: Position?) {
+    private fun checkAnyNumberCompleted(currentNumber: Int?) {
         lifecycleScope.launch {
             val completedNumbers = sudoku.getCompletedNumbers()
             completedNumbers.forEach { pair ->
                 if (pair.second) {
                     selectButtons[pair.first - 1].isEnabled = false
                     selectButtons[pair.first - 1].setTextColor(getColor(R.color.oui_secondary_text_color))
-                    if (position != null && sudoku[position].value == pair.first) {
+                    if (currentNumber == pair.first) {
                         if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
                             pair.first, completedNumbers
                         )

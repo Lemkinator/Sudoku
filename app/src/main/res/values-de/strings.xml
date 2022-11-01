@@ -120,7 +120,7 @@
 
     <!--About Me Page-->
     <string name="about_me">Über mich</string>
-    <string name="website">Webseite</string>
+    <string name="website">Webseite</string>minor
     <string name="task_failed">Hoppla, da ist etwas schiefgelaufen…</string>
     <string name="share">Teilen</string>
     <string name="share_app">App Teilen</string>
