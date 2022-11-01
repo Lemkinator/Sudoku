@@ -164,5 +164,7 @@
 
     <!--Others-->
     <string name="no_game_played">No game played yet</string>
+    <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
+    <string name="show_all_sudokus">Show all Sudokus</string>
 
 </resources>

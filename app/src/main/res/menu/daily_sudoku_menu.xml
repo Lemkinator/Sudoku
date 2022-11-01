@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <group android:id="@+id/group_show_only_completed_sudokus"
+        android:visible="false">
+        <item
+            android:id="@+id/menuitem_show_only_completed_sudokus"
+            android:icon="@drawable/ic_oui_eyes"
+            android:title="@string/show_only_completed_sudokus"
+            app:showAsAction="never"
+            tools:ignore="AppCompatResource" />
+    </group>
+
+    <group android:id="@+id/group_show_all_sudokus">
+        <item
+            android:id="@+id/menuitem_show_all_sudokus"
+            android:icon="@drawable/ic_oui_eyes"
+            android:title="@string/show_all_sudokus"
+            app:showAsAction="never"
+            tools:ignore="AppCompatResource" />
+    </group>
+
+</menu>

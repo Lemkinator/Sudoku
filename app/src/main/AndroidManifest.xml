@@ -6,10 +6,6 @@
     <!--
     TODO / Ideas
 
-        daily sudoku: show only completed, show all
-
-        when rotated: difficulty slider goes max? history empty???
-
         play integration (achievements, leaderboards, etc.)
         show numbers left on button
         multiplayer
@@ -64,6 +60,7 @@
             tools:ignore="LockedOrientationActivity" />
         <activity
             android:name=".ui.MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:exported="true" />
         <activity
             android:name=".ui.OOBEActivity"
