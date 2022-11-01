@@ -11,8 +11,10 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -20,16 +22,19 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetSudokuHistoryUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.ToolbarLayout
+import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.launch
@@ -37,10 +42,12 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import javax.inject.Inject
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class MainActivityTabHistory : Fragment() {
     private lateinit var binding: FragmentTabHistoryBinding
+    private lateinit var sudokuList: List<Sudoku>
     private lateinit var sudokuHistory: List<Pair<Sudoku?, LocalDateTime>>
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var toolbarLayout: ToolbarLayout
@@ -49,6 +56,9 @@ class MainActivityTabHistory : Fragment() {
     private var selected = HashMap<Int, Boolean>()
     private var selecting = false
     private var checkAllListening = true
+
+    @Inject
+    lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Inject
     lateinit var getSudokuHistory: GetSudokuHistoryUseCase
@@ -64,6 +74,7 @@ class MainActivityTabHistory : Fragment() {
         return binding.root
     }
 
+    @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
@@ -73,6 +84,16 @@ class MainActivityTabHistory : Fragment() {
             override fun handleOnBackPressed() {
                 if (selecting) setSelecting(false)
             }
+        }
+        toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
+            val totalScrollRange = layout.totalScrollRange
+            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
+                InputMethodManager::class.java,
+                activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
+                "getInputMethodWindowVisibleHeight"
+            ) as Int
+            if (totalScrollRange != 0) binding.historyNoEntryView.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+            else binding.historyNoEntryView.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
     }
 
@@ -84,13 +105,17 @@ class MainActivityTabHistory : Fragment() {
     }
 
     private suspend fun initList() {
-        sudokuHistory = getSudokuHistory()
+        sudokuList = getAllSudokus(includeNormal = true, includeDaily = false, includeLevel = false)
+        sudokuHistory = getSudokuHistory(sudokuList)
         if (sudokuHistory.isEmpty()) {
-            binding.historyNoEntryView.visibility = View.VISIBLE
             binding.sudokuHistoryList.visibility = View.GONE
+            binding.historyNoEntryScrollView.visibility = View.VISIBLE
+            binding.historyListLottie.cancelAnimation()
+            binding.historyListLottie.progress = 0f
+            binding.historyListLottie.postDelayed({ binding.historyListLottie.playAnimation() }, 400)
             return
         } else {
-            binding.historyNoEntryView.visibility = View.GONE
+            binding.historyNoEntryScrollView.visibility = View.GONE
             binding.sudokuHistoryList.visibility = View.VISIBLE
         }
         selected = HashMap()
@@ -130,7 +155,7 @@ class MainActivityTabHistory : Fragment() {
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {
-                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] ?: false }.map { it.first!! })
+                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] ?: false }.mapNotNull { it.first })
                             initList()
                             dialog.dismiss()
                         }
@@ -146,9 +171,10 @@ class MainActivityTabHistory : Fragment() {
             toolbarLayout.setActionModeCheckboxListener { _, isChecked ->
                 if (checkAllListening) {
                     selected.replaceAll { _, _ -> isChecked }
+                    sudokuHistory.forEachIndexed { index, pair -> if (pair.first == null) selected[index] = false }
                     selected.forEach { (index, _) -> sudokuListAdapter.notifyItemChanged(index) }
                 }
-                toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuListAdapter.itemCount)
+                toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
             }
             mainTabs.isEnabled = false
             onBackPressedCallback.isEnabled = true
@@ -156,7 +182,7 @@ class MainActivityTabHistory : Fragment() {
             selecting = false
             for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
-            toolbarLayout.setActionModeCount(0, sudokuListAdapter.itemCount)
+            toolbarLayout.setActionModeCount(0, sudokuList.size)
             toolbarLayout.dismissActionMode()
             mainTabs.isEnabled = true
             onBackPressedCallback.isEnabled = false
@@ -167,7 +193,7 @@ class MainActivityTabHistory : Fragment() {
         selected[position] = !selected[position]!!
         sudokuListAdapter.notifyItemChanged(position)
         checkAllListening = false
-        toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuListAdapter.itemCount)
+        toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
         checkAllListening = true
     }
 

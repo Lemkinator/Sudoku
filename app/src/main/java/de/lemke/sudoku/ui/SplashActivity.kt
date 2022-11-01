@@ -9,6 +9,7 @@ import android.text.style.ForegroundColorSpan
 import android.view.animation.Animation
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.databinding.ActivitySplashBinding
@@ -44,6 +45,7 @@ class SplashActivity : AppCompatActivity() {
         setContentView(binding.root)
         lifecycleScope.launch {
             appStart = checkAppStart()
+            NotificationManagerCompat.from(this@SplashActivity).cancelAll() // cancel all notifications
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             if (getUserSettings().devModeEnabled) {
                 val devText: Spannable = SpannableString(" Dev")

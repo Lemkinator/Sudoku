@@ -7,12 +7,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
-class GetSudokuHistoryUseCase @Inject constructor(
-    private val getAllSudokus: GetAllSudokusUseCase
-) {
-    suspend operator fun invoke(): List<Pair<Sudoku?, LocalDateTime>> = withContext(Dispatchers.Default) {
-        val sudokuHistory: MutableList<Pair<Sudoku?, LocalDateTime>> =
-            getAllSudokus(includeNormal = true, includeDaily = false, includeLevel = false).map { it to it.updated }.toMutableList()
+class GetSudokuHistoryUseCase @Inject constructor() {
+    suspend operator fun invoke(sudokuList: List<Sudoku>): List<Pair<Sudoku?, LocalDateTime>> = withContext(Dispatchers.Default) {
+        val sudokuHistory: MutableList<Pair<Sudoku?, LocalDateTime>> = sudokuList.map { it to it.updated }.toMutableList()
         val sudokuHistoryCopy = sudokuHistory.toMutableList()
         var offset = 0
         var oldDate: LocalDate? = null
