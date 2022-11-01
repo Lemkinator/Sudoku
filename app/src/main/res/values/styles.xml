@@ -58,6 +58,9 @@
         <item name="android:ellipsize">none</item>
     </style>
 
+    <style name="test" parent="Theme.AppCompat.Dialog.Alert">
+    </style>
+
     <style name="StatisticItem">
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_width">wrap_content</item>
@@ -88,7 +91,7 @@
 
     <style name="OOBE.TextView.ToS" parent="TextAppearance.AppCompat">
         <item name="android:textSize">14.0sp</item>
-        <item name="android:textColor">@color/oui_primary_text_color</item>
+        <item name="android:textColor">@color/oui_primary_text_color_not_themed</item>
         <item name="android:textColorLink">@color/oui_relative_link_title_text_color</item>
         <item name="android:lineSpacingExtra">3.0dp</item>
         <item name="android:maxLines">3</item>
@@ -101,7 +104,7 @@
         <item name="android:background">@drawable/oobe_button_background</item>
         <item name="android:backgroundTint">@color/primary_color</item>
         <item name="android:textSize">18.0sp</item>
-        <item name="android:textColor">@color/oui_primary_text_color</item>
+        <item name="android:textColor">@color/oui_primary_text_color_not_themed</item>
     </style>
 
 </resources>
