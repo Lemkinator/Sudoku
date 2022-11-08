@@ -77,7 +77,6 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
-        binding.gameRecycler.seslSetLastRoundedCorner(true)
 
         val id = intent.getStringExtra("sudokuId")
         if (id == null) {
@@ -119,8 +118,26 @@ class SudokuActivity : AppCompatActivity() {
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
                 InputMethodManager::class.java, getSystemService(INPUT_METHOD_SERVICE), "getInputMethodWindowVisibleHeight"
             ) as Int
-            if (totalScrollRange != 0) binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-            else binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
+            if (totalScrollRange != 0) {
+                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
+            } else {
+                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
+            }
+            /*val width = binding.sudokuLayout.measuredWidth
+            val height = binding.sudokuLayout.measuredHeight
+            val gameSize: Int
+            if (totalScrollRange != 0) {
+                gameSize = min(width, height - totalScrollRange - verticalOffset)
+                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
+            } else {
+                gameSize = min(width, height - inputMethodWindowVisibleHeight - verticalOffset)
+                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
+            }
+            val params: ViewGroup.LayoutParams = binding.roundedGameRecycler.layoutParams
+            params.width = gameSize
+            params.height = gameSize
+            binding.roundedGameRecycler.translationX = max(0, width - gameSize) / 2f
+            binding.roundedGameRecycler.layoutParams = params*/
         }
         binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
@@ -172,6 +189,8 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
         binding.gameRecycler.adapter = gameAdapter
+        binding.gameRecycler.seslSetFillBottomEnabled(true)
+        binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = SudokuGameListener()
         resumeGame()
         checkAnyNumberCompleted(null)
@@ -450,7 +469,6 @@ class SudokuActivity : AppCompatActivity() {
                     ?.setDuration(200L)?.start()
             }?.start()
         delay(20L)
-        //it?.flash(animationDuration)
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {

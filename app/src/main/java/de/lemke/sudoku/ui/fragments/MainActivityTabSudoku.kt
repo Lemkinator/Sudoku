@@ -82,10 +82,10 @@ class MainActivityTabSudoku : Fragment() {
             if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
             else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
-        /*SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
+        SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
         binding.sizeSeekbar.setSeamless(true)
         binding.sizeSeekbar.max = 2
-        binding.sizeSeekbar.progress = 1*/
+        binding.sizeSeekbar.progress = 1
         SeekBarUtils.showTickMark(binding.difficultySeekbar, true)
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
@@ -102,13 +102,13 @@ class MainActivityTabSudoku : Fragment() {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 } else {
                     Log.d("MainActivityTabSudoku", "generating new sudoku")
-                    val sudoku = generateSudoku(9, Difficulty.fromInt(binding.difficultySeekbar.progress))
+                    val sudoku = generateSudoku(binding.sizeSeekbar.size, Difficulty.fromInt(binding.difficultySeekbar.progress))
                     saveSudoku(sudoku)
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 }
                 loadingDialog.dismiss()
                 preloadedSudokus = null
-                preloadedSudokus = preloadSudokus()
+                //preloadedSudokus = preloadSudokus()
             }
         }
         binding.dailyButton.setOnClickListener {
@@ -130,7 +130,7 @@ class MainActivityTabSudoku : Fragment() {
                 override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
             })
-            preloadedSudokus = preloadSudokus()
+            //preloadedSudokus = preloadSudokus()
         }
     }
 
@@ -160,11 +160,9 @@ class MainActivityTabSudoku : Fragment() {
 }
 
 private val HapticSeekBar.size: Int
-    get() {
-        return when (this.progress) {
-            0 -> 4
-            1 -> 9
-            2 -> 16
-            else -> 9
-        }
+    get() = when (this.progress) {
+        0 -> 4
+        1 -> 9
+        2 -> 16
+        else -> 9
     }

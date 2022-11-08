@@ -17,7 +17,7 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <!--LinearLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -28,6 +28,7 @@
                 android:layout_weight="1"
                 android:gravity="start"
                 android:text="4×4"
+                android:textColor="@color/oui_secondary_text_color"
                 tools:ignore="HardcodedText" />
 
             <TextView
@@ -36,7 +37,8 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="9×9"
-                tools:ignore="HardcodedText"/>
+                android:textColor="@color/oui_secondary_text_color"
+                tools:ignore="HardcodedText" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -44,7 +46,8 @@
                 android:layout_weight="1"
                 android:gravity="end"
                 android:text="16×16"
-                tools:ignore="HardcodedText"/>
+                android:textColor="@color/oui_secondary_text_color"
+                tools:ignore="HardcodedText" />
 
         </LinearLayout>
 
@@ -52,7 +55,7 @@
             android:id="@+id/size_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp" /-->
+            android:layout_marginBottom="20dp" />
 
         <LinearLayout
             android:layout_width="match_parent"

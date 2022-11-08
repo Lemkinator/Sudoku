@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/> <!-- Daily Sudoku notification. -->
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- Daily Sudoku notification. -->
 
     <!--
     TODO / Ideas
@@ -49,11 +50,17 @@
             android:name="theming-meta-xml"
             android:value="@xml/meta_998_sesl_app" />
 
-        <activity android:name=".ui.SettingsActivity" android:parentActivityName=".ui.MainActivity" />
+        <activity
+            android:name=".ui.SettingsActivity"
+            android:parentActivityName=".ui.MainActivity" />
         <activity android:name=".ui.AboutActivity" />
         <activity android:name=".ui.AboutMeActivity" />
-        <activity android:name=".ui.DailySudokuActivity" android:parentActivityName=".ui.MainActivity"/>
-        <activity android:name=".ui.SudokuLevelActivity" android:parentActivityName=".ui.MainActivity"/>
+        <activity
+            android:name=".ui.DailySudokuActivity"
+            android:parentActivityName=".ui.MainActivity" />
+        <activity
+            android:name=".ui.SudokuLevelActivity"
+            android:parentActivityName=".ui.MainActivity" />
         <activity
             android:name=".ui.SudokuActivity"
             android:screenOrientation="portrait"
@@ -83,7 +90,9 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" /-->
         </activity>
+
         <receiver android:name=".ui.utils.AlarmReceiver" />
+
     </application>
 
 </manifest>

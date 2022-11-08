@@ -12,7 +12,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import kotlinx.coroutines.delay
 import java.util.stream.Collectors
 
 
@@ -49,12 +48,15 @@ class FieldView(context: Context) : LinearLayout(context) {
         field = sudoku[position.index]
         if (fieldViewContainer == null) return
 
-        if (position.row == 2 || position.row == 5) foreground = context.getDrawable(
-            if (position.column == 2 || position.column == 5) R.drawable.sudoku_view_item_fg_border_bottom_right
-            else R.drawable.sudoku_view_item_fg_border_bottom
-        )
-        else if (position.column == 2 || position.column == 5)
-            foreground = context.getDrawable(R.drawable.sudoku_view_item_fg_border_right)
+        when {
+            position.row % sudoku.blockSize == sudoku.blockSize -1 && position.row != sudoku.size -1 -> foreground = context.getDrawable(
+                if (position.column % sudoku.blockSize == sudoku.blockSize -1 && position.column != sudoku.size - 1)
+                    R.drawable.sudoku_view_item_fg_border_bottom_right
+                else R.drawable.sudoku_view_item_fg_border_bottom
+            )
+            position.column % sudoku.blockSize == sudoku.blockSize -1 && position.column != sudoku.size -1 ->
+                foreground = context.getDrawable(R.drawable.sudoku_view_item_fg_border_right)
+        }
         val rm = position.row % (sudoku.blockSize * 2)
         val cm = position.column % (sudoku.blockSize * 2)
         isColored = (rm >= sudoku.blockSize && rm < sudoku.blockSize * 2) != (cm >= sudoku.blockSize && cm < sudoku.blockSize * 2)
@@ -103,12 +105,6 @@ class FieldView(context: Context) : LinearLayout(context) {
     else if (isHighlighted) context.getColor(R.color.control_color_highlighted)
     else if (isColored) context.getColor(R.color.control_color_normal)
     else Color.TRANSPARENT
-
-    suspend fun flash(milliseconds: Long) {
-        setBackgroundColor(context.getColor(R.color.field_animation_highlight))
-        delay(milliseconds)
-        setBackground()
-    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, widthMeasureSpec)

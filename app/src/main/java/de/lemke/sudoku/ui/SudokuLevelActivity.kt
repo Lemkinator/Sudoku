@@ -54,7 +54,6 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.root.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.root.setNavigationButtonIcon(getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_back))
         binding.root.setNavigationButtonOnClickListener { finish() }
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)

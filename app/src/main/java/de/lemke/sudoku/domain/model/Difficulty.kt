@@ -25,18 +25,18 @@ enum class Difficulty(val value: Int) {
             total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
             minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
              */
-            VERY_EASY -> 50//more than 50
-            EASY -> 36 //36-49
-            MEDIUM -> 32 //32-35
-            HARD -> 28 //28-31
-            EXPERT -> 23 //22-27
+            VERY_EASY -> 50     //more than 50
+            EASY -> 36          //36-49
+            MEDIUM -> 32        //32-35
+            HARD -> 28          //28-31
+            EXPERT -> 23        //22-27
         }
-        16 -> when (this) { //TODO: check numbers
-            VERY_EASY -> 88
-            EASY -> 64
-            MEDIUM -> 53
-            HARD -> 47
-            EXPERT -> 38
+        16 -> when (this) {
+            VERY_EASY -> 166    //empty: 90
+            EASY -> 156         //empty: 100
+            MEDIUM -> 136       //empty: 120
+            HARD -> 126         //empty: 130
+            EXPERT -> 116       //empty: 140
         }
         else -> givenNumbers(9)
     }
