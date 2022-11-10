@@ -9,6 +9,7 @@
 [![](https://img.shields.io/tokei/lines/github/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku)
   
 
+  <img loading="lazy" src="img/app_icon.png" height="200"/>
   
   <a target="_blank" 
        href='https://play.google.com/store/apps/details?id=de.lemke.sudoku&gl=DE&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'>
