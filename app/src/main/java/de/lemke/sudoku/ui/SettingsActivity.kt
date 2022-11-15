@@ -96,12 +96,12 @@ class SettingsActivity : AppCompatActivity() {
             val darkMode = AppCompatDelegate.getDefaultNightMode()
             darkModePref = findPreference("dark_mode_pref")!!
             autoDarkModePref = findPreference("dark_mode_auto")!!
-            confirmExitPref = findPreference("confirmExit")!!
-            regionalHighlightPref = findPreference("highlightRegionalSwitch")!!
-            numberHighlightPref = findPreference("highlightNumberSwitch")!!
-            animationsPref = findPreference("animationsSwitch")!!
-            dailySudokuNotificationPref = findPreference("dailyNotificationSwitch")!!
-            errorLimitPref = findPreference("errorLimitDropDown")!!
+            confirmExitPref = findPreference("confirm_exit_pref")!!
+            regionalHighlightPref = findPreference("highlight_regional_pref")!!
+            numberHighlightPref = findPreference("highlight_number_pref")!!
+            animationsPref = findPreference("animations_pref")!!
+            dailySudokuNotificationPref = findPreference("daily_notification_pref")!!
+            errorLimitPref = findPreference("error_limit_pref")!!
             confirmExitPref.onPreferenceChangeListener = this
             regionalHighlightPref.onPreferenceChangeListener = this
             numberHighlightPref.onPreferenceChangeListener = this
@@ -118,7 +118,7 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref.setTouchEffectEnabled(false)
             darkModePref.isEnabled = !autoDarkModePref.isChecked
             darkModePref.value = if (SeslMisc.isLightTheme(settingsActivity)) "0" else "1"
-            findPreference<PreferenceScreen>("privacy")!!.onPreferenceClickListener =
+            findPreference<PreferenceScreen>("privacy_pref")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.privacy_website))))
                     true
@@ -135,13 +135,13 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             AppUpdateManagerFactory.create(requireContext()).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
-                findPreference<Preference>("about_app")?.widgetLayoutResource =
+                findPreference<Preference>("about_app_pref")?.widgetLayoutResource =
                     if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) R.layout.sesl_preference_badge else 0
             }
             lifecycleScope.launch {
                 if (!getUserSettings().devModeEnabled) preferenceScreen.removePreference(findPreference("dev_options"))
             }
-            findPreference<PreferenceScreen>("delete_app_data")?.setOnPreferenceClickListener {
+            findPreference<PreferenceScreen>("delete_app_data_pref")?.setOnPreferenceClickListener {
                 AlertDialog.Builder(settingsActivity)
                     .setTitle(R.string.delete_appdata_and_exit)
                     .setMessage(R.string.delete_appdata_and_exit_warning)
@@ -222,23 +222,23 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     return true
                 }
-                "confirmExit" -> {
+                "confirm_exit_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(confirmExit = newValue as Boolean) } }
                     return true
                 }
-                "highlightRegionalSwitch" -> {
+                "highlight_regional_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(highlightRegional = newValue as Boolean) } }
                     return true
                 }
-                "highlightNumberSwitch" -> {
+                "highlight_number_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = newValue as Boolean) } }
                     return true
                 }
-                "animationsSwitch" -> {
+                "animations_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = newValue as Boolean) } }
                     return true
                 }
-                "dailyNotificationSwitch" -> {
+                "daily_notification_pref" -> {
                     if (newValue as Boolean) {
                         when {
                             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
@@ -265,7 +265,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     return true
                 }
-                "errorLimitDropDown" -> {
+                "error_limit_pref" -> {
                     val errorLimit = (newValue as String).toIntOrNull() ?: 0
                     lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = errorLimit) } }
                     errorLimitPref.summary = if (errorLimit == 0) getString(R.string.no_limit) else errorLimit.toString()
@@ -304,7 +304,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
 
-        private fun setDailySudokuNotification(enabled:Boolean) {
+        private fun setDailySudokuNotification(enabled: Boolean) {
             lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = enabled) } }
             sendDailyNotification.setDailySudokuNotification(enable = enabled)
         }
@@ -313,16 +313,13 @@ class SettingsActivity : AppCompatActivity() {
             channelId: String? = null,
             notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext())
         ): Boolean =
-            notificationManager.areNotificationsEnabled() &&
-                    if (channelId != null) {
-                        notificationManager.getNotificationChannel(channelId)?.importance != NotificationManagerCompat.IMPORTANCE_NONE &&
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    ContextCompat.checkSelfPermission(
-                                        requireContext(),
-                                        Manifest.permission.POST_NOTIFICATIONS
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                } else true
-                    } else true
+            notificationManager.areNotificationsEnabled() && if (channelId != null) {
+                notificationManager.getNotificationChannel(channelId)?.importance != NotificationManagerCompat.IMPORTANCE_NONE &&
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) ==
+                                    PackageManager.PERMISSION_GRANTED
+                        } else true
+            } else true
 
     }
 }

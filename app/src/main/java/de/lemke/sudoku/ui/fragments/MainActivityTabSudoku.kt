@@ -36,6 +36,7 @@ import kotlin.math.abs
 class MainActivityTabSudoku : Fragment() {
     private lateinit var binding: FragmentTabSudokuBinding
     private lateinit var toolbarLayout: ToolbarLayout
+    private lateinit var loadingDialog: ProgressDialog
     private var preloadedSudokus: List<Sudoku>? = null
 
     @Inject
@@ -71,6 +72,9 @@ class MainActivityTabSudoku : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
+        loadingDialog = ProgressDialog(context)
+        loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+        loadingDialog.setCancelable(false)
         toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
         toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
@@ -90,9 +94,6 @@ class MainActivityTabSudoku : Fragment() {
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.setOnClickListener {
-            val loadingDialog = ProgressDialog(context)
-            loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
-            loadingDialog.setCancelable(false)
             loadingDialog.show()
             lifecycleScope.launch {
                 if (preloadedSudokus != null) {

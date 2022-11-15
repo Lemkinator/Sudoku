@@ -1,8 +1,12 @@
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.domain.model.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import android.util.Log
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.SudokuId
+import de.sfuhrm.sudoku.Creator
+import de.sfuhrm.sudoku.GameSchemas
 import java.util.*
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -15,31 +19,58 @@ class GenerateFieldsUseCase @Inject constructor() {
     private var numbersToRemove: Int = -1
 
 
-    suspend operator fun invoke(size: Int, difficulty: Difficulty, sudokuId: SudokuId): MutableList<Field> =
-        withContext(Dispatchers.Default) {
-            this@GenerateFieldsUseCase.sudokuSize = size
-            this@GenerateFieldsUseCase.sqrtSize = sqrt(size.toDouble()).toInt()
-            this@GenerateFieldsUseCase.numbersToRemove = difficulty.numbersToRemove(size)
+    operator fun invoke(size: Int, difficulty: Difficulty, sudokuId: SudokuId): MutableList<Field> {
+        this@GenerateFieldsUseCase.sudokuSize = size
+        this@GenerateFieldsUseCase.sqrtSize = sqrt(size.toDouble()).toInt()
+        this@GenerateFieldsUseCase.numbersToRemove = difficulty.numbersToRemove(size)
 
-            var solutions: MutableList<Array<Array<Int?>>>
-            //Generate fields until there is at least one solution
-            do {
-                solutions = generateFields().getSolutions()
-            } while (solutions.isEmpty())
-            val solution = solutions.random()
-            val output = solution.removeRandomNumbers()
-
-            return@withContext MutableList(size * size) { index ->
-                val position = Position.create(index, size)
-                Field(
-                    sudokuId = sudokuId,
-                    position = position,
-                    value = output[position.row][position.column],
-                    solution = solution[position.row][position.column],
-                    given = output[position.row][position.column] != null,
-                )
-            }
+        val schema = when (size) {
+            4 -> GameSchemas.SCHEMA_4X4
+            9 -> GameSchemas.SCHEMA_9X9
+            16 -> GameSchemas.SCHEMA_16X16
+            else -> GameSchemas.SCHEMA_9X9
         }
+        val gameMatrix = Creator.createFull(schema)
+        val matrix = gameMatrix.array
+        val riddle = Creator.createRiddle(gameMatrix, difficulty.numbersToRemove(size)).array
+
+
+        val fields = MutableList(size * size) { index ->
+            val position = Position.create(index, size)
+            val value = riddle[position.row][position.column]
+            val solutionValue = matrix[position.row][position.column]
+            Field(
+                sudokuId = sudokuId,
+                position = position,
+                value = if (value == schema.unsetValue) null else value.toInt(),
+                solution = solutionValue.toInt(),
+                given = value == solutionValue,
+            )
+        }
+        Log.d("fields", fields.map { it.value to it.given }.toString())
+
+        return fields
+
+
+        /*var solutions: MutableList<Array<Array<Int?>>>
+        //Generate fields until there is at least one solution
+        do {
+            solutions = generateFields().getSolutions()
+        } while (solutions.isEmpty())
+        val solution = solutions.random()
+        val output = solution.removeRandomNumbers()
+
+        return MutableList(size * size) { index ->
+            val position = Position.create(index, size)
+            Field(
+                sudokuId = sudokuId,
+                position = position,
+                value = output[position.row][position.column],
+                solution = solution[position.row][position.column],
+                given = output[position.row][position.column] != null,
+            )
+        }*/
+    }
 
     private fun generateFields(): Array<Array<Int?>> {
         val fields = Array(sudokuSize) { arrayOfNulls<Int>(sudokuSize) }
@@ -173,8 +204,10 @@ class GenerateFieldsUseCase @Inject constructor() {
         val col = block % sqrtSize * sqrtSize + it % sqrtSize
         this[row][col]
     }
+
     private fun Array<Array<Int?>>.getPossibleValues(row: Int, column: Int): List<Int> =
         (1..sudokuSize).filter { it !in getRow(row) && it !in getColumn(column) && it !in getBlock(row / sqrtSize * sqrtSize + column / sqrtSize) }
+
     private fun Array<Array<Int?>>.getRandomFieldCoordinates(empty: Boolean): Pair<Int, Int> {
         val emptyCells = mutableListOf<Pair<Int, Int>>()
         for (row in 0 until sudokuSize) {

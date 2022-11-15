@@ -7,8 +7,16 @@
     <!--
     TODO / Ideas
 
-        play integration (achievements, leaderboards, etc.)
+        sudoku noti time setting
+        hint secondary color?
+        statisitcs text size
+        autonote: toggle
+        on delete: delte notes when value is empty
         show numbers left on button
+        error limit: level daily
+        setting: directly show errors
+
+        play integration (achievements, leaderboards, etc.)
         multiplayer
 
         size 16?
@@ -22,9 +30,11 @@
         android:name=".App"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="false"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locale_config"
         android:resizeableActivity="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.Sudoku"

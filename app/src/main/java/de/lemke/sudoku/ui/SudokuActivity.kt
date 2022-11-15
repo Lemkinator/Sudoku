@@ -456,10 +456,10 @@ class SudokuActivity : AppCompatActivity() {
 
     private suspend fun animateField(fieldView: FieldView?) {
         fieldView?.animate()
-            ?.alpha(0.2f)
-            ?.scaleX(1.3f)
-            ?.scaleY(1.3f)
-            ?.rotation(145f)
+            ?.alpha(0.4f)
+            ?.scaleX(1.2f)
+            ?.scaleY(1.2f)
+            ?.rotation(90f)
             ?.setDuration(200L)?.withEndAction {
                 fieldView.animate()
                     ?.alpha(1f)
@@ -468,7 +468,7 @@ class SudokuActivity : AppCompatActivity() {
                     ?.rotation(0f)
                     ?.setDuration(200L)?.start()
             }?.start()
-        delay(20L)
+        delay(40L)
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {

@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySplashBinding
 import de.lemke.sudoku.domain.*
 import kotlinx.coroutines.delay
@@ -50,7 +51,7 @@ class SplashActivity : AppCompatActivity() {
             if (getUserSettings().devModeEnabled) {
                 val devText: Spannable = SpannableString(" Dev")
                 devText.setSpan(
-                    ForegroundColorSpan(getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_orange_color)),
+                    ForegroundColorSpan(getColor(R.color.primary_color)),
                     0,
                     devText.length,
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE

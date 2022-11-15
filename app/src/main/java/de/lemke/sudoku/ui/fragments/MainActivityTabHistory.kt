@@ -197,7 +197,6 @@ class MainActivityTabHistory : Fragment() {
         checkAllListening = true
     }
 
-    //Adapter for the Icon RecyclerView
     inner class SudokuListAdapter : RecyclerView.Adapter<SudokuListAdapter.ViewHolder>(), SectionIndexer {
         private var sections: MutableList<String> = mutableListOf()
         private var positionForSection: MutableList<Int> = mutableListOf()

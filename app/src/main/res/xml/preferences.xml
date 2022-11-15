@@ -16,34 +16,34 @@
 
     <PreferenceCategory android:title="@string/general">
         <SwitchPreferenceCompat
-            android:key="confirmExit"
+            android:key="confirm_exit_pref"
             android:summary="@string/press_again_to_exit"
             android:title="@string/confirm_exit" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/game">
         <SwitchPreferenceCompat
-            android:key="animationsSwitch"
+            android:key="animations_pref"
             android:title="@string/animations" />
         <SwitchPreferenceCompat
-            android:key="highlightRegionalSwitch"
+            android:key="highlight_regional_pref"
             android:summary="@string/regional_highlight_summary"
             android:title="@string/regional_highlight" />
         <SwitchPreferenceCompat
-            android:key="highlightNumberSwitch"
+            android:key="highlight_number_pref"
             android:summary="@string/number_highlight_summary"
             android:title="@string/number_highlight" />
         <DropDownPreference
             android:defaultValue="3"
             android:entries="@array/error_limit_entries"
             android:entryValues="@array/error_limit_values"
-            android:key="errorLimitDropDown"
+            android:key="error_limit_pref"
             android:title="@string/error_limit" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/notifications">
         <SwitchPreferenceCompat
-            android:key="dailyNotificationSwitch"
+            android:key="daily_notification_pref"
             android:summary="@string/daily_sudoku_notification_channel_description"
             android:title="@string/daily_sudoku_notification_channel_name" />
 
@@ -53,7 +53,7 @@
         android:key="dev_options"
         android:title="@string/dev_options">
         <PreferenceScreen
-            android:key="delete_app_data"
+            android:key="delete_app_data_pref"
             android:title="@string/delete_appdata_and_exit" />
     </PreferenceCategory>
 
@@ -63,11 +63,11 @@
             android:title="@string/tos" />
 
         <PreferenceScreen
-            android:key="privacy"
+            android:key="privacy_pref"
             android:title="@string/privacy_information" />
 
         <PreferenceScreen
-            android:key="about_app"
+            android:key="about_app_pref"
             android:title="@string/about_app">
             <intent
                 android:targetClass="de.lemke.sudoku.ui.AboutActivity"
