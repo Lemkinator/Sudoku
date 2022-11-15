@@ -9,7 +9,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
-import de.lemke.sudoku.domain.GetAllSudokusWithDifficultyUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
@@ -22,9 +21,6 @@ import javax.inject.Inject
 class MainActivityTabStatistics : Fragment() {
     private lateinit var binding: FragmentTabStatisticsBinding
     private lateinit var sudokus: List<Sudoku>
-
-    @Inject
-    lateinit var getAllSudokusWithDifficulty: GetAllSudokusWithDifficultyUseCase
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
@@ -70,20 +66,7 @@ class MainActivityTabStatistics : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private suspend fun updateStatistics() {
-        val userSettings = getUserSettings()
-        val difficulty =
-            if (userSettings.statisticsFilterDifficulty == -1) null else Difficulty.fromInt(userSettings.statisticsFilterDifficulty)
-        binding.generalStatisticsLayout.visibility = if (difficulty != null) View.GONE else View.VISIBLE
-        sudokus = if (difficulty != null) getAllSudokusWithDifficulty(
-            difficulty,
-            includeNormal = userSettings.statisticsFilterIncludeNormal,
-            includeDaily = userSettings.statisticsFilterIncludeDaily,
-            includeLevel = userSettings.statisticsFilterIncludeLevels
-        ) else getAllSudokus(
-            includeNormal = userSettings.statisticsFilterIncludeNormal,
-            includeDaily = userSettings.statisticsFilterIncludeDaily,
-            includeLevel = userSettings.statisticsFilterIncludeLevels
-        )
+        sudokus = getAllSudokus(getUserSettings().statisticsFilterFlags)
 
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size
@@ -108,11 +91,15 @@ class MainActivityTabStatistics : Fragment() {
             sudokus.filter { it.completed }.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
         val mostGamesWonDifficulty =
             if (mostGamesWonDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesWonDifficultyInt, resources)
+        val mostGamesStartedSizeInt = sudokus.groupingBy { it.size }.eachCount().maxByOrNull { it.value }?.key
+        val mostGamesStartedSize = if (mostGamesStartedSizeInt == null) "-" else "$mostGamesStartedSizeInt×$mostGamesStartedSizeInt"
+        val mostGamesWonSizeInt = sudokus.filter { it.completed }.groupingBy { it.size }.eachCount().maxByOrNull { it.value }?.key
+        val mostGamesWonSize = if (mostGamesWonSizeInt == null) "-" else "$mostGamesWonSizeInt×$mostGamesWonSizeInt"
         binding.gamesStatisticTotalStartedValue.text = gamesStarted.toString()
         binding.gamesStatisticTotalCompletedValue.text = gamesCompleted.toString()
         binding.gamesStatisticWinRateValue.text = "$winRate%"
         binding.timeStatisticBestTimeValue.text =
-            secondsToTimeString(bestTime) + if (bestTimeSudoku != null && difficulty == null) " (${
+            secondsToTimeString(bestTime) + if (bestTimeSudoku != null) " (${
                 bestTimeSudoku.difficulty.getLocalString(resources)
             })" else ""
         binding.timeStatisticAverageTimeValue.text = secondsToTimeString(averageTime)
@@ -128,6 +115,8 @@ class MainActivityTabStatistics : Fragment() {
         binding.gamesStatisticAverageNotesValue.text = averageNotes.toString()
         binding.difficultyStatisticMostGamesStartedValue.text = mostGamesStartedDifficulty
         binding.difficultyStatisticMostGamesWonValue.text = mostGamesWonDifficulty
+        binding.sizeStatisticMostGamesStartedValue.text = mostGamesStartedSize
+        binding.sizeStatisticMostGamesWonValue.text = mostGamesWonSize
     }
 
     private fun secondsToTimeString(seconds: Int): String =

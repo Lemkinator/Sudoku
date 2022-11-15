@@ -6,11 +6,18 @@
     <string name="history">Verlauf</string>
     <string name="statistics">Statistik</string>
 
-    <string name="new_game">Neues Spiel (%1$s)</string>
+    <string name="new_game">Neues Spiel</string>
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
+
     <string name="daily_sudoku">Tägliches Sudoku</string>
+    <string name="show_only_completed_sudokus">Nur abgeschlossene Sudokus anzeigen</string>
+    <string name="show_all_sudokus">Alle Sudokus anzeigen</string>
     <string name="level">Level</string>
     <string name="next_level">Nächstes Level</string>
+
+    <string name="no_game_played">Noch kein Spiel gespielt</string>
+    <string name="task_failed">Hoppla, da ist etwas schiefgelaufen…</string>
+    <string name="error">Fehler</string>
 
     <!--Menu-->
     <string name="undo">Rückgangig machen</string>
@@ -22,12 +29,27 @@
     <string name="about_page_optional_text">Eine Sudoku App im schönen OneUI-Design</string>
     <string name="open_in_playstore">In Play Store öffnen</string>
 
+    <!--About Me-->
+    <string name="about_me">Über mich</string>
+    <string name="website">Webseite</string>minor
+    <string name="share">Teilen</string>
+    <string name="share_app">App Teilen</string>
+    <string name="share_app_text">Schau mal hier, eine Sudoku App im schönen OneUI-Design: https://play.google.com/store/apps/details?id=</string>
+    <string name="write_review">Bewertung schreiben</string>
+    <string name="rate_app">App im Play-Store Bewerten</string>
+    <string name="write_email">E-Mail schreiben</string>
+    <string name="support_me_text">Falls du mich in irgendeiner Weise unterstützen möchtest, dann sende mir gerne eine E-Mail</string>
+    <string name="support_me">Unterstütz mich</string>
+    <string name="no_email_app_installed">Keine E-Mail App installiert…</string>
+    <string name="to_play_store">Zum Play Store</string>
+    <string name="review_comment">Um ein optimales Nutzererlebnis zu gewährleisten, verwaltet Google Play wann und wie oft einem Nutzer der integrierte Bewertungsdialog angezeigt werden kann. Deshalb kann es vorkommen, dass diese Schaltfläche in manchen Fällen keine Aktion durchführt.\nAlternativ kann die Bewertung dann im Play Store geschrieben werden.</string>
+    <string name="useful_links">Nützliche Links</string>
+
     <!--Settings-->
-    <string name="system_default">Systemeinstellung</string>
     <string name="design">Design</string>
+    <string name="system_default">Systemeinstellung</string>
     <string name="general">Allgemein</string>
     <string name="game">Spiel</string>
-    <string name="games">Spiele</string>
     <string name="animations">Animationen</string>
     <string name="regional_highlight">Regionales Highlight</string>
     <string name="regional_highlight_summary">Wenn ein Feld ausgewählt wird, werden die Reihe, Zeile und der Block hervorgehoben.</string>
@@ -40,12 +62,9 @@
     <string name="error_limit">Fehlerlimit</string>
     <string name="no_limit">Kein Limit</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Fehlerlimit von %1$d erreicht.</string>
-
     <string name="dev_options">Developer options</string>
-
     <string name="privacy_information">Informationen zum Datenschutz</string>
     <string name="more_information">Mehr Informationen</string>
-
 
     <!--Difficuilties-->
     <string name="very_easy">Sehr Einfach</string>
@@ -76,6 +95,9 @@
     <string name="gameover">Spiel zu Ende</string>
 
     <!--Statistics-->
+    <string name="size">Größe</string>
+    <string name="type">Typ</string>
+    <string name="games">Spiele</string>
     <string name="games_started">Spiele gestartet</string>
     <string name="games_completed">Spiele gewonnen</string>
     <string name="win_rate">Siegesrate</string>
@@ -100,7 +122,6 @@
     <string name="average_notes">Durchschnittliche Notizen</string>
     <string name="filter">Filter</string>
     <string name="statistics_filter">Statistik-Filter</string>
-    <string name="all">Alle</string>
     <string name="normal_sudokus">Normale Sudokus</string>
     <string name="daily_sudokus">Tägliche Sudokus</string>
     <string name="sudoku_level">Sudoku-Level</string>
@@ -117,23 +138,7 @@
     <string name="oobe_tos_text">Durch die Nutzung der App stimmen Sie den %1$s zu.</string>
     <string name="accept_tos">Weiter</string>
 
-    <!--About Me Page-->
-    <string name="about_me">Über mich</string>
-    <string name="website">Webseite</string>minor
-    <string name="task_failed">Hoppla, da ist etwas schiefgelaufen…</string>
-    <string name="share">Teilen</string>
-    <string name="share_app">App Teilen</string>
-    <string name="share_app_text">Schau mal hier, eine Sudoku App im schönen OneUI-Design: https://play.google.com/store/apps/details?id=</string>
-    <string name="write_review">Bewertung schreiben</string>
-    <string name="rate_app">App im Play-Store Bewerten</string>
-    <string name="write_email">E-Mail schreiben</string>
-    <string name="support_me_text">Falls du mich in irgendeiner Weise unterstützen möchtest, dann sende mir gerne eine E-Mail</string>
-    <string name="support_me">Unterstütz mich</string>
-    <string name="no_email_app_installed">Keine E-Mail App installiert…</string>
-    <string name="to_play_store">Zum Play Store</string>
-    <string name="review_comment">Um ein optimales Nutzererlebnis zu gewährleisten, verwaltet Google Play wann und wie oft einem Nutzer der integrierte Bewertungsdialog angezeigt werden kann. Deshalb kann es vorkommen, dass diese Schaltfläche in manchen Fällen keine Aktion durchführt.\nAlternativ kann die Bewertung dann im Play Store geschrieben werden.</string>
-    <string name="error">Fehler</string>
-    <string name="useful_links">Nützliche Links</string>
+
 
     <!--Notifications-->
     <string name="notifications">Benachrichtigungen</string>
@@ -144,9 +149,6 @@
     <string name="daily_sudoku_notification_channel_description">Eine Benachrichtigung erhalten, wenn ein neues tägliches Sudoku verfügbar ist.</string>
 
     <!--Others-->
-    <string name="no_game_played">Noch kein Spiel gespielt</string>
-    <string name="show_only_completed_sudokus">Nur abgeschlossene Sudokus anzeigen</string>
-    <string name="show_all_sudokus">Alle Sudokus anzeigen</string>
 
 
 </resources>

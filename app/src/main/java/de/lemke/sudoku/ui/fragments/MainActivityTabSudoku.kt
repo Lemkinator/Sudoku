@@ -3,7 +3,6 @@ package de.lemke.sudoku.ui.fragments
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +17,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
@@ -37,7 +35,6 @@ class MainActivityTabSudoku : Fragment() {
     private lateinit var binding: FragmentTabSudokuBinding
     private lateinit var toolbarLayout: ToolbarLayout
     private lateinit var loadingDialog: ProgressDialog
-    private var preloadedSudokus: List<Sudoku>? = null
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -56,9 +53,6 @@ class MainActivityTabSudoku : Fragment() {
 
     @Inject
     lateinit var getRecentSudoku: GetRecentlyUpdatedNormalSudokuUseCase
-
-    @Inject
-    lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Inject
     lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
@@ -89,27 +83,16 @@ class MainActivityTabSudoku : Fragment() {
         SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
         binding.sizeSeekbar.setSeamless(true)
         binding.sizeSeekbar.max = 2
-        binding.sizeSeekbar.progress = 1
         SeekBarUtils.showTickMark(binding.difficultySeekbar, true)
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.setOnClickListener {
             loadingDialog.show()
             lifecycleScope.launch {
-                if (preloadedSudokus != null) {
-                    Log.d("MainActivityTabSudoku", "Using preloaded sudokus")
-                    val sudoku = preloadedSudokus!![binding.difficultySeekbar.progress]
-                    saveSudoku(sudoku)
-                    startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
-                } else {
-                    Log.d("MainActivityTabSudoku", "generating new sudoku")
-                    val sudoku = generateSudoku(binding.sizeSeekbar.size, Difficulty.fromInt(binding.difficultySeekbar.progress))
-                    saveSudoku(sudoku)
-                    startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
-                }
+                val sudoku = generateSudoku(binding.sizeSeekbar.size, Difficulty.fromInt(binding.difficultySeekbar.progress))
+                saveSudoku(sudoku)
+                startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                 loadingDialog.dismiss()
-                preloadedSudokus = null
-                //preloadedSudokus = preloadSudokus()
             }
         }
         binding.dailyButton.setOnClickListener {
@@ -121,17 +104,24 @@ class MainActivityTabSudoku : Fragment() {
         lifecycleScope.launch {
             val sliderValue = getUserSettings().difficultySliderValue
             binding.difficultySeekbar.progress = sliderValue
-            binding.newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(sliderValue, resources))
             binding.difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                    binding.newGameButton.text = getString(R.string.new_game, Difficulty.getLocalString(progress, resources))
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
             })
-            //preloadedSudokus = preloadSudokus()
+            val sizeValue = getUserSettings().sizeSliderValue
+            binding.sizeSeekbar.progress = sizeValue
+            binding.sizeSeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
+                    lifecycleScope.launch { updateUserSettings { it.copy(sizeSliderValue = progress) } }
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+            })
         }
     }
 
@@ -144,7 +134,7 @@ class MainActivityTabSudoku : Fragment() {
                 binding.continueGameButton.text = getString(
                     R.string.continue_game,
                     sudoku.difficulty.getLocalString(resources),
-                    sudoku.timeString
+                    sudoku.sizeString
                 )
                 binding.continueGameButton.setOnClickListener {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))

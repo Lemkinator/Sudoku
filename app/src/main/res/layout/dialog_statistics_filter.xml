@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -10,84 +11,96 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="24dp" />
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:backgroundTint="@android:color/transparent"
+            android:text="@string/size" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_size_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="4×4"
+            tools:ignore="HardcodedText" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_size_9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="9×9"
+            tools:ignore="HardcodedText" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_size_16"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="16×16"
+            tools:ignore="HardcodedText" />
 
         <com.google.android.material.textview.MaterialTextView
             style="?android:listSeparatorTextViewStyle"
             android:backgroundTint="@android:color/transparent"
             android:text="@string/difficulty" />
 
-        <RadioGroup
-            android:id="@+id/radio_group_difficulty"
-            android:layout_width="match_parent"
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_difficulty_very_easy"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp">
-
-            <androidx.appcompat.widget.AppCompatRadioButton
-                android:id="@+id/radio_button_difficulty_all"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/all" />
-
-            <androidx.appcompat.widget.AppCompatRadioButton
-                android:id="@+id/radio_button_difficulty_very_easy"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/very_easy" />
-
-            <androidx.appcompat.widget.AppCompatRadioButton
-                android:id="@+id/radio_button_difficulty_easy"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/easy" />
-
-            <androidx.appcompat.widget.AppCompatRadioButton
-                android:id="@+id/radio_button_difficulty_medium"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/medium" />
-
-            <androidx.appcompat.widget.AppCompatRadioButton
-                android:id="@+id/radio_button_difficulty_hard"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/hard" />
-
-            <androidx.appcompat.widget.AppCompatRadioButton
-                android:id="@+id/radio_button_difficulty_expert"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/expert" />
-
-        </RadioGroup>
-
-        <View
-            style="@style/DividerStyle"
-            android:layout_marginVertical="15dp" />
-
-        <!--com.google.android.material.textview.MaterialTextView
-            style="?android:listSeparatorTextViewStyle"
-            android:backgroundTint="@android:color/transparent"
-            android:text="@string/include" /-->
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/very_easy" />
 
         <androidx.appcompat.widget.AppCompatCheckBox
-            android:id="@+id/checkbox_statistics_filter_include_normal"
+            android:id="@+id/checkbox_statistics_filter_difficulty_easy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/easy" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_difficulty_medium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/medium" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_difficulty_hard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/hard" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_difficulty_expert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/expert" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:backgroundTint="@android:color/transparent"
+            android:text="@string/type" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/checkbox_statistics_filter_normal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
             android:text="@string/normal_sudokus" />
 
         <androidx.appcompat.widget.AppCompatCheckBox
-            android:id="@+id/checkbox_statistics_filter_include_daily"
+            android:id="@+id/checkbox_statistics_filter_daily"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
             android:text="@string/daily_sudokus" />
 
         <androidx.appcompat.widget.AppCompatCheckBox
-            android:id="@+id/checkbox_statistics_filter_include_levels"
+            android:id="@+id/checkbox_statistics_filter_level"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
@@ -95,7 +108,7 @@
 
         <View
             android:layout_width="match_parent"
-            android:layout_height="24dp" />
+            android:layout_height="15dp" />
 
     </LinearLayout>
 

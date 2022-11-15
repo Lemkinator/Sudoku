@@ -64,7 +64,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     }
 
     fun update() {
-        fieldViewValue?.text = if (field.value == null) null else field.value.toString()
+        fieldViewValue?.text = field.value.toSudokuString()
         fieldViewValue?.visibility = if (field.value == null) GONE else VISIBLE
         fieldViewValue?.setTextColor(
             context.getColor(
@@ -92,7 +92,7 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     private fun updateNotes() {
         fieldViewNotes?.visibility = if (field.notes.size == 0) View.GONE else View.VISIBLE
-        fieldViewNotes?.text = field.notes.stream().map { it.toString() }.collect(Collectors.joining())
+        fieldViewNotes?.text = field.notes.stream().map { it.toSudokuString() }.collect(Collectors.joining())
         if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1))
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
     }
@@ -109,4 +109,16 @@ class FieldView(context: Context) : LinearLayout(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, widthMeasureSpec)
     }
+}
+
+private fun Int?.toSudokuString(): CharSequence? = when (this) {
+    null -> null
+    10 -> "A"
+    11 -> "B"
+    12 -> "C"
+    13 -> "D"
+    14 -> "E"
+    15 -> "F"
+    16 -> "G"
+    else -> this.toString()
 }

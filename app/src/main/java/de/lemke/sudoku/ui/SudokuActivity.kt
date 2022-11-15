@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -46,7 +47,7 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     lateinit var toolbarMenu: Menu
-    private val selectButtons: MutableList<AppCompatButton> = mutableListOf()
+    private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     private var notesEnabled = false
     private var selected: Int? = null
 
@@ -84,34 +85,13 @@ class SudokuActivity : AppCompatActivity() {
             return
         }
         lifecycleScope.launch { initSudoku(SudokuId(id)) }
-        selectButtons.addAll(
-            listOf(
-                binding.numberButton1,
-                binding.numberButton2,
-                binding.numberButton3,
-                binding.numberButton4,
-                binding.numberButton5,
-                binding.numberButton6,
-                binding.numberButton7,
-                binding.numberButton8,
-                binding.numberButton9,
-                binding.deleteButton,
-                binding.hintButton,
-            )
-        )
-        for (index in selectButtons.indices) {
-            selectButtons[index].setOnClickListener {
-                lifecycleScope.launch { select(sudoku.itemCount + index) }
-            }
-        }
-
         binding.autoNotesButton.setOnClickListener {
             AlertDialog.Builder(this@SudokuActivity).setTitle(getString(R.string.use_auto_notes))
                 .setMessage(getString(R.string.use_auto_notes_message)).setNegativeButton(getString(R.string.sesl_cancel), null)
                 .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoNotes() }.show()
         }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { saveAndExit() }
+        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.sudokuToolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
@@ -145,16 +125,9 @@ class SudokuActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                saveAndExit()
+                finish()
             }
         })
-    }
-
-    private fun saveAndExit() {
-        lifecycleScope.launch {
-            saveSudoku(sudoku)
-            finish()
-        }
     }
 
     override fun onPause() {
@@ -192,10 +165,65 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameRecycler.seslSetFillBottomEnabled(true)
         binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = SudokuGameListener()
+        initSudokuButtons()
         resumeGame()
         checkAnyNumberCompleted(null)
         loadingDialog.dismiss()
         if (sudoku.isSudokuLevel) lifecycleScope.launch { nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1) }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        val width = binding.numberButtonsHorizontalScrollView.width
+        Log.d("test", "initSudokuButtons: width = $width")
+        for (index in sudokuButtons.indices) {
+            val layoutParams = sudokuButtons[index].layoutParams
+            when (sudoku.size) {
+                4 -> layoutParams.width = width / 4
+                9 -> layoutParams.width = width / 9
+                16 -> layoutParams.width = if (index < 9) width / 9 else width / 7
+            }
+            sudokuButtons[index].layoutParams = layoutParams
+        }
+        Log.d("test", "button1: width = ${sudokuButtons[0].width}")
+        Log.d("test", "button1: measuredWith = ${sudokuButtons[0].measuredWidth}")
+    }
+
+    private fun initSudokuButtons() {
+        if (sudoku.size >= 4) {
+            sudokuButtons.add(binding.numberButton1)
+            sudokuButtons.add(binding.numberButton2)
+            sudokuButtons.add(binding.numberButton3)
+            sudokuButtons.add(binding.numberButton4)
+        }
+        if (sudoku.size >= 9) {
+            sudokuButtons.add(binding.numberButton5)
+            sudokuButtons.add(binding.numberButton6)
+            sudokuButtons.add(binding.numberButton7)
+            sudokuButtons.add(binding.numberButton8)
+            sudokuButtons.add(binding.numberButton9)
+        }
+        if (sudoku.size >= 16) {
+            sudokuButtons.add(binding.numberButtonA)
+            sudokuButtons.add(binding.numberButtonB)
+            sudokuButtons.add(binding.numberButtonC)
+            sudokuButtons.add(binding.numberButtonD)
+            sudokuButtons.add(binding.numberButtonE)
+            sudokuButtons.add(binding.numberButtonF)
+            sudokuButtons.add(binding.numberButtonG)
+        }
+        for (index in sudokuButtons.indices) {
+            sudokuButtons[index].visibility = View.VISIBLE
+            sudokuButtons[index].setOnClickListener {
+                lifecycleScope.launch { select(sudoku.itemCount + index) }
+            }
+        }
+        binding.deleteButton.setOnClickListener {
+            lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
+        }
+        binding.hintButton.setOnClickListener {
+            lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) }
+        }
     }
 
     @Suppress("unused_parameter")
@@ -384,8 +412,8 @@ class SudokuActivity : AppCompatActivity() {
             val completedNumbers = sudoku.getCompletedNumbers()
             completedNumbers.forEach { pair ->
                 if (pair.second) {
-                    selectButtons[pair.first - 1].isEnabled = false
-                    selectButtons[pair.first - 1].setTextColor(getColor(R.color.oui_secondary_text_color))
+                    sudokuButtons[pair.first - 1].isEnabled = false
+                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.oui_secondary_text_color))
                     if (currentNumber == pair.first) {
                         if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
                             pair.first, completedNumbers
@@ -398,8 +426,8 @@ class SudokuActivity : AppCompatActivity() {
                         }
                     }
                 } else {
-                    selectButtons[pair.first - 1].isEnabled = true
-                    selectButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.design.R.color.oui_primary_text_color))
+                    sudokuButtons[pair.first - 1].isEnabled = true
+                    sudokuButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.design.R.color.oui_primary_text_color))
                 }
             }
         }
@@ -472,12 +500,21 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
-        for (button in selectButtons) {
-            button.backgroundTintList = ColorStateList.valueOf(resources.getColor(android.R.color.transparent, theme))
+        for (button in sudokuButtons) {
+            button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         }
+        binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
+        binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         if (i != null) {
-            selectButtons[i].backgroundTintList = ColorStateList.valueOf(resources.getColor(R.color.primary_color, theme))
-            if (highlightSelectedNumber && i in 0 until sudoku.size) gameAdapter.highlightNumber(i + 1)
+            when (i) {
+                sudoku.size -> binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary_color))
+                sudoku.size + 1 -> binding.hintButton.backgroundTintList =
+                    ColorStateList.valueOf(getColor(R.color.primary_color))
+                else -> {
+                    sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary_color))
+                    if (highlightSelectedNumber) gameAdapter.highlightNumber(i + 1)
+                }
+            }
             selected = sudoku.itemCount + i
         } else {
             selected = null

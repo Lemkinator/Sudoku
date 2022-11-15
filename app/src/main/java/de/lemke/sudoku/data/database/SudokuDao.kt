@@ -29,32 +29,12 @@ interface SudokuDao {
     suspend fun getAll(): List<SudokuWithFields>
 
     @Transaction
-    @Query("SELECT * FROM sudoku WHERE modeLevel = 0 ORDER BY updated DESC")
-    suspend fun getAllNormal(): List<SudokuWithFields>
-
-    @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")
     suspend fun getAllDaily(): List<SudokuWithFields>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel > 0 ORDER BY modeLevel DESC")
     suspend fun getAllLevel(): List<SudokuWithFields>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE difficulty = :difficulty ORDER BY updated DESC")
-    suspend fun getAllWithDifficulty(difficulty: Int): List<SudokuWithFields>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE difficulty = :difficulty AND modeLevel = 0 ORDER BY updated DESC")
-    suspend fun getNormalWithDifficulty(difficulty: Int): List<SudokuWithFields>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE difficulty = :difficulty AND modeLevel = -1 ORDER BY updated DESC")
-    suspend fun getDailyWithDifficulty(difficulty: Int): List<SudokuWithFields>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE difficulty = :difficulty AND modeLevel > 0 ORDER BY updated DESC")
-    suspend fun getLevelWithDifficulty(difficulty: Int): List<SudokuWithFields>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")

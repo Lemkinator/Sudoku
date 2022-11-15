@@ -105,7 +105,7 @@ class MainActivityTabHistory : Fragment() {
     }
 
     private suspend fun initList() {
-        sudokuList = getAllSudokus(includeNormal = true, includeDaily = false, includeLevel = false)
+        sudokuList = getAllSudokus(GetAllSudokusUseCase.TYPE_NORMAL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL)
         sudokuHistory = getSudokuHistory(sudokuList)
         if (sudokuHistory.isEmpty()) {
             binding.sudokuHistoryList.visibility = View.GONE
@@ -219,7 +219,7 @@ class MainActivityTabHistory : Fragment() {
             if (holder.isItem && sudoku != null) {
                 holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
-                holder.textView.text = "Sudoku (" + sudoku.difficulty.getLocalString(resources) + ")"
+                holder.textView.text = sudoku.difficulty.getLocalString(resources) + " | " + sudoku.sizeString
                 holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         requireContext(),

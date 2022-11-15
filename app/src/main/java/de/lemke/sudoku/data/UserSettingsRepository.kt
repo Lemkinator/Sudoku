@@ -2,6 +2,7 @@ package de.lemke.sudoku.data
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -26,15 +27,13 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_TOS_ACCEPTED] = newSettings.tosAccepted
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
+            it[KEY_SIZE_SLIDER_VALUE] = newSettings.sizeSliderValue
             it[KEY_CONFIRM_EXIT] = newSettings.confirmExit
             it[KEY_ANIMATIONS_ENABLED] = newSettings.animationsEnabled
             it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
             it[KEY_ERROR_LIMIT] = newSettings.errorLimit
-            it[KEY_STATISTICS_FILTER_DIFFICULTY] = newSettings.statisticsFilterDifficulty
-            it[KEY_STATISTICS_FILTER_INCLUDE_NORMAL] = newSettings.statisticsFilterIncludeNormal
-            it[KEY_STATISTICS_FILTER_INCLUDE_DAILY] = newSettings.statisticsFilterIncludeDaily
-            it[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] = newSettings.statisticsFilterIncludeLevels
+            it[KEY_STATISTICS_FILTER_FLAGS] = newSettings.statisticsFilterFlags
             it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
         }
         return settingsFromPreferences(prefs)
@@ -47,15 +46,14 @@ class UserSettingsRepository @Inject constructor(
         tosAccepted = prefs[KEY_TOS_ACCEPTED] ?: false,
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
+        sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
         confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
-        statisticsFilterDifficulty = prefs[KEY_STATISTICS_FILTER_DIFFICULTY] ?: -1,
-        statisticsFilterIncludeNormal = prefs[KEY_STATISTICS_FILTER_INCLUDE_NORMAL] ?: true,
-        statisticsFilterIncludeDaily = prefs[KEY_STATISTICS_FILTER_INCLUDE_DAILY] ?: false,
-        statisticsFilterIncludeLevels = prefs[KEY_STATISTICS_FILTER_INCLUDE_LEVELS] ?: false,
+        statisticsFilterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
+            ?: (GetAllSudokusUseCase.TYPE_NORMAL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
         dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] ?: false,
     )
 
@@ -66,15 +64,13 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_TOS_ACCEPTED = booleanPreferencesKey("tosAccepted")
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
+        private val KEY_SIZE_SLIDER_VALUE = intPreferencesKey("sizeSliderValue")
         private val KEY_CONFIRM_EXIT = booleanPreferencesKey("confirmExit")
         private val KEY_ANIMATIONS_ENABLED = booleanPreferencesKey("animationsEnabled")
         private val KEY_REGIONAL_HIGHLIGHT = booleanPreferencesKey("regionalHighlight")
         private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
         private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
-        private val KEY_STATISTICS_FILTER_DIFFICULTY = intPreferencesKey("statisticsFilterDifficulty")
-        private val KEY_STATISTICS_FILTER_INCLUDE_NORMAL = booleanPreferencesKey("statisticsFilterIncludeNormal")
-        private val KEY_STATISTICS_FILTER_INCLUDE_DAILY = booleanPreferencesKey("statisticsFilterIncludeDaily")
-        private val KEY_STATISTICS_FILTER_INCLUDE_LEVELS = booleanPreferencesKey("statisticsFilterIncludeLevels")
+        private val KEY_STATISTICS_FILTER_FLAGS = intPreferencesKey("statisticsFilterFlags")
         private val KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED = booleanPreferencesKey("dailySudokuNotificationEnabled")
     }
 }
@@ -91,6 +87,8 @@ data class UserSettings(
     val devModeEnabled: Boolean,
     /** value of difficulty slider*/
     val difficultySliderValue: Int,
+    /** value of size slider*/
+    val sizeSliderValue: Int,
     /** confirm Exit*/
     val confirmExit: Boolean,
     /** animations enabled */
@@ -101,14 +99,8 @@ data class UserSettings(
     val highlightNumber: Boolean,
     /** error limit*/
     val errorLimit: Int,
-    /** Statistics filter Difficulty*/
-    val statisticsFilterDifficulty: Int,
-    /** Statistics filter include normal */
-    val statisticsFilterIncludeNormal: Boolean,
-    /** Statistics filter include daily */
-    val statisticsFilterIncludeDaily: Boolean,
-    /** Statistics filter include levels*/
-    val statisticsFilterIncludeLevels: Boolean,
+    /** Statistics filter Flags*/
+    val statisticsFilterFlags: Int,
     /** daily Sudoku Notification enabled */
     val dailySudokuNotificationEnabled: Boolean,
 

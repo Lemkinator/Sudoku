@@ -3,19 +3,23 @@ package de.lemke.sudoku.ui.dialog
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
+import android.widget.CompoundButton
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDismissListener) : DialogFragment() {
+class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDismissListener) : DialogFragment(),
+    CompoundButton.OnCheckedChangeListener {
+    lateinit var binding: DialogStatisticsFilterBinding
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -29,53 +33,51 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val binding = DialogStatisticsFilterBinding.inflate(layoutInflater)
+        binding = DialogStatisticsFilterBinding.inflate(layoutInflater)
+        updateFlags()
         lifecycleScope.launch {
             val userSettings = getUserSettings()
-            binding.radioGroupDifficulty.check(
-                when (userSettings.statisticsFilterDifficulty) {
-                    -1 -> R.id.radio_button_difficulty_all
-                    0 -> R.id.radio_button_difficulty_very_easy
-                    1 -> R.id.radio_button_difficulty_easy
-                    2 -> R.id.radio_button_difficulty_medium
-                    3 -> R.id.radio_button_difficulty_hard
-                    4 -> R.id.radio_button_difficulty_expert
-                    else -> R.id.radio_button_difficulty_all
-                }
-            )
-            binding.checkboxStatisticsFilterIncludeNormal.isChecked = userSettings.statisticsFilterIncludeNormal
-            binding.checkboxStatisticsFilterIncludeDaily.isChecked = userSettings.statisticsFilterIncludeDaily
-            binding.checkboxStatisticsFilterIncludeLevels.isChecked = userSettings.statisticsFilterIncludeLevels
+            binding.checkboxStatisticsFilterNormal.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_NORMAL != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_ALL != 0
+            binding.checkboxStatisticsFilterDaily.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_DAILY != 0 ||
+                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_ALL != 0
+            binding.checkboxStatisticsFilterLevel.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_LEVEL != 0 ||
+                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_ALL != 0
+            binding.checkboxStatisticsFilterSize4.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_4X4 != 0 ||
+                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_ALL != 0
+            binding.checkboxStatisticsFilterSize9.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_9X9 != 0 ||
+                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_ALL != 0
+            binding.checkboxStatisticsFilterSize16.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_16X16 != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyVeryEasy.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_VERY_EASY != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyEasy.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_EASY != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyMedium.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_MEDIUM != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyHard.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_HARD != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyExpert.isChecked =
+                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_EXPERT != 0 ||
+                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
         }
-        binding.radioGroupDifficulty.setOnCheckedChangeListener { _, checkedId ->
-            lifecycleScope.launch {
-                val newDifficulty = when (checkedId) {
-                    R.id.radio_button_difficulty_all -> -1
-                    R.id.radio_button_difficulty_very_easy -> 0
-                    R.id.radio_button_difficulty_easy -> 1
-                    R.id.radio_button_difficulty_medium -> 2
-                    R.id.radio_button_difficulty_hard -> 3
-                    R.id.radio_button_difficulty_expert -> 4
-                    else -> -1
-                }
-                updateUserSettings { it.copy(statisticsFilterDifficulty = newDifficulty) }
-            }
-        }
-        binding.checkboxStatisticsFilterIncludeNormal.setOnCheckedChangeListener { _, isChecked ->
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(statisticsFilterIncludeNormal = isChecked) }
-            }
-        }
-        binding.checkboxStatisticsFilterIncludeDaily.setOnCheckedChangeListener { _, isChecked ->
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(statisticsFilterIncludeDaily = isChecked) }
-            }
-        }
-        binding.checkboxStatisticsFilterIncludeLevels.setOnCheckedChangeListener { _, isChecked ->
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(statisticsFilterIncludeLevels = isChecked) }
-            }
-        }
+        binding.checkboxStatisticsFilterNormal.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterDaily.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterLevel.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterSize4.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterSize9.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterSize16.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterDifficultyVeryEasy.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterDifficultyEasy.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterDifficultyMedium.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterDifficultyHard.setOnCheckedChangeListener(this)
+        binding.checkboxStatisticsFilterDifficultyExpert.setOnCheckedChangeListener(this)
 
         val builder = AlertDialog.Builder(requireContext())
             .setTitle(R.string.statistics_filter)
@@ -84,5 +86,45 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
             .setOnDismissListener { onDismissListener.onDismiss(it) }
         return builder.create()
 
+    }
+
+    private fun updateFlags() {
+        var flags = 0
+        if (binding.checkboxStatisticsFilterNormal.isChecked) flags = flags or GetAllSudokusUseCase.TYPE_NORMAL
+        if (binding.checkboxStatisticsFilterDaily.isChecked) flags = flags or GetAllSudokusUseCase.TYPE_DAILY
+        if (binding.checkboxStatisticsFilterLevel.isChecked) flags = flags or GetAllSudokusUseCase.TYPE_LEVEL
+        if (flags and GetAllSudokusUseCase.TYPE_NORMAL != 0 &&
+            flags and GetAllSudokusUseCase.TYPE_DAILY != 0 &&
+            flags and GetAllSudokusUseCase.TYPE_LEVEL != 0
+        ) {
+            flags = flags or GetAllSudokusUseCase.TYPE_ALL
+        }
+        if (binding.checkboxStatisticsFilterSize4.isChecked) flags = flags or GetAllSudokusUseCase.SIZE_4X4
+        if (binding.checkboxStatisticsFilterSize9.isChecked) flags = flags or GetAllSudokusUseCase.SIZE_9X9
+        if (binding.checkboxStatisticsFilterSize16.isChecked) flags = flags or GetAllSudokusUseCase.SIZE_16X16
+        if (flags and GetAllSudokusUseCase.SIZE_4X4 != 0 &&
+            flags and GetAllSudokusUseCase.SIZE_9X9 != 0 &&
+            flags and GetAllSudokusUseCase.SIZE_16X16 != 0
+        ) {
+            flags = flags or GetAllSudokusUseCase.SIZE_ALL
+        }
+        if (binding.checkboxStatisticsFilterDifficultyVeryEasy.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_VERY_EASY
+        if (binding.checkboxStatisticsFilterDifficultyEasy.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_EASY
+        if (binding.checkboxStatisticsFilterDifficultyMedium.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_MEDIUM
+        if (binding.checkboxStatisticsFilterDifficultyHard.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_HARD
+        if (binding.checkboxStatisticsFilterDifficultyExpert.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_EXPERT
+        if (flags and GetAllSudokusUseCase.DIFFICULTY_VERY_EASY != 0 &&
+            flags and GetAllSudokusUseCase.DIFFICULTY_EASY != 0 &&
+            flags and GetAllSudokusUseCase.DIFFICULTY_MEDIUM != 0 &&
+            flags and GetAllSudokusUseCase.DIFFICULTY_HARD != 0 &&
+            flags and GetAllSudokusUseCase.DIFFICULTY_EXPERT != 0
+        ) {
+            flags = flags or GetAllSudokusUseCase.DIFFICULTY_ALL
+        }
+        lifecycleScope.launch { updateUserSettings { it.copy(statisticsFilterFlags = flags) } }
+    }
+
+    override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
+        updateFlags()
     }
 }

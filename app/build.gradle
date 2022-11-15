@@ -99,10 +99,6 @@ dependencies {
     implementation 'de.sfuhrm:sudoku:5.0.0'
     implementation 'de.sfuhrm:sudoku-output:5.0.0'
     implementation 'com.airbnb.android:lottie:5.2.0'
-    implementation("com.tbuonomo:dotsindicator:4.3") {
-        exclude group: 'androidx.viewpager', module: 'viewpager'
-        exclude group: 'androidx.viewpager2', module: 'viewpager2'
-    }
 
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'com.google.android.play:core-ktx:1.8.1'
