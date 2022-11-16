@@ -127,42 +127,6 @@ class Sudoku(
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
-    fun copy(
-        id: SudokuId = this.id,
-        size: Int = this.size,
-        history: MutableList<HistoryItem> = this.history,
-        difficulty: Difficulty = this.difficulty,
-        hintsUsed: Int = this.hintsUsed,
-        notesMade: Int = this.notesMade,
-        errorsMade: Int = this.errorsMade,
-        seconds: Int = this.seconds,
-        created: LocalDateTime = this.created,
-        updated: LocalDateTime = this.updated,
-        fields: MutableList<Field> = this.fields,
-        regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
-        numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
-        autoNotesUsed: Boolean = this.autoNotesUsed,
-        modeLevel: Int = this.modeLevel,
-    ): Sudoku = Sudoku(
-        id = id,
-        size = size,
-        history = history.toMutableList(),
-        difficulty = difficulty,
-        hintsUsed = hintsUsed,
-        notesMade = notesMade,
-        errorsMade = errorsMade,
-        seconds = seconds,
-        timer = null,
-        gameListener = null,
-        created = created,
-        updated = updated,
-        fields = fields.toMutableList(),
-        regionalHighlightingUsed = regionalHighlightingUsed,
-        numberHighlightingUsed = numberHighlightingUsed,
-        autoNotesUsed = autoNotesUsed,
-        modeLevel = modeLevel,
-    )
-
     fun reset() {
         fields.forEach { it.reset() }
         history.clear()
@@ -242,6 +206,10 @@ class Sudoku(
         get(position).setHint()
         gameListener?.onFieldChanged(position)
         removeNumberNotesFromNeighbors(position, get(position).value)
+        if (completed) {
+            stopTimer()
+            gameListener?.onCompleted(position)
+        }
     }
 
     fun revertLastChange(adapter: SudokuViewAdapter) {

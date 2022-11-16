@@ -230,6 +230,7 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame(view: View? = null) {
         lifecycleScope.launch {
             binding.resumeButtonLayout.visibility = View.GONE
+            binding.gameButtons.visibility = View.VISIBLE
             binding.gameLayout.visibility = View.VISIBLE
             when {
                 sudoku.completed -> {
@@ -260,6 +261,7 @@ class SudokuActivity : AppCompatActivity() {
         sudoku.stopTimer()
         if (sudoku.completed) return
         binding.gameLayout.visibility = View.GONE
+        binding.gameButtons.visibility = View.GONE
         binding.resumeButtonLayout.visibility = View.VISIBLE
         val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
         itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
@@ -414,17 +416,8 @@ class SudokuActivity : AppCompatActivity() {
                 if (pair.second) {
                     sudokuButtons[pair.first - 1].isEnabled = false
                     sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.oui_secondary_text_color))
-                    if (currentNumber == pair.first) {
-                        if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) selectNextButton(
-                            pair.first, completedNumbers
-                        )
-                        else {
-                            selected = null
-                            val userSettings = getUserSettings()
-                            gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
-                            selectButton(null, userSettings.highlightNumber)
-                        }
-                    }
+                    if (currentNumber == pair.first && selected in sudoku.itemCount until sudoku.itemCount + sudoku.size)
+                        selectNextButton(pair.first, completedNumbers)
                 } else {
                     sudokuButtons[pair.first - 1].isEnabled = true
                     sudokuButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.design.R.color.oui_primary_text_color))
@@ -470,7 +463,7 @@ class SudokuActivity : AppCompatActivity() {
                         (animateColumn && it?.position?.column == position.column && it.position.row <= position.row) ||
                         (animateBlock && it?.position?.block == position.block && it.position.index <= position.index) ||
                         (animateSudoku && it?.position?.index!! <= position.index)
-            }.reversed().forEach { animateField(it) }
+            }.reversed().forEach { if (animateSudoku) animateField(it, 200L, 15L) else animateField(it) }
         }
         return lifecycleScope.launch {
             gameAdapter.fieldViews.filter {
@@ -478,17 +471,17 @@ class SudokuActivity : AppCompatActivity() {
                         (animateColumn && it?.position?.column == position.column && it.position.row > position.row) ||
                         (animateBlock && it?.position?.block == position.block && it.position.index > position.index) ||
                         (animateSudoku && it?.position?.index!! > position.index)
-            }.forEach { animateField(it) }
+            }.forEach { if (animateSudoku) animateField(it, 200L, 15L) else animateField(it) }
         }
     }
 
-    private suspend fun animateField(fieldView: FieldView?) {
+    private suspend fun animateField(fieldView: FieldView?, duration:Long = 200L, delay:Long = 40L) {
         fieldView?.animate()
             ?.alpha(0.4f)
             ?.scaleX(1.2f)
             ?.scaleY(1.2f)
             ?.rotation(90f)
-            ?.setDuration(200L)?.withEndAction {
+            ?.setDuration(duration)?.withEndAction {
                 fieldView.animate()
                     ?.alpha(1f)
                     ?.scaleX(1f)
@@ -496,7 +489,7 @@ class SudokuActivity : AppCompatActivity() {
                     ?.rotation(0f)
                     ?.setDuration(200L)?.start()
             }?.start()
-        delay(40L)
+        delay(delay)
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
