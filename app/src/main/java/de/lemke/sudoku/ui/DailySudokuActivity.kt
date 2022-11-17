@@ -99,25 +99,27 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         return super.onOptionsItemSelected(item)
     }
 
-    private suspend fun initList() {
+    private fun initList() {
         progressDialog.show()
-        dailySudokus = getAllDailySudokus(filterCompleted)
-        if (dailySudokus.isEmpty() || dailySudokus.firstOrNull()?.second?.isBefore(LocalDate.now()) == true) {
-            saveSudoku(generateDailySudoku())
+        lifecycleScope.launch {
             dailySudokus = getAllDailySudokus(filterCompleted)
+            if (dailySudokus.isEmpty() || dailySudokus.firstOrNull()?.second?.isBefore(LocalDate.now()) == true) {
+                saveSudoku(generateDailySudoku())
+                dailySudokus = getAllDailySudokus(filterCompleted)
+            }
+            binding.dailySudokuRecycler.layoutManager = LinearLayoutManager(this@DailySudokuActivity)
+            sudokuListAdapter = SudokuListAdapter()
+            binding.dailySudokuRecycler.adapter = sudokuListAdapter
+            binding.dailySudokuRecycler.itemAnimator = null
+            binding.dailySudokuRecycler.addItemDecoration(ItemDecoration(this@DailySudokuActivity))
+            binding.dailySudokuRecycler.seslSetFastScrollerEnabled(true)
+            binding.dailySudokuRecycler.seslSetIndexTipEnabled(true)
+            binding.dailySudokuRecycler.seslSetFillBottomEnabled(true)
+            binding.dailySudokuRecycler.seslSetGoToTopEnabled(true)
+            binding.dailySudokuRecycler.seslSetLastRoundedCorner(true)
+            binding.dailySudokuRecycler.seslSetSmoothScrollEnabled(true)
+            progressDialog.dismiss()
         }
-        binding.dailySudokuRecycler.layoutManager = LinearLayoutManager(this@DailySudokuActivity)
-        sudokuListAdapter = SudokuListAdapter()
-        binding.dailySudokuRecycler.adapter = sudokuListAdapter
-        binding.dailySudokuRecycler.itemAnimator = null
-        binding.dailySudokuRecycler.addItemDecoration(ItemDecoration(this@DailySudokuActivity))
-        binding.dailySudokuRecycler.seslSetFastScrollerEnabled(true)
-        binding.dailySudokuRecycler.seslSetIndexTipEnabled(true)
-        binding.dailySudokuRecycler.seslSetFillBottomEnabled(true)
-        binding.dailySudokuRecycler.seslSetGoToTopEnabled(true)
-        binding.dailySudokuRecycler.seslSetLastRoundedCorner(true)
-        binding.dailySudokuRecycler.seslSetSmoothScrollEnabled(true)
-        progressDialog.dismiss()
     }
 
     //Adapter for the Icon RecyclerView

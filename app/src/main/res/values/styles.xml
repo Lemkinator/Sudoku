@@ -52,15 +52,11 @@
         <item name="android:layout_weight">1</item>
     </style>
 
-    <style name="ButtonStyle.NumberButton" parent="Widget.AppCompat.Button">
-        <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/oui_primary_text_color</item>
-        <item name="android:drawableTint">@color/oui_primary_text_color</item>
-        <item name="android:layout_height">50dp</item>
-        <item name="android:layout_width">0dp</item>
+    <style name="ButtonStyle.NumberButton" parent="ButtonStyle.SudokuButton">
         <item name="android:padding">0dp</item>
         <item name="android:textSize">25sp</item>
         <item name="android:ellipsize">none</item>
+        <item name="android:visibility">gone</item>
     </style>
 
     <style name="DividerStyle">

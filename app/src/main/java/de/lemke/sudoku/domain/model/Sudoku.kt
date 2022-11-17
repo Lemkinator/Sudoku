@@ -164,14 +164,15 @@ class Sudoku(
 
     fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
         val field = get(position)
-        if (field.given || field.hint || field.value == value || field.value != null && value != null) return false
+        if (field.given || field.hint || field.value == value && value != null || field.value != null && value != null) return false
         if (isNote) {
             if (value != null) {
                 if (field.toggleNote(value)) notesMade++
             } else field.notes.clear()
             gameListener?.onFieldChanged(position)
         } else {
-            history.add(HistoryItem(position, if (value == null) field.value else null))
+            if (field.value == null && value == null) field.notes.clear()
+            else history.add(HistoryItem(position, if (value == null) field.value else null))
             field.value = value
             gameListener?.onFieldChanged(position)
             gameListener?.onHistoryChange(history.size)

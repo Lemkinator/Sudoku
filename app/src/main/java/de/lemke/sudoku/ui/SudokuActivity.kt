@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -43,7 +42,6 @@ import kotlin.math.abs
 class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
-    private lateinit var nextSudokuLevel: Sudoku
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     lateinit var toolbarMenu: Menu
@@ -84,6 +82,9 @@ class SudokuActivity : AppCompatActivity() {
             finish()
             return
         }
+        binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
+        toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
+        setSupportActionBar(null)
         lifecycleScope.launch { initSudoku(SudokuId(id)) }
         binding.autoNotesButton.setOnClickListener {
             AlertDialog.Builder(this@SudokuActivity).setTitle(getString(R.string.use_auto_notes))
@@ -119,9 +120,6 @@ class SudokuActivity : AppCompatActivity() {
             binding.roundedGameRecycler.translationX = max(0, width - gameSize) / 2f
             binding.roundedGameRecycler.layoutParams = params*/
         }
-        binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
-        toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
-        setSupportActionBar(null)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -156,7 +154,11 @@ class SudokuActivity : AppCompatActivity() {
     private suspend fun initSudoku(id: SudokuId) {
         val nullableSudoku = getSudoku(id)
         if (nullableSudoku == null) finish()
-        else sudoku = nullableSudoku
+        else initSudoku(nullableSudoku)
+    }
+
+    private fun initSudoku(sudoku: Sudoku) {
+        this.sudoku = sudoku
         setTitle()
         setSubtitle()
         binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
@@ -166,30 +168,16 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = SudokuGameListener()
         initSudokuButtons()
-        resumeGame()
+        if (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now()) {
+            setToolbarMenuItemsVisible()
+            binding.gameButtons.visibility = View.GONE
+        } else resumeGame()
         checkAnyNumberCompleted(null)
         loadingDialog.dismiss()
-        if (sudoku.isSudokuLevel) lifecycleScope.launch { nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1) }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        val width = binding.numberButtonsHorizontalScrollView.width
-        Log.d("test", "initSudokuButtons: width = $width")
-        for (index in sudokuButtons.indices) {
-            val layoutParams = sudokuButtons[index].layoutParams
-            when (sudoku.size) {
-                4 -> layoutParams.width = width / 4
-                9 -> layoutParams.width = width / 9
-                16 -> layoutParams.width = if (index < 9) width / 9 else width / 7
-            }
-            sudokuButtons[index].layoutParams = layoutParams
-        }
-        Log.d("test", "button1: width = ${sudokuButtons[0].width}")
-        Log.d("test", "button1: measuredWith = ${sudokuButtons[0].measuredWidth}")
     }
 
     private fun initSudokuButtons() {
+        sudokuButtons.clear()
         if (sudoku.size >= 4) {
             sudokuButtons.add(binding.numberButton1)
             sudokuButtons.add(binding.numberButton2)
@@ -230,19 +218,10 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame(view: View? = null) {
         lifecycleScope.launch {
             binding.resumeButtonLayout.visibility = View.GONE
-            binding.gameButtons.visibility = View.VISIBLE
             binding.gameLayout.visibility = View.VISIBLE
             when {
                 sudoku.completed -> {
                     setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
-                    binding.gameButtons.visibility = View.GONE
-                }
-                sudoku.errorLimitReached(getUserSettings().errorLimit) -> {
-                    setToolbarMenuItemsVisible(reset = true)
-                    binding.gameButtons.visibility = View.GONE
-                }
-                sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now() -> {
-                    setToolbarMenuItemsVisible()
                     binding.gameButtons.visibility = View.GONE
                 }
                 else -> {
@@ -254,6 +233,7 @@ class SudokuActivity : AppCompatActivity() {
                     binding.gameButtons.visibility = View.VISIBLE
                 }
             }
+            checkErrorLimit()
         }
     }
 
@@ -329,8 +309,9 @@ class SudokuActivity : AppCompatActivity() {
             sudoku.isSudokuLevel -> dialog.setPositiveButton(R.string.next_level) { _, _ ->
                 lifecycleScope.launch {
                     loadingDialog.show()
+                    val nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1)
                     saveSudoku(nextSudokuLevel)
-                    initSudoku(nextSudokuLevel.id)
+                    initSudoku(nextSudokuLevel)
                 }
             }
             else -> dialog.setPositiveButton(R.string.share_result) { _, _ ->
@@ -351,14 +332,21 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private suspend fun checkErrorLimit(): Boolean {
-        val errorLimit = getUserSettings().errorLimit
+        val errorLimit = when {
+            sudoku.isDailySudoku -> Sudoku.MODE_DAILY_ERROR_LIMIT
+            sudoku.isSudokuLevel -> Sudoku.MODE_LEVEL_ERROR_LIMIT
+            else -> getUserSettings().errorLimit
+        }
         if (sudoku.errorLimitReached(errorLimit)) {
             sudoku.stopTimer()
             setSubtitle()
+            binding.gameButtons.visibility = View.GONE
             setToolbarMenuItemsVisible(reset = true)
             AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.gameover)
                 .setMessage(getString(R.string.error_limit_reached, errorLimit))
-                .setPositiveButton(R.string.restart) { _, _ -> restartGame() }.setNeutralButton(R.string.ok, null).show()
+                .setPositiveButton(R.string.restart) { _, _ -> restartGame() }
+                .setNeutralButton(R.string.ok, null)
+                .show()
             return true
         }
         return false
@@ -368,7 +356,7 @@ class SudokuActivity : AppCompatActivity() {
         lifecycleScope.launch {
             sudoku.reset()
             saveSudoku(sudoku)
-            initSudoku(sudoku.id)
+            initSudoku(sudoku)
         }
     }
 
@@ -399,10 +387,11 @@ class SudokuActivity : AppCompatActivity() {
             val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " + getString(
                 R.string.current_progress,
                 sudoku.progress
-            ) + " | " + if (errorLimit == 0) {
-                getString(R.string.current_errors, sudoku.errorsMade)
-            } else {
-                getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+            ) + " | " + when {
+                sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_DAILY_ERROR_LIMIT)
+                sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_LEVEL_ERROR_LIMIT)
+                errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
+                else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
             } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""
             binding.sudokuToolbarLayout.setExpandedSubtitle(subtitle)
             binding.sudokuToolbarLayout.setCollapsedSubtitle(subtitle)
@@ -475,7 +464,7 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun animateField(fieldView: FieldView?, duration:Long = 200L, delay:Long = 40L) {
+    private suspend fun animateField(fieldView: FieldView?, duration: Long = 200L, delay: Long = 40L) {
         fieldView?.animate()
             ?.alpha(0.4f)
             ?.scaleX(1.2f)

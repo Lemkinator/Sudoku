@@ -46,9 +46,6 @@ class MainActivityTabSudoku : Fragment() {
     lateinit var generateSudoku: GenerateSudokuUseCase
 
     @Inject
-    lateinit var preloadSudokus: PreloadSudokusUseCase
-
-    @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Inject
