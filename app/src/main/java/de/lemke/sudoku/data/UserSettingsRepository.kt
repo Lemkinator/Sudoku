@@ -35,6 +35,8 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_ERROR_LIMIT] = newSettings.errorLimit
             it[KEY_STATISTICS_FILTER_FLAGS] = newSettings.statisticsFilterFlags
             it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
+            it[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] = newSettings.dailySudokuNotificationHour
+            it[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] = newSettings.dailySudokuNotificationMinute
         }
         return settingsFromPreferences(prefs)
     }
@@ -55,6 +57,8 @@ class UserSettingsRepository @Inject constructor(
         statisticsFilterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
             ?: (GetAllSudokusUseCase.TYPE_NORMAL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
         dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] ?: false,
+        dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,
+        dailySudokuNotificationMinute = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] ?: 0,
     )
 
 
@@ -72,6 +76,8 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_ERROR_LIMIT = intPreferencesKey("errorLimit")
         private val KEY_STATISTICS_FILTER_FLAGS = intPreferencesKey("statisticsFilterFlags")
         private val KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED = booleanPreferencesKey("dailySudokuNotificationEnabled")
+        private val KEY_DAILY_SUDOKU_NOTIFICATION_HOUR = intPreferencesKey("dailySudokuNotificationHour")
+        private val KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE = intPreferencesKey("dailySudokuNotificationMinute")
     }
 }
 
@@ -103,5 +109,9 @@ data class UserSettings(
     val statisticsFilterFlags: Int,
     /** daily Sudoku Notification enabled */
     val dailySudokuNotificationEnabled: Boolean,
+    /** daily Sudoku Notification hour */
+    val dailySudokuNotificationHour: Int,
+    /** daily Sudoku Notification minute */
+    val dailySudokuNotificationMinute: Int,
 
     )

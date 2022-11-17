@@ -18,13 +18,12 @@ import javax.inject.Inject
 
 class SendDailyNotificationUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val getUserSettings: GetUserSettingsUseCase
 ) {
     private lateinit var notificationBuilder: NotificationCompat.Builder
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
     private val notificationId = 5
     private val dailySudokuNotificationRequestCode = 55
-    private val hour = 9
-    private val minute = 0
 
     operator fun invoke() {
         createNotificationChannel()
@@ -70,10 +69,10 @@ class SendDailyNotificationUseCase @Inject constructor(
             .setAutoCancel(true)
     }
 
-    fun setDailySudokuNotification(enable: Boolean) =
+    suspend fun setDailySudokuNotification(enable: Boolean) =
         if (enable) enableDailySudokuNotification() else disableDailySudokuNotification()
 
-    private fun enableDailySudokuNotification() {
+    private suspend fun enableDailySudokuNotification() {
         createNotificationChannel()
         initNotificationBuilder()
         val alarmIntent = Intent(context.applicationContext, AlarmReceiver::class.java).let { intent ->
@@ -84,9 +83,10 @@ class SendDailyNotificationUseCase @Inject constructor(
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         }
+        val userSettings = getUserSettings()
         val calendar: Calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
-            set(Calendar.MINUTE, minute)
+            set(Calendar.HOUR_OF_DAY, userSettings.dailySudokuNotificationHour)
+            set(Calendar.MINUTE, userSettings.dailySudokuNotificationMinute)
         }
         // If the trigger time you specify is in the past, the alarm triggers immediately. if soo just add one day to required calendar
         // Note: also adding 1 min cuz if user clicks on notification as soon as received it it will reschedule the alarm to

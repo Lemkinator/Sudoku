@@ -42,7 +42,7 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/notifications">
-        <SwitchPreferenceCompat
+        <SeslSwitchPreferenceScreen
             android:key="daily_notification_pref"
             android:summary="@string/daily_sudoku_notification_channel_description"
             android:title="@string/daily_sudoku_notification_channel_name" />

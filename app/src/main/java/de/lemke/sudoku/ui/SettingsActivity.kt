@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.format.DateFormat
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -20,6 +21,8 @@ import androidx.appcompat.util.SeslMisc
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.picker.app.SeslTimePickerDialog
+import androidx.picker.widget.SeslTimePicker
 import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
 import com.google.android.play.core.appupdate.AppUpdateInfo
@@ -35,6 +38,7 @@ import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
 import dev.oneuiproject.oneui.preference.internal.PreferenceRelatedCard
 import dev.oneuiproject.oneui.utils.PreferenceUtils.createRelatedCard
 import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 
 
@@ -59,7 +63,7 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var regionalHighlightPref: SwitchPreferenceCompat
         private lateinit var numberHighlightPref: SwitchPreferenceCompat
         private lateinit var animationsPref: SwitchPreferenceCompat
-        private lateinit var dailySudokuNotificationPref: SwitchPreferenceCompat
+        private lateinit var dailySudokuNotificationPref: SeslSwitchPreferenceScreen
         private lateinit var errorLimitPref: DropDownPreference
 
         //private var tipCard: TipsCardViewPreference? = null
@@ -107,6 +111,32 @@ class SettingsActivity : AppCompatActivity() {
             numberHighlightPref.onPreferenceChangeListener = this
             animationsPref.onPreferenceChangeListener = this
             dailySudokuNotificationPref.onPreferenceChangeListener = this
+            dailySudokuNotificationPref.onPreferenceClickListener = OnPreferenceClickListener {
+                lifecycleScope.launch {
+                    dailySudokuNotificationPref.isChecked = true
+                    val userSettings = getUserSettings()
+                    val dialog = SeslTimePickerDialog(
+                        settingsActivity,
+                        { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
+                            lifecycleScope.launch {
+                                updateUserSettings {
+                                    it.copy(
+                                        dailySudokuNotificationHour = hourOfDay,
+                                        dailySudokuNotificationMinute = minute
+                                    )
+                                }
+                                setDailyNotificationPrefTime(hourOfDay, minute)
+                                setDailySudokuNotification(true)
+                            }
+                        },
+                        userSettings.dailySudokuNotificationHour,
+                        userSettings.dailySudokuNotificationMinute,
+                        DateFormat.is24HourFormat(settingsActivity)
+                    )
+                    dialog.show()
+                }
+                true
+            }
             errorLimitPref.onPreferenceChangeListener = this
             autoDarkModePref.onPreferenceChangeListener = this
             autoDarkModePref.isChecked = darkMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM ||
@@ -193,12 +223,23 @@ class SettingsActivity : AppCompatActivity() {
                 animationsPref.isChecked = userSettings.animationsEnabled
                 dailySudokuNotificationPref.isChecked =
                     userSettings.dailySudokuNotificationEnabled && areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
+                setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
                 errorLimitPref.summary =
                     if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 //tipCard?.isVisible = showTipCard
                 //tipCardSpacing?.isVisible = showTipCard
             }
             setRelatedCardView()
+        }
+
+        private fun setDailyNotificationPrefTime(hourOfDay: Int, minute: Int) {
+            dailySudokuNotificationPref.summary = getString(
+                R.string.daily_sudoku_notification_channel_description_time,
+                DateFormat.format(if (DateFormat.is24HourFormat(settingsActivity)) "HH:mm" else "h:mm a", Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, hourOfDay)
+                    set(Calendar.MINUTE, minute)
+                })
+            )
         }
 
         @SuppressLint("WrongConstant", "RestrictedApi")
@@ -305,8 +346,10 @@ class SettingsActivity : AppCompatActivity() {
             }
 
         private fun setDailySudokuNotification(enabled: Boolean) {
-            lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = enabled) } }
-            sendDailyNotification.setDailySudokuNotification(enable = enabled)
+            lifecycleScope.launch {
+                updateUserSettings { it.copy(dailySudokuNotificationEnabled = enabled) }
+                sendDailyNotification.setDailySudokuNotification(enable = enabled)
+            }
         }
 
         private fun areNotificationsEnabled(

@@ -99,7 +99,7 @@ class MainActivityTabStatistics : Fragment() {
         binding.gamesStatisticTotalCompletedValue.text = gamesCompleted.toString()
         binding.gamesStatisticWinRateValue.text = "$winRate%"
         binding.timeStatisticBestTimeValue.text =
-            secondsToTimeString(bestTime) + if (bestTimeSudoku != null) " (${
+            secondsToTimeString(bestTime) + if (bestTimeSudoku != null) " (${bestTimeSudoku.sizeString},${
                 bestTimeSudoku.difficulty.getLocalString(resources)
             })" else ""
         binding.timeStatisticAverageTimeValue.text = secondsToTimeString(averageTime)
