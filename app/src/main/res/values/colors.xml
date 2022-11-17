@@ -12,6 +12,10 @@
     <color name="field_userinput_text_color">@color/oui_primary_text_color_not_themed</color>
     <color name="field_given_text_color">@color/primary_color</color>
     <color name="field_hint_text_color">@color/secondary_color</color>
-    <color name="field_animation_highlight">#CCCCCC</color>
+    <!-- Background colors, alpha is set in separate res. -->
+    <color name="field_background_normal">@color/primary_color</color>
+    <color name="field_background_selected">@color/secondary_color</color>
+    <color name="field_background_highlighted">@color/primary_color</color>
+    <color name="field_background_highlighted_number">@color/secondary_color</color>
 
 </resources>
