@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
-import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
@@ -97,18 +96,16 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             override fun onTabReselected(tab: TabLayout.Tab) {
                 try {
                     when (tab.text) {
-                        getString(R.string.app_name) -> {
-                            binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
-                        }
+                        getString(R.string.app_name) -> binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
                         getString(R.string.history) -> {
                             val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuHistoryList)
                             if (historyRecyclerView.canScrollVertically(-1)) historyRecyclerView.smoothScrollToPosition(0)
                             else binding.mainToolbarlayout.setExpanded(!binding.mainToolbarlayout.isExpanded, true)
                         }
                         getString(R.string.statistics) -> {
-                            val statisticsScrollView: NestedScrollView = findViewById(R.id.statistics_scroll_view)
+                            val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
                             if (binding.mainToolbarlayout.isExpanded) binding.mainToolbarlayout.setExpanded(false, true)
-                            else if (statisticsScrollView.canScrollVertically(-1)) statisticsScrollView.smoothScrollTo(0, 0)
+                            if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
                             else StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(
                                 supportFragmentManager,
                                 "StatisticsFilterDialog"

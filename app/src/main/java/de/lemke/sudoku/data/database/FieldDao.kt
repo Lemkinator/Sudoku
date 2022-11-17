@@ -24,14 +24,6 @@ interface FieldDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(field: FieldDb): Long
 
-    @Transaction
-    @Query("SELECT * FROM field")
-    suspend fun getAll(): List<FieldDb>
-
-    @Transaction
-    @Query("SELECT * FROM field WHERE sudokuId = :sudokuId")
-    suspend fun getAllBySudokuId(sudokuId: String): List<FieldDb>
-
     @Query("DELETE FROM field WHERE sudokuId = :sudokuId")
     suspend fun delete(sudokuId: String)
 }
