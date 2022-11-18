@@ -18,7 +18,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -40,9 +39,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,7 +101,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                         getString(R.string.statistics) -> {
                             val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
                             if (binding.mainToolbarlayout.isExpanded) binding.mainToolbarlayout.setExpanded(false, true)
-                            if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
+                            else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
                             else StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(
                                 supportFragmentManager,
                                 "StatisticsFilterDialog"

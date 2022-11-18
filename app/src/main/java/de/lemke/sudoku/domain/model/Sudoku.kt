@@ -100,6 +100,9 @@ class Sudoku(
     val errors: Int
         get() = fields.count { it.error }
 
+    val filled: Boolean
+        get() = fields.all { it.value != null }
+
     val completed: Boolean
         get() = fields.all { !it.error && it.value != null }
 

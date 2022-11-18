@@ -32,10 +32,10 @@ enum class Difficulty(val value: Int) {
             EXPERT -> 23        //22-27
         }
         16 -> when (this) {
-            VERY_EASY -> 166    //empty: 90
-            EASY -> 156         //empty: 100
-            MEDIUM -> 136       //empty: 120
-            HARD -> 126         //empty: 130
+            VERY_EASY -> 186    //empty: 70
+            EASY -> 166         //empty: 90
+            MEDIUM -> 146       //empty: 110
+            HARD -> 136         //empty: 120
             EXPERT -> 116       //empty: 140
         }
         else -> givenNumbers(9)
