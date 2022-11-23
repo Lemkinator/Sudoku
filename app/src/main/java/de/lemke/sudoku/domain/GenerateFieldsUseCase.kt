@@ -1,12 +1,10 @@
 package de.lemke.sudoku.domain
 
-import android.util.Log
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.SudokuId
 import de.sfuhrm.sudoku.Creator
-import de.sfuhrm.sudoku.GameMatrix
 import de.sfuhrm.sudoku.GameSchemas
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,14 +18,7 @@ class GenerateFieldsUseCase @Inject constructor() {
             16 -> GameSchemas.SCHEMA_16X16
             else -> GameSchemas.SCHEMA_9X9
         }
-        var gameMatrix: GameMatrix? = null
-        while (gameMatrix == null) {
-            try {
-                gameMatrix = Creator.createFull(schema)
-            } catch (e: java.lang.AssertionError) {
-                Log.e("GenerateFieldsUseCase", "Error: ${e.message}") //Why???
-            }
-        }
+        val gameMatrix = Creator.createFull(schema)
         val matrix = gameMatrix.array
         val riddle = Creator.createRiddle(gameMatrix, difficulty.numbersToRemove(size)).array
         return@withContext MutableList(size * size) { index ->
