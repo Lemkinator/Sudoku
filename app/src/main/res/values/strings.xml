@@ -15,8 +15,8 @@
     <string name="playstore_link" translatable="false">https://play.google.com/store/apps/details?id=</string>
     <string name="oneui_library_github" translatable="false">OneUI-Project Github</string>
     <string name="oneui_github_link" translatable="false">https://github.com/OneUIProject</string>
-    <string name="sudoku_generator_github" translatable="false">Sudoku Generator Github</string>
-    <string name="sudoku_generator_github_link" translatable="false">https://github.com/sfuhrm/sudoku</string>
+    <string name="sudoku_lib_github_link" translatable="false">https://github.com/sfuhrm/sudoku</string>
+    <string name="sudoku_lib_license_github_link" translatable="false">https://github.com/sfuhrm/sudoku/blob/master/LICENSE</string>
     <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
     <string name="daily_sudoku_notification_channel_id" translatable="false">Daily_Sudoku_Notification_Channel</string>
 
@@ -47,8 +47,11 @@
 
     <!--About-->
     <string name="about_app">About Sudoku</string>
-    <string name="about_page_optional_text">A Sudoku app with OneUI-Design</string>
+    <string name="about_page_optional_text">A Sudoku app with OneUI-Design.</string>
     <string name="open_in_playstore">Open in Play Store</string>
+    <string name="sudoku_lib">Sudoku library</string>
+    <string name="sudoku_lib_license" translatable="false">LGPL 3</string>
+    <string name="sudoku_lib_license_text">Uses Sudoku library licensed under LGPL 3.</string>
 
     <!--About Me-->
     <string name="about_me">About me</string>

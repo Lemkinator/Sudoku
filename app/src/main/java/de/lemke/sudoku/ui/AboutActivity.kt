@@ -2,8 +2,15 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.content.IntentSender.SendIntentException
+import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -50,7 +57,43 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
         setContentView(binding.root)
         appUpdateManager = AppUpdateManagerFactory.create(this)
         appInfoLayout = binding.appInfoLayout
-        appInfoLayout.addOptionalText(getString(R.string.about_page_optional_text))
+        val bib = getString(R.string.sudoku_lib)
+        val license = getString(R.string.sudoku_lib_license)
+        val text = getString(R.string.about_page_optional_text) + "\n" + getString(R.string.sudoku_lib_license_text)
+        val textLink = SpannableString(text)
+        textLink.setSpan(
+            object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_lib_github_link))))
+                }
+
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                }
+            },
+            text.indexOf(bib), text.indexOf(bib) + bib.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        textLink.setSpan(
+            object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_lib_license_github_link))))
+                }
+
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                }
+            },
+            text.indexOf(license), text.indexOf(license) + license.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        val optinalTextView = appInfoLayout.addOptionalText("")
+        optinalTextView.text = textLink
+        optinalTextView.movementMethod = LinkMovementMethod.getInstance()
+        optinalTextView.highlightColor = Color.TRANSPARENT
+        appInfoLayout
         appInfoLayout.isExpandable = true
         appInfoLayout.status = LOADING
         //status: LOADING NO_UPDATE UPDATE_AVAILABLE NOT_UPDATEABLE NO_CONNECTION
@@ -70,9 +113,6 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
         binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
         binding.aboutBtnOpenOneuiGithub.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
-        }
-        binding.aboutBtnOpenSudokuGeneratorGithub.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_generator_github_link))))
         }
         binding.aboutBtnAboutMe.setOnClickListener {
             startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
