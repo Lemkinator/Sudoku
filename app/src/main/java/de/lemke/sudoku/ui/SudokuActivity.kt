@@ -482,9 +482,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
-        for (button in sudokuButtons) {
-            button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
-        }
+        for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         if (i != null) {
@@ -520,108 +518,94 @@ class SudokuActivity : AppCompatActivity() {
         when (selected) {
             null -> {//nothing is selected
                 when (newSelected) {
-                    null -> {} //selected nothing
-                    in 0 until sudoku.itemCount -> { //selected field
+                    //selected nothing
+                    null -> {}
+                    //selected field
+                    in 0 until sudoku.itemCount -> {
                         gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
                         selected = newSelected
                     }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
+                    //selected button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    }
-                    else -> {} //selected nothing
+                    //selected nothing
+                    else -> {}
                 }
             }
             in 0 until sudoku.itemCount -> { //field is selected
                 val position = Position.create(selected!!, sudoku.size)
                 when (newSelected) {
-                    null -> { //selected nothing
-                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
+                    //selected nothing
+                    null -> selected = null
+                    //selected same field
+                    selected -> selected = null
+                    //selected field
+                    in 0 until sudoku.itemCount -> selected = newSelected
+                    //selected number
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+                        if (sudoku[position].value == null) sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
                         selected = null
                     }
-                    selected -> { //selected same field
-                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
-                        selected = null
-                    }
-                    in 0 until sudoku.itemCount -> { //selected field
-                        gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
-                        selected = newSelected
-                    }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //selected number
-                        if (sudoku[position].value == null) {
-                            sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                            if (highlightSelectedNumber) gameAdapter.highlightNumber(newSelected - sudoku.itemCount + 1)
-                        }
-                    }
-                    sudoku.itemCount + sudoku.size -> { //selected delete
+                    //selected delete
+                    sudoku.itemCount + sudoku.size -> {
                         sudoku.move(position, null, notesEnabled)
-                        gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
+                        selected = null
                     }
-                    sudoku.itemCount + sudoku.size + 1 -> { //selected hint
-                        if (!sudoku[position].given) {
-                            sudoku.setHint(position)
-                        }
+                    //selected hint
+                    sudoku.itemCount + sudoku.size + 1 -> {
+                        if (!sudoku[position].given) sudoku.setHint(position)
+                        selected = null
                     }
                 }
+                gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
             }
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
                 when (newSelected) {
-                    null -> { //selected nothing
-                        selectButton(null, highlightSelectedNumber)
-                    }
-                    selected -> { //selected same button
-                        selectButton(null, highlightSelectedNumber)
-                    }
-                    in 0 until sudoku.itemCount -> { //selected field
+                    //selected nothing
+                    null -> selectButton(null, highlightSelectedNumber)
+                    //selected same button
+                    selected -> selectButton(null, highlightSelectedNumber)
+                    //selected field
+                    in 0 until sudoku.itemCount -> {
                         val number = selected!! - sudoku.itemCount + 1
                         sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
                         if (highlightSelectedNumber) gameAdapter.highlightNumber(number)
                     }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button
+                    //selected button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    }
-                    else -> { //selected nothing
-                        selectButton(null, highlightSelectedNumber)
-                    }
+                    //selected nothing
+                    else -> selectButton(null, highlightSelectedNumber)
                 }
             }
             sudoku.itemCount + sudoku.size -> { // delete button is selected
                 when (newSelected) {
-                    null -> { //selected nothing
-                        selectButton(null, highlightSelectedNumber)
-                    }
-                    selected -> { //selected same button
-                        selectButton(null, highlightSelectedNumber)
-                    }
-                    in 0 until sudoku.itemCount -> { //selected field
-                        sudoku.move(newSelected, null, notesEnabled)
-                    }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> { //selected button(not delete)
+                    //selected nothing
+                    null -> selectButton(null, highlightSelectedNumber)
+                    //selected same button
+                    selected -> selectButton(null, highlightSelectedNumber)
+                    //selected field
+                    in 0 until sudoku.itemCount -> sudoku.move(newSelected, null, notesEnabled)
+                    //selected button(not delete)
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    }
-                    else -> { //selected nothing
-                        selectButton(null, highlightSelectedNumber)
-                    }
+                    //selected nothing
+                    else -> selectButton(null, highlightSelectedNumber)
                 }
             }
             sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
                 when (newSelected) {
-                    null -> { //selected nothing
-                        selectButton(null, highlightSelectedNumber)
-                    }
-                    selected -> { //selected same button
-                        selectButton(null, highlightSelectedNumber)
-                    }
-                    in 0 until sudoku.itemCount -> { //selected field
-                        if (!sudoku[newSelected].given) {
-                            sudoku.setHint(newSelected)
-                        }
-                    }
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> { //selected button(not hint)
+                    //selected nothing
+                    null -> selectButton(null, highlightSelectedNumber)
+                    //selected same button
+                    selected -> selectButton(null, highlightSelectedNumber)
+                    //selected field
+                    in 0 until sudoku.itemCount -> if (!sudoku[newSelected].given) sudoku.setHint(newSelected)
+                    //selected button(not hint)
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 ->
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    }
-                    else -> { //selected nothing
-                        selectButton(null, highlightSelectedNumber)
-                    }
+                    //selected nothing
+                    else -> selectButton(null, highlightSelectedNumber)
                 }
             }
         }

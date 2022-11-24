@@ -75,7 +75,7 @@ class MainActivityTabStatistics : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private suspend fun updateStatistics() {
-        val sudokus = getAllSudokus(getUserSettings().statisticsFilterFlags)
+        val sudokus = getAllSudokus(getUserSettings().statisticsFilterFlags).filter { !it.autoNotesUsed }
         statisticsList = mutableListOf()
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size
@@ -86,7 +86,7 @@ class MainActivityTabStatistics : Fragment() {
         val winsWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
         val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
         val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
-        val winsWithoutAutoHints = sudokus.filter { it.completed && !it.autoNotesUsed }.size
+        //val winsWithoutAutoHints = sudokus.filter { it.completed && !it.autoNotesUsed }.size
         val winsWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
         val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
         val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted
@@ -121,7 +121,7 @@ class MainActivityTabStatistics : Fragment() {
         statisticsList.add(getString(R.string.most_errors) to mostErrors.toString())
         statisticsList.add(getString(R.string.average_errors) to averageErrors.toString())
         statisticsList.add(getString(R.string.hints) to null)
-        statisticsList.add(getString(R.string.wins_without_auto_hint) to winsWithoutAutoHints.toString())
+        //statisticsList.add(getString(R.string.wins_without_auto_hint) to winsWithoutAutoHints.toString())
         statisticsList.add(getString(R.string.wins_without_hint) to winsWithoutHints.toString())
         statisticsList.add(getString(R.string.most_hints) to mostHints.toString())
         statisticsList.add(getString(R.string.average_hints) to averageHints.toString())
