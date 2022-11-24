@@ -53,9 +53,6 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var getUserSettings: GetUserSettingsUseCase
 
     @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
-
-    @Inject
     lateinit var getSudoku: GetSudokuUseCase
 
     @Inject
@@ -63,9 +60,6 @@ class SudokuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
-    lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {

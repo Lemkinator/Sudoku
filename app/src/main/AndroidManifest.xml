@@ -3,11 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- Daily Sudoku notification. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
     TODO / Ideas
 
-        max hints -> difficulty?
+        max hints -> difficulty? / 5?
         setting: directly show errors
         autonote: toggle
         show numbers left on button
@@ -90,13 +91,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!--Shortcuts-->
-            <!--meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" /-->
         </activity>
 
-        <receiver android:name=".ui.utils.AlarmReceiver" />
+        <receiver
+            android:name=".ui.utils.AlarmReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 
