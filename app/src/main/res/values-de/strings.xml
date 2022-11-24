@@ -85,12 +85,12 @@
     <string name="completed_title">Fertig</string>
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
-    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNotizen: %6$d \nRegionales Highlight benutzt: %7$s \nGewählte Nummer hervorgehoben: %8$s \nAuto-Notizen benutzt: %9$s \nErstellt: %10$s \nGeändert: %11$s</string>
+    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNotizen: %6$d \nRegionales Highlight benutzt: %7$s \nGewählte Nummer hervorgehoben: %8$s \nErstellt: %10$s \nGeändert: %11$s</string>
     <string name="share_result">Ergebnis teilen</string>
     <string name="text_share">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
-    <string name="hint">Hinweis</string>
+    <string name="hint">Hinweis (%1$d)</string>
     <string name="auto_notes">Auto-Notizen</string>
     <string name="use_auto_notes">Auto-Notizen benutzen?</string>
     <string name="use_auto_notes_message">Das Aktivieren der Auto-Notizen wird in der Statistik vermerkt.</string>

@@ -75,7 +75,7 @@ class MainActivityTabStatistics : Fragment() {
 
     @SuppressLint("SetTextI18n")
     private suspend fun updateStatistics() {
-        val sudokus = getAllSudokus(getUserSettings().statisticsFilterFlags).filter { !it.autoNotesUsed }
+        val sudokus = getAllSudokus(getUserSettings().statisticsFilterFlags) //.filter { !it.autoNotesUsed }
         statisticsList = mutableListOf()
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size

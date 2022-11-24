@@ -88,26 +88,38 @@ class Sudoku(
 
     override fun hashCode(): Int = id.hashCode()
 
-    val isSudokuLevel: Boolean
-        get() = modeLevel > 0
+    private val hintLimit: Int
+        get() = when (size) {
+            4 -> 1
+            9 -> 3
+            16 -> 8
+            else -> 3
+        }
 
-    val isDailySudoku: Boolean
-        get() = modeLevel == MODE_DAILY
+    val availableHints: Int
+        get() = hintLimit - hintsUsed
 
-    val isNormalSudoku: Boolean
-        get() = modeLevel == MODE_NORMAL
+    val isHintAvailable: Boolean get() = if (isNormalSudoku) hintsUsed < hintLimit else false
 
-    val errors: Int
-        get() = fields.count { it.error }
+    val isSudokuLevel: Boolean get() = modeLevel > 0
 
-    val filled: Boolean
-        get() = fields.all { it.value != null }
+    val isDailySudoku: Boolean get() = modeLevel == MODE_DAILY
 
-    val completed: Boolean
-        get() = fields.all { !it.error && it.value != null }
+    val isNormalSudoku: Boolean get() = modeLevel == MODE_NORMAL
 
-    val resumed: Boolean
-        get() = timer != null
+    val errors: Int get() = fields.count { it.error }
+
+    val filled: Boolean get() = fields.all { it.value != null }
+
+    val completed: Boolean get() = fields.all { !it.error && it.value != null }
+
+    val resumed: Boolean get() = timer != null
+
+    val itemCount: Int get() = (this.size * this.size)
+
+    val blockSize: Int get() = sqrt(this.size.toDouble()).toInt()
+
+    val sizeString: String get() = "$size×$size"
 
     val progress: Int
         get() {
@@ -115,18 +127,9 @@ class Sudoku(
             return fields.count { !it.given && it.correct } * 100 / total
         }
 
-    val itemCount: Int
-        get() = (this.size * this.size)
-
-    val blockSize: Int
-        get() = sqrt(this.size.toDouble()).toInt()
-
     val timeString: String
         get() = if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
         else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
-
-    val sizeString: String
-        get() = "$size×$size"
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 

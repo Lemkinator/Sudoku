@@ -216,7 +216,8 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="1dp"
                 android:drawableTop="@drawable/ic_oui_tips_outline"
-                android:text="@string/hint" />
+                android:text="@string/hints"
+                android:visibility="gone"/>
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/note_button"
@@ -234,7 +235,8 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="1dp"
                 android:drawableTop="@drawable/ic_oui_auto_hints"
-                android:text="@string/auto_notes" />
+                android:text="@string/auto_notes"
+                android:visibility="gone"/>
 
         </LinearLayout>
 

@@ -155,6 +155,7 @@ class SudokuActivity : AppCompatActivity() {
         this.sudoku = sudoku
         setTitle()
         setSubtitle()
+        refreshHintButton()
         binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
         binding.gameRecycler.adapter = gameAdapter
@@ -351,6 +352,7 @@ class SudokuActivity : AppCompatActivity() {
             sudoku.reset()
             saveSudoku(sudoku)
             initSudoku(sudoku)
+            selectButton(null, false)
         }
     }
 
@@ -363,13 +365,13 @@ class SudokuActivity : AppCompatActivity() {
                 binding.sudokuToolbarLayout.setTitle(
                     getString(R.string.app_name) + " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
                 )
-                binding.hintButton.visibility = View.GONE
-                binding.autoNotesButton.visibility = View.GONE
+                //binding.hintButton.visibility = View.GONE
+                //binding.autoNotesButton.visibility = View.GONE
             }
             sudoku.isSudokuLevel -> {
                 binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (Level " + sudoku.modeLevel + ")")
-                binding.hintButton.visibility = View.GONE
-                binding.autoNotesButton.visibility = View.GONE
+                //binding.hintButton.visibility = View.GONE
+                //binding.autoNotesButton.visibility = View.GONE
             }
         }
     }
@@ -504,6 +506,11 @@ class SudokuActivity : AppCompatActivity() {
         )
     }
 
+    private fun refreshHintButton() {
+        binding.hintButton.visibility = if (sudoku.isHintAvailable) View.VISIBLE else View.GONE
+        binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
+    }
+
     private suspend fun select(newSelected: Int?) {
         if (checkErrorLimit()) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(false, true)
@@ -549,6 +556,7 @@ class SudokuActivity : AppCompatActivity() {
                     sudoku.itemCount + sudoku.size + 1 -> {
                         if (!sudoku[position].given) sudoku.setHint(position)
                         selected = null
+                        refreshHintButton()
                     }
                 }
                 gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
@@ -594,7 +602,11 @@ class SudokuActivity : AppCompatActivity() {
                     //selected same button
                     selected -> selectButton(null, highlightSelectedNumber)
                     //selected field
-                    in 0 until sudoku.itemCount -> if (!sudoku[newSelected].given) sudoku.setHint(newSelected)
+                    in 0 until sudoku.itemCount -> {
+                        if (!sudoku[newSelected].given) sudoku.setHint(newSelected)
+                        if (!sudoku.isHintAvailable) selected = null
+                        refreshHintButton()
+                    }
                     //selected button(not hint)
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 ->
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
