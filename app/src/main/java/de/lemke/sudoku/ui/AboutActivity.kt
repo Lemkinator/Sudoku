@@ -71,6 +71,9 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
         binding.aboutBtnOpenOneuiGithub.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
         }
+        binding.aboutBtnOpenSudokuGeneratorGithub.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_generator_github_link))))
+        }
         binding.aboutBtnAboutMe.setOnClickListener {
             startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
         }
