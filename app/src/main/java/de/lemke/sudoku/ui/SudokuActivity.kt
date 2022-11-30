@@ -56,6 +56,9 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var getSudoku: GetSudokuUseCase
 
     @Inject
+    lateinit var generateSudoku: GenerateSudokuUseCase
+
+    @Inject
     lateinit var generateSudokuLevel: GenerateSudokuLevelUseCase
 
     @Inject
@@ -300,16 +303,24 @@ class SudokuActivity : AppCompatActivity() {
         )
         val dialog = AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.completed_title).setMessage(completedMessage)
         dialog.setNeutralButton(R.string.ok, null)
-        when {
-            sudoku.isSudokuLevel -> dialog.setPositiveButton(R.string.next_level) { _, _ ->
+        if (sudoku.isSudokuLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
+            lifecycleScope.launch {
+                loadingDialog.show()
+                val nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1)
+                saveSudoku(nextSudokuLevel)
+                initSudoku(nextSudokuLevel)
+            }
+        }
+        else {
+            if (sudoku.isNormalSudoku) dialog.setPositiveButton(R.string.new_game) { _, _ ->
                 lifecycleScope.launch {
                     loadingDialog.show()
-                    val nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1)
-                    saveSudoku(nextSudokuLevel)
-                    initSudoku(nextSudokuLevel)
+                    val newSudoku = generateSudoku(sudoku.size, sudoku.difficulty)
+                    saveSudoku(newSudoku)
+                    initSudoku(newSudoku)
                 }
             }
-            else -> dialog.setPositiveButton(R.string.share_result) { _, _ ->
+            dialog.setNegativeButton(R.string.share_result) { _, _ ->
                 val sendIntent = Intent(Intent.ACTION_SEND)
                 sendIntent.type = "text/plain"
                 sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.text_share) + completedMessage)
