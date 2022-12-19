@@ -130,6 +130,26 @@ class Sudoku(
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
+    val initialSudoku: Sudoku
+        get() = Sudoku(
+            id = SudokuId.generate(),
+            size = size,
+            history = mutableListOf(),
+            difficulty = difficulty,
+            hintsUsed = 0,
+            notesMade = 0,
+            errorsMade = 0,
+            seconds = 0,
+            timer = null,
+            gameListener = null,
+            created = created,
+            updated = created,
+            regionalHighlightingUsed = false,
+            numberHighlightingUsed = false,
+            modeLevel = modeLevel,
+            fields = fields.onEach { it.reset() },
+        )
+
     fun reset() {
         fields.forEach { it.reset() }
         history.clear()

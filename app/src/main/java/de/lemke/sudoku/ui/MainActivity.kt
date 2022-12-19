@@ -23,6 +23,7 @@ import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
+import dev.oneuiproject.oneui.dialog.ProgressDialog
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -86,12 +87,17 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private suspend fun checkImportedSudoku() {
         val intent = intent
         if (intent != null && intent.data != null) {
+            val dialog = ProgressDialog(this)
+            dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+            dialog.setCancelable(false)
+            dialog.show()
             val sudoku = importSudoku(intent.data)
             if (sudoku != null) {
                 startActivity(Intent(this, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
             } else {
                 Toast.makeText(this@MainActivity, "Sudoku konnte nicht importiert werden", Toast.LENGTH_LONG).show()
             }
+            dialog.dismiss()
         }
     }
 

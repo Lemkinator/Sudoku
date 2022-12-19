@@ -148,6 +148,9 @@
     <string name="daily_sudoku_notification_channel_name">Tägliches Sudoku</string>
     <string name="daily_sudoku_notification_channel_description">Eine Benachrichtigung erhalten, wenn ein neues tägliches Sudoku verfügbar ist.</string>
     <string name="daily_sudoku_notification_channel_description_time">Eine Benachrichtigung um %1$s Uhr erhalten, wenn ein neues tägliches Sudoku verfügbar ist. Hier tippen um die Uhrzeit zu ändern.</string>
+    <string name="share_sudoku">Share Sudoku</string>
+    <string name="initial_sudoku">Initial Sudoku</string>
+    <string name="current_sudoku">Current Sudoku</string>
 
     <!--Others-->
 

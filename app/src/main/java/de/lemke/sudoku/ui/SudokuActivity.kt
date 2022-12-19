@@ -136,7 +136,20 @@ class SudokuActivity : AppCompatActivity() {
             R.id.menu_undo -> sudoku.revertLastChange(gameAdapter)
             R.id.menu_pause_play -> if (sudoku.resumed) pauseGame() else resumeGame()
             R.id.menu_reset -> restartGame()
-            R.id.menu_share -> lifecycleScope.launch { shareSudoku() }
+            R.id.menu_share -> {
+                AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.share_sudoku)
+                    //.setMessage(R.string.share_sudoku_message)
+                    .setNegativeButton(R.string.initial_sudoku) { _, _ ->
+                        loadingDialog.show()
+                        lifecycleScope.launch { shareSudoku(sudoku.initialSudoku) }
+                    }
+                    .setPositiveButton(R.string.current_sudoku) { _, _ ->
+                        loadingDialog.show()
+                        lifecycleScope.launch { shareSudoku(sudoku) }
+                    }
+                    .show()
+
+            }
         }
         return true
     }
@@ -365,16 +378,16 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun shareSudoku() {
+    private suspend fun shareSudoku(sudoku: Sudoku) {
         val uri = exportSudoku(sudoku)
         val shareIntent = Intent(Intent.ACTION_SEND)
-        shareIntent.type = "application/octet-stream"
+        shareIntent.type = "application/sudoku" //octet-stream"
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
         //for (ri in packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY))
         //    grantUriPermission(ri.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
-
+        loadingDialog.dismiss()
     }
 
     private fun setTitle() {
