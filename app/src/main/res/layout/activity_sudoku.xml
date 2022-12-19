@@ -228,16 +228,6 @@
                 android:drawableTop="@drawable/ic_oui_pen"
                 android:text="@string/note" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/auto_notes_button"
-                style="@style/ButtonStyle.SudokuButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="1dp"
-                android:drawableTop="@drawable/ic_oui_auto_hints"
-                android:text="@string/auto_notes"
-                android:visibility="gone"/>
-
         </LinearLayout>
 
     </dev.oneuiproject.oneui.widget.RoundLinearLayout>

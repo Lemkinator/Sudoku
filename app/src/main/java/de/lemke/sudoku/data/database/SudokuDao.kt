@@ -45,6 +45,6 @@ interface SudokuDao {
     suspend fun getRecentlyUpdatedNormalSudoku(): SudokuWithFields?
 
     @Delete
-    fun delete(sudoku: SudokuDb)
+    suspend fun delete(sudoku: SudokuDb)
 
 }

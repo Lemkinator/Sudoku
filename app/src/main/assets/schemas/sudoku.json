@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "size": {
+      "type": "integer"
+    },
+    "difficulty": {
+      "type": "integer"
+    },
+    "hintsUsed": {
+      "type": "integer"
+    },
+    "notesMade": {
+      "type": "integer"
+    },
+    "errorsMade": {
+      "type": "integer"
+    },
+    "seconds": {
+      "type": "integer"
+    },
+    "created": {
+      "type": "string"
+    },
+    "updated": {
+      "type": "string"
+    },
+    "regionalHighlightingUsed": {
+      "type": "boolean"
+    },
+    "numberHighlightingUsed": {
+      "type": "boolean"
+    },
+    "modeLevel": {
+      "type": "integer"
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Field"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "size",
+    "difficulty",
+    "hintsUsed",
+    "notesMade",
+    "errorsMade",
+    "seconds",
+    "created",
+    "updated",
+    "regionalHighlightingUsed",
+    "numberHighlightingUsed",
+    "modeLevel",
+    "fields"
+  ],
+  "definitions": {
+    "Field": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "type": "object",
+          "properties": {
+            "block": {
+              "type": "integer"
+            },
+            "column": {
+              "type": "integer"
+            },
+            "index": {
+              "type": "integer"
+            },
+            "row": {
+              "type": "integer"
+            },
+            "size": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "block",
+            "column",
+            "index",
+            "row",
+            "size"
+          ]
+        },
+        "value": {
+          "type": [ "integer", "null" ]
+        },
+        "solution": {
+          "type": "integer"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "given": {
+          "type": "boolean"
+        },
+        "hint": {
+          "type": "boolean"
+        },
+        "correct": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "position",
+        "value",
+        "solution",
+        "notes",
+        "given",
+        "hint",
+        "correct",
+        "error"
+      ]
+    }
+  }
+}

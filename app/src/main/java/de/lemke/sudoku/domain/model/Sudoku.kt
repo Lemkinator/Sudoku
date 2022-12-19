@@ -28,7 +28,6 @@ class Sudoku(
     val fields: MutableList<Field>,
     var regionalHighlightingUsed: Boolean,
     var numberHighlightingUsed: Boolean,
-    var autoNotesUsed: Boolean,
     val modeLevel: Int,
 ) {
     companion object {
@@ -53,7 +52,6 @@ class Sudoku(
             fields: MutableList<Field>,
             regionalHighlightingUsed: Boolean = false,
             numberHighlightingUsed: Boolean = false,
-            autoNotessUsed: Boolean = false,
             modeLevel: Int,
         ): Sudoku = Sudoku(
             id = sudokuId,
@@ -71,7 +69,6 @@ class Sudoku(
             fields = fields,
             regionalHighlightingUsed = regionalHighlightingUsed,
             numberHighlightingUsed = numberHighlightingUsed,
-            autoNotesUsed = autoNotessUsed,
             modeLevel = modeLevel,
         )
     }
@@ -142,7 +139,6 @@ class Sudoku(
         notesMade = 0
         regionalHighlightingUsed = false
         numberHighlightingUsed = false
-        autoNotesUsed = false
         timer?.cancel()
         timer = null
         gameListener = null
@@ -269,17 +265,6 @@ class Sudoku(
             if (field.correct) numbers[field.value!! - 1]++
         }
         return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size) }
-    }
-
-    fun autoNotes() {
-        autoNotesUsed = true
-        fields.forEach { field ->
-            if (field.value == null) {
-                field.notes.clear()
-                field.notes.addAll(getPossibleValues(field.position))
-                gameListener?.onFieldChanged(field.position)
-            }
-        }
     }
 
     fun clearAllNotes() {

@@ -18,14 +18,10 @@ class SudokusRepository @Inject constructor(
 
     suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = sudokuFromDb(sudokuDao.getById(sudokuId.value))
 
+    suspend fun deleteSudoku(sudoku: Sudoku) = sudokuDao.delete(sudokuToDb(sudoku))
+
     suspend fun saveSudoku(sudoku: Sudoku) {
         sudokuDao.upsert(sudokuToDb(sudoku))
-        sudoku.fields.forEach { field ->
-            fieldDao.upsert(fieldToDb(field))
-        }
-    }
-
-    fun deleteSudoku(sudoku: Sudoku) {
-        sudokuDao.delete(sudokuToDb(sudoku))
+        sudoku.fields.forEach { field -> fieldDao.upsert(fieldToDb(field, sudoku.id)) }
     }
 }

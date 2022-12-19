@@ -83,18 +83,14 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private suspend fun launchApp() {
-        if (!getUserSettings().tosAccepted) {
-            startActivity(Intent(applicationContext, OOBEActivity::class.java))
-        } else {
-            when (appStart) {
-                AppStart.FIRST_TIME -> {
-                    startActivity(Intent(applicationContext, OOBEActivity::class.java))
-                }
-                AppStart.NORMAL, AppStart.FIRST_TIME_VERSION -> {
-                    startActivity(Intent(applicationContext, MainActivity::class.java))
-                }
-            }
+        val intent = Intent()
+        if (!getUserSettings().tosAccepted) intent.setClass(applicationContext, OOBEActivity::class.java)
+        else when (appStart) {
+            AppStart.FIRST_TIME -> intent.setClass(applicationContext, OOBEActivity::class.java)
+            AppStart.NORMAL, AppStart.FIRST_TIME_VERSION -> intent.setClass(applicationContext, MainActivity::class.java)
         }
+        intent.data = getIntent().data //transfer intent data -> sudoku import
+        startActivity(intent)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
     }

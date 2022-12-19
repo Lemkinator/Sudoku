@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    version = 1,
+    version = 1, //TODO remove autonotes from next version, rename neighbourHighlight to regionalHighlighting
     entities = [
         SudokuDb::class,
         FieldDb::class,

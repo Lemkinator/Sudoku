@@ -11,12 +11,11 @@ class GenerateSudokuUseCase @Inject constructor(
     private val generateFields: GenerateFieldsUseCase,
 ) {
     suspend operator fun invoke(size: Int, difficulty: Difficulty): Sudoku = withContext(Dispatchers.Default) {
-        val sudokuId = SudokuId.generate()
         return@withContext Sudoku.create(
-            sudokuId = sudokuId,
+            sudokuId = SudokuId.generate(),
             size = size,
             difficulty = difficulty,
-            fields = generateFields(size, difficulty, sudokuId),
+            fields = generateFields(size, difficulty),
             modeLevel = Sudoku.MODE_NORMAL,
         )
     }

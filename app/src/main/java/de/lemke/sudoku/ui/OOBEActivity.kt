@@ -194,7 +194,9 @@ class OOBEActivity : AppCompatActivity() {
 
     private fun openMainActivity() {
         lifecycleScope.launch { sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled) }
-        startActivity(Intent(this, MainActivity::class.java))
+        val intent = Intent().setClass(applicationContext, MainActivity::class.java)
+        intent.data = getIntent().data //transfer intent data -> sudoku import
+        startActivity(intent)
         finish()
     }
 }

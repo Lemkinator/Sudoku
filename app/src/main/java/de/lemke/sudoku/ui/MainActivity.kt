@@ -18,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -40,6 +41,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
 
+    @Inject
+    lateinit var importSudoku: ImportSudokuUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -48,6 +52,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         initTabs()
         initFragments()
         initOnBackPressed()
+        lifecycleScope.launch { checkImportedSudoku() }
     }
 
     override fun onResume() {
@@ -76,6 +81,18 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private suspend fun checkImportedSudoku() {
+        val intent = intent
+        if (intent != null && intent.data != null) {
+            val sudoku = importSudoku(intent.data)
+            if (sudoku != null) {
+                startActivity(Intent(this, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
+            } else {
+                Toast.makeText(this@MainActivity, "Sudoku konnte nicht importiert werden", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun initTabs() {

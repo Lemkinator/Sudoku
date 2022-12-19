@@ -64,6 +64,9 @@ class SudokuActivity : AppCompatActivity() {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
+    @Inject
+    lateinit var exportSudoku: ExportSudokuUseCase
+
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,11 +86,6 @@ class SudokuActivity : AppCompatActivity() {
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
         lifecycleScope.launch { initSudoku(SudokuId(id)) }
-        binding.autoNotesButton.setOnClickListener {
-            AlertDialog.Builder(this@SudokuActivity).setTitle(getString(R.string.use_auto_notes))
-                .setMessage(getString(R.string.use_auto_notes_message)).setNegativeButton(getString(R.string.sesl_cancel), null)
-                .setPositiveButton(R.string.ok) { _, _ -> sudoku.autoNotes() }.show()
-        }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
@@ -138,6 +136,7 @@ class SudokuActivity : AppCompatActivity() {
             R.id.menu_undo -> sudoku.revertLastChange(gameAdapter)
             R.id.menu_pause_play -> if (sudoku.resumed) pauseGame() else resumeGame()
             R.id.menu_reset -> restartGame()
+            R.id.menu_share -> lifecycleScope.launch { shareSudoku() }
         }
         return true
     }
@@ -293,7 +292,6 @@ class SudokuActivity : AppCompatActivity() {
             sudoku.notesMade,
             getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
             getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
-            getString(if (sudoku.autoNotesUsed) R.string.yes else R.string.no),
             sudoku.created.format(
                 DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
             ),
@@ -365,6 +363,18 @@ class SudokuActivity : AppCompatActivity() {
             initSudoku(sudoku)
             selectButton(null, false)
         }
+    }
+
+    private suspend fun shareSudoku() {
+        val uri = exportSudoku(sudoku)
+        val shareIntent = Intent(Intent.ACTION_SEND)
+        shareIntent.type = "application/octet-stream"
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+        //for (ri in packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY))
+        //    grantUriPermission(ri.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
+
     }
 
     private fun setTitle() {

@@ -30,7 +30,17 @@
             android:id="@+id/menu_reset"
             android:icon="@drawable/ic_oui_refresh"
             android:title="@string/restart"
-            app:showAsAction="always"
-            tools:ignore="AlwaysShowAction,AppCompatResource" />
+            app:showAsAction="ifRoom"
+            tools:ignore="AppCompatResource" />
+    </group>
+    <group
+        android:id="@+id/sudoku_menu_group_share"
+        android:visible="true">
+        <item
+            android:id="@+id/menu_share"
+            android:icon="@drawable/ic_oui_share_outline"
+            android:title="@string/share"
+            app:showAsAction="ifRoom"
+            tools:ignore="AppCompatResource" />
     </group>
 </menu>

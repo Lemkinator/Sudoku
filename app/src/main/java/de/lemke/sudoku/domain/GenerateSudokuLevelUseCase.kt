@@ -29,7 +29,6 @@ class GenerateSudokuLevelUseCase @Inject constructor(
         val size16hard = 800
         val size16expert = 900
 
-        val sudokuId = SudokuId.generate()
         val difficulty: Difficulty
         val size: Int
         when (level) {
@@ -95,10 +94,10 @@ class GenerateSudokuLevelUseCase @Inject constructor(
             }
         }
         return@withContext Sudoku.create(
-            sudokuId = sudokuId,
+            sudokuId = SudokuId.generate(),
             size = size,
             difficulty = difficulty,
-            fields = generateFields(size, difficulty, sudokuId),
+            fields = generateFields(size, difficulty),
             modeLevel = level,
         )
     }
