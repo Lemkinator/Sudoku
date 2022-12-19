@@ -25,6 +25,9 @@ import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
 import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
+import com.google.android.gms.games.AuthenticationResult
+import com.google.android.gms.games.PlayGames
+import com.google.android.gms.tasks.Task
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
@@ -148,6 +151,32 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref.setTouchEffectEnabled(false)
             darkModePref.isEnabled = !autoDarkModePref.isChecked
             darkModePref.value = if (SeslMisc.isLightTheme(settingsActivity)) "0" else "1"
+            val gamesSignInClient = PlayGames.getGamesSignInClient(settingsActivity)
+            findPreference<PreferenceScreen>("play_games_achievements_pref")!!.onPreferenceClickListener =
+                OnPreferenceClickListener {
+                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
+                        val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
+                        if (isAuthenticated) {
+                            PlayGames.getAchievementsClient(settingsActivity)
+                                .achievementsIntent
+                                .addOnSuccessListener { intent -> startActivityForResult(intent, 9003) }
+                        } else gamesSignInClient.signIn()
+                    }
+                    true
+                }
+            findPreference<PreferenceScreen>("play_games_leaderboards_pref")!!.onPreferenceClickListener =
+                OnPreferenceClickListener {
+                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
+                        val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
+                        if (isAuthenticated) {
+                            PlayGames.getLeaderboardsClient(settingsActivity)
+                                .allLeaderboardsIntent
+                                .addOnSuccessListener { intent -> startActivityForResult(intent, 9004) }
+                        } else gamesSignInClient.signIn()
+                    }
+                    true
+                }
+
             findPreference<PreferenceScreen>("privacy_pref")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.privacy_website))))

@@ -152,6 +152,11 @@
     <string name="initial_sudoku">Initial Sudoku</string>
     <string name="current_sudoku">Current Sudoku</string>
 
+    <!--Play Games-->
+    <string name="play_games">Play Spiele</string>
+    <string name="play_games_leaderboards">Bestenlisten</string>
+    <string name="play_games_achievements">Erfolge</string>
+
     <!--Others-->
 
 
