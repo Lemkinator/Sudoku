@@ -12,6 +12,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.games.AuthenticationResult
+import com.google.android.gms.games.PlayGames
+import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
@@ -72,6 +75,17 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.menuitem_play_games -> {
+                val gamesSignInClient = PlayGames.getGamesSignInClient(this)
+                gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
+                    val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
+                    if (isAuthenticated) {
+                        PlayGames.getAchievementsClient(this)
+                            .achievementsIntent
+                            .addOnSuccessListener { intent -> startActivityForResult(intent, 9003) }
+                    } else gamesSignInClient.signIn()
+                }
+            }
             R.id.menuitem_app_info -> {
                 startActivity(Intent(this@MainActivity, AboutActivity::class.java))
                 return true

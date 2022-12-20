@@ -9,12 +9,8 @@
     TODO / Ideas
 
         strategies
-        play integration (achievements, leaderboards, etc.)
         multiplayer
-
         landscape mode?
-        (splash icon on non sammy devices squarish?) check splash icon on non sammy
-
         (new Android 12 Splashscreen)
     -->
 
@@ -112,6 +108,13 @@
                 <data android:scheme="content" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
+            android:authorities="${applicationId}.playgamesinitprovider"
+            android:exported="false"
+            android:initOrder="99"
+            tools:node="remove" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

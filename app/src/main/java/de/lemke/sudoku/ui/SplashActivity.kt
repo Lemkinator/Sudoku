@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySplashBinding
@@ -44,6 +45,7 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        PlayGamesSdk.initialize(applicationContext)
         lifecycleScope.launch {
             appStart = checkAppStart()
             NotificationManagerCompat.from(this@SplashActivity).cancelAll() // cancel all notifications
