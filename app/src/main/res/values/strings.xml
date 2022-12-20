@@ -1,8 +1,4 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!--app_id-->
-    <string name="app_id" translatable="false">890372406825</string>
-    <!--package_name-->
-    <string name="package_name" translatable="false">de.lemke.sudoku</string>
     <!--General-->
     <string name="app_name" translatable="false">Sudoku</string>
     <string name="leo" translatable="false">Leonard Lemke</string>

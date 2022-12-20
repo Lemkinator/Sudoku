@@ -28,7 +28,7 @@ class GetAllSudokusUseCase @Inject constructor(
 
     }
 
-    suspend operator fun invoke(flags: Int): List<Sudoku> = withContext(Dispatchers.Default) {
+    suspend operator fun invoke(flags: Int = TYPE_ALL or DIFFICULTY_ALL or SIZE_ALL): List<Sudoku> = withContext(Dispatchers.Default) {
         val typeAll = flags and TYPE_ALL != 0
         val typeNormal = flags and TYPE_NORMAL != 0
         val typeDaily = flags and TYPE_DAILY != 0

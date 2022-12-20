@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?><!--Google Play game services IDs. Save this file as res/values/games-ids.xml in your project.-->
+<resources>
+    <!--app_id-->
+    <string name="app_id" translatable="false">890372406825</string>
+    <!--package_name-->
+    <string name="package_name" translatable="false">de.lemke.sudoku</string>
+    <!--achievement Eraser-->
+    <string name="achievement_eraser" translatable="false">CgkIqfzS8vQZEAIQAg</string>
+    <!--achievement Use Notes-->
+    <string name="achievement_use_notes" translatable="false">CgkIqfzS8vQZEAIQAw</string>
+    <!--achievement No Hints-->
+    <string name="achievement_no_hints" translatable="false">CgkIqfzS8vQZEAIQBg</string>
+    <!--achievement Share Sudoku-->
+    <string name="achievement_share_sudoku" translatable="false">CgkIqfzS8vQZEAIQBQ</string>
+    <!--achievement Share App-->
+    <string name="achievement_share_app" translatable="false">CgkIqfzS8vQZEAIQBA</string>
+    <!--achievement First Win-->
+    <string name="achievement_first_win" translatable="false">CgkIqfzS8vQZEAIQBw</string>
+    <!--achievement Checklist-->
+    <string name="achievement_checklist" translatable="false">CgkIqfzS8vQZEAIQCQ</string>
+    <!--achievement Stopwatch-->
+    <string name="achievement_stopwatch" translatable="false">CgkIqfzS8vQZEAIQDA</string>
+    <!--achievement I am Speed-->
+    <string name="achievement_i_am_speed" translatable="false">CgkIqfzS8vQZEAIQDQ</string>
+    <!--achievement 10 Sudokus (4x4)-->
+    <string name="achievement_10_sudokus_4x4" translatable="false">CgkIqfzS8vQZEAIQDg</string>
+    <!--achievement 50 Sudokus (4x4)-->
+    <string name="achievement_50_sudokus_4x4" translatable="false">CgkIqfzS8vQZEAIQDw</string>
+    <!--achievement 10 Sudokus (9x9)-->
+    <string name="achievement_10_sudokus_9x9" translatable="false">CgkIqfzS8vQZEAIQCA</string>
+    <!--achievement 50 Sudokus (9x9)-->
+    <string name="achievement_50_sudokus_9x9" translatable="false">CgkIqfzS8vQZEAIQEA</string>
+    <!--achievement 10 Sudokus (16x16)-->
+    <string name="achievement_10_sudokus_16x16" translatable="false">CgkIqfzS8vQZEAIQEQ</string>
+    <!--achievement 50 Sudokus (16x16)-->
+    <string name="achievement_50_sudokus_16x16" translatable="false">CgkIqfzS8vQZEAIQEg</string>
+    <!--achievement 10 Sudokus (Very Easy)-->
+    <string name="achievement_10_sudokus_very_easy" translatable="false">CgkIqfzS8vQZEAIQEw</string>
+    <!--achievement 50 Sudokus (Very Easy)-->
+    <string name="achievement_50_sudokus_very_easy" translatable="false">CgkIqfzS8vQZEAIQFA</string>
+    <!--achievement 10 Sudokus (Easy)-->
+    <string name="achievement_10_sudokus_easy" translatable="false">CgkIqfzS8vQZEAIQFQ</string>
+    <!--achievement 50 Sudokus (Easy)-->
+    <string name="achievement_50_sudokus_easy" translatable="false">CgkIqfzS8vQZEAIQFg</string>
+    <!--achievement 10 Sudokus (Medium)-->
+    <string name="achievement_10_sudokus_medium" translatable="false">CgkIqfzS8vQZEAIQFw</string>
+    <!--achievement 50 Sudokus (Medium)-->
+    <string name="achievement_50_sudokus_medium" translatable="false">CgkIqfzS8vQZEAIQGA</string>
+    <!--achievement 10 Sudokus (Hard)-->
+    <string name="achievement_10_sudokus_hard" translatable="false">CgkIqfzS8vQZEAIQGQ</string>
+    <!--achievement 50 Sudokus (Hard)-->
+    <string name="achievement_50_sudokus_hard" translatable="false">CgkIqfzS8vQZEAIQGg</string>
+    <!--achievement 10 Sudokus (Expert)-->
+    <string name="achievement_10_sudokus_expert" translatable="false">CgkIqfzS8vQZEAIQGw</string>
+    <!--achievement 50 Sudokus (Expert)-->
+    <string name="achievement_50_sudokus_expert" translatable="false">CgkIqfzS8vQZEAIQHA</string>
+    <!--leaderboard Total Wins-->
+    <string name="leaderboard_total_wins" translatable="false">CgkIqfzS8vQZEAIQCg</string>
+    <!--leaderboard Best time-->
+    <string name="leaderboard_best_time" translatable="false">CgkIqfzS8vQZEAIQCw</string>
+    <!--leaderboard Wins (Very Easy)-->
+    <string name="leaderboard_wins_very_easy" translatable="false">CgkIqfzS8vQZEAIQHQ</string>
+</resources>

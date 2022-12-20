@@ -10,7 +10,20 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_ALL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EASY
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EXPERT
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_HARD
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_MEDIUM
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_VERY_EASY
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_16X16
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_9X9
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_ALL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_ALL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_DAILY
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_LEVEL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_NORMAL
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import kotlinx.coroutines.launch
@@ -37,35 +50,29 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
         updateFlags()
         lifecycleScope.launch {
             val userSettings = getUserSettings()
-            binding.checkboxStatisticsFilterNormal.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_NORMAL != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_ALL != 0
-            binding.checkboxStatisticsFilterDaily.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_DAILY != 0 ||
-                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_ALL != 0
-            binding.checkboxStatisticsFilterLevel.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_LEVEL != 0 ||
-                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.TYPE_ALL != 0
-            binding.checkboxStatisticsFilterSize4.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_4X4 != 0 ||
-                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_ALL != 0
-            binding.checkboxStatisticsFilterSize9.isChecked = userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_9X9 != 0 ||
-                    userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_ALL != 0
-            binding.checkboxStatisticsFilterSize16.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_16X16 != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.SIZE_ALL != 0
+            binding.checkboxStatisticsFilterNormal.isChecked = userSettings.statisticsFilterFlags and TYPE_NORMAL != 0 ||
+                        userSettings.statisticsFilterFlags and TYPE_ALL != 0
+            binding.checkboxStatisticsFilterDaily.isChecked = userSettings.statisticsFilterFlags and TYPE_DAILY != 0 ||
+                    userSettings.statisticsFilterFlags and TYPE_ALL != 0
+            binding.checkboxStatisticsFilterLevel.isChecked = userSettings.statisticsFilterFlags and TYPE_LEVEL != 0 ||
+                    userSettings.statisticsFilterFlags and TYPE_ALL != 0
+            binding.checkboxStatisticsFilterSize4.isChecked = userSettings.statisticsFilterFlags and SIZE_4X4 != 0 ||
+                    userSettings.statisticsFilterFlags and SIZE_ALL != 0
+            binding.checkboxStatisticsFilterSize9.isChecked = userSettings.statisticsFilterFlags and SIZE_9X9 != 0 ||
+                    userSettings.statisticsFilterFlags and SIZE_ALL != 0
+            binding.checkboxStatisticsFilterSize16.isChecked = userSettings.statisticsFilterFlags and SIZE_16X16 != 0 ||
+                    userSettings.statisticsFilterFlags and SIZE_ALL != 0
             binding.checkboxStatisticsFilterDifficultyVeryEasy.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_VERY_EASY != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
-            binding.checkboxStatisticsFilterDifficultyEasy.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_EASY != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
-            binding.checkboxStatisticsFilterDifficultyMedium.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_MEDIUM != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
-            binding.checkboxStatisticsFilterDifficultyHard.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_HARD != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
-            binding.checkboxStatisticsFilterDifficultyExpert.isChecked =
-                userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_EXPERT != 0 ||
-                        userSettings.statisticsFilterFlags and GetAllSudokusUseCase.DIFFICULTY_ALL != 0
+                userSettings.statisticsFilterFlags and DIFFICULTY_VERY_EASY != 0 ||
+                        userSettings.statisticsFilterFlags and DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyEasy.isChecked = userSettings.statisticsFilterFlags and DIFFICULTY_EASY != 0 ||
+                    userSettings.statisticsFilterFlags and DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyMedium.isChecked = userSettings.statisticsFilterFlags and DIFFICULTY_MEDIUM != 0 ||
+                    userSettings.statisticsFilterFlags and DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyHard.isChecked = userSettings.statisticsFilterFlags and DIFFICULTY_HARD != 0 ||
+                    userSettings.statisticsFilterFlags and DIFFICULTY_ALL != 0
+            binding.checkboxStatisticsFilterDifficultyExpert.isChecked = userSettings.statisticsFilterFlags and DIFFICULTY_EXPERT != 0 ||
+                    userSettings.statisticsFilterFlags and DIFFICULTY_ALL != 0
         }
         binding.checkboxStatisticsFilterNormal.setOnCheckedChangeListener(this)
         binding.checkboxStatisticsFilterDaily.setOnCheckedChangeListener(this)
@@ -90,36 +97,30 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
 
     private fun updateFlags() {
         var flags = 0
-        if (binding.checkboxStatisticsFilterNormal.isChecked) flags = flags or GetAllSudokusUseCase.TYPE_NORMAL
-        if (binding.checkboxStatisticsFilterDaily.isChecked) flags = flags or GetAllSudokusUseCase.TYPE_DAILY
-        if (binding.checkboxStatisticsFilterLevel.isChecked) flags = flags or GetAllSudokusUseCase.TYPE_LEVEL
-        if (flags and GetAllSudokusUseCase.TYPE_NORMAL != 0 &&
-            flags and GetAllSudokusUseCase.TYPE_DAILY != 0 &&
-            flags and GetAllSudokusUseCase.TYPE_LEVEL != 0
-        ) {
-            flags = flags or GetAllSudokusUseCase.TYPE_ALL
+        if (binding.checkboxStatisticsFilterNormal.isChecked) flags = flags or TYPE_NORMAL
+        if (binding.checkboxStatisticsFilterDaily.isChecked) flags = flags or TYPE_DAILY
+        if (binding.checkboxStatisticsFilterLevel.isChecked) flags = flags or TYPE_LEVEL
+        if (flags and TYPE_NORMAL != 0 && flags and TYPE_DAILY != 0 && flags and TYPE_LEVEL != 0) {
+            flags = flags or TYPE_ALL
         }
-        if (binding.checkboxStatisticsFilterSize4.isChecked) flags = flags or GetAllSudokusUseCase.SIZE_4X4
-        if (binding.checkboxStatisticsFilterSize9.isChecked) flags = flags or GetAllSudokusUseCase.SIZE_9X9
-        if (binding.checkboxStatisticsFilterSize16.isChecked) flags = flags or GetAllSudokusUseCase.SIZE_16X16
-        if (flags and GetAllSudokusUseCase.SIZE_4X4 != 0 &&
-            flags and GetAllSudokusUseCase.SIZE_9X9 != 0 &&
-            flags and GetAllSudokusUseCase.SIZE_16X16 != 0
-        ) {
-            flags = flags or GetAllSudokusUseCase.SIZE_ALL
+        if (binding.checkboxStatisticsFilterSize4.isChecked) flags = flags or SIZE_4X4
+        if (binding.checkboxStatisticsFilterSize9.isChecked) flags = flags or SIZE_9X9
+        if (binding.checkboxStatisticsFilterSize16.isChecked) flags = flags or SIZE_16X16
+        if (flags and SIZE_4X4 != 0 && flags and SIZE_9X9 != 0 && flags and SIZE_16X16 != 0) {
+            flags = flags or SIZE_ALL
         }
-        if (binding.checkboxStatisticsFilterDifficultyVeryEasy.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_VERY_EASY
-        if (binding.checkboxStatisticsFilterDifficultyEasy.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_EASY
-        if (binding.checkboxStatisticsFilterDifficultyMedium.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_MEDIUM
-        if (binding.checkboxStatisticsFilterDifficultyHard.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_HARD
-        if (binding.checkboxStatisticsFilterDifficultyExpert.isChecked) flags = flags or GetAllSudokusUseCase.DIFFICULTY_EXPERT
-        if (flags and GetAllSudokusUseCase.DIFFICULTY_VERY_EASY != 0 &&
-            flags and GetAllSudokusUseCase.DIFFICULTY_EASY != 0 &&
-            flags and GetAllSudokusUseCase.DIFFICULTY_MEDIUM != 0 &&
-            flags and GetAllSudokusUseCase.DIFFICULTY_HARD != 0 &&
-            flags and GetAllSudokusUseCase.DIFFICULTY_EXPERT != 0
+        if (binding.checkboxStatisticsFilterDifficultyVeryEasy.isChecked) flags = flags or DIFFICULTY_VERY_EASY
+        if (binding.checkboxStatisticsFilterDifficultyEasy.isChecked) flags = flags or DIFFICULTY_EASY
+        if (binding.checkboxStatisticsFilterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
+        if (binding.checkboxStatisticsFilterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
+        if (binding.checkboxStatisticsFilterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
+        if (flags and DIFFICULTY_VERY_EASY != 0 &&
+            flags and DIFFICULTY_EASY != 0 &&
+            flags and DIFFICULTY_MEDIUM != 0 &&
+            flags and DIFFICULTY_HARD != 0 &&
+            flags and DIFFICULTY_EXPERT != 0
         ) {
-            flags = flags or GetAllSudokusUseCase.DIFFICULTY_ALL
+            flags = flags or DIFFICULTY_ALL
         }
         lifecycleScope.launch { updateUserSettings { it.copy(statisticsFilterFlags = flags) } }
     }
