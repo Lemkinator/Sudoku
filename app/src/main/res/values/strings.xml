@@ -114,6 +114,9 @@
     <string name="hint">Hint (%1$d)</string>
     <string name="restart">Restart</string>
     <string name="gameover">Gameover</string>
+    <string name="share_sudoku">Share Sudoku</string>
+    <string name="initial_sudoku">Initial Sudoku</string>
+    <string name="current_sudoku">Current Sudoku</string>
 
     <!--Statistics-->
     <string name="size">Size</string>
@@ -167,15 +170,11 @@
     <string name="daily_sudoku_notification_channel_name">Daily Sudoku Notification</string>
     <string name="daily_sudoku_notification_channel_description">Get notified when a new daily sudoku is available.</string>
     <string name="daily_sudoku_notification_channel_description_time">Receive a notification at %1$s when a new daily Sudoku is available. Tap here to change the time.</string>
-    <string name="share_sudoku">Share Sudoku</string>
-    <string name="initial_sudoku">Initial Sudoku</string>
-    <string name="current_sudoku">Current Sudoku</string>
 
     <!--Play Games-->
     <string name="play_games">Play Games</string>
     <string name="play_games_leaderboards">Leaderboards</string>
     <string name="play_games_achievements">Achievements</string>
-
 
     <!--Others-->
 

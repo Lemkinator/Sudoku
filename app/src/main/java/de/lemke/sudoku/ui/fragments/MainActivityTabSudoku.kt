@@ -22,7 +22,7 @@ import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.ButtonUtils
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.layout.ToolbarLayout
+import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.SeekBarUtils
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import dev.oneuiproject.oneui.widget.HapticSeekBar
@@ -33,7 +33,6 @@ import kotlin.math.abs
 @AndroidEntryPoint
 class MainActivityTabSudoku : Fragment() {
     private lateinit var binding: FragmentTabSudokuBinding
-    private lateinit var toolbarLayout: ToolbarLayout
     private lateinit var loadingDialog: ProgressDialog
 
     @Inject
@@ -66,17 +65,17 @@ class MainActivityTabSudoku : Fragment() {
         loadingDialog = ProgressDialog(context)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
-        toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
-        toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
-            val totalScrollRange = layout.totalScrollRange
-            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
-                InputMethodManager::class.java,
-                activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
-                "getInputMethodWindowVisibleHeight"
-            ) as Int
-            if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-            else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
-        }
+        activity.findViewById<DrawerLayout>(R.id.drawer_layout_main)
+            .appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
+                val totalScrollRange = layout.totalScrollRange
+                val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
+                    InputMethodManager::class.java,
+                    activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
+                    "getInputMethodWindowVisibleHeight"
+                ) as Int
+                if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+                else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
+            }
         SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
         binding.sizeSeekbar.setSeamless(true)
         binding.sizeSeekbar.max = 2

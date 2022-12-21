@@ -11,6 +11,27 @@
     "difficulty": {
       "type": "integer"
     },
+    "modeLevel": {
+      "type": "integer"
+    },
+    "regionalHighlightingUsed": {
+      "type": "boolean"
+    },
+    "numberHighlightingUsed": {
+      "type": "boolean"
+    },
+    "eraserUsed": {
+      "type": "boolean"
+    },
+    "isChecklist": {
+      "type": "boolean"
+    },
+    "isReverseChecklist": {
+      "type": "boolean"
+    },
+    "checklistNumber": {
+      "type": "integer"
+    },
     "hintsUsed": {
       "type": "integer"
     },
@@ -20,22 +41,13 @@
     "errorsMade": {
       "type": "integer"
     },
-    "seconds": {
-      "type": "integer"
-    },
     "created": {
       "type": "string"
     },
     "updated": {
       "type": "string"
     },
-    "regionalHighlightingUsed": {
-      "type": "boolean"
-    },
-    "numberHighlightingUsed": {
-      "type": "boolean"
-    },
-    "modeLevel": {
+    "seconds": {
       "type": "integer"
     },
     "fields": {
@@ -49,15 +61,19 @@
     "id",
     "size",
     "difficulty",
+    "modeLevel",
+    "regionalHighlightingUsed",
+    "numberHighlightingUsed",
+    "eraserUsed",
+    "isChecklist",
+    "isReverseChecklist",
+    "checklistNumber",
     "hintsUsed",
     "notesMade",
     "errorsMade",
-    "seconds",
     "created",
     "updated",
-    "regionalHighlightingUsed",
-    "numberHighlightingUsed",
-    "modeLevel",
+    "seconds",
     "fields"
   ],
   "definitions": {

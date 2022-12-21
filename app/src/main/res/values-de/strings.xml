@@ -93,6 +93,9 @@
     <string name="hint">Hinweis (%1$d)</string>
     <string name="restart">Neustart</string>
     <string name="gameover">Spiel zu Ende</string>
+    <string name="share_sudoku">Sudoku teilen</string>
+    <string name="initial_sudoku">Original Sudoku</string>
+    <string name="current_sudoku">Aktuelles Sudoku</string>
 
     <!--Statistics-->
     <string name="size">Größe</string>
@@ -138,8 +141,6 @@
     <string name="oobe_tos_text">Durch die Nutzung der App stimmen Sie den %1$s zu.</string>
     <string name="accept_tos">Weiter</string>
 
-
-
     <!--Notifications-->
     <string name="notifications">Benachrichtigungen</string>
     <string name="notifications_title">Ding Dong?</string>
@@ -148,9 +149,6 @@
     <string name="daily_sudoku_notification_channel_name">Tägliches Sudoku</string>
     <string name="daily_sudoku_notification_channel_description">Eine Benachrichtigung erhalten, wenn ein neues tägliches Sudoku verfügbar ist.</string>
     <string name="daily_sudoku_notification_channel_description_time">Eine Benachrichtigung um %1$s Uhr erhalten, wenn ein neues tägliches Sudoku verfügbar ist. Hier tippen um die Uhrzeit zu ändern.</string>
-    <string name="share_sudoku">Share Sudoku</string>
-    <string name="initial_sudoku">Initial Sudoku</string>
-    <string name="current_sudoku">Current Sudoku</string>
 
     <!--Play Games-->
     <string name="play_games">Play Spiele</string>
@@ -158,6 +156,5 @@
     <string name="play_games_achievements">Erfolge</string>
 
     <!--Others-->
-
 
 </resources>

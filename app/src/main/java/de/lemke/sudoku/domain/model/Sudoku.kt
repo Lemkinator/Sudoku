@@ -15,20 +15,24 @@ value class SudokuId(val value: String) {
 class Sudoku(
     val id: SudokuId,
     val size: Int,
-    val history: MutableList<HistoryItem>,
     val difficulty: Difficulty,
+    val modeLevel: Int,
+    var regionalHighlightingUsed: Boolean,
+    var numberHighlightingUsed: Boolean,
+    var eraserUsed: Boolean,
+    var isChecklist: Boolean,
+    var isReverseChecklist: Boolean,
+    var checklistNumber: Int,
     var hintsUsed: Int,
     var notesMade: Int,
     var errorsMade: Int,
+    val created: LocalDateTime,
+    var updated: LocalDateTime,
     var seconds: Int,
     var timer: Timer?,
     var gameListener: GameListener?,
-    val created: LocalDateTime,
-    var updated: LocalDateTime,
+    val history: MutableList<HistoryItem>,
     val fields: MutableList<Field>,
-    var regionalHighlightingUsed: Boolean,
-    var numberHighlightingUsed: Boolean,
-    val modeLevel: Int,
 ) {
     companion object {
         const val MODE_NORMAL = 0
@@ -39,37 +43,45 @@ class Sudoku(
         fun create(
             sudokuId: SudokuId = SudokuId.generate(),
             size: Int,
-            history: MutableList<HistoryItem> = mutableListOf(),
             difficulty: Difficulty,
+            modeLevel: Int,
+            regionalHighlightingUsed: Boolean = false,
+            numberHighlightingUsed: Boolean = false,
+            eraserUsed: Boolean = false,
+            isChecklist: Boolean = false,
+            isReverseChecklist: Boolean = false,
+            checklistNumber: Int = 0,
             hintsUsed: Int = 0,
             notesMade: Int = 0,
             errorsMade: Int = 0,
+            created: LocalDateTime = LocalDateTime.now(),
+            updated: LocalDateTime = LocalDateTime.now(),
             seconds: Int = 0,
             timer: Timer? = null,
             gameListener: GameListener? = null,
-            created: LocalDateTime = LocalDateTime.now(),
-            updated: LocalDateTime = LocalDateTime.now(),
+            history: MutableList<HistoryItem> = mutableListOf(),
             fields: MutableList<Field>,
-            regionalHighlightingUsed: Boolean = false,
-            numberHighlightingUsed: Boolean = false,
-            modeLevel: Int,
         ): Sudoku = Sudoku(
             id = sudokuId,
             size = size,
-            history = history,
             difficulty = difficulty,
+            modeLevel = modeLevel,
+            regionalHighlightingUsed = regionalHighlightingUsed,
+            numberHighlightingUsed = numberHighlightingUsed,
+            eraserUsed = eraserUsed,
+            isChecklist = isChecklist,
+            isReverseChecklist = isReverseChecklist,
+            checklistNumber = checklistNumber,
             hintsUsed = hintsUsed,
             notesMade = notesMade,
             errorsMade = errorsMade,
+            created = created,
+            updated = updated,
             seconds = seconds,
             timer = timer,
             gameListener = gameListener,
-            created = created,
-            updated = updated,
+            history = history,
             fields = fields,
-            regionalHighlightingUsed = regionalHighlightingUsed,
-            numberHighlightingUsed = numberHighlightingUsed,
-            modeLevel = modeLevel,
         )
     }
 
@@ -134,31 +146,39 @@ class Sudoku(
         get() = Sudoku(
             id = SudokuId.generate(),
             size = size,
-            history = mutableListOf(),
             difficulty = difficulty,
+            modeLevel = modeLevel,
+            regionalHighlightingUsed = false,
+            numberHighlightingUsed = false,
+            eraserUsed = false,
+            isChecklist = false,
+            isReverseChecklist = false,
+            checklistNumber = 0,
             hintsUsed = 0,
             notesMade = 0,
             errorsMade = 0,
+            created = created,
+            updated = created,
             seconds = 0,
             timer = null,
             gameListener = null,
-            created = created,
-            updated = created,
-            regionalHighlightingUsed = false,
-            numberHighlightingUsed = false,
-            modeLevel = modeLevel,
+            history = mutableListOf(),
             fields = fields.onEach { it.reset() },
         )
 
     fun reset() {
         fields.forEach { it.reset() }
         history.clear()
-        hintsUsed = 0
-        errorsMade = 0
-        seconds = 0
-        notesMade = 0
         regionalHighlightingUsed = false
         numberHighlightingUsed = false
+        eraserUsed = false
+        isChecklist = false
+        isReverseChecklist = false
+        checklistNumber = 0
+        hintsUsed = 0
+        notesMade = 0
+        errorsMade = 0
+        seconds = 0
         timer?.cancel()
         timer = null
         gameListener = null
@@ -195,6 +215,8 @@ class Sudoku(
         } else {
             if (field.value == null && value == null) field.notes.clear()
             else history.add(HistoryItem(position, if (value == null) field.value else null))
+            if (value == null) eraserUsed = true
+            checkChecklist(value)
             field.value = value
             gameListener?.onFieldChanged(position)
             gameListener?.onHistoryChange(history.size)
@@ -212,6 +234,27 @@ class Sudoku(
             }
         }
         return true
+    }
+
+    private fun checkChecklist(value: Int?) {
+        if (value == null) return
+        when {
+            isChecklist -> when {
+                value == checklistNumber -> return
+                value > checklistNumber -> checklistNumber = value
+                else -> isChecklist = false
+            }
+            isReverseChecklist -> when {
+                value == checklistNumber -> return
+                value < checklistNumber -> checklistNumber = value
+                else -> isReverseChecklist = false
+            }
+            checklistNumber == 0 -> when (value) {
+                1 -> isChecklist = true
+                size -> isReverseChecklist = true
+            }
+        }
+        checklistNumber = value
     }
 
     private fun removeNumberNotesFromNeighbors(position: Position, value: Int?) {

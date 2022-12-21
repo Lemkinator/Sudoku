@@ -14,15 +14,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.gms.games.PlayGames
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
 import de.lemke.sudoku.domain.*
-import de.lemke.sudoku.domain.model.GameListener
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.*
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -66,6 +64,9 @@ class SudokuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var exportSudoku: ExportSudokuUseCase
+
+    @Inject
+    lateinit var updatePlayGames: UpdatePlayGamesUseCase
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -142,13 +143,14 @@ class SudokuActivity : AppCompatActivity() {
                     .setNegativeButton(R.string.initial_sudoku) { _, _ ->
                         loadingDialog.show()
                         lifecycleScope.launch { shareSudoku(sudoku.initialSudoku) }
+                        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
                     }
                     .setPositiveButton(R.string.current_sudoku) { _, _ ->
                         loadingDialog.show()
                         lifecycleScope.launch { shareSudoku(sudoku) }
+                        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
                     }
                     .show()
-
             }
         }
         return true
@@ -343,6 +345,7 @@ class SudokuActivity : AppCompatActivity() {
         lifecycleScope.launch {
             saveSudoku(sudoku)
             dialog.show()
+            updatePlayGames(sudoku, this@SudokuActivity)
         }
         setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
         binding.gameButtons.visibility = View.GONE

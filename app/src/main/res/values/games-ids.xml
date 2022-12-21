@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--Google Play game services IDs. Save this file as res/values/games-ids.xml in your project.-->
+<?xml version="1.0" encoding="utf-8"?>
+<!--Google Play game services IDs. Save this file as res/values/games-ids.xml in your project.-->
 <resources>
     <!--app_id-->
     <string name="app_id" translatable="false">890372406825</string>
@@ -18,6 +19,8 @@
     <string name="achievement_first_win" translatable="false">CgkIqfzS8vQZEAIQBw</string>
     <!--achievement Checklist-->
     <string name="achievement_checklist" translatable="false">CgkIqfzS8vQZEAIQCQ</string>
+    <!--achievement Reverse Checklist-->
+    <string name="achievement_reverse_checklist" translatable="false">CgkIqfzS8vQZEAIQPQ</string>
     <!--achievement Stopwatch-->
     <string name="achievement_stopwatch" translatable="false">CgkIqfzS8vQZEAIQDA</string>
     <!--achievement I am Speed-->
@@ -54,10 +57,72 @@
     <string name="achievement_10_sudokus_expert" translatable="false">CgkIqfzS8vQZEAIQGw</string>
     <!--achievement 50 Sudokus (Expert)-->
     <string name="achievement_50_sudokus_expert" translatable="false">CgkIqfzS8vQZEAIQHA</string>
+    <!--leaderboard Level-->
+    <string name="leaderboard_level" translatable="false">CgkIqfzS8vQZEAIQIA</string>
+    <!--leaderboard Daily Sudokus-->
+    <string name="leaderboard_daily_sudokus" translatable="false">CgkIqfzS8vQZEAIQIw</string>
     <!--leaderboard Total Wins-->
     <string name="leaderboard_total_wins" translatable="false">CgkIqfzS8vQZEAIQCg</string>
     <!--leaderboard Best time-->
     <string name="leaderboard_best_time" translatable="false">CgkIqfzS8vQZEAIQCw</string>
-    <!--leaderboard Wins (Very Easy)-->
-    <string name="leaderboard_wins_very_easy" translatable="false">CgkIqfzS8vQZEAIQHQ</string>
+    <!--leaderboard Wins (4×4, Very Easy)-->
+    <string name="leaderboard_wins_44_very_easy" translatable="false">CgkIqfzS8vQZEAIQJQ</string>
+    <!--leaderboard Wins (4×4, Easy)-->
+    <string name="leaderboard_wins_44_easy" translatable="false">CgkIqfzS8vQZEAIQJA</string>
+    <!--leaderboard Wins (4×4, Medium)-->
+    <string name="leaderboard_wins_44_medium" translatable="false">CgkIqfzS8vQZEAIQJg</string>
+    <!--leaderboard Wins (4×4, Hard)-->
+    <string name="leaderboard_wins_44_hard" translatable="false">CgkIqfzS8vQZEAIQHg</string>
+    <!--leaderboard Wins (4×4, Expert)-->
+    <string name="leaderboard_wins_44_expert" translatable="false">CgkIqfzS8vQZEAIQHw</string>
+    <!--leaderboard Wins (9×9, Very Easy)-->
+    <string name="leaderboard_wins_99_very_easy" translatable="false">CgkIqfzS8vQZEAIQHQ</string>
+    <!--leaderboard Wins (9×9, Easy)-->
+    <string name="leaderboard_wins_99_easy" translatable="false">CgkIqfzS8vQZEAIQIQ</string>
+    <!--leaderboard Wins (9×9, Medium)-->
+    <string name="leaderboard_wins_99_medium" translatable="false">CgkIqfzS8vQZEAIQIg</string>
+    <!--leaderboard Wins (9×9, Hard)-->
+    <string name="leaderboard_wins_99_hard" translatable="false">CgkIqfzS8vQZEAIQKg</string>
+    <!--leaderboard Wins (9×9, Expert)-->
+    <string name="leaderboard_wins_99_expert" translatable="false">CgkIqfzS8vQZEAIQKw</string>
+    <!--leaderboard Wins (16×16, Very Easy)-->
+    <string name="leaderboard_wins_1616_very_easy" translatable="false">CgkIqfzS8vQZEAIQLA</string>
+    <!--leaderboard Wins (16×16, Easy)-->
+    <string name="leaderboard_wins_1616_easy" translatable="false">CgkIqfzS8vQZEAIQLQ</string>
+    <!--leaderboard Wins (16×16, Medium)-->
+    <string name="leaderboard_wins_1616_medium" translatable="false">CgkIqfzS8vQZEAIQLg</string>
+    <!--leaderboard Wins (16×16, Hard)-->
+    <string name="leaderboard_wins_1616_hard" translatable="false">CgkIqfzS8vQZEAIQLw</string>
+    <!--leaderboard Wins (16×16, Expert)-->
+    <string name="leaderboard_wins_1616_expert" translatable="false">CgkIqfzS8vQZEAIQMA</string>
+    <!--leaderboard Time (4×4, Very Easy)-->
+    <string name="leaderboard_time_44_very_easy" translatable="false">CgkIqfzS8vQZEAIQJw</string>
+    <!--leaderboard Time (4×4, Easy)-->
+    <string name="leaderboard_time_44_easy" translatable="false">CgkIqfzS8vQZEAIQKA</string>
+    <!--leaderboard Time (4×4, Medium)-->
+    <string name="leaderboard_time_44_medium" translatable="false">CgkIqfzS8vQZEAIQKQ</string>
+    <!--leaderboard Time (4×4, Hard)-->
+    <string name="leaderboard_time_44_hard" translatable="false">CgkIqfzS8vQZEAIQMQ</string>
+    <!--leaderboard Time (4×4, Expert)-->
+    <string name="leaderboard_time_44_expert" translatable="false">CgkIqfzS8vQZEAIQMg</string>
+    <!--leaderboard Time (9×9, Very Easy)-->
+    <string name="leaderboard_time_99_very_easy" translatable="false">CgkIqfzS8vQZEAIQMw</string>
+    <!--leaderboard Time (9×9, Easy)-->
+    <string name="leaderboard_time_99_easy" translatable="false">CgkIqfzS8vQZEAIQNA</string>
+    <!--leaderboard Time (9×9, Medium)-->
+    <string name="leaderboard_time_99_medium" translatable="false">CgkIqfzS8vQZEAIQNQ</string>
+    <!--leaderboard Time (9×9, Hard)-->
+    <string name="leaderboard_time_99_hard" translatable="false">CgkIqfzS8vQZEAIQNg</string>
+    <!--leaderboard Time (9×9, Expert)-->
+    <string name="leaderboard_time_99_expert" translatable="false">CgkIqfzS8vQZEAIQNw</string>
+    <!--leaderboard Time (16×16, Very Easy)-->
+    <string name="leaderboard_time_1616_very_easy" translatable="false">CgkIqfzS8vQZEAIQOA</string>
+    <!--leaderboard Time (16×16, Easy)-->
+    <string name="leaderboard_time_1616_easy" translatable="false">CgkIqfzS8vQZEAIQOQ</string>
+    <!--leaderboard Time (16×16, Medium)-->
+    <string name="leaderboard_time_1616_medium" translatable="false">CgkIqfzS8vQZEAIQOg</string>
+    <!--leaderboard Time (16×16, Hard)-->
+    <string name="leaderboard_time_1616_hard" translatable="false">CgkIqfzS8vQZEAIQOw</string>
+    <!--leaderboard Time (16×16, Expert)-->
+    <string name="leaderboard_time_1616_expert" translatable="false">CgkIqfzS8vQZEAIQPA</string>
 </resources>

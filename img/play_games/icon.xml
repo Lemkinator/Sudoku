@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DD442F DD9D2F 60B13E 4293AC 694FC8 -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="#6D55DA" />
+    <foreground android:drawable="@drawable/icon_f" />
+    <monochrome android:drawable="@drawable/ic_oui_calendar_task"/>
+</adaptive-icon>

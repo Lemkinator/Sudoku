@@ -1,0 +1,199 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "e02b301490ce5b023aa7fddb460ee2fc",
+    "entities": [
+      {
+        "tableName": "sudoku",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `size` INTEGER NOT NULL, `difficulty` INTEGER NOT NULL, `modeLevel` INTEGER NOT NULL, `regionalHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `eraserUsed` INTEGER NOT NULL, `isChecklist` INTEGER NOT NULL, `isReverseChecklist` INTEGER NOT NULL, `checklistNumber` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `created` TEXT NOT NULL, `updated` TEXT NOT NULL, `seconds` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "size",
+            "columnName": "size",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "difficulty",
+            "columnName": "difficulty",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modeLevel",
+            "columnName": "modeLevel",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "regionalHighlightingUsed",
+            "columnName": "regionalHighlightingUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numberHighlightingUsed",
+            "columnName": "numberHighlightingUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eraserUsed",
+            "columnName": "eraserUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isChecklist",
+            "columnName": "isChecklist",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isReverseChecklist",
+            "columnName": "isReverseChecklist",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checklistNumber",
+            "columnName": "checklistNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hintsUsed",
+            "columnName": "hintsUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notesMade",
+            "columnName": "notesMade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "errorsMade",
+            "columnName": "errorsMade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "created",
+            "columnName": "created",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updated",
+            "columnName": "updated",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seconds",
+            "columnName": "seconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "field",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`sudokuId` TEXT NOT NULL, `gameSize` INTEGER NOT NULL, `index` INTEGER NOT NULL, `value` INTEGER, `solution` INTEGER, `notes` TEXT NOT NULL, `given` INTEGER NOT NULL, `hint` INTEGER NOT NULL, PRIMARY KEY(`sudokuId`, `index`), FOREIGN KEY(`sudokuId`) REFERENCES `sudoku`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "sudokuId",
+            "columnName": "sudokuId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gameSize",
+            "columnName": "gameSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "index",
+            "columnName": "index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "solution",
+            "columnName": "solution",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "given",
+            "columnName": "given",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hint",
+            "columnName": "hint",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "sudokuId",
+            "index"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": [
+          {
+            "table": "sudoku",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sudokuId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e02b301490ce5b023aa7fddb460ee2fc')"
+    ]
+  }
+}

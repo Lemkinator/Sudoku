@@ -33,7 +33,7 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.layout.ToolbarLayout
+import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import dev.oneuiproject.oneui.widget.Separator
@@ -50,7 +50,7 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var sudokuList: List<Sudoku>
     private lateinit var sudokuHistory: List<Pair<Sudoku?, LocalDateTime>>
     private lateinit var sudokuListAdapter: SudokuListAdapter
-    private lateinit var toolbarLayout: ToolbarLayout
+    private lateinit var drawerLayout: DrawerLayout
     private lateinit var mainTabs: MarginsTabLayout
     private lateinit var onBackPressedCallback: OnBackPressedCallback
     private var selected = HashMap<Int, Boolean>()
@@ -78,14 +78,14 @@ class MainActivityTabHistory : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
-        toolbarLayout = activity.findViewById(R.id.main_toolbarlayout)
+        drawerLayout = activity.findViewById(R.id.drawer_layout_main)
         mainTabs = activity.findViewById(R.id.main_margins_tab_layout)
         onBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
                 if (selecting) setSelecting(false)
             }
         }
-        toolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
+        drawerLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
                 InputMethodManager::class.java,
@@ -145,9 +145,9 @@ class MainActivityTabHistory : Fragment() {
         if (enabled) {
             selecting = true
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
-            toolbarLayout.actionModeBottomMenu.clear()
-            toolbarLayout.setActionModeBottomMenu(R.menu.remove_menu)
-            toolbarLayout.setActionModeBottomMenuListener { item: MenuItem ->
+            drawerLayout.actionModeBottomMenu.clear()
+            drawerLayout.setActionModeBottomMenu(R.menu.remove_menu)
+            drawerLayout.setActionModeBottomMenuListener { item: MenuItem ->
                 when (item.itemId) {
                     R.id.menuButtonRemove -> {
                         val dialog = ProgressDialog(context)
@@ -167,14 +167,14 @@ class MainActivityTabHistory : Fragment() {
                 setSelecting(false)
                 true
             }
-            toolbarLayout.showActionMode()
-            toolbarLayout.setActionModeCheckboxListener { _, isChecked ->
+            drawerLayout.showActionMode()
+            drawerLayout.setActionModeCheckboxListener { _, isChecked ->
                 if (checkAllListening) {
                     selected.replaceAll { _, _ -> isChecked }
                     sudokuHistory.forEachIndexed { index, pair -> if (pair.first == null) selected[index] = false }
                     selected.forEach { (index, _) -> sudokuListAdapter.notifyItemChanged(index) }
                 }
-                toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
+                drawerLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
             }
             mainTabs.isEnabled = false
             onBackPressedCallback.isEnabled = true
@@ -182,8 +182,8 @@ class MainActivityTabHistory : Fragment() {
             selecting = false
             for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
-            toolbarLayout.setActionModeCount(0, sudokuList.size)
-            toolbarLayout.dismissActionMode()
+            drawerLayout.setActionModeCount(0, sudokuList.size)
+            drawerLayout.dismissActionMode()
             mainTabs.isEnabled = true
             onBackPressedCallback.isEnabled = false
         }
@@ -193,7 +193,7 @@ class MainActivityTabHistory : Fragment() {
         selected[position] = !selected[position]!!
         sudokuListAdapter.notifyItemChanged(position)
         checkAllListening = false
-        toolbarLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
+        drawerLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
         checkAllListening = true
     }
 
