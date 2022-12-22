@@ -2,6 +2,7 @@ package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import java.time.LocalDate
 import javax.inject.Inject
 
 class SudokusRepository @Inject constructor(
@@ -23,5 +24,19 @@ class SudokusRepository @Inject constructor(
     suspend fun saveSudoku(sudoku: Sudoku) {
         sudokuDao.upsert(sudokuToDb(sudoku))
         sudoku.fields.forEach { field -> fieldDao.upsert(fieldToDb(field, sudoku.id)) }
+    }
+
+    private suspend fun getSudokuLevel(level: Int): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(level))
+
+    private suspend fun getDailySudoku(date: LocalDate): Sudoku? = sudokuFromDb(sudokuDao.getAllDaily().firstOrNull { it.sudoku.created.toLocalDate() == date })
+
+    suspend fun saveSudokus(sudokus: List<Sudoku>) {
+        sudokus.forEach { sudoku ->
+            when {
+                sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { deleteSudoku(it) }
+                sudoku.isSudokuLevel -> getSudokuLevel(sudoku.modeLevel)?.let { deleteSudoku(it) }
+            }
+            saveSudoku(sudoku)
+        }
     }
 }

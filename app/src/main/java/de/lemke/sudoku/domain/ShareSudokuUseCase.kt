@@ -3,7 +3,6 @@ package de.lemke.sudoku.domain
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ActivityContext
 import de.lemke.sudoku.BuildConfig
@@ -17,7 +16,7 @@ import java.io.File
 import java.util.*
 import javax.inject.Inject
 
-class ExportSudokuUseCase @Inject constructor(
+class ShareSudokuUseCase @Inject constructor(
     @ActivityContext private val context: Context,
 ) {
     @SuppressLint("Recycle")
@@ -26,7 +25,6 @@ class ExportSudokuUseCase @Inject constructor(
         val file = File(context.cacheDir, fileName)
         val uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider", file)
         val json = sudokuToExport(sudoku).stringifyJSON(JSONConfig { includeNulls = true })
-        Log.d("ExportSudokuUseCase", json)
         context.contentResolver.openOutputStream(uri)!!.bufferedWriter().use { bufferedWriter -> bufferedWriter.write(json) }
         return@withContext uri
     }

@@ -10,9 +10,12 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
 import android.text.format.DateFormat
 import android.view.View
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -25,23 +28,18 @@ import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
 import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
-import com.google.android.gms.games.AuthenticationResult
-import com.google.android.gms.games.PlayGames
-import com.google.android.gms.games.PlayGamesSdk
-import com.google.android.gms.tasks.Task
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.*
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
 import dev.oneuiproject.oneui.preference.internal.PreferenceRelatedCard
 import dev.oneuiproject.oneui.utils.PreferenceUtils.createRelatedCard
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
 import javax.inject.Inject
 
@@ -61,6 +59,8 @@ class SettingsActivity : AppCompatActivity() {
     @AndroidEntryPoint
     class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
         private lateinit var settingsActivity: SettingsActivity
+        private lateinit var pickExportFolderActivityResultLauncher: ActivityResultLauncher<Uri>
+        private lateinit var pickImportJsonActivityResultLauncher: ActivityResultLauncher<String>
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
         private lateinit var confirmExitPref: SwitchPreferenceCompat
@@ -84,6 +84,12 @@ class SettingsActivity : AppCompatActivity() {
         @Inject
         lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
+        @Inject
+        lateinit var exportData: ExportDataUseCase
+
+        @Inject
+        lateinit var importData: ImportDataUseCase
+
         override fun onAttach(context: Context) {
             super.onAttach(context)
             if (activity is SettingsActivity) settingsActivity = activity as SettingsActivity
@@ -96,6 +102,14 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
             lastTimeVersionClicked = System.currentTimeMillis()
+            pickExportFolderActivityResultLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+                if (uri == null) Toast.makeText(settingsActivity, getString(R.string.error_no_folder_selected), Toast.LENGTH_LONG).show()
+                else lifecycleScope.launch { exportData(uri) }
+            }
+            pickImportJsonActivityResultLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+                if (uri == null) Toast.makeText(settingsActivity, getString(R.string.error_no_file_selected), Toast.LENGTH_LONG).show()
+                else lifecycleScope.launch { importData(uri) }
+            }
             initPreferences()
         }
 
@@ -152,32 +166,31 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref.setTouchEffectEnabled(false)
             darkModePref.isEnabled = !autoDarkModePref.isChecked
             darkModePref.value = if (SeslMisc.isLightTheme(settingsActivity)) "0" else "1"
-            PlayGamesSdk.initialize(settingsActivity)
-            val gamesSignInClient = PlayGames.getGamesSignInClient(settingsActivity)
-            findPreference<PreferenceScreen>("play_games_achievements_pref")!!.onPreferenceClickListener =
-                OnPreferenceClickListener {
-                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                        val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
-                        if (isAuthenticated) {
-                            PlayGames.getAchievementsClient(settingsActivity)
-                                .achievementsIntent
-                                .addOnSuccessListener { intent -> startActivityForResult(intent, 9003) }
-                        } else gamesSignInClient.signIn()
+
+            findPreference<PreferenceScreen>("export_data_pref")?.setOnPreferenceClickListener {
+                AlertDialog.Builder(settingsActivity)
+                    .setTitle(R.string.export_data)
+                    .setMessage(R.string.export_data_message)
+                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+                        pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(Environment.getExternalStorageDirectory().absolutePath)))
                     }
-                    true
-                }
-            findPreference<PreferenceScreen>("play_games_leaderboards_pref")!!.onPreferenceClickListener =
-                OnPreferenceClickListener {
-                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                        val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
-                        if (isAuthenticated) {
-                            PlayGames.getLeaderboardsClient(settingsActivity)
-                                .allLeaderboardsIntent
-                                .addOnSuccessListener { intent -> startActivityForResult(intent, 9004) }
-                        } else gamesSignInClient.signIn()
+                    .create()
+                    .show()
+                true
+            }
+            findPreference<PreferenceScreen>("import_data_pref")?.setOnPreferenceClickListener {
+                AlertDialog.Builder(settingsActivity)
+                    .setTitle(R.string.import_data)
+                    .setMessage(R.string.import_data_message)
+                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+                        pickImportJsonActivityResultLauncher.launch("application/json")
                     }
-                    true
-                }
+                    .create()
+                    .show()
+                true
+            }
 
             findPreference<PreferenceScreen>("privacy_pref")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {

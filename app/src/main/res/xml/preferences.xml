@@ -48,13 +48,15 @@
             android:title="@string/daily_sudoku_notification_channel_name" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/play_games">
+    <PreferenceCategory android:title="@string/data">
         <PreferenceScreen
-            android:key="play_games_achievements_pref"
-            android:title="@string/play_games_achievements" />
+            android:key="export_data_pref"
+            android:summary="@string/export_data_summary"
+            android:title="@string/export_data" />
         <PreferenceScreen
-            android:key="play_games_leaderboards_pref"
-            android:title="@string/play_games_leaderboards" />
+            android:key="import_data_pref"
+            android:summary="@string/import_data_summary"
+            android:title="@string/import_data" />
     </PreferenceCategory>
 
     <PreferenceCategory

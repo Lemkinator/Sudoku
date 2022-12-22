@@ -64,7 +64,7 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Inject
-    lateinit var exportSudoku: ExportSudokuUseCase
+    lateinit var shareSudoku: ShareSudokuUseCase
 
     @Inject
     lateinit var updatePlayGames: UpdatePlayGamesUseCase
@@ -143,12 +143,12 @@ class SudokuActivity : AppCompatActivity() {
                     //.setMessage(R.string.share_sudoku_message)
                     .setNegativeButton(R.string.initial_sudoku) { _, _ ->
                         loadingDialog.show()
-                        lifecycleScope.launch { shareSudoku(sudoku.initialSudoku) }
+                        lifecycleScope.launch { shareCurrentSudoku(sudoku.initialSudoku) }
                         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
                     }
                     .setPositiveButton(R.string.current_sudoku) { _, _ ->
                         loadingDialog.show()
-                        lifecycleScope.launch { shareSudoku(sudoku) }
+                        lifecycleScope.launch { shareCurrentSudoku(sudoku) }
                         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
                     }
                     .show()
@@ -382,8 +382,8 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun shareSudoku(sudoku: Sudoku) {
-        val uri = exportSudoku(sudoku)
+    private suspend fun shareCurrentSudoku(sudoku: Sudoku) {
+        val uri = shareSudoku(sudoku)
         val shareIntent = Intent(Intent.ACTION_SEND)
         shareIntent.type = "application/sudoku" //octet-stream"
         shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

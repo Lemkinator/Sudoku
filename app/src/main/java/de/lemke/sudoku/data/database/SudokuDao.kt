@@ -37,6 +37,10 @@ interface SudokuDao {
     suspend fun getAllLevel(): List<SudokuWithFields>
 
     @Transaction
+    @Query("SELECT * FROM sudoku WHERE modeLevel = :level")
+    suspend fun getSudokuLevel(level: Int): SudokuWithFields?
+
+    @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?
 

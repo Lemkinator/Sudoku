@@ -219,7 +219,7 @@ class MainActivityTabHistory : Fragment() {
             if (holder.isItem && sudoku != null) {
                 holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
-                holder.textView.text = sudoku.difficulty.getLocalString(resources) + " | " + sudoku.sizeString
+                holder.textView.text = sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(resources)
                 holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         requireContext(),

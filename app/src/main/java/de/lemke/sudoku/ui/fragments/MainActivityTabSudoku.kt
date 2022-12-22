@@ -129,8 +129,8 @@ class MainActivityTabSudoku : Fragment() {
                 binding.continueGameButton.visibility = View.VISIBLE
                 binding.continueGameButton.text = getString(
                     R.string.continue_game,
-                    sudoku.difficulty.getLocalString(resources),
-                    sudoku.sizeString
+                    sudoku.sizeString,
+                    sudoku.difficulty.getLocalString(resources)
                 )
                 binding.continueGameButton.setOnClickListener {
                     startActivity(Intent(activity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
