@@ -14,6 +14,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.TooltipCompat
 import com.google.android.gms.games.PlayGames
+import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.AppBarLayout.OnOffsetChangedListener
 import com.google.android.play.core.review.ReviewManagerFactory
@@ -182,6 +183,7 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
                 bottomContent.aboutBottomShareApp.id -> {
+                    PlayGamesSdk.initialize(applicationContext)
                     PlayGames.getAchievementsClient(this@AboutMeActivity).unlock(getString(R.string.achievement_share_app))
                     val sendIntent = Intent(Intent.ACTION_SEND)
                     sendIntent.type = "text/plain"

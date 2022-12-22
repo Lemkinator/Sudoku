@@ -15,6 +15,7 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
+import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -116,7 +117,7 @@ class SudokuActivity : AppCompatActivity() {
             binding.roundedGameRecycler.translationX = max(0, width - gameSize) / 2f
             binding.roundedGameRecycler.layoutParams = params*/
         }
-
+        PlayGamesSdk.initialize(applicationContext)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 finish()

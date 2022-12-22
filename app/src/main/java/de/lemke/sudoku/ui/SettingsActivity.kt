@@ -27,6 +27,7 @@ import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
 import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.PlayGames
+import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.gms.tasks.Task
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -151,6 +152,7 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref.setTouchEffectEnabled(false)
             darkModePref.isEnabled = !autoDarkModePref.isChecked
             darkModePref.value = if (SeslMisc.isLightTheme(settingsActivity)) "0" else "1"
+            PlayGamesSdk.initialize(settingsActivity)
             val gamesSignInClient = PlayGames.getGamesSignInClient(settingsActivity)
             findPreference<PreferenceScreen>("play_games_achievements_pref")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {
