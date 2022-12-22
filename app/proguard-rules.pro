@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 -renamesourcefileattribute SourceFile
+
+-keep class de.lemke.sudoku.** {*;}
+
+#java.lang.IllegalArgumentException: Annotation class g does not have a String property "name"
+-keep class io.kjson.** {*;}
+-keep class io.kjson.stringifyJSON.** {*;}
+-keep class io.kjson.parseJSON.** {*;}

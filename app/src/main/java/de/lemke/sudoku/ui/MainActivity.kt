@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.PlayGames
+import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
@@ -56,6 +57,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         time = System.currentTimeMillis()
+        PlayGamesSdk.initialize(applicationContext)
         initDrawer()
         initTabs()
         initFragments()
