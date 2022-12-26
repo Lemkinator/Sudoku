@@ -169,6 +169,7 @@
     <string name="play_games">Play Spiele</string>
     <string name="play_games_leaderboards">Bestenlisten</string>
     <string name="play_games_achievements">Erfolge</string>
+    <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
 
     <!--Others-->
 

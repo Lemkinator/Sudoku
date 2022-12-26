@@ -37,10 +37,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
-    companion object {
-        var refreshView = false
-    }
-
     private lateinit var binding: ActivityMainBinding
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
@@ -65,14 +61,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         lifecycleScope.launch { checkImportedSudoku() }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (refreshView) {
-            refreshView = false
-            recreate()
-        }
-    }
-
     private suspend fun checkImportedSudoku() {
         val intent = intent
         if (intent != null && intent.data != null) {
@@ -84,7 +72,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (sudoku != null) {
                 startActivity(Intent(this, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
             } else {
-                Toast.makeText(this@MainActivity, "Sudoku konnte nicht importiert werden", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, getString(R.string.error_import_failed), Toast.LENGTH_LONG).show()
             }
             dialog.dismiss()
         }

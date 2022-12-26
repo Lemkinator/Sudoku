@@ -163,7 +163,7 @@ class Sudoku(
             timer = null,
             gameListener = null,
             history = mutableListOf(),
-            fields = fields.onEach { it.reset() },
+            fields = fields.toMutableList().onEach { it.reset() },
         )
 
     fun reset() {
