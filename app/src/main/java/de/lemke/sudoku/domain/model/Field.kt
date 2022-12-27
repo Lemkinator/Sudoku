@@ -1,6 +1,6 @@
 package de.lemke.sudoku.domain.model
 
-data class Field(
+class Field(
     val position: Position,
     var value: Int? = null,
     var solution: Int? = null,
@@ -12,6 +12,15 @@ data class Field(
         get() = value != null && value != solution
     val correct: Boolean
         get() = value != null && value == solution
+
+    fun getInitialField() = Field(
+            position = position,
+            value = if (given) value else null,
+            solution = solution,
+            notes = mutableListOf(),
+            given = given,
+            hint = false,
+        )
 
     fun toggleNote(note: Int): Boolean {
         if (!notes.remove(note)) {
@@ -31,10 +40,10 @@ data class Field(
         position: Position = this.position,
         value: Int? = this.value,
         solution: Int? = this.solution,
-        notes: MutableList<Int> = ArrayList(this.notes),
-        preNumber: Boolean = this.given,
+        notes: MutableList<Int> = this.notes.toMutableList(),
+        given: Boolean = this.given,
         hint: Boolean = this.hint,
-    ): Field = Field(position, value, solution, notes, preNumber, hint)
+    ): Field = Field(position, value, solution, notes, given, hint)
 
     fun reset() {
         if (!given) value = null

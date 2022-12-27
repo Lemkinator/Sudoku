@@ -5,16 +5,17 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.*
+import android.window.OnBackInvokedDispatcher
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.TooltipCompat
 import com.google.android.gms.games.PlayGames
-import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.AppBarLayout.OnOffsetChangedListener
 import com.google.android.play.core.review.ReviewManagerFactory
@@ -55,7 +56,12 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun initOnBackPressed() {
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
+                if (enableBackToHeader && binding.aboutAppBar.seslIsCollapsed()) binding.aboutAppBar.setExpanded(true)
+                else finish()
+            }
+        else onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (enableBackToHeader && binding.aboutAppBar.seslIsCollapsed()) binding.aboutAppBar.setExpanded(true)
                 else finish()
@@ -183,7 +189,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
                 bottomContent.aboutBottomShareApp.id -> {
-                    PlayGamesSdk.initialize(applicationContext)
                     PlayGames.getAchievementsClient(this@AboutMeActivity).unlock(getString(R.string.achievement_share_app))
                     val sendIntent = Intent(Intent.ACTION_SEND)
                     sendIntent.type = "text/plain"

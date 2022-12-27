@@ -72,14 +72,12 @@
     <!--Settings-->
     <string name="design">Design</string>
     <string name="system_default">System default</string>
-    <string name="general">General</string>
     <string name="game">Game</string>
     <string name="animations">Animations</string>
     <string name="regional_highlight">Regional Highlight</string>
     <string name="regional_highlight_summary">When a field is selected, the row, line and block will be highlighted.</string>
     <string name="number_highlight">Highlight selected number</string>
     <string name="number_highlight_summary">When a number is selected, all other fields with the same number will be highlighted.</string>
-    <string name="confirm_exit">Confirm exit</string>
     <string name="press_again_to_exit">Press again to exit.</string>
     <string name="delete_appdata_and_exit">Delete App-Data and exit</string>
     <string name="delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue? </string>

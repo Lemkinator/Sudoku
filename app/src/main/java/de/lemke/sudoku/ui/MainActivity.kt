@@ -1,18 +1,22 @@
 package de.lemke.sudoku.ui
 
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.LinearLayout
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.animation.doOnEnd
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.PlayGames
-import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
@@ -22,8 +26,7 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.ImportSudokuUseCase
+import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -41,6 +44,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
+    private var isUIReady = false
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -48,17 +52,82 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     @Inject
     lateinit var importSudoku: ImportSudokuUseCase
 
+    @Inject
+    lateinit var checkAppStart: CheckAppStartUseCase
+
+    @Inject
+    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+
+    @Inject
+    lateinit var updatePlayGames: UpdatePlayGamesUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        /*  Note: https://stackoverflow.com/a/69831106/18332741
+        On Android 12 just running the app via android studio doesn't show the full splash screen.
+        You have to kill it and open the app from the launcher.
+        */
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { !isUIReady }
+        splashScreen.setOnExitAnimationListener { splashScreenView ->
+            // Create your custom animation.
+            val slideUp = ObjectAnimator.ofFloat(
+                splashScreenView.view,
+                View.ALPHA,
+                0f,
+            )
+            slideUp.interpolator = AccelerateDecelerateInterpolator()
+            slideUp.duration = 400L
+            // Call SplashScreenView.remove at the end of your custom animation.
+            slideUp.doOnEnd { splashScreenView.remove() }
+            // Run your animation.
+            slideUp.start()
+
+            /*
+            // Get the duration of the animated vector drawable.
+            val animationDuration = splashScreenView.iconAnimationDurationMillis
+            // Get the start time of the animation.
+            val animationStart = splashScreenView.iconAnimationStartMillis
+            // Calculate the remaining duration of the animation.
+            val remainingDuration = animationDuration - (System.currentTimeMillis() - animationStart).coerceAtLeast(0L)
+            */
+        }
+
         super.onCreate(savedInstanceState)
+        lifecycleScope.launch {
+            when (checkAppStart()) {
+                AppStart.FIRST_TIME -> openOOBE()
+                AppStart.NORMAL -> checkTOS()
+                AppStart.FIRST_TIME_VERSION -> checkTOS()
+            }
+        }
+    }
+
+    private fun openOOBE() {
+        startActivity(Intent(applicationContext, OOBEActivity::class.java))
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        isUIReady = true
+        finish()
+    }
+
+    private suspend fun checkTOS() {
+        if (!getUserSettings().tosAccepted) openOOBE()
+        else openMain()
+    }
+
+    private fun openMain() {
+        isUIReady = true
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         time = System.currentTimeMillis()
-        PlayGamesSdk.initialize(applicationContext)
         initDrawer()
         initTabs()
         initFragments()
-        initOnBackPressed()
-        lifecycleScope.launch { checkImportedSudoku() }
+        NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
+        lifecycleScope.launch {
+            sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
+            checkImportedSudoku()
+            updatePlayGames(this@MainActivity)
+        }
     }
 
     private suspend fun checkImportedSudoku() {
@@ -165,7 +234,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private fun initFragments() {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         for (fragment in fragmentsInstance) transaction.add(R.id.fragment_container, fragment)
-        transaction.commit()
+        transaction.commitAllowingStateLoss()
         supportFragmentManager.executePendingTransactions()
         onTabItemSelected(1)
     }
@@ -178,39 +247,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             for (fragment in supportFragmentManager.fragments) {
                 transaction.hide(fragment)
             }
-            transaction.show(newFragment).commit()
+            transaction.show(newFragment).commitAllowingStateLoss()
             supportFragmentManager.executePendingTransactions()
             val newTab = tab ?: binding.mainMarginsTabLayout.getTabAt(position)
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
-    }
-
-    private fun initOnBackPressed() {
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                lifecycleScope.launch {
-                    when {
-                        binding.drawerLayoutMain.findViewById<androidx.drawerlayout.widget.DrawerLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer)
-                            .isDrawerOpen(
-                                binding.drawerLayoutMain.findViewById<LinearLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer_content)
-                            ) -> {
-                            binding.drawerLayoutMain.setDrawerOpen(false, true)
-                        }
-                        selectedPosition != 1 -> onTabItemSelected(1)
-                        else -> {
-                            if (getUserSettings().confirmExit) {
-                                if (System.currentTimeMillis() - time < 3000) finishAffinity()
-                                else {
-                                    Toast.makeText(this@MainActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT)
-                                        .show()
-                                    time = System.currentTimeMillis()
-                                }
-                            } else finishAffinity()
-                        }
-                    }
-                }
-            }
-        })
     }
 }

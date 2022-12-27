@@ -13,9 +13,13 @@ class UpdatePlayGamesUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
 ) {
 
-    suspend operator fun invoke(completedSudoku: Sudoku, activity: Activity) = withContext(Dispatchers.Default) {
+    suspend operator fun invoke(activity: Activity, completedSudoku: Sudoku? = null) = withContext(Dispatchers.Default) {
         val achievementsClient = PlayGames.getAchievementsClient(activity)
         val leaderboardsClient = PlayGames.getLeaderboardsClient(activity)
+        val sudokus = getAllSudokus().filter { it.completed }
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_total_wins), sudokus.size.toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_daily_sudokus), sudokus.count { it.isDailySudoku }.toLong())
+        if (completedSudoku == null) return@withContext
         achievementsClient.unlock(activity.getString(R.string.achievement_first_win))
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_best_time), completedSudoku.seconds * 1000L)
         if (completedSudoku.eraserUsed) achievementsClient.unlock(activity.getString(R.string.achievement_eraser))
@@ -39,9 +43,6 @@ class UpdatePlayGamesUseCase @Inject constructor(
                 achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_16x16), 1)
             }
         }
-        val sudokus = getAllSudokus().filter { it.completed }
-        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_total_wins), sudokus.size.toLong())
-        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_daily_sudokus), sudokus.count { it.isDailySudoku }.toLong())
         if (completedSudoku.isSudokuLevel) leaderboardsClient.submitScore(
             activity.getString(R.string.leaderboard_level),
             completedSudoku.modeLevel.toLong()

@@ -20,7 +20,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.appcompat.util.SeslMisc
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -63,7 +62,6 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var pickImportJsonActivityResultLauncher: ActivityResultLauncher<String>
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
-        private lateinit var confirmExitPref: SwitchPreferenceCompat
         private lateinit var regionalHighlightPref: SwitchPreferenceCompat
         private lateinit var numberHighlightPref: SwitchPreferenceCompat
         private lateinit var animationsPref: SwitchPreferenceCompat
@@ -113,18 +111,19 @@ class SettingsActivity : AppCompatActivity() {
             initPreferences()
         }
 
-        @SuppressLint("RestrictedApi", "UnspecifiedImmutableFlag")
         private fun initPreferences() {
-            val darkMode = AppCompatDelegate.getDefaultNightMode()
             darkModePref = findPreference("dark_mode_pref")!!
             autoDarkModePref = findPreference("dark_mode_auto")!!
-            confirmExitPref = findPreference("confirm_exit_pref")!!
             regionalHighlightPref = findPreference("highlight_regional_pref")!!
             numberHighlightPref = findPreference("highlight_number_pref")!!
             animationsPref = findPreference("animations_pref")!!
             dailySudokuNotificationPref = findPreference("daily_notification_pref")!!
             errorLimitPref = findPreference("error_limit_pref")!!
-            confirmExitPref.onPreferenceChangeListener = this
+            errorLimitPref.onPreferenceChangeListener = this
+            autoDarkModePref.onPreferenceChangeListener = this
+            darkModePref.onPreferenceChangeListener = this
+            darkModePref.setDividerEnabled(false)
+            darkModePref.setTouchEffectEnabled(false)
             regionalHighlightPref.onPreferenceChangeListener = this
             numberHighlightPref.onPreferenceChangeListener = this
             animationsPref.onPreferenceChangeListener = this
@@ -155,17 +154,13 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 true
             }
-            errorLimitPref.onPreferenceChangeListener = this
-            autoDarkModePref.onPreferenceChangeListener = this
-            autoDarkModePref.isChecked = darkMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM ||
-                    darkMode == AppCompatDelegate.MODE_NIGHT_AUTO_BATTERY ||
-                    darkMode == AppCompatDelegate.MODE_NIGHT_UNSPECIFIED
 
-            darkModePref.onPreferenceChangeListener = this
-            darkModePref.setDividerEnabled(false)
-            darkModePref.setTouchEffectEnabled(false)
-            darkModePref.isEnabled = !autoDarkModePref.isChecked
-            darkModePref.value = if (SeslMisc.isLightTheme(settingsActivity)) "0" else "1"
+            lifecycleScope.launch {
+                val userSettings = getUserSettings()
+                autoDarkModePref.isChecked = userSettings.autoDarkMode
+                darkModePref.isEnabled = !autoDarkModePref.isChecked
+                darkModePref.value = if (userSettings.darkMode) "1" else "0"
+            }
 
             findPreference<PreferenceScreen>("export_data_pref")?.setOnPreferenceClickListener {
                 AlertDialog.Builder(settingsActivity)
@@ -261,7 +256,6 @@ class SettingsActivity : AppCompatActivity() {
             super.onStart()
             lifecycleScope.launch {
                 val userSettings = getUserSettings()
-                confirmExitPref.isChecked = userSettings.confirmExit
                 regionalHighlightPref.isChecked = userSettings.highlightRegional
                 numberHighlightPref.isChecked = userSettings.highlightNumber
                 animationsPref.isChecked = userSettings.animationsEnabled
@@ -274,6 +268,13 @@ class SettingsActivity : AppCompatActivity() {
                 //tipCardSpacing?.isVisible = showTipCard
             }
             setRelatedCardView()
+        }
+
+        override fun onResume() {
+            super.onResume()
+            lifecycleScope.launch {
+                findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
+            }
         }
 
         private fun setDailyNotificationPrefTime(hourOfDay: Int, minute: Int) {
@@ -291,24 +292,26 @@ class SettingsActivity : AppCompatActivity() {
         override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
             when (preference.key) {
                 "dark_mode_pref" -> {
+                    val darkMode = newValue as String == "1"
                     AppCompatDelegate.setDefaultNightMode(
-                        if (newValue == "0") AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
+                        if (darkMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
                     )
-                    return true
-                }
-                "dark_mode_auto" -> {
-                    if (newValue as Boolean) {
-                        darkModePref.isEnabled = false
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-                    } else {
-                        darkModePref.isEnabled = true
-                        if (SeslMisc.isLightTheme(settingsActivity)) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                        else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                    lifecycleScope.launch {
+                        updateUserSettings { it.copy(darkMode = darkMode) }
                     }
                     return true
                 }
-                "confirm_exit_pref" -> {
-                    lifecycleScope.launch { updateUserSettings { it.copy(confirmExit = newValue as Boolean) } }
+                "dark_mode_auto" -> {
+                    val autoDarkMode = newValue as Boolean
+                    darkModePref.isEnabled = !autoDarkMode
+                    lifecycleScope.launch {
+                        if (autoDarkMode) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                        else {
+                            if (getUserSettings().darkMode) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                            else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        }
+                        updateUserSettings { it.copy(autoDarkMode = newValue) }
+                    }
                     return true
                 }
                 "highlight_regional_pref" -> {

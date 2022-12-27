@@ -133,7 +133,7 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
 
         init {
             sudokuLevel.forEachIndexed { index, _ ->
-                sections.add((index + 1).toString())
+                sections.add((sudokuLevel.size - index).toString())
                 positionForSection.add(index)
                 sectionForPosition.add(sections.size)
             }

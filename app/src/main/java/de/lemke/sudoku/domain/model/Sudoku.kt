@@ -1,6 +1,5 @@
 package de.lemke.sudoku.domain.model
 
-import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.math.sqrt
@@ -31,7 +30,6 @@ class Sudoku(
     var seconds: Int,
     var timer: Timer?,
     var gameListener: GameListener?,
-    val history: MutableList<HistoryItem>,
     val fields: MutableList<Field>,
 ) {
     companion object {
@@ -59,7 +57,6 @@ class Sudoku(
             seconds: Int = 0,
             timer: Timer? = null,
             gameListener: GameListener? = null,
-            history: MutableList<HistoryItem> = mutableListOf(),
             fields: MutableList<Field>,
         ): Sudoku = Sudoku(
             id = sudokuId,
@@ -80,7 +77,6 @@ class Sudoku(
             seconds = seconds,
             timer = timer,
             gameListener = gameListener,
-            history = history,
             fields = fields,
         )
     }
@@ -142,8 +138,7 @@ class Sudoku(
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
-    val initialSudoku: Sudoku
-        get() = Sudoku(
+    fun getInitialSudoku() = Sudoku(
             id = SudokuId.generate(),
             size = size,
             difficulty = difficulty,
@@ -162,13 +157,11 @@ class Sudoku(
             seconds = 0,
             timer = null,
             gameListener = null,
-            history = mutableListOf(),
-            fields = fields.toMutableList().onEach { it.reset() },
+            fields = MutableList(itemCount) {fields[it].getInitialField() },
         )
 
     fun reset() {
         fields.forEach { it.reset() }
-        history.clear()
         regionalHighlightingUsed = false
         numberHighlightingUsed = false
         eraserUsed = false
@@ -213,20 +206,18 @@ class Sudoku(
             } else field.notes.clear()
             gameListener?.onFieldChanged(position)
         } else {
-            if (field.value == null && value == null) field.notes.clear()
-            else history.add(HistoryItem(position, if (value == null) field.value else null))
-            if (value == null) eraserUsed = true
+            if (value == null) {
+                eraserUsed = true
+                if (field.value == null) field.notes.clear()
+            }
             checkChecklist(value)
             field.value = value
             gameListener?.onFieldChanged(position)
-            gameListener?.onHistoryChange(history.size)
             if (value != null) {
                 if (field.error) {
                     errorsMade++
                     gameListener?.onError()
-                } else {
-                    removeNumberNotesFromNeighbors(position, value)
-                }
+                } else removeNumberNotesFromNeighbors(position, value)
                 if (completed) {
                     stopTimer()
                     gameListener?.onCompleted(position)
@@ -275,16 +266,6 @@ class Sudoku(
         if (completed) {
             stopTimer()
             gameListener?.onCompleted(position)
-        }
-    }
-
-    fun revertLastChange(adapter: SudokuViewAdapter) {
-        if (history.size != 0) {
-            val item = history.removeAt(history.lastIndex)
-            get(item.position.index).value = item.deletedNumber
-            adapter.updateFieldView(item.position.index)
-            gameListener?.onHistoryChange(history.size)
-            gameListener?.onFieldChanged(item.position)
         }
     }
 
@@ -341,7 +322,6 @@ class Sudoku(
 }
 
 interface GameListener {
-    fun onHistoryChange(length: Int)
     fun onFieldClicked(position: Position)
     fun onFieldChanged(position: Position)
     fun onCompleted(position: Position)

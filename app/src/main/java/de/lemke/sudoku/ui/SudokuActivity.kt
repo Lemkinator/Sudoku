@@ -8,14 +8,12 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
-import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -117,12 +115,6 @@ class SudokuActivity : AppCompatActivity() {
             binding.roundedGameRecycler.translationX = max(0, width - gameSize) / 2f
             binding.roundedGameRecycler.layoutParams = params*/
         }
-        PlayGamesSdk.initialize(applicationContext)
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                finish()
-            }
-        })
     }
 
     override fun onPause() {
@@ -135,7 +127,6 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_undo -> sudoku.revertLastChange(gameAdapter)
             R.id.menu_pause_play -> if (sudoku.resumed) pauseGame() else resumeGame()
             R.id.menu_reset -> restartGame()
             R.id.menu_share -> {
@@ -143,7 +134,7 @@ class SudokuActivity : AppCompatActivity() {
                     //.setMessage(R.string.share_sudoku_message)
                     .setNegativeButton(R.string.initial_sudoku) { _, _ ->
                         loadingDialog.show()
-                        lifecycleScope.launch { shareCurrentSudoku(sudoku.initialSudoku) }
+                        lifecycleScope.launch { shareCurrentSudoku(sudoku.getInitialSudoku()) }
                         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
                     }
                     .setPositiveButton(R.string.current_sudoku) { _, _ ->
@@ -157,8 +148,7 @@ class SudokuActivity : AppCompatActivity() {
         return true
     }
 
-    private fun setToolbarMenuItemsVisible(undo: Boolean = false, pausePlay: Boolean = false, reset: Boolean = false) {
-        toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, undo)
+    private fun setToolbarMenuItemsVisible(pausePlay: Boolean = false, reset: Boolean = false) {
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, pausePlay)
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, reset)
     }
@@ -242,7 +232,7 @@ class SudokuActivity : AppCompatActivity() {
                     val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
                     itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
                     itemPausePlay.title = getString(R.string.pause)
-                    setToolbarMenuItemsVisible(undo = sudoku.history.isNotEmpty(), pausePlay = true)
+                    setToolbarMenuItemsVisible(pausePlay = true)
                     binding.gameButtons.visibility = View.VISIBLE
                 }
             }
@@ -263,10 +253,6 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     inner class SudokuGameListener : GameListener {
-        override fun onHistoryChange(length: Int) {
-            toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_undo, sudoku.history.isNotEmpty())
-        }
-
         override fun onFieldClicked(position: Position) {
             lifecycleScope.launch { select(position.index) }
         }
@@ -346,7 +332,7 @@ class SudokuActivity : AppCompatActivity() {
         lifecycleScope.launch {
             saveSudoku(sudoku)
             dialog.show()
-            updatePlayGames(sudoku, this@SudokuActivity)
+            updatePlayGames(this@SudokuActivity, sudoku)
         }
         setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
         binding.gameButtons.visibility = View.GONE

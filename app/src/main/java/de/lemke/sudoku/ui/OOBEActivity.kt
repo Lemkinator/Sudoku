@@ -18,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.Toast
+import android.window.OnBackInvokedDispatcher
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -64,14 +65,20 @@ class OOBEActivity : AppCompatActivity() {
     }
 
     private fun initOnBackPressed() {
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
+                if (System.currentTimeMillis() - time < 3000) finishAffinity()
+                else {
+                    Toast.makeText(this@OOBEActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
+                    time = System.currentTimeMillis()
+                }
+            }
+        else onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                lifecycleScope.launch {
-                    if (System.currentTimeMillis() - time < 3000) finishAffinity()
-                    else {
-                        Toast.makeText(this@OOBEActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
-                        time = System.currentTimeMillis()
-                    }
+                if (System.currentTimeMillis() - time < 3000) finishAffinity()
+                else {
+                    Toast.makeText(this@OOBEActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
+                    time = System.currentTimeMillis()
                 }
             }
         })
@@ -146,16 +153,18 @@ class OOBEActivity : AppCompatActivity() {
     // an instance of ActivityResultLauncher. You can use either a val, as shown in this snippet,
     // or a lateinit var in your onAttach() or onCreate() method.
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permission is granted. Continue the action or workflow in your app.
-            lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) } }
-        } else {
-            // Explain to the user that the feature is unavailable because the features requires a permission that the user has denied.
-            // At the same time, respect the user's decision. Don't link to system settings in an effort to convince the user
-            // to change their decision.
-            lifecycleScope.launch { updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) } }
+        lifecycleScope.launch {
+            if (isGranted) {
+                // Permission is granted. Continue the action or workflow in your app.
+                updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
+            } else {
+                // Explain to the user that the feature is unavailable because the features requires a permission that the user has denied.
+                // At the same time, respect the user's decision. Don't link to system settings in an effort to convince the user
+                // to change their decision.
+                updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
+            }
+            openMainActivity()
         }
-        openMainActivity()
     }
 
     @SuppressLint("InlinedApi")
@@ -165,8 +174,8 @@ class OOBEActivity : AppCompatActivity() {
             .setNegativeButton(R.string.decline_notifications) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch {
                     updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
+                    openMainActivity()
                 }
-                openMainActivity()
             }
             .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch {
@@ -192,11 +201,9 @@ class OOBEActivity : AppCompatActivity() {
     }
 
 
-    private fun openMainActivity() {
-        lifecycleScope.launch { sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled) }
-        val intent = Intent().setClass(applicationContext, MainActivity::class.java)
-        intent.data = getIntent().data //transfer intent data -> sudoku import
-        startActivity(intent)
+    private suspend fun openMainActivity() {
+        sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
+        startActivity(Intent(applicationContext, MainActivity::class.java))
         finish()
     }
 }

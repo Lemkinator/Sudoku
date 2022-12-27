@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -13,6 +14,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.util.SeslRoundedCorner
@@ -53,6 +56,7 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mainTabs: MarginsTabLayout
     private lateinit var onBackPressedCallback: OnBackPressedCallback
+    private lateinit var onBackInvokedCallback: OnBackInvokedCallback
     private var selected = HashMap<Int, Boolean>()
     private var selecting = false
     private var checkAllListening = true
@@ -82,7 +86,12 @@ class MainActivityTabHistory : Fragment() {
         mainTabs = activity.findViewById(R.id.main_margins_tab_layout)
         onBackPressedCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                if (selecting) setSelecting(false)
+                setSelecting(false)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedCallback = OnBackInvokedCallback {
+                setSelecting(false)
             }
         }
         drawerLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
@@ -100,7 +109,6 @@ class MainActivityTabHistory : Fragment() {
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { initList() }
-        onBackPressedCallback.remove()
         requireActivity().onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
@@ -178,6 +186,9 @@ class MainActivityTabHistory : Fragment() {
             }
             mainTabs.isEnabled = false
             onBackPressedCallback.isEnabled = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireActivity().onBackInvokedDispatcher.registerOnBackInvokedCallback(PRIORITY_DEFAULT, onBackInvokedCallback)
+            }
         } else {
             selecting = false
             for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
@@ -186,6 +197,9 @@ class MainActivityTabHistory : Fragment() {
             drawerLayout.dismissActionMode()
             mainTabs.isEnabled = true
             onBackPressedCallback.isEnabled = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireActivity().onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
+            }
         }
     }
 

@@ -23,7 +23,6 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         seconds = sudokuWithFields.sudoku.seconds,
         timer = null,
         gameListener = null,
-        history = mutableListOf(),
         fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList(),
     )
 
@@ -90,7 +89,6 @@ fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku =
         seconds = sudokuExport.seconds,
         timer = null,
         gameListener = null,
-        history = mutableListOf(),
         fields = sudokuExport.fields,
     )
 

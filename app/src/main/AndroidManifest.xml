@@ -18,7 +18,7 @@
         android:name=".App"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:enableOnBackInvokedCallback="false"
+        android:enableOnBackInvokedCallback="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -57,8 +57,8 @@
 
         <activity
             android:name=".ui.SettingsActivity"
-            android:parentActivityName=".ui.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:parentActivityName=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.NOTIFICATION_PREFERENCES" />
@@ -79,15 +79,8 @@
         <activity
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:exported="true" />
-        <activity
-            android:name=".ui.OOBEActivity"
-            android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" />
-        <activity
-            android:name=".ui.SplashActivity"
             android:exported="true"
-            android:noHistory="true">
+            android:theme="@style/Theme.Sudoku.Splash">
             <!--Launcher-->
             <meta-data
                 android:name="com.sec.android.app.launcher.icon_theme"
@@ -96,7 +89,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
             <!--File select-->
             <intent-filter android:label="Import">
                 <action android:name="android.intent.action.VIEW" />
@@ -114,13 +106,10 @@
                 <data android:scheme="content" />
             </intent-filter>
         </activity>
-
-        <provider
-            android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"
-            android:authorities="${applicationId}.playgamesinitprovider"
-            android:exported="false"
-            android:initOrder="99"
-            tools:node="remove" />
+        <activity
+            android:name=".ui.OOBEActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

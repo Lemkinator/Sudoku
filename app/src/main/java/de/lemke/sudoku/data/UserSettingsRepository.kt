@@ -24,11 +24,12 @@ class UserSettingsRepository @Inject constructor(
             val newSettings = f(settingsFromPreferences(it))
             it[KEY_LAST_VERSION_CODE] = newSettings.lastVersionCode
             it[KEY_LAST_VERSION_NAME] = newSettings.lastVersionName
+            it[KEY_DARK_MODE] = newSettings.darkMode
+            it[KEY_AUTO_DARK_MODE] = newSettings.autoDarkMode
             it[KEY_TOS_ACCEPTED] = newSettings.tosAccepted
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
             it[KEY_SIZE_SLIDER_VALUE] = newSettings.sizeSliderValue
-            it[KEY_CONFIRM_EXIT] = newSettings.confirmExit
             it[KEY_ANIMATIONS_ENABLED] = newSettings.animationsEnabled
             it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
@@ -45,11 +46,12 @@ class UserSettingsRepository @Inject constructor(
     private fun settingsFromPreferences(prefs: Preferences) = UserSettings(
         lastVersionCode = prefs[KEY_LAST_VERSION_CODE] ?: -1,
         lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
+        darkMode = prefs[KEY_DARK_MODE] ?: false,
+        autoDarkMode = prefs[KEY_AUTO_DARK_MODE] ?: true,
         tosAccepted = prefs[KEY_TOS_ACCEPTED] ?: false,
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
         sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
-        confirmExit = prefs[KEY_CONFIRM_EXIT] ?: true,
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
@@ -65,11 +67,12 @@ class UserSettingsRepository @Inject constructor(
     private companion object {
         private val KEY_LAST_VERSION_CODE = intPreferencesKey("lastVersionCode")
         private val KEY_LAST_VERSION_NAME = stringPreferencesKey("lastVersionName")
+        private val KEY_DARK_MODE = booleanPreferencesKey("darkMode")
+        private val KEY_AUTO_DARK_MODE = booleanPreferencesKey("autoDarkMode")
         private val KEY_TOS_ACCEPTED = booleanPreferencesKey("tosAccepted")
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
         private val KEY_SIZE_SLIDER_VALUE = intPreferencesKey("sizeSliderValue")
-        private val KEY_CONFIRM_EXIT = booleanPreferencesKey("confirmExit")
         private val KEY_ANIMATIONS_ENABLED = booleanPreferencesKey("animationsEnabled")
         private val KEY_REGIONAL_HIGHLIGHT = booleanPreferencesKey("regionalHighlight")
         private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
@@ -87,6 +90,10 @@ data class UserSettings(
     val lastVersionCode: Int,
     /** Last App-Version-Name */
     val lastVersionName: String,
+    /** dark mode enabled */
+    val darkMode: Boolean,
+    /** auto dark mode enabled */
+    val autoDarkMode: Boolean,
     /** terms of service accepted by user */
     val tosAccepted: Boolean,
     /** devMode enabled */
@@ -95,8 +102,6 @@ data class UserSettings(
     val difficultySliderValue: Int,
     /** value of size slider*/
     val sizeSliderValue: Int,
-    /** confirm Exit*/
-    val confirmExit: Boolean,
     /** animations enabled */
     val animationsEnabled: Boolean,
     /** highlight sudoku neighbors*/
