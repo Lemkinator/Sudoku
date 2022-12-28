@@ -1,15 +1,10 @@
 package de.lemke.sudoku.ui
 
-import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.animation.doOnEnd
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.Fragment
@@ -35,6 +30,7 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.ToolbarLayout
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -68,7 +64,14 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         You have to kill it and open the app from the launcher.
         */
         val splashScreen = installSplashScreen()
+        time = System.currentTimeMillis()
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         splashScreen.setKeepOnScreenCondition { !isUIReady }
+        /*
+        there is a bug in the new splash screen api, when using the onExitAnimationListener -> splash icon flickers
+        therefore setting a manual delay in openMain()
         splashScreen.setOnExitAnimationListener { splash ->
             val splashAnimator: ObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(
                 splash.view,
@@ -87,22 +90,16 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             )
             contentAnimator.interpolator = AccelerateDecelerateInterpolator()
             contentAnimator.duration = 400L
-            contentAnimator.doOnEnd { splash.remove() }
-            splashAnimator.start()
-            contentAnimator.start()
 
+            val remainingDuration = splash.iconAnimationDurationMillis - (System.currentTimeMillis() - splash.iconAnimationStartMillis)
+                .coerceAtLeast(0L)
+            lifecycleScope.launch {
+                delay(remainingDuration)
+                splashAnimator.start()
+                contentAnimator.start()
+            }
+        }*/
 
-            /*
-            // Get the duration of the animated vector drawable.
-            val animationDuration = splash.iconAnimationDurationMillis
-            // Get the start time of the animation.
-            val animationStart = splash.iconAnimationStartMillis
-            // Calculate the remaining duration of the animation.
-            val remainingDuration = animationDuration - (System.currentTimeMillis() - animationStart).coerceAtLeast(0L)
-            */
-        }
-
-        super.onCreate(savedInstanceState)
         lifecycleScope.launch {
             when (checkAppStart()) {
                 AppStart.FIRST_TIME -> openOOBE()
@@ -112,10 +109,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
-    private fun openOOBE() {
+    private suspend fun openOOBE() {
+        //manually waiting for the animation to finish :/
+        delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
         startActivity(Intent(applicationContext, OOBEActivity::class.java))
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        isUIReady = true
         finish()
     }
 
@@ -125,18 +123,17 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun openMain() {
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        isUIReady = true
-        time = System.currentTimeMillis()
         initDrawer()
         initTabs()
         initFragments()
         NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
         lifecycleScope.launch {
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
-            checkImportedSudoku()
             updatePlayGames(this@MainActivity)
+            //manually waiting for the animation to finish :/
+            delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
+            isUIReady = true
+            checkImportedSudoku()
         }
     }
 
