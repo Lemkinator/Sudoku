@@ -224,7 +224,7 @@ class Sudoku(
         gameListener = null
     }
 
-    fun startTimer(delay: Long = 1500) {
+    fun startTimer(delay: Long = 1000) {
         if (completed) return
         timer?.cancel()
         timer = Timer()

@@ -81,7 +81,7 @@ class MainActivityTabStatistics : Fragment() {
         val gamesCompleted = sudokus.filter { it.completed }.size
         val winRate = if (gamesStarted == 0) 0 else (gamesCompleted.toFloat() / gamesStarted.toFloat() * 100).toInt()
         val bestTimeSudoku = sudokus.filter { it.completed }.minByOrNull { it.seconds }
-        val bestTime = bestTimeSudoku?.seconds ?: 0
+        val bestTime = bestTimeSudoku?.seconds ?: -1
         val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
         val winsWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
         val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
@@ -148,9 +148,11 @@ class MainActivityTabStatistics : Fragment() {
     }
 
     private fun secondsToTimeString(seconds: Int): String =
-        if (seconds == 0) "--:--"
-        else if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-        else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+        when {
+            seconds < 0 -> "--:--"
+            seconds >= 3600 -> String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+            else -> String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+        }
 
     inner class StatisticsListAdapter : RecyclerView.Adapter<StatisticsListAdapter.ViewHolder>() {
         override fun getItemCount(): Int = statisticsList.size
