@@ -98,9 +98,9 @@
     <string name="completed_title">Fertig</string>
     <string name="yes">Ja</string>
     <string name="no">Nein</string>
-    <string name="completed_message">Größe: %1$d×%1$d \nSchwierigkeit: %2$s \nZeit: %3$s \nFehler: %4$d \nHinweise: %5$d \nNotizen: %6$d \nRegionales Highlight benutzt: %7$s \nGewählte Nummer hervorgehoben: %8$s \nErstellt: %9$s \nGeändert: %10$s</string>
-    <string name="share_result">Ergebnis teilen</string>
-    <string name="text_share">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
+    <string name="sudoku_completed">Schau mal, ich habe ein Sudoku erfolgreich abgeschlossen:\n</string>
+    <string name="sudoku_solving">Schau mal, ich löse gerade dieses Sudoku: \nFortschritt: %1$d\%% \n</string>
+    <string name="sudokuStatisticsString">Typ: %1$s \nGröße: %2$d×%2$d \nSchwierigkeit: %3$s \nZeit: %4$s \nFehler: %5$d \nHinweise: %6$d \nNotizen: %7$d \nRegionales Highlight benutzt: %8$s \nGewählte Nummer hervorgehoben: %9$s \nErstellt: %10$s \nGeändert: %11$s</string>
     <string name="delete">Löschen</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis (%1$d)</string>
@@ -109,6 +109,7 @@
     <string name="share_sudoku">Sudoku teilen</string>
     <string name="initial_sudoku">Original Sudoku</string>
     <string name="current_sudoku">Aktuelles Sudoku</string>
+    <string name="normal_sudoku">Normales Sudoku</string>
 
     <!--Statistics-->
     <string name="size">Größe</string>

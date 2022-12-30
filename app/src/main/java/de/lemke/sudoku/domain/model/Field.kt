@@ -36,7 +36,7 @@ class Field(
         value = solution
     }
 
-    fun clone(
+    fun copy(
         position: Position = this.position,
         value: Int? = this.value,
         solution: Int? = this.solution,

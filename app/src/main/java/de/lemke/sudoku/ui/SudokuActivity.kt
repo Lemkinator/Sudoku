@@ -1,6 +1,7 @@
 package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
@@ -8,6 +9,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.RadioGroup
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
@@ -23,12 +26,12 @@ import de.lemke.sudoku.domain.model.*
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.utils.DialogUtils
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import javax.inject.Inject
@@ -39,9 +42,9 @@ import kotlin.math.abs
 class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
+    private lateinit var toolbarMenu: Menu
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
-    lateinit var toolbarMenu: Menu
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     private var notesEnabled = false
     private var selected: Int? = null
@@ -129,23 +132,49 @@ class SudokuActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.menu_pause_play -> if (sudoku.resumed) pauseGame() else resumeGame()
             R.id.menu_reset -> restartGame()
-            R.id.menu_share -> {
-                AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.share_sudoku)
-                    //.setMessage(R.string.share_sudoku_message)
-                    .setNegativeButton(R.string.initial_sudoku) { _, _ ->
-                        loadingDialog.show()
-                        lifecycleScope.launch { shareCurrentSudoku(sudoku.getInitialSudoku()) }
-                        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
-                    }
-                    .setPositiveButton(R.string.current_sudoku) { _, _ ->
-                        loadingDialog.show()
-                        lifecycleScope.launch { shareCurrentSudoku(sudoku) }
-                        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
-                    }
-                    .show()
-            }
+            R.id.menu_share -> shareDialog()
         }
         return true
+    }
+
+    private fun shareDialog() {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.share_sudoku)
+            .setView(R.layout.dialog_share)
+            .setPositiveButton(R.string.share, null)
+            .setNegativeButton(R.string.sesl_cancel, null)
+            .create()
+        dialog.show()
+        dialog.findViewById<TextView>(R.id.share_statistics)?.text = sudoku.getLocalStatisticsString(resources)
+        DialogUtils.setDialogProgressForButton(dialog, DialogInterface.BUTTON_POSITIVE) {
+            lifecycleScope.launch {
+                when (dialog.findViewById<RadioGroup>(R.id.share_radio_group)?.checkedRadioButtonId) {
+                    R.id.radio_button_text -> {
+                        val sendIntent = Intent(Intent.ACTION_SEND)
+                        sendIntent.type = "text/plain"
+                        sendIntent.putExtra(Intent.EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
+                        sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_sudoku))
+                        sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        startActivity(Intent.createChooser(sendIntent, getString(R.string.share_sudoku)))
+                    }
+                    R.id.radio_button_initial -> shareGame(sudoku.getInitialSudoku())
+                    R.id.radio_button_current -> shareGame(sudoku.copy(modeLevel = Sudoku.MODE_NORMAL))
+                }
+                dialog.dismiss()
+            }
+        }
+    }
+
+    private suspend fun shareGame(sudoku: Sudoku) {
+        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
+        val uri = shareSudoku(sudoku)
+        val shareIntent = Intent(Intent.ACTION_SEND)
+        shareIntent.type = "application/sudoku" //octet-stream"
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+        //for (ri in packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY))
+        //    grantUriPermission(ri.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
     }
 
     private fun setToolbarMenuItemsVisible(pausePlay: Boolean = false, reset: Boolean = false) {
@@ -284,24 +313,9 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onSudokuCompleted() {
         setSubtitle()
-        val completedMessage = getString(
-            R.string.completed_message,
-            sudoku.size,
-            sudoku.difficulty.getLocalString(resources),
-            sudoku.timeString,
-            sudoku.errorsMade,
-            sudoku.hintsUsed,
-            sudoku.notesMade,
-            getString(if (sudoku.regionalHighlightingUsed) R.string.yes else R.string.no),
-            getString(if (sudoku.numberHighlightingUsed) R.string.yes else R.string.no),
-            sudoku.created.format(
-                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
-            ),
-            sudoku.updated.format(
-                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())
-            ),
-        )
-        val dialog = AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.completed_title).setMessage(completedMessage)
+        val dialog = AlertDialog.Builder(this@SudokuActivity)
+            .setTitle(R.string.completed_title)
+            .setMessage(sudoku.getLocalStatisticsString(resources))
         dialog.setNeutralButton(R.string.ok, null)
         if (sudoku.isSudokuLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
             lifecycleScope.launch {
@@ -311,22 +325,12 @@ class SudokuActivity : AppCompatActivity() {
                 initSudoku(nextSudokuLevel)
             }
         }
-        else {
-            if (sudoku.isNormalSudoku) dialog.setPositiveButton(R.string.new_game) { _, _ ->
-                lifecycleScope.launch {
-                    loadingDialog.show()
-                    val newSudoku = generateSudoku(sudoku.size, sudoku.difficulty)
-                    saveSudoku(newSudoku)
-                    initSudoku(newSudoku)
-                }
-            }
-            dialog.setNegativeButton(R.string.share_result) { _, _ ->
-                val sendIntent = Intent(Intent.ACTION_SEND)
-                sendIntent.type = "text/plain"
-                sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.text_share) + completedMessage)
-                sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_result))
-                sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                startActivity(Intent.createChooser(sendIntent, "Share Via"))
+        else if (sudoku.isNormalSudoku) dialog.setPositiveButton(R.string.new_game) { _, _ ->
+            lifecycleScope.launch {
+                loadingDialog.show()
+                val newSudoku = generateSudoku(sudoku.size, sudoku.difficulty)
+                saveSudoku(newSudoku)
+                initSudoku(newSudoku)
             }
         }
         lifecycleScope.launch {
@@ -366,18 +370,6 @@ class SudokuActivity : AppCompatActivity() {
             initSudoku(sudoku)
             selectButton(null, false)
         }
-    }
-
-    private suspend fun shareCurrentSudoku(sudoku: Sudoku) {
-        val uri = shareSudoku(sudoku)
-        val shareIntent = Intent(Intent.ACTION_SEND)
-        shareIntent.type = "application/sudoku" //octet-stream"
-        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
-        //for (ri in packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY))
-        //    grantUriPermission(ri.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
-        loadingDialog.dismiss()
     }
 
     private fun setTitle() {

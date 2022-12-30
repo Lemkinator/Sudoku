@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/share_statistics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp" />
+
+        <com.google.android.material.textview.MaterialTextView
+            style="?android:listSeparatorTextViewStyle"
+            android:backgroundTint="@android:color/transparent"
+            android:text="@string/share" />
+
+        <RadioGroup
+            android:id="@+id/share_radio_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/radio_button_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/statistics" />
+
+            <RadioButton
+                android:id="@+id/radio_button_initial"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initial_sudoku" />
+
+            <RadioButton
+                android:id="@+id/radio_button_current"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/current_sudoku" />
+
+        </RadioGroup>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

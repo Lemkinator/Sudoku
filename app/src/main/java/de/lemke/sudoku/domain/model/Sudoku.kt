@@ -1,6 +1,11 @@
 package de.lemke.sudoku.domain.model
 
+import android.content.res.Resources
+import de.lemke.sudoku.R
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 import kotlin.math.sqrt
 
@@ -93,6 +98,48 @@ class Sudoku(
 
     override fun hashCode(): Int = id.hashCode()
 
+    fun copy(
+        sudokuId: SudokuId = this.id,
+        size: Int = this.size,
+        difficulty: Difficulty = this.difficulty,
+        modeLevel: Int = this.modeLevel,
+        regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
+        numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
+        eraserUsed: Boolean = this.eraserUsed,
+        isChecklist: Boolean = this.isChecklist,
+        isReverseChecklist: Boolean = this.isReverseChecklist,
+        checklistNumber: Int = this.checklistNumber,
+        hintsUsed: Int = this.hintsUsed,
+        notesMade: Int = this.notesMade,
+        errorsMade: Int = this.errorsMade,
+        created: LocalDateTime = this.created,
+        updated: LocalDateTime = this.updated,
+        seconds: Int = this.seconds,
+        timer: Timer? = this.timer,
+        gameListener: GameListener? = this.gameListener,
+        fields: MutableList<Field> = MutableList(itemCount) { this.fields[it].copy() },
+    ): Sudoku = Sudoku(
+        id = sudokuId,
+        size = size,
+        difficulty = difficulty,
+        modeLevel = modeLevel,
+        regionalHighlightingUsed = regionalHighlightingUsed,
+        numberHighlightingUsed = numberHighlightingUsed,
+        eraserUsed = eraserUsed,
+        isChecklist = isChecklist,
+        isReverseChecklist = isReverseChecklist,
+        checklistNumber = checklistNumber,
+        hintsUsed = hintsUsed,
+        notesMade = notesMade,
+        errorsMade = errorsMade,
+        created = created,
+        updated = updated,
+        seconds = seconds,
+        timer = timer,
+        gameListener = gameListener,
+        fields = fields,
+    )
+
     private val hintLimit: Int
         get() = when (size) {
             4 -> 1
@@ -139,26 +186,26 @@ class Sudoku(
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
     fun getInitialSudoku() = Sudoku(
-            id = SudokuId.generate(),
-            size = size,
-            difficulty = difficulty,
-            modeLevel = modeLevel,
-            regionalHighlightingUsed = false,
-            numberHighlightingUsed = false,
-            eraserUsed = false,
-            isChecklist = false,
-            isReverseChecklist = false,
-            checklistNumber = 0,
-            hintsUsed = 0,
-            notesMade = 0,
-            errorsMade = 0,
-            created = created,
-            updated = created,
-            seconds = 0,
-            timer = null,
-            gameListener = null,
-            fields = MutableList(itemCount) {fields[it].getInitialField() },
-        )
+        id = SudokuId.generate(),
+        size = size,
+        difficulty = difficulty,
+        modeLevel = MODE_NORMAL,
+        regionalHighlightingUsed = false,
+        numberHighlightingUsed = false,
+        eraserUsed = false,
+        isChecklist = false,
+        isReverseChecklist = false,
+        checklistNumber = 0,
+        hintsUsed = 0,
+        notesMade = 0,
+        errorsMade = 0,
+        created = created,
+        updated = created,
+        seconds = 0,
+        timer = null,
+        gameListener = null,
+        fields = MutableList(itemCount) { fields[it].getInitialField() },
+    )
 
     fun reset() {
         fields.forEach { it.reset() }
@@ -271,18 +318,18 @@ class Sudoku(
 
     operator fun get(position: Position): Field = fields[position.index]
     operator fun set(position: Position, field: Field) {
-        fields[position.index] = field.clone(position = position)
+        fields[position.index] = field.copy(position = position)
     }
 
     operator fun get(index: Int): Field = fields[index]
     operator fun set(index: Int, field: Field) {
-        fields[index] = field.clone(position = Position.create(index, size))
+        fields[index] = field.copy(position = Position.create(index, size))
     }
 
     operator fun get(row: Int, column: Int) = fields[Position.create(size = size, row = row, column = column).index]
     operator fun set(row: Int, column: Int, field: Field) {
         fields[Position.create(size = size, row = row, column = column).index] =
-            field.clone(position = Position.create(size = size, row = row, column = column))
+            field.copy(position = Position.create(size = size, row = row, column = column))
     }
 
     private fun getRow(row: Int): List<Field> = fields.filter { it.position.row == row }
@@ -318,6 +365,31 @@ class Sudoku(
         }
     }
 
+    fun getLocalStatisticsString(resources: Resources): String = resources.getString(
+        R.string.sudokuStatisticsString,
+        when (modeLevel) {
+            MODE_NORMAL -> resources.getString(R.string.normal_sudoku)
+            MODE_DAILY -> resources.getString(R.string.daily_sudoku)
+            else -> resources.getString(R.string.level) + " $modeLevel"
+        },
+        size,
+        difficulty.getLocalString(resources),
+        timeString,
+        errorsMade,
+        hintsUsed,
+        notesMade,
+        resources.getString(if (regionalHighlightingUsed) R.string.yes else R.string.no),
+        resources.getString(if (numberHighlightingUsed) R.string.yes else R.string.no),
+        created.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
+        updated.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
+    )
+
+    fun getLocalStatisticsStringShare(resources: Resources): String =
+        if (completed) {
+            resources.getString(R.string.sudoku_completed)
+        } else {
+            resources.getString(R.string.sudoku_solving, progress)
+        } + getLocalStatisticsString(resources)
 
 }
 
