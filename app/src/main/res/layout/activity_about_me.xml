@@ -49,7 +49,7 @@
                     android:layout_marginTop="8dp"
                     android:gravity="center"
                     android:text="@string/leo_job"
-                    android:textColor="@color/oui_secondary_text_color"
+                    android:textColor="@color/secondary_text_icon_color"
                     android:textSize="14sp" />
 
                 <LinearLayout
@@ -73,7 +73,7 @@
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
-                        android:tint="@color/oui_secondary_text_color"
+                        android:tint="@color/secondary_text_icon_color"
                         app:srcCompat="@drawable/about_page_play_store" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
@@ -82,7 +82,7 @@
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
-                        android:tint="@color/oui_secondary_text_color"
+                        android:tint="@color/secondary_text_icon_color"
                         app:srcCompat="@drawable/ic_oui_website" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
@@ -91,7 +91,7 @@
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
-                        android:tint="@color/oui_secondary_text_color"
+                        android:tint="@color/secondary_text_icon_color"
                         app:srcCompat="@drawable/about_page_insta" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
@@ -159,7 +159,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/leo_job"
                     android:textAppearance="?android:attr/textAppearanceListItemSecondary"
-                    android:textColor="@color/oui_secondary_text_color" />
+                    android:textColor="@color/secondary_text_icon_color" />
 
             </LinearLayout>
 

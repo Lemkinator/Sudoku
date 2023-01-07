@@ -5,6 +5,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -43,6 +44,7 @@ class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     private lateinit var toolbarMenu: Menu
+    private var colorPrimary: Int = 0
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -75,6 +77,10 @@ class SudokuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val typedValue = TypedValue()
+        theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
+        colorPrimary = typedValue.data
+
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
@@ -416,7 +422,7 @@ class SudokuActivity : AppCompatActivity() {
             completedNumbers.forEach { pair ->
                 if (pair.second) {
                     sudokuButtons[pair.first - 1].isEnabled = false
-                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.oui_secondary_text_color))
+                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.secondary_text_icon_color))
                     if (currentNumber == pair.first && selected in sudoku.itemCount until sudoku.itemCount + sudoku.size)
                         selectNextButton(pair.first, completedNumbers)
                 } else {
@@ -499,11 +505,11 @@ class SudokuActivity : AppCompatActivity() {
         binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         if (i != null) {
             when (i) {
-                sudoku.size -> binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary_color))
+                sudoku.size -> binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
                 sudoku.size + 1 -> binding.hintButton.backgroundTintList =
-                    ColorStateList.valueOf(getColor(R.color.primary_color))
+                    ColorStateList.valueOf(colorPrimary)
                 else -> {
-                    sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(getColor(R.color.primary_color))
+                    sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(colorPrimary)
                     if (highlightSelectedNumber) gameAdapter.highlightNumber(i + 1)
                 }
             }
@@ -517,7 +523,7 @@ class SudokuActivity : AppCompatActivity() {
     private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
         notesEnabled = enabled ?: !notesEnabled
         binding.noteButton.backgroundTintList = ColorStateList.valueOf(
-            if (notesEnabled) resources.getColor(R.color.primary_color, theme)
+            if (notesEnabled) colorPrimary
             else resources.getColor(android.R.color.transparent, theme)
         )
     }
@@ -590,8 +596,10 @@ class SudokuActivity : AppCompatActivity() {
                         if (highlightSelectedNumber) gameAdapter.highlightNumber(number)
                     }
                     //selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
                         selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
+                    }
                     //selected nothing
                     else -> selectButton(null, highlightSelectedNumber)
                 }

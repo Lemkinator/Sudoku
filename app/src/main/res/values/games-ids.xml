@@ -21,8 +21,12 @@
     <string name="achievement_checklist" translatable="false">CgkIqfzS8vQZEAIQCQ</string>
     <!--achievement Reverse Checklist-->
     <string name="achievement_reverse_checklist" translatable="false">CgkIqfzS8vQZEAIQPQ</string>
-    <!--achievement Stopwatch-->
-    <string name="achievement_stopwatch" translatable="false">CgkIqfzS8vQZEAIQDA</string>
+    <!--achievement Stopwatch (4x4)-->
+    <string name="achievement_stopwatch_4x4" translatable="false">CgkIqfzS8vQZEAIQDA</string>
+    <!--achievement Stopwatch (9x9)-->
+    <string name="achievement_stopwatch_9x9" translatable="false">CgkIqfzS8vQZEAIQPg</string>
+    <!--achievement Stopwatch (16x16)-->
+    <string name="achievement_stopwatch_16x16" translatable="false">CgkIqfzS8vQZEAIQPw</string>
     <!--achievement I am Speed-->
     <string name="achievement_i_am_speed" translatable="false">CgkIqfzS8vQZEAIQDQ</string>
     <!--achievement 10 Sudokus (4x4)-->
@@ -65,6 +69,12 @@
     <string name="leaderboard_total_wins" translatable="false">CgkIqfzS8vQZEAIQCg</string>
     <!--leaderboard Best time-->
     <string name="leaderboard_best_time" translatable="false">CgkIqfzS8vQZEAIQCw</string>
+    <!--leaderboard Wins (4×4)-->
+    <string name="leaderboard_wins_44" translatable="false">CgkIqfzS8vQZEAIQQA</string>
+    <!--leaderboard Wins (9×9)-->
+    <string name="leaderboard_wins_99" translatable="false">CgkIqfzS8vQZEAIQQQ</string>
+    <!--leaderboard Wins (16×16)-->
+    <string name="leaderboard_wins_1616" translatable="false">CgkIqfzS8vQZEAIQQg</string>
     <!--leaderboard Wins (4×4, Very Easy)-->
     <string name="leaderboard_wins_44_very_easy" translatable="false">CgkIqfzS8vQZEAIQJQ</string>
     <!--leaderboard Wins (4×4, Easy)-->

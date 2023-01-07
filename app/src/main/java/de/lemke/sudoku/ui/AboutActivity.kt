@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.IntentSender.SendIntentException
 import android.graphics.Color
 import android.graphics.Typeface
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableString
@@ -11,7 +13,6 @@ import android.text.Spanned
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
-import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -30,15 +31,13 @@ import de.lemke.sudoku.databinding.ActivityAboutBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import dev.oneuiproject.oneui.layout.AppInfoLayout
 import dev.oneuiproject.oneui.layout.AppInfoLayout.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class AboutActivity : AppCompatActivity(), OnClickListener {
+class AboutActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAboutBinding
-    private lateinit var appInfoLayout: AppInfoLayout
     private lateinit var appUpdateManager: AppUpdateManager
     private lateinit var appUpdateInfo: AppUpdateInfo
     private lateinit var appUpdateInfoTask: Task<AppUpdateInfo>
@@ -58,7 +57,55 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
         binding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(binding.root)
         appUpdateManager = AppUpdateManagerFactory.create(this)
-        appInfoLayout = binding.appInfoLayout
+        binding.appInfoLayout.status = LOADING
+        setExtraText()
+        setVersionText()
+        //status: LOADING NO_UPDATE UPDATE_AVAILABLE NOT_UPDATEABLE NO_CONNECTION
+        binding.appInfoLayout.setMainButtonClickListener(object : OnClickListener {
+            override fun onUpdateClicked(v: View?) {
+                startUpdateFlow()
+            }
+
+            override fun onRetryClicked(v: View?) {
+                binding.appInfoLayout.status = LOADING
+                checkUpdate()
+            }
+        })
+        binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
+        binding.aboutBtnOpenOneuiGithub.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
+        }
+        binding.aboutBtnAboutMe.setOnClickListener {
+            startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
+        }
+        checkUpdate()
+    }
+
+    private fun setVersionText() {
+        val version: TextView = binding.appInfoLayout.findViewById(dev.oneuiproject.oneui.design.R.id.app_info_version)
+        lifecycleScope.launch { setVersionTextView(version, getUserSettings().devModeEnabled) }
+        version.setOnClickListener {
+            clicks++
+            if (clicks > 5) {
+                clicks = 0
+                lifecycleScope.launch {
+                    val newDevModeEnabled = !getUserSettings().devModeEnabled
+                    updateUserSettings { it.copy(devModeEnabled = newDevModeEnabled) }
+                    setVersionTextView(version, newDevModeEnabled)
+                }
+            }
+        }
+    }
+
+    private fun setVersionTextView(textView: TextView, devModeEnabled: Boolean) {
+        lifecycleScope.launch {
+            textView.text = getString(
+                dev.oneuiproject.oneui.design.R.string.version_info, BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
+            )
+        }
+    }
+
+    private fun setExtraText() {
         val bib = getString(R.string.sudoku_lib)
         val license = getString(R.string.sudoku_lib_license)
         val text = getString(R.string.about_page_optional_text) + "\n" + getString(R.string.sudoku_lib_license_text)
@@ -91,44 +138,11 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
             text.indexOf(license), text.indexOf(license) + license.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
-        val optinalTextView = appInfoLayout.addOptionalText("")
+        val optinalTextView = binding.appInfoLayout.addOptionalText("")
         optinalTextView.text = textLink
         optinalTextView.movementMethod = LinkMovementMethod.getInstance()
         optinalTextView.highlightColor = Color.TRANSPARENT
-        appInfoLayout
-        appInfoLayout.isExpandable = true
-        appInfoLayout.status = LOADING
-        //status: LOADING NO_UPDATE UPDATE_AVAILABLE NOT_UPDATEABLE NO_CONNECTION
-        appInfoLayout.setMainButtonClickListener(this)
-        val version: TextView = appInfoLayout.findViewById(dev.oneuiproject.oneui.design.R.id.app_info_version)
-        lifecycleScope. launch { setVersionTextView(version, getUserSettings().devModeEnabled) }
-        version.setOnClickListener {
-            clicks++
-            if (clicks > 5) {
-                clicks = 0
-                lifecycleScope.launch {
-                    val newDevModeEnabled = !getUserSettings().devModeEnabled
-                    updateUserSettings { it.copy(devModeEnabled = newDevModeEnabled) }
-                    setVersionTextView(version, newDevModeEnabled)
-                }
-            }
-        }
-        binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
-        binding.aboutBtnOpenOneuiGithub.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
-        }
-        binding.aboutBtnAboutMe.setOnClickListener {
-            startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
-        }
-        checkUpdate()
-    }
-
-    private fun setVersionTextView(textView: TextView, devModeEnabled: Boolean) {
-        lifecycleScope.launch {
-            textView.text = getString(
-                dev.oneuiproject.oneui.design.R.string.version_info, BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
-            )
-        }
+        optinalTextView.setLinkTextColor(getColor(R.color.primary_color_themed))
     }
 
     // Checks that the update is not stalled during 'onResume()'.
@@ -145,45 +159,31 @@ class AboutActivity : AppCompatActivity(), OnClickListener {
             }
     }
 
-    override fun onUpdateClicked(v: View?) {
-        startUpdateFlow()
-    }
-
-    override fun onRetryClicked(v: View?) {
-        appInfoLayout.status = LOADING
-        checkUpdate()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == UPDATEREQUESTCODE) {
-            if (resultCode != RESULT_OK) {
-                Log.e("Update: ", "Update flow failed! Result code: $resultCode")
-                Toast.makeText(this@AboutActivity, "Fehler beim Update-Prozess: $resultCode", Toast.LENGTH_LONG).show()
-                appInfoLayout.status = NO_CONNECTION
-            }
-        }
-    }
-
     private fun checkUpdate() {
+        val connectivityManager = getSystemService(ConnectivityManager::class.java)
+        val caps = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+        if (caps == null || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
+            binding.appInfoLayout.status = NO_CONNECTION
+            return
+        }
+
         // Returns an intent object that you use to check for an update.
         appUpdateInfoTask = appUpdateManager.appUpdateInfo
         // Checks that the platform will allow the specified type of update.
-        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
-                //&& appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
+        appUpdateInfoTask
+            .addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
                 this.appUpdateInfo = appUpdateInfo
-                appInfoLayout.status = UPDATE_AVAILABLE
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+                    binding.appInfoLayout.status = UPDATE_AVAILABLE
+                }
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_NOT_AVAILABLE) {
+                    binding.appInfoLayout.status = NO_UPDATE
+                }
             }
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_NOT_AVAILABLE) {
-                this.appUpdateInfo = appUpdateInfo
-                appInfoLayout.status = NO_UPDATE
+            .addOnFailureListener { appUpdateInfo: Exception ->
+                Toast.makeText(this@AboutActivity, appUpdateInfo.message, Toast.LENGTH_LONG).show()
+                binding.appInfoLayout.status = NOT_UPDATEABLE
             }
-        }
-        appUpdateInfoTask.addOnFailureListener { appUpdateInfo: Exception ->
-            Toast.makeText(this@AboutActivity, appUpdateInfo.message, Toast.LENGTH_LONG).show()
-            appInfoLayout.status = NO_CONNECTION
-        }
     }
 
     private fun startUpdateFlow() {

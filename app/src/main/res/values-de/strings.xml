@@ -53,6 +53,7 @@
     <string name="system_default">Systemeinstellung</string>
     <string name="game">Spiel</string>
     <string name="animations">Animationen</string>
+    <string name="animations_summary">Felder animieren</string>
     <string name="regional_highlight">Regionales Highlight</string>
     <string name="regional_highlight_summary">Wenn ein Feld ausgewählt wird, werden die Reihe, Zeile und der Block hervorgehoben.</string>
     <string name="number_highlight">Ausgewählte Zahl hervorheben</string>
@@ -67,7 +68,6 @@
     <string name="privacy_information">Informationen zum Datenschutz</string>
     <string name="more_information">Mehr Informationen</string>
 
-    <string name="data">Daten</string>
     <string name="export_data">Daten exportieren</string>
     <string name="export_data_summary">JSON-Datei exportieren</string>
     <string name="export_data_ongoing">Daten werden exportiert</string>

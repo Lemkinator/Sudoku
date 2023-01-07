@@ -205,9 +205,6 @@ class SettingsActivity : AppCompatActivity() {
                 findPreference<Preference>("about_app_pref")?.widgetLayoutResource =
                     if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) R.layout.sesl_preference_badge else 0
             }
-            lifecycleScope.launch {
-                if (!getUserSettings().devModeEnabled) preferenceScreen.removePreference(findPreference("dev_options"))
-            }
             findPreference<PreferenceScreen>("delete_app_data_pref")?.setOnPreferenceClickListener {
                 AlertDialog.Builder(settingsActivity)
                     .setTitle(R.string.delete_appdata_and_exit)
@@ -253,6 +250,7 @@ class SettingsActivity : AppCompatActivity() {
         override fun onStart() {
             super.onStart()
             lifecycleScope.launch {
+                findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
                 val userSettings = getUserSettings()
                 regionalHighlightPref.isChecked = userSettings.highlightRegional
                 numberHighlightPref.isChecked = userSettings.highlightNumber
@@ -266,13 +264,6 @@ class SettingsActivity : AppCompatActivity() {
                 //tipCardSpacing?.isVisible = showTipCard
             }
             setRelatedCardView()
-        }
-
-        override fun onResume() {
-            super.onResume()
-            lifecycleScope.launch {
-                findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
-            }
         }
 
         private fun setDailyNotificationPrefTime(hourOfDay: Int, minute: Int) {

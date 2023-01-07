@@ -17,6 +17,7 @@
     <PreferenceCategory android:title="@string/game">
         <SwitchPreferenceCompat
             android:key="animations_pref"
+            android:summary="@string/animations_summary"
             android:title="@string/animations" />
         <SwitchPreferenceCompat
             android:key="highlight_regional_pref"
@@ -41,7 +42,10 @@
             android:title="@string/daily_sudoku_notification_channel_name" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/data">
+    <PreferenceCategory
+        android:key="dev_options"
+        android:title="@string/dev_options"
+        app:isPreferenceVisible="false">
         <PreferenceScreen
             android:key="export_data_pref"
             android:summary="@string/export_data_summary"
@@ -50,12 +54,6 @@
             android:key="import_data_pref"
             android:summary="@string/import_data_summary"
             android:title="@string/import_data" />
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:key="dev_options"
-        android:title="@string/dev_options"
-        app:isPreferenceVisible="false">
         <PreferenceScreen
             android:key="delete_app_data_pref"
             android:title="@string/delete_appdata_and_exit" />
