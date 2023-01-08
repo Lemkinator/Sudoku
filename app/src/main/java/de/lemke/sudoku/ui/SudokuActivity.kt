@@ -576,7 +576,7 @@ class SudokuActivity : AppCompatActivity() {
                     }
                     //selected hint
                     sudoku.itemCount + sudoku.size + 1 -> {
-                        if (!sudoku[position].given) sudoku.setHint(position)
+                        if (sudoku[position].value == null) sudoku.setHint(position)
                         selected = null
                         refreshHintButton()
                     }
@@ -627,7 +627,7 @@ class SudokuActivity : AppCompatActivity() {
                     selected -> selectButton(null, highlightSelectedNumber)
                     //selected field
                     in 0 until sudoku.itemCount -> {
-                        if (!sudoku[newSelected].given) sudoku.setHint(newSelected)
+                        if (sudoku[newSelected].value == null) sudoku.setHint(newSelected)
                         if (!sudoku.isHintAvailable) selected = null
                         refreshHintButton()
                     }
