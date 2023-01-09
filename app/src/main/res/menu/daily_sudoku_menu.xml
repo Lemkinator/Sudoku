@@ -3,20 +3,30 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <group android:id="@+id/group_daily_sudoku_info">
+        <item
+            android:id="@+id/menuitem_daily_sudoku_info"
+            android:icon="@drawable/ic_oui_help_outline"
+            android:title="@string/more_information"
+            app:showAsAction="ifRoom"
+            tools:ignore="AppCompatResource" />
+    </group>
+
     <group android:id="@+id/group_show_only_completed_sudokus"
         android:visible="false">
         <item
             android:id="@+id/menuitem_show_only_completed_sudokus"
-            android:icon="@drawable/ic_oui_eyes"
+            android:icon="@drawable/ic_oui_password_hide"
             android:title="@string/show_only_completed_sudokus"
             app:showAsAction="never"
             tools:ignore="AppCompatResource" />
     </group>
 
-    <group android:id="@+id/group_show_all_sudokus">
+    <group android:id="@+id/group_show_all_sudokus"
+        android:visible="false">
         <item
             android:id="@+id/menuitem_show_all_sudokus"
-            android:icon="@drawable/ic_oui_eyes"
+            android:icon="@drawable/ic_oui_password_show"
             android:title="@string/show_all_sudokus"
             app:showAsAction="never"
             tools:ignore="AppCompatResource" />

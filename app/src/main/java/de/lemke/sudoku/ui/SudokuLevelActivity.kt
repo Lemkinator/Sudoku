@@ -37,6 +37,7 @@ import javax.inject.Inject
 class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivitySudokuLevelBinding
     private lateinit var sudokuLevel: List<Sudoku>
+    private var nextLevelSudoku: Sudoku? = null
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var progressDialog: ProgressDialog
 
@@ -69,9 +70,9 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
         progressDialog.show()
         sudokuLevel = getAllSudokuLevel()
         if (sudokuLevel.isEmpty() || sudokuLevel.firstOrNull()?.completed == true) {
-            saveSudoku(generateSudokuLevel(level = sudokuLevel.size + 1))
-            sudokuLevel = getAllSudokuLevel()
-        }
+            nextLevelSudoku = generateSudokuLevel(level = sudokuLevel.size + 1)
+            sudokuLevel = (listOf(nextLevelSudoku!!) + sudokuLevel)
+        } else nextLevelSudoku = null
 
         binding.sudokuLevelsRecycler.layoutManager = LinearLayoutManager(this@SudokuLevelActivity)
         sudokuListAdapter = SudokuListAdapter()
@@ -126,7 +127,12 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
                             getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_LEVEL_ERROR_LIMIT)
                 }
                 holder.parentView.setOnClickListener {
-                    startActivity(Intent(this@SudokuLevelActivity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
+                    progressDialog.show()
+                    lifecycleScope.launch {
+                        if (position == 0 && nextLevelSudoku != null) saveSudoku(sudoku)
+                        startActivity(Intent(this@SudokuLevelActivity, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
+                    }
+                    progressDialog.dismiss()
                 }
             }
         }

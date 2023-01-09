@@ -10,6 +10,7 @@
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Tägliches Sudoku</string>
+    <string name="daily_sudoku_info_message">Tägliche Sudokus werden für jeden Benutzer mit zufälligen Schwierigkeiten nach folgenden Wahrscheinlichkeiten generiert: \n\nSehr Einfach: 30\% \nEinfach: 40\% \nMittel: 20\% \nSchwer: 10\% \nExperte: 0\% </string>
     <string name="show_only_completed_sudokus">Nur abgeschlossene Sudokus anzeigen</string>
     <string name="show_all_sudokus">Alle Sudokus anzeigen</string>
     <string name="level">Level</string>

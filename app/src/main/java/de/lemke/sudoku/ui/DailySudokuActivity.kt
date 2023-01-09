@@ -12,6 +12,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SectionIndexer
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
@@ -23,10 +24,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
-import de.lemke.sudoku.domain.GenerateDailySudokuUseCase
-import de.lemke.sudoku.domain.GetDailySudokusUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Sudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.widget.Separator
@@ -45,7 +43,6 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     private lateinit var dailySudokus: List<Pair<Sudoku?, LocalDate>>
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var progressDialog: ProgressDialog
-    private var filterCompleted = true
 
     @Inject
     lateinit var getAllDailySudokus: GetDailySudokusUseCase
@@ -58,6 +55,9 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
+
+    @Inject
+    lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,22 +78,38 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.daily_sudoku_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
+        lifecycleScope.launch {
+            val showUncompleted = getUserSettings().dailyShowUncompleted
+            binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, !showUncompleted)
+            binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, showUncompleted)
+        }
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.menuitem_daily_sudoku_info -> {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.daily_sudoku)
+                    .setMessage(R.string.daily_sudoku_info_message)
+                    .setPositiveButton(R.string.ok, null)
+                    .show()
+            }
             R.id.menuitem_show_all_sudokus -> {
-                filterCompleted = false
-                lifecycleScope.launch { initList() }
-                binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, false)
-                binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, true)
+                lifecycleScope.launch {
+                    updateUserSettings { it.copy(dailyShowUncompleted = true) }
+                    initList()
+                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, false)
+                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, true)
+                }
             }
             R.id.menuitem_show_only_completed_sudokus -> {
-                filterCompleted = true
-                lifecycleScope.launch { initList() }
-                binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, false)
-                binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, true)
+                lifecycleScope.launch {
+                    updateUserSettings { it.copy(dailyShowUncompleted = false) }
+                    initList()
+                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, true)
+                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, false)
+                }
             }
         }
         return super.onOptionsItemSelected(item)
@@ -102,10 +118,10 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     private fun initList() {
         progressDialog.show()
         lifecycleScope.launch {
-            dailySudokus = getAllDailySudokus(filterCompleted)
+            dailySudokus = getAllDailySudokus(getUserSettings().dailyShowUncompleted)
             if (dailySudokus.isEmpty() || dailySudokus.firstOrNull()?.second?.isBefore(LocalDate.now()) == true) {
                 saveSudoku(generateDailySudoku())
-                dailySudokus = getAllDailySudokus(filterCompleted)
+                dailySudokus = getAllDailySudokus(getUserSettings().dailyShowUncompleted)
             }
             binding.dailySudokuRecycler.layoutManager = LinearLayoutManager(this@DailySudokuActivity)
             sudokuListAdapter = SudokuListAdapter()

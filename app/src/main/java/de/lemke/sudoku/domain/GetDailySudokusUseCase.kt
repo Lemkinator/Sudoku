@@ -10,14 +10,14 @@ import javax.inject.Inject
 class GetDailySudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(filterCompleted: Boolean, date: LocalDate = LocalDate.now()): List<Pair<Sudoku?, LocalDate>> =
+    suspend operator fun invoke(showUncompleted: Boolean, date: LocalDate = LocalDate.now()): List<Pair<Sudoku?, LocalDate>> =
         withContext(Dispatchers.Default) {
             val sudokuList: MutableList<Pair<Sudoku?, LocalDate>> =
                 sudokusRepository.getAllDailySudokus().filter {
-                    if (filterCompleted) {
-                        it.completed
-                    } else {
+                    if (showUncompleted) {
                         true
+                    } else {
+                        it.completed
                     } || it.created.toLocalDate() == date
                 }
                     .map { it to it.created.toLocalDate() }.toMutableList()
