@@ -31,7 +31,7 @@
     <string name="continue_game">Continue (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Daily Sudoku</string>
-    <string name="daily_sudoku_info_message">info</string>
+    <string name="daily_sudoku_info_message">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\% </string>
     <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
     <string name="show_all_sudokus">Show all Sudokus</string>
     <string name="level">Level</string>
