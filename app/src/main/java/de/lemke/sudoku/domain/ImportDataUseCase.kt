@@ -53,7 +53,7 @@ class ImportDataUseCase @Inject constructor(
             output.errors?.forEach { Log.e("ImportDataUseCase", "${it.error} - ${it.instanceLocation}") }
             return if (output.errors.isNullOrEmpty()) {
                 json.parseJSON<List<SudokuExport>>()?.let {
-                    sudokusRepository.saveSudokus(it.map { sudokuExport -> sudokuFromExport(sudokuExport) },)
+                    sudokusRepository.saveSudokus(it.map { sudokuExport -> sudokuFromExport(sudokuExport) })
                 }
                 true
             } else {

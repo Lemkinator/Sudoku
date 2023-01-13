@@ -4,7 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.Fragment
@@ -42,6 +45,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private var selectedPosition = 0
     private var time: Long = 0
     private var isUIReady = false
+    private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -167,7 +172,16 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 if (isAuthenticated) {
                     PlayGames.getAchievementsClient(this)
                         .achievementsIntent
-                        .addOnSuccessListener { intent -> startActivityForResult(intent, 9003) }
+                        .addOnSuccessListener { intent ->
+                            playGamesActivityResultLauncher.launch(
+                                intent,
+                                ActivityOptionsCompat.makeCustomAnimation(
+                                    this,
+                                    android.R.anim.slide_in_left,
+                                    android.R.anim.slide_out_right
+                                )
+                            )
+                        }
                 } else gamesSignInClient.signIn()
             }
         }
@@ -177,7 +191,16 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 if (isAuthenticated) {
                     PlayGames.getLeaderboardsClient(this)
                         .allLeaderboardsIntent
-                        .addOnSuccessListener { intent -> startActivityForResult(intent, 9004) }
+                        .addOnSuccessListener { intent ->
+                            playGamesActivityResultLauncher.launch(
+                                intent,
+                                ActivityOptionsCompat.makeCustomAnimation(
+                                    this,
+                                    android.R.anim.slide_in_left,
+                                    android.R.anim.slide_out_right
+                                )
+                            )
+                        }
                 } else gamesSignInClient.signIn()
             }
         }
@@ -194,7 +217,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             binding.drawerLayoutMain.setDrawerOpen(false, true)
         }
         binding.drawerLayoutMain.setDrawerButtonIcon(getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
-        binding.drawerLayoutMain.setDrawerButtonOnClickListener { startActivity(Intent().setClass(this@MainActivity, AboutActivity::class.java)) }
+        binding.drawerLayoutMain.setDrawerButtonOnClickListener {
+            startActivity(Intent().setClass(this@MainActivity, AboutActivity::class.java))
+        }
         binding.drawerLayoutMain.setDrawerButtonTooltip(getText(R.string.about_app))
         AppUpdateManagerFactory.create(this).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)

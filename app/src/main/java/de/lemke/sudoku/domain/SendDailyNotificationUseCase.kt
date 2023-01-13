@@ -30,7 +30,7 @@ class SendDailyNotificationUseCase @Inject constructor(
         initNotificationBuilder()
         with(NotificationManagerCompat.from(context)) {
             // notificationId is a unique int for each notification that you must define
-            NotificationManagerCompat.from(context).notify(notificationId, notificationBuilder.build())
+            notify(notificationId, notificationBuilder.build())
         }
     }
 

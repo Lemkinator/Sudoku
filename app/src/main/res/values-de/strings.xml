@@ -21,7 +21,6 @@
     <string name="error">Fehler</string>
 
     <!--Menu-->
-    <string name="undo">Rückgangig machen</string>
     <string name="pause">Pause</string>
     <string name="resume">Weiter</string>
 
@@ -124,7 +123,6 @@
     <string name="best_time">Beste Zeit</string>
     <string name="average_time">Durchschnittliche Zeit</string>
     <string name="wins_without_hint">Siege ohne Hinweis</string>
-    <string name="wins_without_auto_hint">Siege ohne Auto-Hinweise</string>
     <string name="most_errors">Meiste Fehler</string>
     <string name="average_errors">Durchschnittliche Fehler</string>
     <string name="most_hints">Meiste Hinweise</string>
@@ -166,7 +164,6 @@
     <string name="daily_sudoku_notification_channel_description_time">Eine Benachrichtigung um %1$s Uhr erhalten, wenn ein neues tägliches Sudoku verfügbar ist. Hier tippen um die Uhrzeit zu ändern.</string>
 
     <!--Play Games-->
-    <string name="play_games">Play Spiele</string>
     <string name="play_games_leaderboards">Bestenlisten</string>
     <string name="play_games_achievements">Erfolge</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>

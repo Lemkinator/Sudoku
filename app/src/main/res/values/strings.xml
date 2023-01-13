@@ -42,7 +42,6 @@
     <string name="error">Error</string>
 
     <!--Menu-->
-    <string name="undo">Undo</string>
     <string name="pause">Pause</string>
     <string name="resume">Resume</string>
 
@@ -145,7 +144,6 @@
     <string name="best_time">Best time</string>
     <string name="average_time">Average Time</string>
     <string name="wins_without_hint">Wins without hint</string>
-    <string name="wins_without_auto_hint">Wins without auto hint</string>
     <string name="most_errors">Most errors</string>
     <string name="average_errors">Average Errors</string>
     <string name="most_hints">Most hints</string>
@@ -187,7 +185,6 @@
     <string name="daily_sudoku_notification_channel_description_time">Receive a notification at %1$s when a new daily Sudoku is available. Tap here to change the time.</string>
 
     <!--Play Games-->
-    <string name="play_games">Play Games</string>
     <string name="play_games_leaderboards">Leaderboards</string>
     <string name="play_games_achievements">Achievements</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
