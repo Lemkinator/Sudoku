@@ -25,8 +25,7 @@ android {
                 arg("room.schemaLocation", "$projectDir/schemas")
             }
         }
-
-        resConfigs "en", "de"
+        resConfigs 'en', 'de'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -111,7 +110,7 @@ dependencies {
     implementation 'androidx.asynclayoutinflater:asynclayoutinflater:1.0.0'
 
     implementation "androidx.datastore:datastore-preferences:1.0.0"
-    def room_version = "2.4.3"
+    def room_version = "2.5.0"
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
