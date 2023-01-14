@@ -158,6 +158,10 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             dialog.dismiss()
         }
     }
+    override fun onPause() {
+        super.onPause()
+        binding.drawerLayoutMain.setDrawerOpen(false, true)
+    }
 
     private fun initDrawer() {
         val achievementsOption = findViewById<LinearLayout>(R.id.draweritem_achievements)
