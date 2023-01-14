@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:insetLeft="-6dp"
-    android:insetTop="-6dp">
+    android:insetLeft="-4dp"
+    android:insetTop="-4dp">
     <shape>
         <stroke
-            android:width="8px"
+            android:width="2dp"
             android:color="@color/oui_list_divider_color" />
     </shape>
 </inset>

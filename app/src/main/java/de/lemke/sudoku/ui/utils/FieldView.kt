@@ -16,7 +16,7 @@ import java.util.stream.Collectors
 
 
 class FieldView(context: Context) : LinearLayout(context) {
-    private var fieldViewValue: TextView? = null
+    var fieldViewValue: TextView? = null
     private var fieldViewNotes: TextView? = null
     private var fieldViewContainer: View? = null
     private var sudoku: Sudoku? = null

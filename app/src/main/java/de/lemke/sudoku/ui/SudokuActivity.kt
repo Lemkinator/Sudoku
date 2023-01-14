@@ -24,7 +24,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.*
-import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.utils.DialogUtils
@@ -295,7 +294,10 @@ class SudokuActivity : AppCompatActivity() {
         override fun onFieldChanged(position: Position) {
             gameAdapter.updateFieldView(position.index)
             checkAnyNumberCompleted(sudoku[position].value)
-            lifecycleScope.launch { checkRowColumnBlockCompleted(position) }
+            lifecycleScope.launch {
+                checkRowColumnBlockCompleted(position)
+                saveSudoku(sudoku)
+            }
         }
 
         override fun onCompleted(position: Position) {
@@ -312,7 +314,6 @@ class SudokuActivity : AppCompatActivity() {
         override fun onTimeChanged() {
             lifecycleScope.launch {
                 setSubtitle()
-                saveSudoku(sudoku)
             }
         }
     }
@@ -340,7 +341,6 @@ class SudokuActivity : AppCompatActivity() {
             }
         }
         lifecycleScope.launch {
-            saveSudoku(sudoku)
             dialog.show()
             updatePlayGames(this@SudokuActivity, sudoku)
         }
@@ -464,13 +464,14 @@ class SudokuActivity : AppCompatActivity() {
         animateBlock: Boolean = false,
         animateSudoku: Boolean = false
     ): Job {
+        val delay = 60L/sudoku.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews.filter {
                 (animateRow && it?.position?.row == position.row && it.position.column <= position.column) ||
                         (animateColumn && it?.position?.column == position.column && it.position.row <= position.row) ||
                         (animateBlock && it?.position?.block == position.block && it.position.index <= position.index) ||
                         (animateSudoku && it?.position?.index!! <= position.index)
-            }.reversed().forEach { if (animateSudoku) animateField(it, 200L, 15L) else animateField(it) }
+            }.reversed().forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
         }
         return lifecycleScope.launch {
             gameAdapter.fieldViews.filter {
@@ -478,25 +479,25 @@ class SudokuActivity : AppCompatActivity() {
                         (animateColumn && it?.position?.column == position.column && it.position.row > position.row) ||
                         (animateBlock && it?.position?.block == position.block && it.position.index > position.index) ||
                         (animateSudoku && it?.position?.index!! > position.index)
-            }.forEach { if (animateSudoku) animateField(it, 200L, 15L) else animateField(it) }
+            }.forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
         }
     }
 
-    private suspend fun animateField(fieldView: FieldView?, duration: Long = 200L, delay: Long = 40L) {
-        fieldView?.animate()
+    private suspend fun animateField(fieldTextView: TextView?, duration: Long = 250L, delay: Long = 120L) {
+        fieldTextView?.animate()
             ?.alpha(0.4f)
-            ?.scaleX(1.2f)
-            ?.scaleY(1.2f)
-            ?.rotation(90f)
+            ?.scaleX(1.6f)
+            ?.scaleY(1.6f)
+            ?.rotation(100f)
             ?.setDuration(duration)?.withEndAction {
-                fieldView.animate()
+                fieldTextView.animate()
                     ?.alpha(1f)
                     ?.scaleX(1f)
                     ?.scaleY(1f)
                     ?.rotation(0f)
-                    ?.setDuration(200L)?.start()
+                    ?.setDuration(duration)?.start()
             }?.start()
-        delay(delay)
+        delay(delay / sudoku.blockSize)
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
