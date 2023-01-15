@@ -163,7 +163,7 @@ class OOBEActivity : AppCompatActivity() {
                 // to change their decision.
                 updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
             }
-            openMainActivity()
+            openIntroActivity()
         }
     }
 
@@ -174,7 +174,7 @@ class OOBEActivity : AppCompatActivity() {
             .setNegativeButton(R.string.decline_notifications) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch {
                     updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
-                    openMainActivity()
+                    openIntroActivity()
                 }
             }
             .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
@@ -186,7 +186,7 @@ class OOBEActivity : AppCompatActivity() {
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
                         updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
-                        openMainActivity()
+                        openIntroActivity()
                     } else requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
@@ -201,9 +201,10 @@ class OOBEActivity : AppCompatActivity() {
     }
 
 
-    private suspend fun openMainActivity() {
+    private suspend fun openIntroActivity() {
         sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
-        startActivity(Intent(applicationContext, MainActivity::class.java))
+        startActivity(Intent(applicationContext, IntroActivity::class.java))
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
     }
 }

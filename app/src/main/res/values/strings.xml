@@ -188,6 +188,8 @@
     <string name="play_games_leaderboards">Leaderboards</string>
     <string name="play_games_achievements">Achievements</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
+    <string name="skip">Skip</string>
+    <string name="intro">Intro</string>
 
     <!--Others-->
 

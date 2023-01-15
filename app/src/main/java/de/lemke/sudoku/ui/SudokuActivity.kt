@@ -76,20 +76,22 @@ class SudokuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        val typedValue = TypedValue()
-        theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
-        colorPrimary = typedValue.data
-
-        loadingDialog = ProgressDialog(this)
-        loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
-        loadingDialog.setCancelable(false)
-        loadingDialog.show()
 
         val id = intent.getStringExtra("sudokuId")
         if (id == null) {
             finish()
             return
         }
+
+        loadingDialog = ProgressDialog(this)
+        loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+        loadingDialog.setCancelable(false)
+        loadingDialog.show()
+
+        val typedValue = TypedValue()
+        theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
+        colorPrimary = typedValue.data
+
         binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
@@ -302,7 +304,7 @@ class SudokuActivity : AppCompatActivity() {
 
         override fun onCompleted(position: Position) {
             lifecycleScope.launch {
-                if (getUserSettings().animationsEnabled) animate(position, animateSudoku = true).invokeOnCompletion { onSudokuCompleted() }
+                if (getUserSettings().animationsEnabled) animate(position, animateSudoku = true)?.invokeOnCompletion { onSudokuCompleted() }
                 else onSudokuCompleted()
             }
         }
@@ -463,7 +465,8 @@ class SudokuActivity : AppCompatActivity() {
         animateColumn: Boolean = false,
         animateBlock: Boolean = false,
         animateSudoku: Boolean = false
-    ): Job {
+    ): Job? {
+        if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
         val delay = 60L/sudoku.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews.filter {
