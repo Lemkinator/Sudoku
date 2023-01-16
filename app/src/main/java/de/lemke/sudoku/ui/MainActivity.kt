@@ -128,11 +128,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun openMain() {
-        //temporary to test the intro
-        startActivity(Intent(applicationContext, IntroActivity::class.java))
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        finish()
-
         initDrawer()
         initTabs()
         initFragments()

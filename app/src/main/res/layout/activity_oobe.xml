@@ -96,7 +96,7 @@
                     style="@style/OOBE.Button"
                     android:layout_width="296.0dp"
                     android:layout_height="44.0dp"
-                    android:text="@string/accept_tos"
+                    android:text="@string/next"
                     android:layout_gravity="center" />
 
                 <androidx.appcompat.widget.SeslProgressBar

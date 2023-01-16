@@ -19,6 +19,7 @@
     <string name="no_game_played">Noch kein Spiel gespielt</string>
     <string name="task_failed">Hoppla, da ist etwas schiefgelaufen…</string>
     <string name="error">Fehler</string>
+    <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
 
     <!--Menu-->
     <string name="pause">Pause</string>
@@ -152,7 +153,7 @@
     <string name="tos">Nutzungsbedingungen</string>
     <string name="tos_content">Es ist nicht gestattet, diese App entgegen den guten Sitten oder den geltenden Gesetzen zu verwenden. \n\nSie verpflichten sich außerdem, diese App nicht für Zwecke zu verwenden, die nach dem Recht der Vereinigten Staaten verboten sind, insbesondere nicht für die Entwicklung, Konstruktion, Herstellung oder Produktion von Raketen, chemischen oder biologischen Waffen. \nDiese Einschränkung gilt jedoch nicht für den Fall, dass eine weit verbreitete Virusinfektion auftritt (die von den United States Centers for Disease Control oder einer Nachfolgeorganisation bestätigt wurde), die durch Bisse oder Kontakt mit Körperflüssigkeiten übertragen wird und dazu führt, dass menschliche Leichen wiederbelebt werden und versuchen, lebendes menschliches Fleisch, Blut, Gehirn oder Nervengewebe zu verzehren, und die wahrscheinlich zum Untergang der organisierten Zivilisation führen wird. \n\nEine besondere Gegenleistung, die eine finanzielle Entschädigung beinhalten kann, wird einer begrenzten Anzahl von Nutzern angeboten, die diesen Abschnitt der Nutzungsbedingungen lesen und mich unter eine-email-an-diese-adresse-zu-schreiben-wird-sie-10-euro-kosten@leonard-lemke.com kontaktieren. Dieses Angebot kann jederzeit und ohne Vorankündigung zurückgezogen werden. \n\nWeitere Fragen werden unter diese-email-ist-viel-zu-lang-und-hoffentlich-koennen-sie-nicht-kopieren-und-einfuegen@leonard-lemke.com beantwortet.</string>
     <string name="oobe_tos_text">Durch die Nutzung der App stimmen Sie den %1$s zu.</string>
-    <string name="accept_tos">Weiter</string>
+    <string name="next">Weiter</string>
 
     <!--Notifications-->
     <string name="notifications">Benachrichtigungen</string>
@@ -166,9 +167,25 @@
     <!--Play Games-->
     <string name="play_games_leaderboards">Bestenlisten</string>
     <string name="play_games_achievements">Erfolge</string>
-    <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
+
+    <!--Intro-->
     <string name="skip">Überspringen</string>
-    <string name="intro">Intro</string>
+    <string name="intro">Wie man spielt</string>
+    <string name="intro_title">Spielregeln</string>
+    <string name="intro_text0">Ein Sudoku-Raster besteht aus 4×4-, 9×9- oder 16×16-Feldern. Je nach größe können nur die Zahlen von 1 bis 4, 9 oder 16 eingesetzt werden. Dabei dürfen in jedem Block, jeder Zeile und jeder Spalte keine Zahlen fehlen oder doppelt vorkommen.</string>
+    <string name="intro_text1">Das Spiel ist beendet, wenn alle Zahlen korrekt in das Sudoku-Raster eingetragen wurden. \nDie Anzahl der vorgegebenen Zahlen hängt vom Schwierigkeitsgrad des Sudokus ab. \nBei schwereren Sudokus sind weniger Zahlen vorgegeben und es müssen oftmals komplexere Lösungsstrategien angewendet werden. </string>
+    <string name="intro_text2">In der ersten Zeile fehlt als letzte Zahl die 5. Tippe zuerst auf das freie Feld um es auszuwählen.</string>
+    <string name="intro_text3">Tippe nun auf die 5 um die Zahl einzutragen.</string>
+    <string name="intro_text4">Super! Um das Eintragen von Zahlen zu beschleunigen kann auch zuerst eine Zahl ausgewählt werden und anschließend in mehrere Felder eingetragen werden. Um fortzufahren tippe auf die 2.</string>
+    <string name="intro_text5">Im mittleren Block fehlt unter anderem die 2. Dadurch, dass die 2 in Reihe 4 und 5 bereits vorhanden ist, bleibt nurnoch das freie Feld in der unteren Reihe des mittleren Blocks. Um die 2 einzutragen tippe auf dieses Feld.</string>
+    <string name="intro_text6">Wie vorhin beschrieben, können bei einer ausgewählten Zahl mehrere Felder beschrieben werden. Im oberen, rechten Block fehlt als letzte Zahl die 2. Tippe auf das freie Feld um auch hier die 2 einzutragen.</string>
+    <string name="intro_title7">Sehr gut!</string>
+    <string name="intro_text7">Die 2 möglichen Vorgehensweisen nochmal zusammengefasst:\n1. Zuerst Feld, dann Zahl auswählen\n2. Zuerst Zahl, dann (mehrere) Feld(er) auswählen.</string>
+    <string name="intro_title8">Vorsicht!</string>
+    <string name="intro_text8">Aber sei Vorsichtig ob und welche Zahl bzw. welches Feld aktuell ausgewählt ist um Fehler durch falsches Tippen zu vermeiden!</string>
+    <string name="intro_title9">Löschen und Hinweise</string>
+    <string name="intro_text9">Gleiches Prinzip gilt auch für das Löschen von Zahlen oder benutzen von Hinweisen.\nEine eingetragene Zahl kann außerdem auch durch langes tippen auf das entsprechende Feld wieder gelöscht werden.</string>
+    <string name="intro_text10">Zuletzt gibt es noch den Notiz-Knopf. Dieser kann jederzeit an- oder ausgeschaltet werden um zwischen Notiz oder Zahl zu wechseln.\n\nUnd los gehts, hier sind einige Sudokus die darauf warten gelöst zu werden!</string>
 
     <!--Others-->
 

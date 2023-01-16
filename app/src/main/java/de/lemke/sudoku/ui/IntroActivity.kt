@@ -9,7 +9,6 @@ import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 import android.window.OnBackInvokedDispatcher
@@ -18,7 +17,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
@@ -26,11 +24,9 @@ import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.*
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 
 @AndroidEntryPoint
@@ -41,9 +37,9 @@ class IntroActivity : AppCompatActivity() {
     private var colorPrimary: Int = 0
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
-    private var notesEnabled = false
     private var selected: Int? = null
     private var time: Long = 0
+    private var introStep = -1
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,55 +62,84 @@ class IntroActivity : AppCompatActivity() {
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
         initSudoku()
-        binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
+        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { backPressed() }
+        binding.introContinueButton.setOnClickListener { openMainActivity() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.sudokuToolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
-            val totalScrollRange = layout.totalScrollRange
-            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
-                InputMethodManager::class.java, getSystemService(INPUT_METHOD_SERVICE), "getInputMethodWindowVisibleHeight"
-            ) as Int
-            if (totalScrollRange != 0) {
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
-            } else {
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
+        binding.introNextButton.setOnClickListener { nextIntroStep() }
+        nextIntroStep()
+    }
+
+    private fun nextIntroStep() {
+        introStep += 1
+        when (introStep) {
+            0 -> {
+                binding.introTitleText.text = getString(R.string.intro_title)
+                binding.introTextText.text = getString(R.string.intro_text0)
+                animateIntro()
             }
-            /*val width = binding.sudokuLayout.measuredWidth
-            val height = binding.sudokuLayout.measuredHeight
-            val gameSize: Int
-            if (totalScrollRange != 0) {
-                gameSize = min(width, height - totalScrollRange - verticalOffset)
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
-            } else {
-                gameSize = min(width, height - inputMethodWindowVisibleHeight - verticalOffset)
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
+            1 -> {
+                binding.introTextText.text = getString(R.string.intro_text1)
             }
-            val params: ViewGroup.LayoutParams = binding.roundedGameRecycler.layoutParams
-            params.width = gameSize
-            params.height = gameSize
-            binding.roundedGameRecycler.translationX = max(0, width - gameSize) / 2f
-            binding.roundedGameRecycler.layoutParams = params*/
+            2 -> {
+                binding.introTitle.visibility = View.GONE
+                binding.introTextText.text = getString(R.string.intro_text2)
+            }
+            3 -> {
+                binding.introTextText.text = getString(R.string.intro_text3)
+                binding.otherButtons.visibility = View.GONE
+                binding.gameButtons.visibility = View.VISIBLE
+            }
+            4 -> {
+                binding.introTextText.text = getString(R.string.intro_text4)
+            }
+            5 -> {
+                binding.introTextText.text = getString(R.string.intro_text5)
+            }
+            6 -> {
+                binding.introTextText.text = getString(R.string.intro_text6)
+            }
+            7 -> {
+                binding.introTitleText.text = getString(R.string.intro_title7)
+                binding.introTitle.visibility = View.VISIBLE
+                binding.introTextText.text = getString(R.string.intro_text7)
+            }
+            8 -> {
+                binding.introTitleText.text = getString(R.string.intro_title8)
+                binding.introTextText.text = getString(R.string.intro_text8)
+                animateIntro()
+            }
+            9 -> {
+                binding.introTitleText.text = getString(R.string.intro_title9)
+                binding.introTextText.text = getString(R.string.intro_text9)
+                binding.otherButtons.visibility = View.VISIBLE
+                binding.numberButtons.visibility = View.GONE
+            }
+            10 -> {
+                binding.introTitle.visibility = View.GONE
+                binding.introTextText.text = getString(R.string.intro_text10)
+                binding.introContinueLayout.visibility = View.VISIBLE
+            }
         }
     }
 
     private fun initOnBackPressed() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
-                if (System.currentTimeMillis() - time < 3000) finishAffinity()
-                else {
-                    Toast.makeText(this, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
-                    time = System.currentTimeMillis()
-                }
+                backPressed()
             }
         else onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (System.currentTimeMillis() - time < 3000) finishAffinity()
-                else {
-                    Toast.makeText(this@IntroActivity, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
-                    time = System.currentTimeMillis()
-                }
+                backPressed()
             }
         })
+    }
+
+    private fun backPressed() {
+        if (System.currentTimeMillis() - time < 3000) finishAffinity()
+        else {
+            Toast.makeText(this, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
+            time = System.currentTimeMillis()
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -126,7 +151,7 @@ class IntroActivity : AppCompatActivity() {
 
 
     private fun initSudoku() {
-        binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (" + getString(R.string.intro) + ")")
+        binding.sudokuToolbarLayout.setTitle(getString(R.string.intro))
         refreshHintButton()
         binding.gameRecycler.layoutManager = GridLayoutManager(this, sudoku.size)
         gameAdapter = SudokuViewAdapter(this, sudoku)
@@ -269,6 +294,53 @@ class IntroActivity : AppCompatActivity() {
         delay(delay / sudoku.blockSize)
     }
 
+    private fun animateIntro() {
+        lifecycleScope.launch {
+            while (introStep == 0) {
+                delay(900)
+                gameAdapter.fieldViews.filter { (it?.position?.block == 0) }.forEach { animateIntroField(it?.fieldViewValue) }
+                delay(900)
+                gameAdapter.fieldViews.filter { (it?.position?.row == 1) }.forEach { animateIntroField(it?.fieldViewValue) }
+                delay(900)
+                gameAdapter.fieldViews.filter { (it?.position?.column == 5) }.forEach { animateIntroField(it?.fieldViewValue) }
+            }
+            val delayMillis = 1200L
+            while (introStep == 8) {
+                delay(delayMillis)
+                selectButton(null)
+                gameAdapter.selectFieldView(4, highlightNeighbors = true, highlightNumber = true)
+                delay(delayMillis)
+                gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+                selectButton(7)
+                delay(delayMillis)
+                selectButton(4)
+                delay(delayMillis)
+                selectButton(null)
+                gameAdapter.selectFieldView(21, highlightNeighbors = true, highlightNumber = true)
+                delay(delayMillis)
+                gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+                selectButton(1)
+            }
+            if (introStep > 8) {
+                selectButton(null)
+                gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+            }
+        }
+    }
+
+    private suspend fun animateIntroField(fieldTextView: TextView?, duration: Long = 450, delay: Long = 180L) {
+        fieldTextView?.animate()
+            ?.scaleX(2f)
+            ?.scaleY(2f)
+            ?.setDuration(duration)?.withEndAction {
+                fieldTextView.animate()
+                    ?.scaleX(1f)
+                    ?.scaleY(1f)
+                    ?.setDuration(duration)?.start()
+            }?.start()
+        delay(delay)
+    }
+
     private fun selectButton(i: Int?) {
         for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
@@ -290,14 +362,6 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 
-    private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
-        notesEnabled = enabled ?: !notesEnabled
-        binding.noteButton.backgroundTintList = ColorStateList.valueOf(
-            if (notesEnabled) colorPrimary
-            else resources.getColor(android.R.color.transparent, theme)
-        )
-    }
-
     private fun refreshHintButton() {
         binding.hintButton.visibility = if (sudoku.isHintAvailable) View.VISIBLE else View.GONE
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
@@ -312,12 +376,19 @@ class IntroActivity : AppCompatActivity() {
                     null -> {}
                     //selected field
                     in 0 until sudoku.itemCount -> {
-                        gameAdapter.selectFieldView(newSelected, true, true)
-                        selected = newSelected
+                        if (newSelected == 4 && introStep == 2) {
+                            gameAdapter.selectFieldView(newSelected, highlightNeighbors = true, highlightNumber = true)
+                            selected = newSelected
+                            nextIntroStep()
+                        }
                     }
                     //selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
-                        selectButton(newSelected - sudoku.itemCount)
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                        if (introStep == 4 && newSelected == sudoku.itemCount + 1) {
+                            selectButton(newSelected - sudoku.itemCount)
+                            nextIntroStep()
+                        }
+                    }
                     //selected nothing
                     else -> {}
                 }
@@ -327,82 +398,30 @@ class IntroActivity : AppCompatActivity() {
                 when (newSelected) {
                     //selected nothing
                     null -> selected = null
-                    //selected same field
-                    selected -> selected = null
-                    //selected field
-                    in 0 until sudoku.itemCount -> selected = newSelected
                     //selected number
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                        if (sudoku[position].value == null) sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                        selected = null
-                    }
-                    //selected delete
-                    sudoku.itemCount + sudoku.size -> {
-                        sudoku.move(position, null, notesEnabled)
-                        selected = null
-                    }
-                    //selected hint
-                    sudoku.itemCount + sudoku.size + 1 -> {
-                        if (sudoku[position].value == null) sudoku.setHint(position)
-                        selected = null
-                        refreshHintButton()
+                        if (introStep == 3 && newSelected == sudoku.itemCount + 4) {
+                            sudoku.move(position, newSelected - sudoku.itemCount + 1, false)
+                            selected = null
+                            gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+                            nextIntroStep()
+                        }
                     }
                 }
-                gameAdapter.selectFieldView(selected, true, true)
             }
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
                 when (newSelected) {
                     //selected nothing
                     null -> selectButton(null)
-                    //selected same button
-                    selected -> selectButton(null)
                     //selected field
                     in 0 until sudoku.itemCount -> {
                         val number = selected!! - sudoku.itemCount + 1
-                        sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
-                        gameAdapter.highlightNumber(number)
+                        if (introStep == 5 && newSelected == 49 || introStep == 6 && newSelected == 24) {
+                            sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, false)
+                            gameAdapter.highlightNumber(number)
+                            nextIntroStep()
+                        }
                     }
-                    //selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                        gameAdapter.selectFieldView(null, true, true)
-                        selectButton(newSelected - sudoku.itemCount)
-                    }
-                    //selected nothing
-                    else -> selectButton(null)
-                }
-            }
-            sudoku.itemCount + sudoku.size -> { // delete button is selected
-                when (newSelected) {
-                    //selected nothing
-                    null -> selectButton(null)
-                    //selected same button
-                    selected -> selectButton(null)
-                    //selected field
-                    in 0 until sudoku.itemCount -> sudoku.move(newSelected, null, notesEnabled)
-                    //selected button(not delete)
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
-                        selectButton(newSelected - sudoku.itemCount)
-                    //selected nothing
-                    else -> selectButton(null)
-                }
-            }
-            sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
-                when (newSelected) {
-                    //selected nothing
-                    null -> selectButton(null)
-                    //selected same button
-                    selected -> selectButton(null)
-                    //selected field
-                    in 0 until sudoku.itemCount -> {
-                        if (sudoku[newSelected].value == null) sudoku.setHint(newSelected)
-                        if (!sudoku.isHintAvailable) selected = null
-                        refreshHintButton()
-                    }
-                    //selected button(not hint)
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 ->
-                        selectButton(newSelected - sudoku.itemCount)
-                    //selected nothing
-                    else -> selectButton(null)
                 }
             }
         }
@@ -423,8 +442,8 @@ class IntroActivity : AppCompatActivity() {
                 0 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
                 1 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
                 2 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                3 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
-                4 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                3 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
+                4 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
                 5 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
                 6 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
                 7 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
@@ -468,7 +487,7 @@ class IntroActivity : AppCompatActivity() {
                 41 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
                 42 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
                 43 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                44 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
+                44 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
 
                 45 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
                 46 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)

@@ -160,6 +160,11 @@ class SettingsActivity : AppCompatActivity() {
                 darkModePref.value = if (userSettings.darkMode) "1" else "0"
             }
 
+            findPreference<PreferenceScreen>("intro_pref")?.setOnPreferenceClickListener {
+                settingsActivity.finishAffinity()
+                startActivity(Intent(settingsActivity, IntroActivity::class.java))
+                true
+            }
             findPreference<PreferenceScreen>("export_data_pref")?.setOnPreferenceClickListener {
                 AlertDialog.Builder(settingsActivity)
                     .setTitle(R.string.export_data)
