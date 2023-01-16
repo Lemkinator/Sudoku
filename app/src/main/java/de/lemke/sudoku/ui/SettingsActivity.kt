@@ -161,8 +161,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             findPreference<PreferenceScreen>("intro_pref")?.setOnPreferenceClickListener {
-                settingsActivity.finishAffinity()
-                startActivity(Intent(settingsActivity, IntroActivity::class.java))
+                startActivity(Intent(settingsActivity, IntroActivity::class.java).putExtra("openedFromSettings", true))
                 true
             }
             findPreference<PreferenceScreen>("export_data_pref")?.setOnPreferenceClickListener {

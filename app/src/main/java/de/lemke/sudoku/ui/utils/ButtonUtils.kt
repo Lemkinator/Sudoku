@@ -11,9 +11,8 @@ class ButtonUtils {
             when (style) {
                 R.style.ButtonStyle_Colored -> {
                     button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.primary_color_themed)
-                    button.compoundDrawableTintList =
-                        ContextCompat.getColorStateList(context, dev.oneuiproject.oneui.design.R.color.oui_round_and_bgcolor)
-                    button.setTextColor(ContextCompat.getColor(context, dev.oneuiproject.oneui.design.R.color.oui_round_and_bgcolor))
+                    button.compoundDrawableTintList = ContextCompat.getColorStateList(context, R.color.primary_text_icon_color)
+                    button.setTextColor(ContextCompat.getColor(context, R.color.primary_text_icon_color))
                 }
                 R.style.ButtonStyle_Filled -> {
                     button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.filled_background_color)

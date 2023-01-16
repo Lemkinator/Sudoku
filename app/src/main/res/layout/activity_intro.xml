@@ -17,29 +17,21 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         app:layout_location="main_content">
 
-        <LinearLayout
-            android:id="@+id/game_layout"
+        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            android:id="@+id/rounded_game_recycler"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:animateLayoutChanges="true"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:animateLayoutChanges="true">
 
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                android:id="@+id/rounded_game_recycler"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/game_recycler"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:background="@color/oui_background_color"
+                android:foreground="@drawable/sudoku_view_fg"
+                android:scrollbars="none" />
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/game_recycler"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@color/oui_background_color"
-                    android:foreground="@drawable/sudoku_view_fg"
-                    android:scrollbars="none" />
-
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        </LinearLayout>
+        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
@@ -224,7 +216,7 @@
             android:visibility="gone">
 
             <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/intro_continue_button"
+                android:id="@+id/intro_continue_button"
                 style="@style/OOBE.Button"
                 android:layout_width="296.0dp"
                 android:layout_height="44.0dp"

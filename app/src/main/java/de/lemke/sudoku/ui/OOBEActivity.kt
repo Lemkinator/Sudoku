@@ -143,7 +143,8 @@ class OOBEActivity : AppCompatActivity() {
             binding.oobeIntroFooterButton.visibility = View.GONE
             binding.oobeIntroFooterButtonProgress.visibility = View.VISIBLE
             lifecycleScope.launch {
-                updateUserSettings { it.copy(tosAccepted = true) }
+                //updateUserSettings { it.copy(tosAccepted = true) }
+                //set in IntroActivity: in case user exits before completing intro, oobe and intro will be shown again
                 notificationsDialog()
             }
         }
