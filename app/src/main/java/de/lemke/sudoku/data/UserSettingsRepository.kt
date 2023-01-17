@@ -58,7 +58,7 @@ class UserSettingsRepository @Inject constructor(
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
         statisticsFilterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
-            ?: (GetAllSudokusUseCase.TYPE_NORMAL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
+            ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
         dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] ?: false,
         dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] ?: true,
         dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,

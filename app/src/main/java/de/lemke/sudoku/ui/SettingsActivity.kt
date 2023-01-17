@@ -129,6 +129,7 @@ class SettingsActivity : AppCompatActivity() {
             dailySudokuNotificationPref.onPreferenceClickListener = OnPreferenceClickListener {
                 lifecycleScope.launch {
                     dailySudokuNotificationPref.isChecked = true
+                    dailySudokuNotificationPref.onPreferenceChangeListener.onPreferenceChange(dailySudokuNotificationPref, true)
                     val userSettings = getUserSettings()
                     val dialog = SeslTimePickerDialog(
                         settingsActivity,

@@ -197,7 +197,7 @@
     <string name="intro_text1">The game is finished when all numbers have been correctly entered into the Sudoku grid. \nThe amount of given numbers depends on the difficulty of the Sudoku. \nFor more difficult Sudokus, fewer numbers are given and often more complex strategies must be used. </string>
     <string name="intro_text2">In the first row the last number missing is 5. Tap on the empty field to select it.</string>
     <string name="intro_text3">Now tap on 5 to enter the number.</string>
-    <string name="intro_text4">Nice! To speed up entering numbers you can also select a number first and then enter it in multiple fields. To continue tap on 2.</string>
+    <string name="intro_text4">Nice! To speed up entering numbers you can also select a number first and then tap on multiple fields. To continue tap on 2.</string>
     <string name="intro_text5">In the middle block, the 2 is missing. Due to the fact that the 2 is already present in row 4 and 5, only the empty field in the bottom row of the middle block remains. To enter the 2 tap on this field.</string>.
     <string name="intro_text6">As described earlier, multiple fields can be filled with the selected number. The upper right block is missing the 2. Tap on the empty field to enter the 2.</string>.
     <string name="intro_title7">Very good!</string>
