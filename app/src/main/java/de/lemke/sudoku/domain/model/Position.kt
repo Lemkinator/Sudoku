@@ -48,10 +48,5 @@ class Position private constructor(
                 block = row / (size / sqrtSize) * sqrtSize + column / (size / sqrtSize)
             )
         }
-
-        fun first(sudoku: Sudoku): Position = first(sudoku.size)
-        fun last(sudoku: Sudoku): Position = last(sudoku.size)
-        fun first(size: Int): Position = create(0, size)
-        fun last(size: Int): Position = create(size * size - 1, size)
     }
 }
