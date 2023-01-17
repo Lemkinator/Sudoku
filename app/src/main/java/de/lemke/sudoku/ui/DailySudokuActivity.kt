@@ -119,10 +119,6 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         progressDialog.show()
         lifecycleScope.launch {
             dailySudokus = getAllDailySudokus(getUserSettings().dailyShowUncompleted)
-            if (dailySudokus.isEmpty() || dailySudokus.firstOrNull()?.second?.isBefore(LocalDate.now()) == true) {
-                saveSudoku(generateDailySudoku())
-                dailySudokus = getAllDailySudokus(getUserSettings().dailyShowUncompleted)
-            }
             binding.dailySudokuRecycler.layoutManager = LinearLayoutManager(this@DailySudokuActivity)
             sudokuListAdapter = SudokuListAdapter()
             binding.dailySudokuRecycler.adapter = sudokuListAdapter
