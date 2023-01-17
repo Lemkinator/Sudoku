@@ -1,9 +1,13 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.Toast
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -41,6 +45,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var onBackPressedCallback: OnBackPressedCallback
+    private lateinit var onBackInvokedCallback: OnBackInvokedCallback
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
@@ -128,6 +134,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun openMain() {
+        initOnBackPressed()
         initDrawer()
         initTabs()
         initFragments()
@@ -158,6 +165,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             dialog.dismiss()
         }
     }
+
     override fun onPause() {
         super.onPause()
         binding.drawerLayoutMain.setDrawerOpen(false, true)
@@ -276,6 +284,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     fun onTabItemSelected(position: Int, tab: TabLayout.Tab? = null) {
+        onBackPressedCallback.isEnabled = position != 1
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (position == 1) onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
+            else onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback)
+        }
         val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
@@ -289,5 +302,31 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
+    }
+
+    private fun initOnBackPressed() {
+        //set custom callback to prevent app from exiting on back press when in search mode
+        onBackPressedCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                checkBackPressed()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackInvokedCallback = OnBackInvokedCallback { checkBackPressed() }
+        }
+    }
+
+    private fun checkBackPressed() {
+        when {
+            binding.drawerLayoutMain.findViewById<androidx.drawerlayout.widget.DrawerLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer)
+                .isDrawerOpen(
+                    binding.drawerLayoutMain.findViewById<LinearLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer_content)
+                ) -> {
+                binding.drawerLayoutMain.setDrawerOpen(false, true)
+            }
+            else -> binding.mainMarginsTabLayout.selectTab(binding.mainMarginsTabLayout.getTabAt(1))
+        }
+
     }
 }
