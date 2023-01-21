@@ -9,7 +9,7 @@
 [![](https://img.shields.io/tokei/lines/github/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku)
   
 
-  <img loading="lazy" src="img/Sudoku_squircle.png" height="200"/>
+  <img src="img/Sudoku_squircle.png" height="150"/>
   
   <a target="_blank" 
        href='https://play.google.com/store/apps/details?id=de.lemke.sudoku&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'>
@@ -27,7 +27,7 @@
   <img loading="lazy" src="img/mobile3.png" height="350"/>
   <img loading="lazy" src="img/mobile4.png" height="350"/>
   
-  ### More Information: <a target="_blank" href='https://www.leonard-lemke.com/apps/sudoku'> leonard-lemke.com/apps/sudoku </a>
+  ### More Information: <a target="_blank" href='https://www.leonard-lemke.com/apps/sudoku'>www.leonard-lemke.com</a>
 
   <br>
   <hr>
