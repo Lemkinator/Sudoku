@@ -23,8 +23,8 @@ class GenerateSudokuLevelUseCase @Inject constructor(
         val size9hard = 150
         val size9expert = 300
 
-        val size16veryEasy = 400
-        val size16easy = 500
+        val size16veryEasy = 500
+        val size16easy = 600
         val size16medium = 700
         val size16hard = 800
         val size16expert = 900
