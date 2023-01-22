@@ -429,7 +429,7 @@ class SudokuActivity : AppCompatActivity() {
                         selectNextButton(pair.first, completedNumbers)
                 } else {
                     sudokuButtons[pair.first - 1].isEnabled = true
-                    sudokuButtons[pair.first - 1].setTextColor(getColor(dev.oneuiproject.oneui.design.R.color.oui_primary_text_color))
+                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.primary_text_icon_color))
                 }
             }
         }
