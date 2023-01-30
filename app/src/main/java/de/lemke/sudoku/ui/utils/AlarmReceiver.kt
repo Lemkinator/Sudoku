@@ -31,10 +31,16 @@ class AlarmReceiver : BroadcastReceiver() {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
         GlobalScope.launch {
-            if (!intent.action.equals(Intent.ACTION_BOOT_COMPLETED)) {
-                if (!isDailySudokuCompleted()) sendDailyNotification()
-                sendDailyNotification.setDailySudokuNotification(enable = true) //reschedule the reminder
-            } else sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
+            val notificationEnabled = getUserSettings().dailySudokuNotificationEnabled
+            if (
+                !intent.action.equals(Intent.ACTION_BOOT_COMPLETED) &&
+                !intent.action.equals(Intent.ACTION_MY_PACKAGE_REPLACED) &&
+                notificationEnabled &&
+                !isDailySudokuCompleted()
+            ) {
+                sendDailyNotification()
+            }
+            sendDailyNotification.setDailySudokuNotification(enable = notificationEnabled)
         }
     }
 }
