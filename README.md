@@ -1,7 +1,7 @@
 <div align="center">
   
 [![](https://img.shields.io/website?down_color=red&down_message=offline&up_color=blue&up_message=online&url=https%3A%2F%2Fwww.leonard-lemke.com)](https://www.leonard-lemke.com/rr)
-[![](https://img.shields.io/github/last-commit/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku/commits/master)
+[![](https://img.shields.io/github/last-commit/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku/commits/)
 [![](https://img.shields.io/github/issues-raw/Lemkinator/Sudoku?color=%23ff4400)](https://github.com/Lemkinator/Sudoku/issues)
 [![](https://img.shields.io/github/issues-pr-raw/Lemkinator/Sudoku?color=%23bb00bb)](https://github.com/Lemkinator/Sudoku/pulls)
 [![](https://img.shields.io/github/contributors/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku/graphs/contributors)
