@@ -73,6 +73,9 @@
     <!--Settings-->
     <string name="design">Design</string>
     <string name="system_default">System default</string>
+    <string name="language">Language</string>
+    <string name="change_language">Change app language</string>
+    <string name="change_language_not_supportet_by_device">Change language is not supported by your device.</string>
     <string name="game">Game</string>
     <string name="animations">Animations</string>
     <string name="animations_summary">Animate fields</string>

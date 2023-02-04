@@ -3,6 +3,7 @@ package de.lemke.sudoku.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -159,6 +160,20 @@ class SettingsActivity : AppCompatActivity() {
                 autoDarkModePref.isChecked = userSettings.autoDarkMode
                 darkModePref.isEnabled = !autoDarkModePref.isChecked
                 darkModePref.value = if (userSettings.darkMode) "1" else "0"
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                findPreference<PreferenceCategory>("language_pref_cat")!!.isVisible = true
+                findPreference<PreferenceScreen>("language_pref")!!.onPreferenceClickListener = OnPreferenceClickListener {
+                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.parse("package:${settingsActivity.packageName}"))
+                    try {
+                        startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(settingsActivity, getString(R.string.change_language_not_supportet_by_device), Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                    true
+                }
             }
 
             findPreference<PreferenceScreen>("intro_pref")?.setOnPreferenceClickListener {

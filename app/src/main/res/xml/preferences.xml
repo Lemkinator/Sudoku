@@ -14,6 +14,17 @@
             android:title="@string/system_default" />
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="language_pref_cat"
+        android:title="@string/language"
+        app:isPreferenceVisible="false">
+
+        <PreferenceScreen
+            android:key="language_pref"
+            android:title="@string/change_language" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/app_name">
         <PreferenceScreen
             android:key="intro_pref"
