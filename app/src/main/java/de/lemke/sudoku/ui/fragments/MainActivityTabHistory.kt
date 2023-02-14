@@ -25,6 +25,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.SimpleColorFilter
+import com.airbnb.lottie.model.KeyPath
+import com.airbnb.lottie.value.LottieValueCallback
 import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -120,6 +124,11 @@ class MainActivityTabHistory : Fragment() {
             binding.historyNoEntryScrollView.visibility = View.VISIBLE
             binding.historyListLottie.cancelAnimation()
             binding.historyListLottie.progress = 0f
+            binding.historyListLottie.addValueCallback(
+                KeyPath("**"),
+                LottieProperty.COLOR_FILTER,
+                LottieValueCallback(SimpleColorFilter(requireContext().getColor(R.color.primary_color_themed)))
+            )
             binding.historyListLottie.postDelayed({ binding.historyListLottie.playAnimation() }, 400)
             return
         } else {
