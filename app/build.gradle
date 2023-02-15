@@ -17,8 +17,8 @@ android {
         applicationId "de.lemke.sudoku"
         minSdk 26
         targetSdk 33
-        versionCode 17
-        versionName "2.3.2"
+        versionCode 18
+        versionName "2.3.3"
 
         kapt {
             arguments {
