@@ -52,10 +52,12 @@
     <!--Settings-->
     <string name="design">Design</string>
     <string name="system_default">Systemeinstellung</string>
+    <string name="general">Allgemein</string>
+    <string name="keep_screen_on">Bildschirm anlassen</string>
+    <string name="keep_screen_on_summary">Bildschirm beim Spielen nicht ausschalten</string>
     <string name="language">Sprache</string>
     <string name="change_language">App Sprache ändern</string>
     <string name="change_language_not_supportet_by_device">Das Ändern der Sprache wird von diesem Gerät nicht unterstützt.</string>
-    <string name="game">Spiel</string>
     <string name="animations">Animationen</string>
     <string name="animations_summary">Felder animieren</string>
     <string name="regional_highlight">Regionales Highlight</string>

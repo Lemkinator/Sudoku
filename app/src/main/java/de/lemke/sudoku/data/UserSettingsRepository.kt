@@ -30,6 +30,7 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
             it[KEY_SIZE_SLIDER_VALUE] = newSettings.sizeSliderValue
+            it[KEY_KEEP_SCREEN_ON] = newSettings.keepScreenOn
             it[KEY_ANIMATIONS_ENABLED] = newSettings.animationsEnabled
             it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
@@ -53,9 +54,10 @@ class UserSettingsRepository @Inject constructor(
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
         sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
+        keepScreenOn = prefs[KEY_KEEP_SCREEN_ON] ?: false,
+        animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
-        animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
         statisticsFilterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
             ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
@@ -75,6 +77,7 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
         private val KEY_SIZE_SLIDER_VALUE = intPreferencesKey("sizeSliderValue")
+        private val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("keepScreenOn")
         private val KEY_ANIMATIONS_ENABLED = booleanPreferencesKey("animationsEnabled")
         private val KEY_REGIONAL_HIGHLIGHT = booleanPreferencesKey("regionalHighlight")
         private val KEY_NUMBER_HIGHLIGHT = booleanPreferencesKey("numberHighlight")
@@ -105,6 +108,8 @@ data class UserSettings(
     val difficultySliderValue: Int,
     /** value of size slider*/
     val sizeSliderValue: Int,
+    /** keep screen on */
+    val keepScreenOn: Boolean,
     /** animations enabled */
     val animationsEnabled: Boolean,
     /** highlight sudoku neighbors*/

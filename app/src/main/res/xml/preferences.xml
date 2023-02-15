@@ -14,14 +14,17 @@
             android:title="@string/system_default" />
     </PreferenceCategory>
 
-    <PreferenceCategory
-        android:key="language_pref_cat"
-        android:title="@string/language"
-        app:isPreferenceVisible="false">
+    <PreferenceCategory android:title="@string/general">
+        <SwitchPreferenceCompat
+            android:key="keep_screen_on_pref"
+            android:summary="@string/keep_screen_on_summary"
+            android:title="@string/keep_screen_on" />
 
         <PreferenceScreen
             android:key="language_pref"
-            android:title="@string/change_language" />
+            android:summary="@string/change_language"
+            android:title="@string/language"
+            app:isPreferenceVisible="false" />
 
     </PreferenceCategory>
 
@@ -30,9 +33,6 @@
             android:key="intro_pref"
             android:summary="@string/intro_title"
             android:title="@string/intro" />
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/game">
         <SwitchPreferenceCompat
             android:key="animations_pref"
             android:summary="@string/animations_summary"

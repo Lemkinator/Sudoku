@@ -63,6 +63,7 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var pickImportJsonActivityResultLauncher: ActivityResultLauncher<String>
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
+        private lateinit var keepScreenOnPref: SwitchPreferenceCompat
         private lateinit var regionalHighlightPref: SwitchPreferenceCompat
         private lateinit var numberHighlightPref: SwitchPreferenceCompat
         private lateinit var animationsPref: SwitchPreferenceCompat
@@ -113,6 +114,7 @@ class SettingsActivity : AppCompatActivity() {
         private fun initPreferences() {
             darkModePref = findPreference("dark_mode_pref")!!
             autoDarkModePref = findPreference("dark_mode_auto")!!
+            keepScreenOnPref = findPreference("keep_screen_on_pref")!!
             regionalHighlightPref = findPreference("highlight_regional_pref")!!
             numberHighlightPref = findPreference("highlight_number_pref")!!
             animationsPref = findPreference("animations_pref")!!
@@ -123,6 +125,7 @@ class SettingsActivity : AppCompatActivity() {
             darkModePref.onPreferenceChangeListener = this
             darkModePref.setDividerEnabled(false)
             darkModePref.setTouchEffectEnabled(false)
+            keepScreenOnPref.onPreferenceChangeListener = this
             regionalHighlightPref.onPreferenceChangeListener = this
             numberHighlightPref.onPreferenceChangeListener = this
             animationsPref.onPreferenceChangeListener = this
@@ -163,7 +166,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                findPreference<PreferenceCategory>("language_pref_cat")!!.isVisible = true
+                findPreference<PreferenceScreen>("language_pref")!!.isVisible = true
                 findPreference<PreferenceScreen>("language_pref")!!.onPreferenceClickListener = OnPreferenceClickListener {
                     val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.parse("package:${settingsActivity.packageName}"))
                     try {
@@ -272,6 +275,7 @@ class SettingsActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
                 val userSettings = getUserSettings()
+                keepScreenOnPref.isChecked = userSettings.keepScreenOn
                 regionalHighlightPref.isChecked = userSettings.highlightRegional
                 numberHighlightPref.isChecked = userSettings.highlightNumber
                 animationsPref.isChecked = userSettings.animationsEnabled
@@ -329,6 +333,10 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 "highlight_number_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = newValue as Boolean) } }
+                    return true
+                }
+                "keep_screen_on_pref" -> {
+                    lifecycleScope.launch { updateUserSettings { it.copy(keepScreenOn = newValue as Boolean) } }
                     return true
                 }
                 "animations_pref" -> {

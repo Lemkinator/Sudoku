@@ -6,9 +6,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.TypedValue
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -95,7 +93,10 @@ class SudokuActivity : AppCompatActivity() {
         binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
-        lifecycleScope.launch { initSudoku(SudokuId(id)) }
+        lifecycleScope.launch {
+            initSudoku(SudokuId(id))
+            if (getUserSettings().keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
@@ -467,7 +468,7 @@ class SudokuActivity : AppCompatActivity() {
         animateSudoku: Boolean = false
     ): Job? {
         if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
-        val delay = 60L/sudoku.blockSize
+        val delay = 60L / sudoku.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews.filter {
                 (animateRow && it?.position?.row == position.row && it.position.column <= position.column) ||
@@ -642,6 +643,117 @@ class SudokuActivity : AppCompatActivity() {
                     else -> selectButton(null, highlightSelectedNumber)
                 }
             }
+        }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_1 -> {
+                lifecycleScope.launch { select(sudoku.itemCount) }
+                true
+            }
+            KeyEvent.KEYCODE_2 -> {
+                lifecycleScope.launch { select(sudoku.itemCount + 1) }
+                true
+            }
+            KeyEvent.KEYCODE_3 -> {
+                lifecycleScope.launch { select(sudoku.itemCount + 2) }
+                true
+            }
+            KeyEvent.KEYCODE_4 -> {
+                lifecycleScope.launch { select(sudoku.itemCount + 3) }
+                true
+            }
+            KeyEvent.KEYCODE_5 -> {
+                if (sudoku.size > 4) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 4) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_6 -> {
+                if (sudoku.size > 4) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 5) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_7 -> {
+                if (sudoku.size > 4) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 6) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_8 -> {
+                if (sudoku.size > 4) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 7) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_9 -> {
+                if (sudoku.size > 4) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 8) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_A -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 9) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_B -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 10) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_C -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 11) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_D -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 12) }
+                } else lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
+                true
+            }
+            KeyEvent.KEYCODE_E -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 13) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_F -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 14) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_G -> {
+                if (sudoku.size > 9) {
+                    lifecycleScope.launch { select(sudoku.itemCount + 15) }
+                    true
+                } else false
+            }
+            KeyEvent.KEYCODE_DEL -> {
+                lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
+                true
+            }
+            KeyEvent.KEYCODE_H -> {
+                lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) }
+                true
+            }
+            KeyEvent.KEYCODE_N -> {
+                toggleOrSetNoteButton()
+                true
+            }
+            KeyEvent.KEYCODE_ESCAPE -> {
+                lifecycleScope.launch { select(null) }
+                true
+            }
+
+            else -> super.onKeyUp(keyCode, event)
         }
     }
 }
