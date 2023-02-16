@@ -206,7 +206,7 @@
     <string name="intro_text5">In the middle block, the 2 is missing. Due to the fact that the 2 is already present in row 4 and 5, only the empty field in the bottom row of the middle block remains. To enter the 2 tap on this field.</string>.
     <string name="intro_text6">As described earlier, multiple fields can be filled with the selected number. The upper right block is missing the 2. Tap on the empty field to enter the 2.</string>.
     <string name="intro_title7">Very good!</string>
-    <string name="intro_text7">The 2 possible procedures summarized again:\n1. First select field, then number\n2. First select number, then select (multiple) field(s).</string>.
+    <string name="intro_text7">The 2 possible procedures summarized again:\n1. Select a field, then a number\n2. Select a number, then select multiple fields.</string>.
     <string name="intro_title8">Caution!</string>
     <string name="intro_text8">But be careful if and which number or field is currently selected to avoid errors!</string>
     <string name="intro_title9">Delete and hints</string>.
