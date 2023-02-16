@@ -10,62 +10,39 @@
     app:title="@string/app_name"
     tools:context=".ui.SudokuActivity">
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/game_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/oui_background_color"
+        android:foreground="@drawable/sudoku_view_fg"
+        android:scrollbars="none"
+        app:layout_location="main_content" />
+
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/resume_button_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
+        android:visibility="gone"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         app:layout_location="main_content">
 
         <LinearLayout
-            android:id="@+id/sudoku_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical">
 
-            <LinearLayout
-                android:id="@+id/game_layout"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:animateLayoutChanges="true"
-                android:orientation="vertical">
-
-                <dev.oneuiproject.oneui.widget.RoundLinearLayout
-                    android:id="@+id/rounded_game_recycler"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/game_recycler"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="@color/oui_background_color"
-                        android:foreground="@drawable/sudoku_view_fg"
-                        android:scrollbars="none" />
-
-                </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/resume_button_layout"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    style="@style/ButtonStyle.Filled"
-                    android:layout_width="90dp"
-                    android:layout_height="90dp"
-                    android:drawableTop="@drawable/ic_oui_control_play"
-                    android:onClick="resumeGame"
-                    android:paddingTop="20dp"
-                    android:text="@string/resume" />
-
-            </LinearLayout>
+            <androidx.appcompat.widget.AppCompatButton
+                style="@style/ButtonStyle.Filled"
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:drawableTop="@drawable/ic_oui_control_play"
+                android:onClick="resumeGame"
+                android:paddingTop="20dp"
+                android:text="@string/resume" />
 
         </LinearLayout>
 
@@ -217,7 +194,7 @@
                 android:layout_margin="1dp"
                 android:drawableTop="@drawable/ic_oui_tips_outline"
                 android:text="@string/hints"
-                android:visibility="gone"/>
+                android:visibility="gone" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/note_button"

@@ -110,8 +110,8 @@ class SudokuActivity : AppCompatActivity() {
             } else {
                 binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
             }
-            /*val width = binding.sudokuLayout.measuredWidth
-            val height = binding.sudokuLayout.measuredHeight
+            /*val width = binding.gameRecycler.measuredWidth
+            val height = binding.gameRecycler.measuredHeight
             val gameSize: Int
             if (totalScrollRange != 0) {
                 gameSize = min(width, height - totalScrollRange - verticalOffset)
@@ -120,11 +120,11 @@ class SudokuActivity : AppCompatActivity() {
                 gameSize = min(width, height - inputMethodWindowVisibleHeight - verticalOffset)
                 binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
             }
-            val params: ViewGroup.LayoutParams = binding.roundedGameRecycler.layoutParams
+            val params: ViewGroup.LayoutParams = binding.gameRecycler.layoutParams
             params.width = gameSize
             params.height = gameSize
-            binding.roundedGameRecycler.translationX = max(0, width - gameSize) / 2f
-            binding.roundedGameRecycler.layoutParams = params*/
+            binding.gameRecycler.translationX = max(0, width - gameSize) / 2f
+            binding.gameRecycler.layoutParams = params*/
         }
     }
 
@@ -258,7 +258,7 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame(view: View? = null) {
         lifecycleScope.launch {
             binding.resumeButtonLayout.visibility = View.GONE
-            binding.gameLayout.visibility = View.VISIBLE
+            binding.gameRecycler.visibility = View.VISIBLE
             when {
                 sudoku.completed -> {
                     setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
@@ -280,7 +280,7 @@ class SudokuActivity : AppCompatActivity() {
     private fun pauseGame() {
         sudoku.stopTimer()
         if (sudoku.completed) return
-        binding.gameLayout.visibility = View.GONE
+        binding.gameRecycler.visibility = View.GONE
         binding.gameButtons.visibility = View.GONE
         binding.resumeButtonLayout.visibility = View.VISIBLE
         val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
