@@ -54,7 +54,7 @@ class UserSettingsRepository @Inject constructor(
         devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] ?: false,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
         sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
-        keepScreenOn = prefs[KEY_KEEP_SCREEN_ON] ?: false,
+        keepScreenOn = prefs[KEY_KEEP_SCREEN_ON] ?: true,
         animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] ?: true,
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] ?: true,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] ?: true,
