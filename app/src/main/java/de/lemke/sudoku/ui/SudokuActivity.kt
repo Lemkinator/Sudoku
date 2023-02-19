@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.*
@@ -258,7 +259,7 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame(view: View? = null) {
         lifecycleScope.launch {
             binding.resumeButtonLayout.visibility = View.GONE
-            binding.gameRecycler.visibility = View.VISIBLE
+            binding.gameLayout.visibility = View.VISIBLE
             when {
                 sudoku.completed -> {
                     setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
@@ -280,7 +281,7 @@ class SudokuActivity : AppCompatActivity() {
     private fun pauseGame() {
         sudoku.stopTimer()
         if (sudoku.completed) return
-        binding.gameRecycler.visibility = View.GONE
+        binding.gameLayout.visibility = View.GONE
         binding.gameButtons.visibility = View.GONE
         binding.resumeButtonLayout.visibility = View.VISIBLE
         val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
@@ -535,7 +536,9 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun refreshHintButton() {
         binding.hintButton.visibility = if (sudoku.isHintAvailable) View.VISIBLE else View.GONE
-        binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+            binding.hintButton.text = sudoku.availableHints.toString()
+        else binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
     private suspend fun select(newSelected: Int?) {

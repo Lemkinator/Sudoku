@@ -19,10 +19,11 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:background="@color/oui_background_color"
-            app:layout_constraintBottom_toTopOf="@id/game_buttons"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintDimensionRatio="1"
+            app:layout_constraintHorizontal_chainStyle="packed"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintRight_toLeftOf="@id/game_buttons"
             app:layout_constraintTop_toTopOf="parent">
 
             <androidx.recyclerview.widget.RecyclerView
@@ -65,167 +66,167 @@
 
         <dev.oneuiproject.oneui.widget.RoundLinearLayout
             android:id="@+id/game_buttons"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_marginVertical="2dp"
             android:layout_marginTop="2dp"
             android:background="@color/oui_background_color"
             android:gravity="center"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:padding="3dp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/game_layout"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/game_layout">
+            app:layout_constraintTop_toTopOf="parent">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_1"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="1"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_2"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="2"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_3"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="3"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_4"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="4"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_5"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="5"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_6"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="6"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_7"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="7"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_8"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="8"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_9"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="9"
                     tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_a"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="A"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_b"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="B"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_c"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="C"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_d"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="D"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_e"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="E"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_f"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="F"
                     tools:ignore="HardcodedText" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/number_button_g"
                     style="@style/ButtonStyle.NumberButton"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
+                    android:layout_width="50dp"
+                    android:layout_height="0dp"
                     android:text="G"
                     tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/delete_button"
@@ -233,8 +234,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="1dp"
-                    android:drawableTop="@drawable/ic_oui_pen_eraser_outline"
-                    android:text="@string/delete" />
+                    android:drawableStart="@drawable/ic_oui_pen_eraser_outline" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/hint_button"
@@ -242,8 +242,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="1dp"
-                    android:drawableTop="@drawable/ic_oui_tips_outline"
-                    android:text="@string/hints"
+                    android:drawableStart="@drawable/ic_oui_tips_outline"
                     android:visibility="gone" />
 
                 <androidx.appcompat.widget.AppCompatButton
@@ -252,8 +251,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="1dp"
-                    android:drawableTop="@drawable/ic_oui_pen"
-                    android:text="@string/note" />
+                    android:drawableStart="@drawable/ic_oui_pen" />
 
             </LinearLayout>
 

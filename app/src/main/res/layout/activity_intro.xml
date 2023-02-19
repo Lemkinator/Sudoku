@@ -10,221 +10,240 @@
     app:title="@string/app_name"
     tools:context=".ui.SudokuActivity">
 
-    <androidx.core.widget.NestedScrollView
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        app:layout_location="main_content">
+        android:layout_height="match_parent">
 
         <dev.oneuiproject.oneui.widget.RoundLinearLayout
-            android:id="@+id/rounded_game_recycler"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:animateLayoutChanges="true">
+            android:id="@+id/game_layout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@color/oui_background_color"
+            app:layout_constraintBottom_toTopOf="@id/intro_layout"
+            app:layout_constraintDimensionRatio="1"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/game_recycler"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:background="@color/oui_background_color"
                 android:foreground="@drawable/sudoku_view_fg"
                 android:scrollbars="none" />
 
         </dev.oneuiproject.oneui.widget.RoundLinearLayout>
 
-    </androidx.core.widget.NestedScrollView>
-
-
-    <LinearLayout
-        android:id="@+id/intro_footer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_location="footer">
-
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
-            android:id="@+id/intro_title"
+        <LinearLayout
+            android:id="@+id/intro_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="4dp"
-            android:background="@color/oui_background_color"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
-            app:layout_location="footer">
-
-            <TextView
-                android:id="@+id/intro_title_text"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/primary_text_icon_color"
-                android:textSize="18sp" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/intro_next_button"
-                style="@style/ButtonStyle.Colored"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/next" />
-
-
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
-            android:id="@+id/intro_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="4dp"
-            android:background="@color/oui_background_color"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
-            app:layout_location="footer">
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/game_layout">
 
-            <TextView
-                android:id="@+id/intro_text_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/primary_text_icon_color"
-                android:textSize="18sp" />
-
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
-            android:id="@+id/game_buttons"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="4dp"
-            android:background="@color/oui_background_color"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="3dp"
-            android:visibility="gone"
-            app:layout_location="footer">
-
-            <LinearLayout
-                android:id="@+id/number_buttons"
+            <dev.oneuiproject.oneui.widget.RoundLinearLayout
+                android:id="@+id/intro_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_1"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="1"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_2"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="2"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_3"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="3"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_4"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="4"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_5"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="5"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_6"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="6"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_7"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="7"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_8"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="8"
-                    tools:ignore="HardcodedText" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/number_button_9"
-                    style="@style/ButtonStyle.NumberButton"
-                    android:text="9"
-                    tools:ignore="HardcodedText" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/other_buttons"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/delete_button"
-                    style="@style/ButtonStyle.SudokuButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="1dp"
-                    android:drawableTop="@drawable/ic_oui_pen_eraser_outline"
-                    android:text="@string/delete" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/hint_button"
-                    style="@style/ButtonStyle.SudokuButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="1dp"
-                    android:drawableTop="@drawable/ic_oui_tips_outline"
-                    android:text="@string/hints"
-                    android:visibility="gone" />
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/note_button"
-                    style="@style/ButtonStyle.SudokuButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="1dp"
-                    android:drawableTop="@drawable/ic_oui_pen"
-                    android:text="@string/note" />
-
-            </LinearLayout>
-
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
-
-        <FrameLayout
-            android:id="@+id/intro_continue_layout"
-            android:layout_width="match_parent"
-            android:layout_height="44.0dp"
-            android:layout_margin="8dp"
-            android:visibility="gone">
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/intro_continue_button"
-                style="@style/OOBE.Button"
-                android:layout_width="296.0dp"
-                android:layout_height="44.0dp"
                 android:layout_gravity="center"
-                android:text="@string/next" />
+                android:layout_marginTop="4dp"
+                android:background="@color/oui_background_color"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
 
-        </FrameLayout>
+                <TextView
+                    android:id="@+id/intro_title_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/primary_text_icon_color"
+                    android:textSize="18sp" />
 
-    </LinearLayout>
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/intro_next_button"
+                    style="@style/ButtonStyle.Colored"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/next" />
+
+
+            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+            <dev.oneuiproject.oneui.widget.RoundLinearLayout
+                android:id="@+id/intro_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="4dp"
+                android:background="@color/oui_background_color"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp">
+
+                <TextView
+                    android:id="@+id/intro_text_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/primary_text_icon_color"
+                    android:textSize="18sp" />
+
+            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+
+            <dev.oneuiproject.oneui.widget.RoundLinearLayout
+                android:id="@+id/game_buttons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="4dp"
+                android:background="@color/oui_background_color"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="3dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/number_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_1"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="1"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_2"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="2"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_3"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="3"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_4"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="4"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_5"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="5"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_6"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="6"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_7"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="7"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_8"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="8"
+                        tools:ignore="HardcodedText" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/number_button_9"
+                        style="@style/ButtonStyle.NumberButton"
+                        android:layout_width="0dp"
+                        android:layout_height="50dp"
+                        android:text="9"
+                        tools:ignore="HardcodedText" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/other_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/delete_button"
+                        style="@style/ButtonStyle.SudokuButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="1dp"
+                        android:drawableTop="@drawable/ic_oui_pen_eraser_outline"
+                        android:text="@string/delete" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/hint_button"
+                        style="@style/ButtonStyle.SudokuButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="1dp"
+                        android:drawableTop="@drawable/ic_oui_tips_outline"
+                        android:text="@string/hints"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/note_button"
+                        style="@style/ButtonStyle.SudokuButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="1dp"
+                        android:drawableTop="@drawable/ic_oui_pen"
+                        android:text="@string/note" />
+
+                </LinearLayout>
+
+            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+
+            <FrameLayout
+                android:id="@+id/intro_continue_layout"
+                android:layout_width="match_parent"
+                android:layout_height="44.0dp"
+                android:layout_margin="8dp"
+                android:visibility="gone">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/intro_continue_button"
+                    style="@style/OOBE.Button"
+                    android:layout_width="296.0dp"
+                    android:layout_height="44.0dp"
+                    android:layout_gravity="center"
+                    android:text="@string/next" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </dev.oneuiproject.oneui.layout.ToolbarLayout>
