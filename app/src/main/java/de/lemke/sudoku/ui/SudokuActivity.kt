@@ -81,7 +81,6 @@ class SudokuActivity : AppCompatActivity() {
             finish()
             return
         }
-
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
@@ -108,8 +107,12 @@ class SudokuActivity : AppCompatActivity() {
             ) as Int
             if (totalScrollRange != 0) {
                 binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
+                binding.gameLayout.translationY = ((abs(verticalOffset) - totalScrollRange).toFloat())
+                binding.gameButtons.translationY = ((abs(verticalOffset) - totalScrollRange).toFloat())
             } else {
                 binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
+                binding.gameLayout.translationY = ((abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat())
+                binding.gameButtons.translationY = ((abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat())
             }
             /*val width = binding.gameRecycler.measuredWidth
             val height = binding.gameRecycler.measuredHeight

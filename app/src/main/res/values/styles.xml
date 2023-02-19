@@ -44,7 +44,10 @@
 
     <style name="ButtonStyle.NumberButton" parent="ButtonStyle.SudokuButton">
         <item name="android:padding">0dp</item>
-        <item name="android:textSize">25sp</item>
+        <item name="android:autoSizeStepGranularity">1sp</item>
+        <item name="android:autoSizeMaxTextSize">25sp</item>
+        <item name="android:autoSizeMinTextSize">10sp</item>
+        <item name="android:autoSizeTextType">uniform</item>
         <item name="android:ellipsize">none</item>
         <item name="android:visibility">gone</item>
     </style>

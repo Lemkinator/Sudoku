@@ -31,6 +31,7 @@
                 android:layout_height="match_parent"
                 android:background="@color/oui_background_color"
                 android:foreground="@drawable/sudoku_view_fg"
+                android:overScrollMode="never"
                 android:scrollbars="none" />
 
         </dev.oneuiproject.oneui.widget.RoundLinearLayout>

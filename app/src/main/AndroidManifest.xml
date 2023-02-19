@@ -76,7 +76,9 @@
             android:parentActivityName=".ui.MainActivity" />
         <activity android:name=".ui.OOBEActivity" />
         <activity android:name=".ui.SudokuActivity" />
-        <activity android:name=".ui.IntroActivity" />
+        <activity android:name=".ui.IntroActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity" />
         <activity
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
