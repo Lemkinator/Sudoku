@@ -13,9 +13,9 @@ import android.text.Spanned
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
+import android.util.Log
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.play.core.appupdate.AppUpdateInfo
@@ -181,7 +181,7 @@ class AboutActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { appUpdateInfo: Exception ->
-                Toast.makeText(this@AboutActivity, appUpdateInfo.message, Toast.LENGTH_LONG).show()
+                Log.w("AboutActivity", appUpdateInfo.message.toString())
                 binding.appInfoLayout.status = NOT_UPDATEABLE
             }
     }
