@@ -40,6 +40,9 @@ interface SudokuDao {
     @Query("SELECT * FROM sudoku WHERE modeLevel = :level")
     suspend fun getSudokuLevel(level: Int): SudokuWithFields?
 
+    @Query("SELECT MAX(modeLevel) FROM sudoku")
+    suspend fun getMaxSudokuLevel(): Int
+
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?

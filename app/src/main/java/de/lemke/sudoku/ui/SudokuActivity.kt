@@ -62,6 +62,9 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var generateSudokuLevel: GenerateSudokuLevelUseCase
 
     @Inject
+    lateinit var getMaxSudokuLevel: GetMaxSudokuLevelUseCase
+
+    @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Inject
@@ -265,7 +268,7 @@ class SudokuActivity : AppCompatActivity() {
             binding.gameLayout.visibility = View.VISIBLE
             when {
                 sudoku.completed -> {
-                    setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
+                    setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
                     binding.gameButtons.visibility = View.GONE
                 }
                 else -> {
@@ -331,28 +334,28 @@ class SudokuActivity : AppCompatActivity() {
             .setTitle(R.string.completed_title)
             .setMessage(sudoku.getLocalStatisticsString(resources))
         dialog.setNeutralButton(R.string.ok, null)
-        if (sudoku.isSudokuLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
-            lifecycleScope.launch {
-                loadingDialog.show()
-                val nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1)
-                saveSudoku(nextSudokuLevel)
-                initSudoku(nextSudokuLevel)
-            }
-        }
-        else if (sudoku.isNormalSudoku) dialog.setPositiveButton(R.string.new_game) { _, _ ->
-            lifecycleScope.launch {
-                loadingDialog.show()
-                val newSudoku = generateSudoku(sudoku.size, sudoku.difficulty)
-                saveSudoku(newSudoku)
-                initSudoku(newSudoku)
-            }
-        }
         lifecycleScope.launch {
+            if (sudoku.isSudokuLevel && getMaxSudokuLevel() == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
+                lifecycleScope.launch {
+                    loadingDialog.show()
+                    val nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1)
+                    saveSudoku(nextSudokuLevel)
+                    initSudoku(nextSudokuLevel)
+                }
+            }
+            else if (sudoku.isNormalSudoku) dialog.setPositiveButton(R.string.new_game) { _, _ ->
+                lifecycleScope.launch {
+                    loadingDialog.show()
+                    val newSudoku = generateSudoku(sudoku.size, sudoku.difficulty)
+                    saveSudoku(newSudoku)
+                    initSudoku(newSudoku)
+                }
+            }
             dialog.show()
+            setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
             updatePlayGames(this@SudokuActivity, sudoku)
+            binding.gameButtons.visibility = View.GONE
         }
-        setToolbarMenuItemsVisible(reset = sudoku.isNormalSudoku)
-        binding.gameButtons.visibility = View.GONE
     }
 
     private suspend fun checkErrorLimit(): Boolean {
@@ -431,7 +434,7 @@ class SudokuActivity : AppCompatActivity() {
                     sudokuButtons[pair.first - 1].isEnabled = false
                     sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.secondary_text_icon_color))
                     if (currentNumber == pair.first && selected in sudoku.itemCount until sudoku.itemCount + sudoku.size)
-                        selectNextButton(pair.first, completedNumbers)
+                        selectNextButton(currentNumber, completedNumbers)
                 } else {
                     sudokuButtons[pair.first - 1].isEnabled = true
                     sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.primary_text_icon_color))
@@ -440,18 +443,16 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun selectNextButton(n: Int, completedNumbers: List<Pair<Int, Boolean>>) {
-        var number = n
+    private suspend fun selectNextButton(currentNumber: Int, completedNumbers: List<Pair<Int, Boolean>>) {
+        var number = currentNumber
         while (completedNumbers[number - 1].second) {
             number++
             if (number > completedNumbers.size) number = 1 //wrap around
-            if (number == n) { //all numbers are completed
-                selected = null
+            if (number == currentNumber) { //all numbers are completed
                 selectButton(null, getUserSettings().highlightNumber)
                 return
             }
         }
-        selected = sudoku.itemCount + number - 1
         selectButton(number - 1, getUserSettings().highlightNumber)
     }
 

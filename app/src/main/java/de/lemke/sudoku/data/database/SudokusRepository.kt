@@ -28,6 +28,8 @@ class SudokusRepository @Inject constructor(
 
     private suspend fun getSudokuLevel(level: Int): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(level))
 
+    suspend fun getMaxSudokuLevel(): Int = sudokuDao.getMaxSudokuLevel()
+
     private suspend fun getDailySudoku(date: LocalDate): Sudoku? = sudokuFromDb(sudokuDao.getAllDaily().firstOrNull { it.sudoku.created.toLocalDate() == date })
 
     suspend fun saveSudokus(sudokus: List<Sudoku>) {
