@@ -12,22 +12,22 @@ class GenerateSudokuLevelUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(level: Int): Sudoku = withContext(Dispatchers.Default) {
         val size4VeryEasy = 1
-        val size4Easy = 3
-        val size4Medium = 5
-        val size4Hard = 7
-        val size4Expert = 10
+        val size4Easy = 5
+        val size4Medium = 10
+        val size4Hard = 15
+        val size4Expert = 20
 
-        val size9VeryEasy = 20
-        val size9easy = 40
-        val size9medium = 80
-        val size9hard = 150
-        val size9expert = 300
+        val size9VeryEasy = 30
+        val size9easy = 60
+        val size9medium = 100
+        val size9hard = 200
+        val size9expert = 500
 
-        val size16veryEasy = 500
-        val size16easy = 600
-        val size16medium = 700
-        val size16hard = 800
-        val size16expert = 900
+        val size16veryEasy = 1000
+        val size16easy = 1200
+        val size16medium = 1400
+        val size16hard = 1700
+        val size16expert = 2000
 
         val difficulty: Difficulty
         val size: Int
