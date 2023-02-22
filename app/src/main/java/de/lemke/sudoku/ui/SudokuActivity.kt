@@ -96,10 +96,7 @@ class SudokuActivity : AppCompatActivity() {
         binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
-        lifecycleScope.launch {
-            initSudoku(SudokuId(id))
-            if (getUserSettings().keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
+        lifecycleScope.launch { initSudoku(SudokuId(id)) }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
@@ -281,6 +278,7 @@ class SudokuActivity : AppCompatActivity() {
                 }
             }
             checkErrorLimit()
+            if (getUserSettings().keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 
@@ -294,6 +292,9 @@ class SudokuActivity : AppCompatActivity() {
         itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
         setToolbarMenuItemsVisible(pausePlay = true)
+        lifecycleScope.launch {
+            if (getUserSettings().keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     inner class SudokuGameListener : GameListener {
@@ -578,7 +579,7 @@ class SudokuActivity : AppCompatActivity() {
                     in 0 until sudoku.itemCount -> selected = newSelected
                     //selected number
                     in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                        if (sudoku[position].value == null) sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
+                        sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
                         selected = null
                     }
                     //selected delete
@@ -588,7 +589,7 @@ class SudokuActivity : AppCompatActivity() {
                     }
                     //selected hint
                     sudoku.itemCount + sudoku.size + 1 -> {
-                        if (sudoku[position].value == null) sudoku.setHint(position)
+                        sudoku.setHint(position)
                         selected = null
                         refreshHintButton()
                     }
@@ -639,7 +640,7 @@ class SudokuActivity : AppCompatActivity() {
                     selected -> selectButton(null, highlightSelectedNumber)
                     //selected field
                     in 0 until sudoku.itemCount -> {
-                        if (sudoku[newSelected].value == null) sudoku.setHint(newSelected)
+                        sudoku.setHint(newSelected)
                         if (!sudoku.isHintAvailable) selected = null
                         refreshHintButton()
                     }

@@ -246,21 +246,29 @@ class Sudoku(
 
     fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
         val field = get(position)
-        if (field.given || field.hint || field.value == value && value != null || field.value != null && value != null) return false
-        if (isNote) {
-            if (value != null) {
-                if (field.toggleNote(value)) notesMade++
-            } else field.notes.clear()
-            gameListener?.onFieldChanged(position)
-        } else {
-            if (value == null) {
+        return when {
+            timer == null || field.given || field.hint -> false
+            isNote -> {
+                if (field.value != null) return false
+                if (value != null) {
+                    if (field.toggleNote(value)) notesMade++
+                } else field.notes.clear()
+                gameListener?.onFieldChanged(position)
+                true
+            }
+            value == null -> {
+                if (field.value == null && field.notes.isEmpty()) return false
                 eraserUsed = true
                 if (field.value == null) field.notes.clear()
+                field.value = null
+                gameListener?.onFieldChanged(position)
+                true
             }
-            checkChecklist(value)
-            field.value = value
-            gameListener?.onFieldChanged(position)
-            if (value != null) {
+            field.correct -> false
+            else -> {
+                field.value = value
+                gameListener?.onFieldChanged(position)
+                checkChecklist(value)
                 if (field.error) {
                     errorsMade++
                     gameListener?.onError()
@@ -269,13 +277,12 @@ class Sudoku(
                     stopTimer()
                     gameListener?.onCompleted(position)
                 }
+                true
             }
         }
-        return true
     }
 
-    private fun checkChecklist(value: Int?) {
-        if (value == null) return
+    private fun checkChecklist(value: Int) {
         when {
             isChecklist -> when {
                 value == checklistNumber -> return

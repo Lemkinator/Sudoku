@@ -78,14 +78,12 @@ class FieldView(context: Context) : LinearLayout(context) {
         if (sudoku?.completed != true) {
             setOnClickListener { sudoku?.gameListener?.onFieldClicked(position) }
             setOnLongClickListener {
-                if (field.given || field.hint || field.value == null) {
-                    return@setOnLongClickListener false
-                }
-                sudoku?.move(position, null)
-                isSelected = false
-                isHighlightedNumber = false
-                setBackground()
-                true
+                if (sudoku?.move(position, null) == true) {
+                    isSelected = false
+                    isHighlightedNumber = false
+                    setBackground()
+                    return@setOnLongClickListener true
+                } else return@setOnLongClickListener false
             }
         }
     }
