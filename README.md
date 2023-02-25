@@ -31,6 +31,6 @@ A Sudoku app with OneUI-Design.
 
 <br><hr>
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Lemkinator/OneUI-Sample-App&type=Date)](https://star-history.com/#Lemkinator/OneUI-Sample-App&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Lemkinator/Sudoku&type=Date)](https://star-history.com/#Lemkinator/Sudoku&Date)
 
 </div>
