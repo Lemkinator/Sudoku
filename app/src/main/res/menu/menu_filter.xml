@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <item
-        android:id="@+id/main_menu_statistics_filter"
+        android:id="@+id/menu_item_filter"
         android:icon="@drawable/ic_oui_list_filter"
         android:title="@string/filter"
         app:showAsAction="always"

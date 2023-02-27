@@ -60,12 +60,12 @@ class MainActivityTabStatistics : Fragment() {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.main_menu_statistics, menu)
+        inflater.inflate(R.menu.menu_filter, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.main_menu_statistics_filter -> {
+            R.id.menu_item_filter -> {
                 StatisticsFilterDialog { lifecycleScope.launch { onResume() } }.show(childFragmentManager, "StatisticsFilterDialog")
                 return true
             }

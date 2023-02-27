@@ -40,6 +40,7 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
     private var nextLevelSudoku: Sudoku? = null
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var progressDialog: ProgressDialog
+    private var savedPosition: Int? = null
 
     @Inject
     lateinit var getAllSudokuLevel: GetSudokuLevelUseCase
@@ -54,8 +55,8 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.root.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.root.setNavigationButtonOnClickListener { finish() }
+        binding.sudokuLevelToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
+        binding.sudokuLevelToolbarLayout.setNavigationButtonOnClickListener { finish() }
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)
@@ -63,7 +64,16 @@ class SudokuLevelActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { initList() }
+        lifecycleScope.launch {
+            initList()
+            savedPosition?.let { (binding.sudokuLevelsRecycler.layoutManager as LinearLayoutManager).scrollToPosition(it) }
+            savedPosition = null
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        savedPosition = (binding.sudokuLevelsRecycler.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
     }
 
     private suspend fun initList() {

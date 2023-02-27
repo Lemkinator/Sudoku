@@ -43,6 +43,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     private lateinit var dailySudokus: List<Pair<Sudoku?, LocalDate>>
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var progressDialog: ProgressDialog
+    private var savedPosition: Int? = null
 
     @Inject
     lateinit var getAllDailySudokus: GetDailySudokusUseCase
@@ -72,7 +73,16 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { initList() }
+        lifecycleScope.launch {
+            initList()
+            savedPosition?.let { (binding.dailySudokuRecycler.layoutManager as LinearLayoutManager).scrollToPosition(it) }
+            savedPosition = null
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        savedPosition = (binding.dailySudokuRecycler.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
