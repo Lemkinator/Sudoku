@@ -74,6 +74,7 @@
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
                         android:tint="@color/secondary_text_icon_color"
+                        android:visibility="gone"
                         app:srcCompat="@drawable/about_page_play_store" />
 
                     <androidx.appcompat.widget.AppCompatImageButton

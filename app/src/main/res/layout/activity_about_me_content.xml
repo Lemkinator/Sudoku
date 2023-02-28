@@ -60,15 +60,6 @@
                 app:SummaryText="@string/rate_app"
                 app:TitleText="@string/write_review" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/reviewCommentButton"
-                style="@style/ButtonStyle.Transparent"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:layout_gravity="center"
-                android:layout_marginEnd="16dp"
-                android:drawableStart="@drawable/ic_oui_help_outline" />
-
         </dev.oneuiproject.oneui.widget.RoundLinearLayout>
 
         <dev.oneuiproject.oneui.widget.RelatedCard

@@ -69,8 +69,6 @@
     <string name="support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
     <string name="support_me">Support me</string>
     <string name="no_email_app_installed">No e-mail app installed…</string>
-    <string name="to_play_store">To Play Store</string>
-    <string name="review_comment">To ensure an optimal user experience, Google Play manages when and how often the integrated rating dialog can be displayed to a user. Therefore, this button may not perform any action in some cases.\nAlternatively, the rating can then be written in the Play Store.</string>
     <string name="useful_links">Useful links</string>
 
     <!--Settings-->

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.util.TypedValue
 import android.view.*
 import android.view.inputmethod.InputMethodManager
@@ -18,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.play.core.review.ReviewManagerFactory
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
@@ -33,6 +35,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.abs
 
@@ -51,6 +54,9 @@ class SudokuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
+
+    @Inject
+    lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     @Inject
     lateinit var getSudoku: GetSudokuUseCase
@@ -356,6 +362,27 @@ class SudokuActivity : AppCompatActivity() {
             setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
             updatePlayGames(this@SudokuActivity, sudoku)
             binding.gameButtons.visibility = View.GONE
+            opportunityToShowInAppReview()
+        }
+    }
+
+    private suspend fun opportunityToShowInAppReview() {
+        val lastInAppReviewRequest = getUserSettings().lastInAppReviewRequest
+        val daysSinceLastRequest = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastInAppReviewRequest)
+        if (daysSinceLastRequest < 7) return
+        updateUserSettings { it.copy(lastInAppReviewRequest = System.currentTimeMillis()) }
+        val manager = ReviewManagerFactory.create(this)
+        //val manager = FakeReviewManager(context);
+        val request = manager.requestReviewFlow()
+        request.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val reviewInfo = task.result
+                val flow = manager.launchReviewFlow(this, reviewInfo)
+                flow.addOnCompleteListener {}
+            } else {
+                // There was some problem, log or handle the error code.
+                Log.e("InAppReview", "Review task failed: ${task.exception?.message}")
+            }
         }
     }
 

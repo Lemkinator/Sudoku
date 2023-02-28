@@ -45,8 +45,6 @@
     <string name="support_me_text">Falls du mich in irgendeiner Weise unterstützen möchtest, dann sende mir gerne eine E-Mail</string>
     <string name="support_me">Unterstütz mich</string>
     <string name="no_email_app_installed">Keine E-Mail App installiert…</string>
-    <string name="to_play_store">Zum Play Store</string>
-    <string name="review_comment">Um ein optimales Nutzererlebnis zu gewährleisten, verwaltet Google Play wann und wie oft einem Nutzer der integrierte Bewertungsdialog angezeigt werden kann. Deshalb kann es vorkommen, dass diese Schaltfläche in manchen Fällen keine Aktion durchführt.\nAlternativ kann die Bewertung dann im Play Store geschrieben werden.</string>
     <string name="useful_links">Nützliche Links</string>
 
     <!--Settings-->

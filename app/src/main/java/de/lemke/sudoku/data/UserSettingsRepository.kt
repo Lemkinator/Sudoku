@@ -40,6 +40,7 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
             it[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] = newSettings.dailySudokuNotificationHour
             it[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] = newSettings.dailySudokuNotificationMinute
+            it[KEY_LAST_IN_APP_REVIEW_REQUEST] = newSettings.lastInAppReviewRequest
         }
         return settingsFromPreferences(prefs)
     }
@@ -65,6 +66,7 @@ class UserSettingsRepository @Inject constructor(
         dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] ?: true,
         dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,
         dailySudokuNotificationMinute = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] ?: 0,
+        lastInAppReviewRequest = prefs[KEY_LAST_IN_APP_REVIEW_REQUEST] ?: System.currentTimeMillis(),
     )
 
 
@@ -87,6 +89,7 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED = booleanPreferencesKey("dailySudokuNotificationEnabled")
         private val KEY_DAILY_SUDOKU_NOTIFICATION_HOUR = intPreferencesKey("dailySudokuNotificationHour")
         private val KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE = intPreferencesKey("dailySudokuNotificationMinute")
+        private val KEY_LAST_IN_APP_REVIEW_REQUEST = longPreferencesKey("lastInAppReviewRequest")
     }
 }
 
@@ -128,5 +131,7 @@ data class UserSettings(
     val dailySudokuNotificationHour: Int,
     /** daily Sudoku Notification minute */
     val dailySudokuNotificationMinute: Int,
+    /** last time in app review was requested */
+    val lastInAppReviewRequest: Long = 0,
 
     )
