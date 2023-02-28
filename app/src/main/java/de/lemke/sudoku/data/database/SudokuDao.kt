@@ -33,15 +33,15 @@ interface SudokuDao {
     suspend fun getAllDaily(): List<SudokuWithFields>
 
     @Transaction
-    @Query("SELECT * FROM sudoku WHERE modeLevel > 0 ORDER BY modeLevel DESC")
-    suspend fun getAllLevel(): List<SudokuWithFields>
+    @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel > 0 ORDER BY modeLevel DESC")
+    suspend fun getAllLevelWithSize(size: Int): List<SudokuWithFields>
 
     @Transaction
-    @Query("SELECT * FROM sudoku WHERE modeLevel = :level")
-    suspend fun getSudokuLevel(level: Int): SudokuWithFields?
+    @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel = :level")
+    suspend fun getSudokuLevel(size: Int, level: Int): SudokuWithFields?
 
-    @Query("SELECT MAX(modeLevel) FROM sudoku")
-    suspend fun getMaxSudokuLevel(): Int
+    @Query("SELECT MAX(modeLevel) FROM sudoku WHERE size = :size")
+    suspend fun getMaxSudokuLevel(size: Int): Int?
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")

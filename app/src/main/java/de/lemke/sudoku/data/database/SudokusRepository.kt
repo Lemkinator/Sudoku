@@ -11,7 +11,7 @@ class SudokusRepository @Inject constructor(
 ) {
     suspend fun getAllDailySudokus(): List<Sudoku> = sudokuDao.getAllDaily().mapNotNull { sudokuFromDb(it) }
 
-    suspend fun getAllLevelSudokus(): List<Sudoku> = sudokuDao.getAllLevel().mapNotNull { sudokuFromDb(it) }
+    suspend fun getAllLevelSudokus(size:Int): List<Sudoku> = sudokuDao.getAllLevelWithSize(size).mapNotNull { sudokuFromDb(it) }
 
     suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
 
@@ -26,9 +26,9 @@ class SudokusRepository @Inject constructor(
         sudoku.fields.forEach { field -> fieldDao.upsert(fieldToDb(field, sudoku.id)) }
     }
 
-    private suspend fun getSudokuLevel(level: Int): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(level))
+    private suspend fun getSudokuLevel(size: Int, level: Int): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size, level))
 
-    suspend fun getMaxSudokuLevel(): Int = sudokuDao.getMaxSudokuLevel()
+    suspend fun getMaxSudokuLevel(size: Int): Int = sudokuDao.getMaxSudokuLevel(size) ?: 0
 
     private suspend fun getDailySudoku(date: LocalDate): Sudoku? = sudokuFromDb(sudokuDao.getAllDaily().firstOrNull { it.sudoku.created.toLocalDate() == date })
 
@@ -36,7 +36,7 @@ class SudokusRepository @Inject constructor(
         sudokus.forEach { sudoku ->
             when {
                 sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { deleteSudoku(it) }
-                sudoku.isSudokuLevel -> getSudokuLevel(sudoku.modeLevel)?.let { deleteSudoku(it) }
+                sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { deleteSudoku(it) }
             }
             saveSudoku(sudoku)
         }

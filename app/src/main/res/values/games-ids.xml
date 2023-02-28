@@ -21,26 +21,26 @@
     <string name="achievement_checklist" translatable="false">CgkIqfzS8vQZEAIQCQ</string>
     <!--achievement Reverse Checklist-->
     <string name="achievement_reverse_checklist" translatable="false">CgkIqfzS8vQZEAIQPQ</string>
-    <!--achievement Stopwatch (4x4)-->
-    <string name="achievement_stopwatch_4x4" translatable="false">CgkIqfzS8vQZEAIQDA</string>
-    <!--achievement Stopwatch (9x9)-->
-    <string name="achievement_stopwatch_9x9" translatable="false">CgkIqfzS8vQZEAIQPg</string>
-    <!--achievement Stopwatch (16x16)-->
-    <string name="achievement_stopwatch_16x16" translatable="false">CgkIqfzS8vQZEAIQPw</string>
+    <!--achievement Stopwatch (4×4)-->
+    <string name="achievement_stopwatch_44" translatable="false">CgkIqfzS8vQZEAIQDA</string>
+    <!--achievement Stopwatch (9×9)-->
+    <string name="achievement_stopwatch_99" translatable="false">CgkIqfzS8vQZEAIQPg</string>
+    <!--achievement Stopwatch (16×16)-->
+    <string name="achievement_stopwatch_1616" translatable="false">CgkIqfzS8vQZEAIQPw</string>
     <!--achievement I am Speed-->
     <string name="achievement_i_am_speed" translatable="false">CgkIqfzS8vQZEAIQDQ</string>
-    <!--achievement 10 Sudokus (4x4)-->
-    <string name="achievement_10_sudokus_4x4" translatable="false">CgkIqfzS8vQZEAIQDg</string>
-    <!--achievement 50 Sudokus (4x4)-->
-    <string name="achievement_50_sudokus_4x4" translatable="false">CgkIqfzS8vQZEAIQDw</string>
-    <!--achievement 10 Sudokus (9x9)-->
-    <string name="achievement_10_sudokus_9x9" translatable="false">CgkIqfzS8vQZEAIQCA</string>
-    <!--achievement 50 Sudokus (9x9)-->
-    <string name="achievement_50_sudokus_9x9" translatable="false">CgkIqfzS8vQZEAIQEA</string>
-    <!--achievement 10 Sudokus (16x16)-->
-    <string name="achievement_10_sudokus_16x16" translatable="false">CgkIqfzS8vQZEAIQEQ</string>
-    <!--achievement 50 Sudokus (16x16)-->
-    <string name="achievement_50_sudokus_16x16" translatable="false">CgkIqfzS8vQZEAIQEg</string>
+    <!--achievement 10 Sudokus (4×4)-->
+    <string name="achievement_10_sudokus_44" translatable="false">CgkIqfzS8vQZEAIQDg</string>
+    <!--achievement 50 Sudokus (4×4)-->
+    <string name="achievement_50_sudokus_44" translatable="false">CgkIqfzS8vQZEAIQDw</string>
+    <!--achievement 10 Sudokus (9×9)-->
+    <string name="achievement_10_sudokus_99" translatable="false">CgkIqfzS8vQZEAIQCA</string>
+    <!--achievement 50 Sudokus (9×9)-->
+    <string name="achievement_50_sudokus_99" translatable="false">CgkIqfzS8vQZEAIQEA</string>
+    <!--achievement 10 Sudokus (16×16)-->
+    <string name="achievement_10_sudokus_1616" translatable="false">CgkIqfzS8vQZEAIQEQ</string>
+    <!--achievement 50 Sudokus (16×16)-->
+    <string name="achievement_50_sudokus_1616" translatable="false">CgkIqfzS8vQZEAIQEg</string>
     <!--achievement 10 Sudokus (Very Easy)-->
     <string name="achievement_10_sudokus_very_easy" translatable="false">CgkIqfzS8vQZEAIQEw</string>
     <!--achievement 50 Sudokus (Very Easy)-->
@@ -61,14 +61,18 @@
     <string name="achievement_10_sudokus_expert" translatable="false">CgkIqfzS8vQZEAIQGw</string>
     <!--achievement 50 Sudokus (Expert)-->
     <string name="achievement_50_sudokus_expert" translatable="false">CgkIqfzS8vQZEAIQHA</string>
-    <!--leaderboard Level-->
-    <string name="leaderboard_level" translatable="false">CgkIqfzS8vQZEAIQIA</string>
-    <!--leaderboard Daily Sudokus-->
-    <string name="leaderboard_daily_sudokus" translatable="false">CgkIqfzS8vQZEAIQIw</string>
     <!--leaderboard Total Wins-->
     <string name="leaderboard_total_wins" translatable="false">CgkIqfzS8vQZEAIQCg</string>
+    <!--leaderboard Daily Sudokus-->
+    <string name="leaderboard_daily_sudokus" translatable="false">CgkIqfzS8vQZEAIQIw</string>
     <!--leaderboard Best time-->
     <string name="leaderboard_best_time" translatable="false">CgkIqfzS8vQZEAIQCw</string>
+    <!--leaderboard Level (4×4)-->
+    <string name="leaderboard_level_44" translatable="false">CgkIqfzS8vQZEAIQQw</string>
+    <!--leaderboard Level (9×9)-->
+    <string name="leaderboard_level_99" translatable="false">CgkIqfzS8vQZEAIQIA</string>
+    <!--leaderboard Level (16×16)-->
+    <string name="leaderboard_level_1616" translatable="false">CgkIqfzS8vQZEAIQRA</string>
     <!--leaderboard Wins (4×4)-->
     <string name="leaderboard_wins_44" translatable="false">CgkIqfzS8vQZEAIQQA</string>
     <!--leaderboard Wins (9×9)-->

@@ -11,6 +11,7 @@ import javax.inject.Inject
 
 class UpdatePlayGamesUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
+    private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase
 ) {
 
     suspend operator fun invoke(activity: Activity, completedSudoku: Sudoku? = null) = withContext(Dispatchers.Default) {
@@ -19,6 +20,9 @@ class UpdatePlayGamesUseCase @Inject constructor(
         val sudokus = getAllSudokus().filter { it.completed }
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_total_wins), sudokus.size.toLong())
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_daily_sudokus), sudokus.count { it.isDailySudoku }.toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_44), getMaxSudokuLevel(4).toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_99), getMaxSudokuLevel(9).toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_1616), getMaxSudokuLevel(16).toLong())
         if (completedSudoku == null) return@withContext
         achievementsClient.unlock(activity.getString(R.string.achievement_first_win))
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_best_time), completedSudoku.seconds * 1000L)
@@ -28,27 +32,23 @@ class UpdatePlayGamesUseCase @Inject constructor(
         if (completedSudoku.isChecklist) achievementsClient.unlock(activity.getString(R.string.achievement_checklist))
         if (completedSudoku.isReverseChecklist) achievementsClient.unlock(activity.getString(R.string.achievement_reverse_checklist))
         if (completedSudoku.seconds < 10) achievementsClient.unlock(activity.getString(R.string.achievement_i_am_speed))
-        if (completedSudoku.isSudokuLevel) leaderboardsClient.submitScore(
-            activity.getString(R.string.leaderboard_level),
-            completedSudoku.modeLevel.toLong()
-        )
         when (completedSudoku.size) {
             4 -> {
-                achievementsClient.increment(activity.getString(R.string.achievement_10_sudokus_4x4), 1)
-                achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_4x4), 1)
-                if (completedSudoku.seconds < 30) achievementsClient.unlock(activity.getString(R.string.achievement_stopwatch_4x4))
+                achievementsClient.increment(activity.getString(R.string.achievement_10_sudokus_44), 1)
+                achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_44), 1)
+                if (completedSudoku.seconds < 30) achievementsClient.unlock(activity.getString(R.string.achievement_stopwatch_44))
                 leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_wins_44), sudokus.count { it.size == 4 }.toLong())
             }
             9 -> {
-                achievementsClient.increment(activity.getString(R.string.achievement_10_sudokus_9x9), 1)
-                achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_9x9), 1)
-                if (completedSudoku.seconds < 120) achievementsClient.unlock(activity.getString(R.string.achievement_stopwatch_9x9))
+                achievementsClient.increment(activity.getString(R.string.achievement_10_sudokus_99), 1)
+                achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_99), 1)
+                if (completedSudoku.seconds < 120) achievementsClient.unlock(activity.getString(R.string.achievement_stopwatch_99))
                 leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_wins_99), sudokus.count { it.size == 9 }.toLong())
             }
             16 -> {
-                achievementsClient.increment(activity.getString(R.string.achievement_10_sudokus_16x16), 1)
-                achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_16x16), 1)
-                if (completedSudoku.seconds < 420) achievementsClient.unlock(activity.getString(R.string.achievement_stopwatch_16x16))
+                achievementsClient.increment(activity.getString(R.string.achievement_10_sudokus_1616), 1)
+                achievementsClient.increment(activity.getString(R.string.achievement_50_sudokus_1616), 1)
+                if (completedSudoku.seconds < 420) achievementsClient.unlock(activity.getString(R.string.achievement_stopwatch_1616))
                 leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_wins_1616), sudokus.count { it.size == 16 }.toLong())
             }
         }

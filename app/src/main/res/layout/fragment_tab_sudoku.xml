@@ -27,27 +27,24 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="start"
-                android:text="4×4"
-                android:textColor="@color/secondary_text_icon_color"
-                tools:ignore="HardcodedText" />
+                android:text="@string/size4"
+                android:textColor="@color/secondary_text_icon_color"/>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="9×9"
-                android:textColor="@color/secondary_text_icon_color"
-                tools:ignore="HardcodedText" />
+                android:text="@string/size9"
+                android:textColor="@color/secondary_text_icon_color" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="end"
-                android:text="16×16"
-                android:textColor="@color/secondary_text_icon_color"
-                tools:ignore="HardcodedText" />
+                android:text="@string/size16"
+                android:textColor="@color/secondary_text_icon_color"/>
 
         </LinearLayout>
 

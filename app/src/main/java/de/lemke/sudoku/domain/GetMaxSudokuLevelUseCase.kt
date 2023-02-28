@@ -8,7 +8,7 @@ import javax.inject.Inject
 class GetMaxSudokuLevelUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(): Int = withContext(Dispatchers.Default) {
-        sudokusRepository.getMaxSudokuLevel()
+    suspend operator fun invoke(size: Int): Int = withContext(Dispatchers.Default) {
+        sudokusRepository.getMaxSudokuLevel(size)
     }
 }

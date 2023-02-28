@@ -336,10 +336,10 @@ class SudokuActivity : AppCompatActivity() {
             .setMessage(sudoku.getLocalStatisticsString(resources))
         dialog.setNeutralButton(R.string.ok, null)
         lifecycleScope.launch {
-            if (sudoku.isSudokuLevel && getMaxSudokuLevel() == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
+            if (sudoku.isSudokuLevel && getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
                 lifecycleScope.launch {
                     loadingDialog.show()
-                    val nextSudokuLevel = generateSudokuLevel(level = sudoku.modeLevel + 1)
+                    val nextSudokuLevel = generateSudokuLevel(sudoku.size, level = sudoku.modeLevel + 1)
                     saveSudoku(nextSudokuLevel)
                     initSudoku(nextSudokuLevel)
                 }

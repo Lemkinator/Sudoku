@@ -19,6 +19,9 @@
     <string name="sudoku_lib_license_github_link" translatable="false">https://github.com/sfuhrm/sudoku/blob/master/LICENSE</string>
     <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
     <string name="daily_sudoku_notification_channel_id" translatable="false">Daily_Sudoku_Notification_Channel</string>
+    <string name="size4" translatable="false">4×4</string>
+    <string name="size9" translatable="false">9×9</string>
+    <string name="size16" translatable="false">16×16</string>
 
     <string name="ok" translatable="false" tools:ignore="ButtonCase,Typos">Ok</string>
     <string name="sesl_cancel">Cancel</string>

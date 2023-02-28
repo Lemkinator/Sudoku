@@ -11,11 +11,29 @@
     app:title="@string/level"
     tools:context=".ui.SudokuLevelActivity">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/sudoku_levels_recycler"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/oui_background_color"
-        android:scrollbars="vertical" />
+        android:orientation="vertical">
+
+        <dev.oneuiproject.oneui.widget.MarginsTabLayout
+            android:id="@+id/fragment_level_sub_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <dev.oneuiproject.oneui.widget.RoundFrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:roundedCorners="top_left|top_right">
+
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/view_pager_level"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </dev.oneuiproject.oneui.widget.RoundFrameLayout>
+        
+    </LinearLayout>
 
 </dev.oneuiproject.oneui.layout.ToolbarLayout>

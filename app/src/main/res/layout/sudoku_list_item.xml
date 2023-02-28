@@ -57,23 +57,4 @@
 
     </LinearLayout>
 
-
-    <!--androidx.appcompat.widget.AppCompatImageButton
-        android:id="@+id/item_rename"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:background="?selectableItemBackgroundBorderless"
-        android:paddingHorizontal="8dp"
-        android:src="@drawable/ic_oui_edit_outline"
-        android:tooltipText="@string/rename" />
-
-    <androidx.appcompat.widget.AppCompatImageButton
-        android:id="@+id/item_delete"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:background="?selectableItemBackgroundBorderless"
-        android:paddingHorizontal="8dp"
-        android:src="@drawable/ic_oui_delete_outline"
-        android:tooltipText="@string/delete" /-->
-
 </LinearLayout>
