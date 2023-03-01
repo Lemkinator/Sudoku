@@ -34,7 +34,7 @@
     <string name="continue_game">Continue (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Daily Sudoku</string>
-    <string name="daily_sudoku_info_message">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\% </string>
+    <string name="daily_sudoku_info_message" formatted="false">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\% </string>
     <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
     <string name="show_all_sudokus">Show all Sudokus</string>
     <string name="level">Level</string>
@@ -70,6 +70,8 @@
     <string name="support_me">Support me</string>
     <string name="no_email_app_installed">No e-mail app installed…</string>
     <string name="useful_links">Useful links</string>
+    <string name="ad">ADVERTISEMENT!!!&#129313;&#129396;</string>
+    <string name="playstore_redirect_message">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>
 
     <!--Settings-->
     <string name="design">Design</string>
@@ -199,15 +201,15 @@
     <string name="skip">Skip</string>
     <string name="intro">How to play</string>
     <string name="intro_title">Rules</string>
-    <string name="intro_text0">A Sudoku grid consists of 4×4, 9×9 or 16×16 squares. Depending on the size, only the numbers from 1 to 4, 9 or 16 can be used. No numbers may be missing or duplicated in each block, row or column.</string>.
+    <string name="intro_text0">A Sudoku grid consists of 4×4, 9×9 or 16×16 squares. Depending on the size, only the numbers from 1 to 4, 9 or 16 can be used. No numbers may be missing or duplicated in each block, row or column.</string>
     <string name="intro_text1">The game is finished when all numbers have been correctly entered into the Sudoku grid. \nThe amount of given numbers depends on the difficulty of the Sudoku. \nFor more difficult Sudokus, fewer numbers are given and often more complex strategies must be used. </string>
     <string name="intro_text2">In the first row the last number missing is 5. Tap on the empty field to select it.</string>
     <string name="intro_text3">Now tap on 5 to enter the number.</string>
     <string name="intro_text4">Nice! To speed up entering numbers you can also select a number first and then tap on multiple fields. To continue tap on 2.</string>
-    <string name="intro_text5">In the middle block, the 2 is missing. Due to the fact that the 2 is already present in row 4 and 5, only the empty field in the bottom row of the middle block remains. To enter the 2 tap on this field.</string>.
-    <string name="intro_text6">As described earlier, multiple fields can be filled with the selected number. The upper right block is missing the 2. Tap on the empty field to enter the 2.</string>.
+    <string name="intro_text5">In the middle block, the 2 is missing. Due to the fact that the 2 is already present in row 4 and 5, only the empty field in the bottom row of the middle block remains. To enter the 2 tap on this field.</string>
+    <string name="intro_text6">As described earlier, multiple fields can be filled with the selected number. The upper right block is missing the 2. Tap on the empty field to enter the 2.</string>
     <string name="intro_title7">Very good!</string>
-    <string name="intro_text7">The 2 possible procedures summarized again:\n1. Select a field, then a number\n2. Select a number, then select multiple fields.</string>.
+    <string name="intro_text7">The 2 possible procedures summarized again:\n1. Select a field, then a number\n2. Select a number, then select multiple fields.</string>
     <string name="intro_title8">Caution!</string>
     <string name="intro_text8">But be careful if and which number or field is currently selected to avoid errors!</string>
     <string name="intro_title9">Delete and hints</string>.

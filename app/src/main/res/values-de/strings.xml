@@ -10,7 +10,7 @@
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Tägliches Sudoku</string>
-    <string name="daily_sudoku_info_message">Tägliche Sudokus werden für jeden Benutzer mit zufälligen Schwierigkeiten nach folgenden Wahrscheinlichkeiten generiert: \n\nSehr Einfach: 30\% \nEinfach: 40\% \nMittel: 20\% \nSchwer: 10\% \nExperte: 0\% </string>
+    <string name="daily_sudoku_info_message" formatted="false">Tägliche Sudokus werden für jeden Benutzer mit zufälligen Schwierigkeiten nach folgenden Wahrscheinlichkeiten generiert: \n\nSehr Einfach: 30\% \nEinfach: 40\% \nMittel: 20\% \nSchwer: 10\% \nExperte: 0\% </string>
     <string name="show_only_completed_sudokus">Nur abgeschlossene Sudokus anzeigen</string>
     <string name="show_all_sudokus">Alle Sudokus anzeigen</string>
     <string name="level">Level</string>
@@ -46,6 +46,9 @@
     <string name="support_me">Unterstütz mich</string>
     <string name="no_email_app_installed">Keine E-Mail App installiert…</string>
     <string name="useful_links">Nützliche Links</string>
+    <string name="ad">WERBUNG!!!&#129313;&#129396;</string>
+    <string name="playstore_redirect_message">Laut Google Play handelt es sich hierbei um \"Irreführende Werbung, welche die Benutzeroberfläche einer App-Funktion simuliert oder nachahmt\"… Weil App-Updates andernfalls von Google Play abgelehnt werden, hier ein Hinweis: Dieser Button führt (überaschenderweise?&#129313;) zu meiner Entwicklerseite bei Google Play, fortfahren?</string>
+
 
     <!--Settings-->
     <string name="design">Design</string>

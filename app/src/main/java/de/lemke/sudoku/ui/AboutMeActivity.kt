@@ -11,6 +11,7 @@ import android.os.SystemClock
 import android.view.*
 import android.window.OnBackInvokedDispatcher
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.TooltipCompat
 import com.google.android.gms.games.PlayGames
@@ -146,7 +147,14 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_website))))
                 }
                 binding.aboutHeaderPlayStore.id, bottomContent.aboutBottomRelativePlayStore.id -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.playstore_developer_page_link))))
+                    AlertDialog.Builder(this)
+                        .setTitle(getString(R.string.ad))
+                        .setMessage(getString(R.string.playstore_redirect_message))
+                        .setPositiveButton(getString(R.string.yes)) { _, _ ->
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.playstore_developer_page_link))))
+                        }
+                        .setNegativeButton(getString(R.string.sesl_cancel), null)
+                        .show()
                 }
                 binding.aboutHeaderInsta.id -> {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_insta))))

@@ -362,7 +362,11 @@ class SudokuActivity : AppCompatActivity() {
             setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
             updatePlayGames(this@SudokuActivity, sudoku)
             binding.gameButtons.visibility = View.GONE
-            opportunityToShowInAppReview()
+            try {
+                opportunityToShowInAppReview()
+            } catch (e: Exception) {
+                Log.e("InAppReview", "Error: ${e.message}")
+            }
         }
     }
 
