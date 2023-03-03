@@ -41,6 +41,7 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] = newSettings.dailySudokuNotificationHour
             it[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] = newSettings.dailySudokuNotificationMinute
             it[KEY_LAST_IN_APP_REVIEW_REQUEST] = newSettings.lastInAppReviewRequest
+            it[KEY_CURRENT_LEVEL_TAB] = newSettings.currentLevelTab
         }
         return settingsFromPreferences(prefs)
     }
@@ -67,6 +68,7 @@ class UserSettingsRepository @Inject constructor(
         dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,
         dailySudokuNotificationMinute = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] ?: 0,
         lastInAppReviewRequest = prefs[KEY_LAST_IN_APP_REVIEW_REQUEST] ?: System.currentTimeMillis(),
+        currentLevelTab = prefs[KEY_CURRENT_LEVEL_TAB] ?: 1,
     )
 
 
@@ -90,6 +92,7 @@ class UserSettingsRepository @Inject constructor(
         private val KEY_DAILY_SUDOKU_NOTIFICATION_HOUR = intPreferencesKey("dailySudokuNotificationHour")
         private val KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE = intPreferencesKey("dailySudokuNotificationMinute")
         private val KEY_LAST_IN_APP_REVIEW_REQUEST = longPreferencesKey("lastInAppReviewRequest")
+        private val KEY_CURRENT_LEVEL_TAB = intPreferencesKey("currentLevelTab")
     }
 }
 
@@ -132,6 +135,8 @@ data class UserSettings(
     /** daily Sudoku Notification minute */
     val dailySudokuNotificationMinute: Int,
     /** last time in app review was requested */
-    val lastInAppReviewRequest: Long = 0,
+    val lastInAppReviewRequest: Long,
+    /** the number of the currently selected Tab in SudokuLevelActivity */
+    val currentLevelTab: Int,
 
     )

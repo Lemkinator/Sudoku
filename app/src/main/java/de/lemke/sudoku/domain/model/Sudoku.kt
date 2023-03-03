@@ -264,7 +264,7 @@ class Sudoku(
                 gameListener?.onFieldChanged(position)
                 true
             }
-            field.correct -> false
+            field.correct || field.value == value -> false
             else -> {
                 field.value = value
                 gameListener?.onFieldChanged(position)

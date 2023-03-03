@@ -76,7 +76,9 @@ class SudokuLevelTab(private val size: Int) : Fragment(), OnDataChangedListener 
 
     override fun onPause() {
         super.onPause()
-        savedPosition = (binding.sudokuLevelsRecycler.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+        if (binding.sudokuLevelsRecycler.layoutManager is LinearLayoutManager) {
+            savedPosition = (binding.sudokuLevelsRecycler.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+        }
     }
 
     private suspend fun initList() {

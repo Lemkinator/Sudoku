@@ -28,6 +28,7 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 
 
@@ -181,8 +182,8 @@ class IntroActivity : AppCompatActivity() {
         binding.gameRecycler.seslSetFillBottomEnabled(true)
         binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = SudokuGameListener()
+        sudoku.timer = Timer()
         initSudokuButtons()
-        checkAnyNumberCompleted(null)
         loadingDialog.dismiss()
     }
 
@@ -218,7 +219,6 @@ class IntroActivity : AppCompatActivity() {
 
         override fun onFieldChanged(position: Position) {
             gameAdapter.updateFieldView(position.index)
-            checkAnyNumberCompleted(sudoku[position].value)
             lifecycleScope.launch {
                 checkRowColumnBlockCompleted(position)
             }
@@ -229,38 +229,6 @@ class IntroActivity : AppCompatActivity() {
         override fun onError() {}
 
         override fun onTimeChanged() {}
-    }
-
-    private fun checkAnyNumberCompleted(currentNumber: Int?) {
-        lifecycleScope.launch {
-            val completedNumbers = sudoku.getCompletedNumbers()
-            completedNumbers.forEach { pair ->
-                if (pair.second) {
-                    sudokuButtons[pair.first - 1].isEnabled = false
-                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.secondary_text_icon_color))
-                    if (currentNumber == pair.first && selected in sudoku.itemCount until sudoku.itemCount + sudoku.size)
-                        selectNextButton(pair.first, completedNumbers)
-                } else {
-                    sudokuButtons[pair.first - 1].isEnabled = true
-                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.primary_text_icon_color))
-                }
-            }
-        }
-    }
-
-    private fun selectNextButton(n: Int, completedNumbers: List<Pair<Int, Boolean>>) {
-        var number = n
-        while (completedNumbers[number - 1].second) {
-            number++
-            if (number > completedNumbers.size) number = 1 //wrap around
-            if (number == n) { //all numbers are completed
-                selected = null
-                selectButton(null)
-                return
-            }
-        }
-        selected = sudoku.itemCount + number - 1
-        selectButton(number - 1)
     }
 
     private fun checkRowColumnBlockCompleted(position: Position) {
