@@ -10,8 +10,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class UpdatePlayGamesUseCase @Inject constructor(
-    private val getAllSudokus: GetAllSudokusUseCase,
-    private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase
+    private val getAllSudokus: GetAllSudokusUseCase
 ) {
 
     suspend operator fun invoke(activity: Activity, completedSudoku: Sudoku? = null) = withContext(Dispatchers.Default) {
@@ -20,9 +19,9 @@ class UpdatePlayGamesUseCase @Inject constructor(
         val sudokus = getAllSudokus().filter { it.completed }
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_total_wins), sudokus.size.toLong())
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_daily_sudokus), sudokus.count { it.isDailySudoku }.toLong())
-        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_44), getMaxSudokuLevel(4).toLong())
-        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_99), getMaxSudokuLevel(9).toLong())
-        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_1616), getMaxSudokuLevel(16).toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_44), sudokus.count { it.size == 4 && it.isSudokuLevel }.toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_99), sudokus.count { it.size == 9 && it.isSudokuLevel }.toLong())
+        leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_level_1616), sudokus.count { it.size == 16 && it.isSudokuLevel }.toLong())
         if (completedSudoku == null) return@withContext
         achievementsClient.unlock(activity.getString(R.string.achievement_first_win))
         leaderboardsClient.submitScore(activity.getString(R.string.leaderboard_best_time), completedSudoku.seconds * 1000L)

@@ -156,9 +156,7 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                         .setNegativeButton(getString(R.string.sesl_cancel), null)
                         .show()
                 }
-                binding.aboutHeaderInsta.id -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_insta))))
-                }
+                binding.aboutHeaderInsta.id -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_insta))))
                 bottomContent.aboutBottomWriteEmail.id -> {
                     val intent = Intent(Intent.ACTION_SENDTO)
                     intent.data = Uri.parse("mailto:") // only email apps should handle this
