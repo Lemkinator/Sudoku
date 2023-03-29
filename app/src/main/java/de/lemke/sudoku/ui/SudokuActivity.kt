@@ -413,6 +413,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun restartGame() {
         lifecycleScope.launch {
+            loadingDialog.show()
             sudoku.reset()
             saveSudoku(sudoku)
             initSudoku(sudoku)
