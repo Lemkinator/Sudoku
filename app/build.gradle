@@ -103,10 +103,8 @@ dependencies {
 
     implementation 'androidx.core:core-splashscreen:1.0.0'
     implementation 'androidx.core:core-animation:1.0.0-beta01'
-    implementation 'androidx.core:core-ktx:1.9.0'
     implementation "com.google.android.gms:play-services-games-v2:17.0.0"
     implementation 'com.google.android.play:core-ktx:1.8.1'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1' //Duplicate class kotlin...
     implementation 'androidx.asynclayoutinflater:asynclayoutinflater:1.0.0'
 
     implementation "androidx.datastore:datastore-preferences:1.0.0"
@@ -116,7 +114,19 @@ dependencies {
     kapt "androidx.room:room-compiler:$room_version"
     androidTestImplementation "androidx.room:room-testing:$room_version"
 
+    //kotlin 1.8 vs 1.7, kotlin-stdlib-jdk8 vs kotlin-stdlib-jdk7
+    //https://github.com/facebook/react-native/issues/35979
+    //https://kotlinlang.org/docs/whatsnew18.html#usage-of-the-latest-kotlin-stdlib-version-in-transitive-dependencies
+    //https://stackoverflow.com/questions/67744002/hilt-unsupported-metadata-version-in-kotlin
+
+    //noinspection GradleDependency
+    implementation 'androidx.core:core-ktx:1.9.0'
+    //noinspection GradleDependency
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
+
+    //noinspection GradleDependency
     implementation 'com.google.dagger:hilt-android:2.42'
+    //noinspection GradleDependency
     kapt 'com.google.dagger:hilt-compiler:2.42'
 
     testImplementation 'junit:junit:4.13.2'
