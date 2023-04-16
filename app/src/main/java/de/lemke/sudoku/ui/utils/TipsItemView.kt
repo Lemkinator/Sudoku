@@ -8,7 +8,6 @@ import android.util.Log
 import android.util.TypedValue
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
@@ -58,10 +57,8 @@ class TipsItemView @JvmOverloads constructor(
         titleTextView.text = titleText
     }
 
-    fun setTitleColor(@ColorInt color: Int) = titleTextView.setTextColor(color)
-
     fun setSummaryText(summaryText: CharSequence?) {
-        summaryTextView.visibility = if ((summaryText == null || summaryText.isEmpty())) GONE else VISIBLE
+        summaryTextView.visibility = if (summaryText.isNullOrEmpty()) GONE else VISIBLE
         summaryTextView.text = summaryText
     }
 

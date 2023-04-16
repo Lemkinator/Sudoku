@@ -29,7 +29,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_oui_game"
+                android:src="@drawable/ic_oui_game_outline"
                 tools:ignore="ContentDescription" />
 
             <TextView
@@ -63,7 +63,7 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_oui_game"
+                android:src="@drawable/ic_oui_game_outline"
                 tools:ignore="ContentDescription" />
 
             <TextView

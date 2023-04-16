@@ -83,7 +83,7 @@
                         android:layout_marginEnd="8dp"
                         android:background="?attr/actionBarItemBackground"
                         android:tint="@color/secondary_text_icon_color"
-                        app:srcCompat="@drawable/ic_oui_website" />
+                        app:srcCompat="@drawable/ic_oui_internet_website" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/about_header_insta"

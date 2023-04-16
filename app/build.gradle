@@ -17,15 +17,15 @@ android {
         applicationId "de.lemke.sudoku"
         minSdk 26
         targetSdk 33
-        versionCode 27
-        versionName "3.0.4"
+        versionCode 28
+        versionName "3.0.5"
 
         kapt {
             arguments {
                 arg("room.schemaLocation", "$projectDir/schemas")
             }
         }
-        resConfigs 'en', 'de'
+        resourceConfigurations += ['en', 'de']
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -74,8 +74,6 @@ android {
     buildFeatures {
         viewBinding true
     }
-
-    ndkVersion "25.1.8937393"
 }
 
 configurations.all {
@@ -88,13 +86,13 @@ configurations.all {
 }
 
 dependencies {
-    implementation 'io.github.oneuiproject:design:1.2.2'
+    implementation 'io.github.oneuiproject:design:1.2.3'
     implementation 'io.github.oneuiproject.sesl:appcompat:1.3.0'
     implementation 'io.github.oneuiproject.sesl:material:1.4.0'
     implementation 'io.github.oneuiproject.sesl:preference:1.1.0'
     implementation 'io.github.oneuiproject.sesl:recyclerview:1.3.0'
     implementation 'io.github.oneuiproject.sesl:picker-basic:1.1.0'
-    implementation 'io.github.oneuiproject:icons:1.0.1'
+    implementation 'io.github.oneuiproject:icons:1.1.0'
 
     implementation 'de.sfuhrm:sudoku:5.0.1'
     implementation 'com.airbnb.android:lottie:6.0.0'

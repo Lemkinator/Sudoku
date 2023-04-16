@@ -24,7 +24,7 @@
         android:id="@+id/item_icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_oui_time"
+        android:src="@drawable/ic_oui_time_outline"
         android:tint="@color/oui_primary_icon_color"
         tools:ignore="ContentDescription" />
 

@@ -41,8 +41,6 @@
     <string name="next_level">Next level</string>
 
     <string name="no_game_played">No game played yet</string>
-    <string name="task_failed">Oops, something went wrong…</string>
-    <string name="error">Error</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
 
     <!--Menu-->

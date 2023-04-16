@@ -90,8 +90,4 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
             summaryTextView.text = summaryText1
             if (summaryText1!!.isEmpty()) summaryTextView.visibility = View.GONE else summaryTextView.visibility = View.VISIBLE
         }
-
-    fun setDividerVisible(visible: Boolean) {
-        dividerView!!.visibility = if (visible) View.VISIBLE else View.GONE
-    }
 }

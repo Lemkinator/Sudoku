@@ -247,7 +247,7 @@ class MainActivityTabHistory : Fragment() {
                     ContextCompat.getDrawable(
                         requireContext(),
                         if (sudoku.completed) dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
-                        else dev.oneuiproject.oneui.R.drawable.ic_oui_time
+                        else dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline
                     )
                 )
                 lifecycleScope.launch {
