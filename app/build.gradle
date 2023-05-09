@@ -87,19 +87,19 @@ configurations.all {
 
 dependencies {
     implementation 'io.github.oneuiproject:design:1.2.3'
-    implementation 'io.github.oneuiproject.sesl:appcompat:1.3.0'
-    implementation 'io.github.oneuiproject.sesl:material:1.4.0'
+    implementation 'io.github.oneuiproject.sesl:appcompat:1.4.0'
+    implementation 'io.github.oneuiproject.sesl:material:1.5.0'
     implementation 'io.github.oneuiproject.sesl:preference:1.1.0'
-    implementation 'io.github.oneuiproject.sesl:recyclerview:1.3.0'
-    implementation 'io.github.oneuiproject.sesl:picker-basic:1.1.0'
+    implementation 'io.github.oneuiproject.sesl:recyclerview:1.4.0'
+    implementation 'io.github.oneuiproject.sesl:picker-basic:1.2.0'
     implementation 'io.github.oneuiproject:icons:1.1.0'
 
     implementation 'de.sfuhrm:sudoku:5.0.1'
     implementation 'com.airbnb.android:lottie:6.0.0'
-    implementation 'io.kjson:kjson:4.2'
+    implementation 'io.kjson:kjson:4.4'
     implementation 'net.pwall.json:json-kotlin-schema:0.39'
 
-    implementation 'androidx.core:core-splashscreen:1.0.0'
+    implementation 'androidx.core:core-splashscreen:1.0.1'
     implementation 'androidx.core:core-animation:1.0.0-beta01'
     implementation "com.google.android.gms:play-services-games-v2:17.0.0"
     implementation 'com.google.android.play:core-ktx:1.8.1'
