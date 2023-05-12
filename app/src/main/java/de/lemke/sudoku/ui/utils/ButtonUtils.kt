@@ -17,8 +17,8 @@ class ButtonUtils {
                 R.style.ButtonStyle_Filled -> {
                     button.backgroundTintList = ContextCompat.getColorStateList(context, R.color.filled_background_color)
                     button.compoundDrawableTintList =
-                        ContextCompat.getColorStateList(context, dev.oneuiproject.oneui.design.R.color.oui_primary_text_color)
-                    button.setTextColor(ContextCompat.getColor(context, dev.oneuiproject.oneui.design.R.color.oui_primary_text_color))
+                        ContextCompat.getColorStateList(context, R.color.primary_text_icon_color_themed)
+                    button.setTextColor(ContextCompat.getColor(context, R.color.primary_text_icon_color_themed))
                 }
                 R.style.ButtonStyle_Transparent -> {
                     button.backgroundTintList = ContextCompat.getColorStateList(context, android.R.color.transparent)
