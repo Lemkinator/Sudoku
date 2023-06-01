@@ -82,9 +82,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
 
     override fun onPause() {
         super.onPause()
-        if (binding.dailySudokuRecycler.layoutManager is LinearLayoutManager) {
-            savedPosition = (binding.dailySudokuRecycler.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-        }
+        savedPosition = (binding.dailySudokuRecycler.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
