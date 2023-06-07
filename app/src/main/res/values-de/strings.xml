@@ -171,6 +171,7 @@
     <!--Play Games-->
     <string name="play_games_leaderboards">Bestenlisten</string>
     <string name="play_games_achievements">Erfolge</string>
+    <string name="error_sign_in_failed">Anmeldung bei Google Play Spiele fehlgeschlagen</string>
 
     <!--Intro-->
     <string name="skip">Überspringen</string>

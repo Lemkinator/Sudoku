@@ -194,6 +194,7 @@
     <!--Play Games-->
     <string name="play_games_leaderboards">Leaderboards</string>
     <string name="play_games_achievements">Achievements</string>
+    <string name="error_sign_in_failed">Failed to sign in to Google Play Games</string>
 
     <!--Intro-->
     <string name="skip">Skip</string>

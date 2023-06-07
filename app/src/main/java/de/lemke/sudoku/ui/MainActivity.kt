@@ -19,6 +19,7 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.games.AuthenticationResult
+import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
@@ -180,40 +181,14 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
         achievementsOption.setOnClickListener {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
-                if (isAuthenticated) {
-                    PlayGames.getAchievementsClient(this)
-                        .achievementsIntent
-                        .addOnSuccessListener { intent ->
-                            playGamesActivityResultLauncher.launch(
-                                intent,
-                                ActivityOptionsCompat.makeCustomAnimation(
-                                    this,
-                                    android.R.anim.slide_in_left,
-                                    android.R.anim.slide_out_right
-                                )
-                            )
-                        }
-                } else gamesSignInClient.signIn()
+                if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openAchievements()
+                else signInPlayGames(gamesSignInClient) { openAchievements() }
             }
         }
         leaderboardsOption.setOnClickListener {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                val isAuthenticated = isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated
-                if (isAuthenticated) {
-                    PlayGames.getLeaderboardsClient(this)
-                        .allLeaderboardsIntent
-                        .addOnSuccessListener { intent ->
-                            playGamesActivityResultLauncher.launch(
-                                intent,
-                                ActivityOptionsCompat.makeCustomAnimation(
-                                    this,
-                                    android.R.anim.slide_in_left,
-                                    android.R.anim.slide_out_right
-                                )
-                            )
-                        }
-                } else gamesSignInClient.signIn()
+                if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openLeaderboards()
+                else signInPlayGames(gamesSignInClient) { openLeaderboards() }
             }
         }
         aboutAppOption.setOnClickListener {
@@ -239,6 +214,46 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
+    private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
+        gamesSignInClient.signIn().addOnCompleteListener { signInTask: Task<AuthenticationResult> ->
+            if (signInTask.isSuccessful && signInTask.result.isAuthenticated) onSuccess()
+            else {
+                binding.drawerLayoutMain.setDrawerOpen(false, true)
+                Toast.makeText(this@MainActivity, getString(R.string.error_sign_in_failed), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun openLeaderboards() {
+        PlayGames.getLeaderboardsClient(this)
+            .allLeaderboardsIntent
+            .addOnSuccessListener { intent ->
+                playGamesActivityResultLauncher.launch(
+                    intent,
+                    ActivityOptionsCompat.makeCustomAnimation(
+                        this,
+                        android.R.anim.slide_in_left,
+                        android.R.anim.slide_out_right
+                    )
+                )
+            }
+    }
+
+    private fun openAchievements() {
+        PlayGames.getAchievementsClient(this)
+            .achievementsIntent
+            .addOnSuccessListener { intent ->
+                playGamesActivityResultLauncher.launch(
+                    intent,
+                    ActivityOptionsCompat.makeCustomAnimation(
+                        this,
+                        android.R.anim.slide_in_left,
+                        android.R.anim.slide_out_right
+                    )
+                )
+            }
+    }
+
     private fun initTabs() {
         binding.mainMarginsTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
         binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.history)))
@@ -259,6 +274,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                             if (historyRecyclerView.canScrollVertically(-1)) historyRecyclerView.smoothScrollToPosition(0)
                             else binding.drawerLayoutMain.setExpanded(!binding.drawerLayoutMain.isExpanded, true)
                         }
+
                         getString(R.string.statistics) -> {
                             val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
                             if (binding.drawerLayoutMain.isExpanded) binding.drawerLayoutMain.setExpanded(false, true)
@@ -325,6 +341,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 ) -> {
                 binding.drawerLayoutMain.setDrawerOpen(false, true)
             }
+
             else -> binding.mainMarginsTabLayout.selectTab(binding.mainMarginsTabLayout.getTabAt(1))
         }
 
