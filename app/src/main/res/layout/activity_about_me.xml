@@ -161,7 +161,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/leo_job"
                     android:textAppearance="?android:attr/textAppearanceListItemSecondary"
-                    android:textColor="@color/secondary_text_icon_color" />
+                    android:textColor="@color/secondary_text_icon_color_themed" />
 
             </LinearLayout>
 
