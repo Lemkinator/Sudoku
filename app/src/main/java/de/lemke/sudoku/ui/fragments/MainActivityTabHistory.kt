@@ -64,6 +64,7 @@ class MainActivityTabHistory : Fragment() {
     private var selected = HashMap<Int, Boolean>()
     private var selecting = false
     private var checkAllListening = true
+    private var savedPosition: Int? = null
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
@@ -112,8 +113,17 @@ class MainActivityTabHistory : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch { initList() }
+        lifecycleScope.launch {
+            initList()
+            savedPosition?.let { (binding.sudokuHistoryList.layoutManager as? LinearLayoutManager)?.scrollToPosition(it) }
+            savedPosition = null
+        }
         requireActivity().onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        savedPosition = (binding.sudokuHistoryList.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition()
     }
 
     private suspend fun initList() {

@@ -75,7 +75,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         super.onResume()
         lifecycleScope.launch {
             initList()
-            savedPosition?.let { (binding.dailySudokuRecycler.layoutManager as LinearLayoutManager).scrollToPosition(it) }
+            savedPosition?.let { (binding.dailySudokuRecycler.layoutManager as? LinearLayoutManager)?.scrollToPosition(it) }
             savedPosition = null
         }
     }
