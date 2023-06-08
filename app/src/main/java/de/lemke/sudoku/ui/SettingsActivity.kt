@@ -301,7 +301,6 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         @SuppressLint("WrongConstant", "RestrictedApi")
-        @Suppress("UNCHECKED_CAST")
         override fun onPreferenceChange(preference: Preference, newValue: Any): Boolean {
             when (preference.key) {
                 "dark_mode_pref" -> {

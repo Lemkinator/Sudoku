@@ -173,8 +173,8 @@ class MainActivityTabHistory : Fragment() {
             selecting = true
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             drawerLayout.actionModeBottomMenu.clear()
-            drawerLayout.setActionModeBottomMenu(R.menu.remove_menu)
-            drawerLayout.setActionModeBottomMenuListener { item: MenuItem ->
+            drawerLayout.setActionModeMenu(R.menu.remove_menu)
+            drawerLayout.setActionModeMenuListener { item: MenuItem ->
                 when (item.itemId) {
                     R.id.menuButtonRemove -> {
                         val dialog = ProgressDialog(context)
