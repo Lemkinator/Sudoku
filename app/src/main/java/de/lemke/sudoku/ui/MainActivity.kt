@@ -3,6 +3,7 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
@@ -169,7 +170,10 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onPause() {
         super.onPause()
-        binding.drawerLayoutMain.setDrawerOpen(false, true)
+        lifecycleScope.launch {
+            delay(500) //delay, so closing the drawer is not visible for the user
+            binding.drawerLayoutMain.setDrawerOpen(false, false)
+        }
     }
 
     private fun initDrawer() {
@@ -193,15 +197,12 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
         aboutAppOption.setOnClickListener {
             startActivity(Intent(this@MainActivity, AboutActivity::class.java))
-            binding.drawerLayoutMain.setDrawerOpen(false, true)
         }
         aboutMeOption.setOnClickListener {
             startActivity(Intent(this@MainActivity, AboutMeActivity::class.java))
-            binding.drawerLayoutMain.setDrawerOpen(false, true)
         }
         settingsOption.setOnClickListener {
             startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-            binding.drawerLayoutMain.setDrawerOpen(false, true)
         }
         binding.drawerLayoutMain.setDrawerButtonIcon(getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
         binding.drawerLayoutMain.setDrawerButtonOnClickListener {
@@ -212,6 +213,21 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
                 binding.drawerLayoutMain.setButtonBadges(ToolbarLayout.N_BADGE, DrawerLayout.N_BADGE)
         }
+        binding.drawerLayoutMain.findViewById<androidx.drawerlayout.widget.DrawerLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer)
+            .addDrawerListener(
+                object : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
+                    override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+                    override fun onDrawerOpened(drawerView: View) {
+                        setBackPressedEnabled(true)
+                    }
+
+                    override fun onDrawerClosed(drawerView: View) {
+                        setBackPressedEnabled(false)
+                    }
+
+                    override fun onDrawerStateChanged(newState: Int) {}
+                }
+            )
     }
 
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
@@ -300,11 +316,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     fun onTabItemSelected(position: Int, tab: TabLayout.Tab? = null) {
-        onBackPressedCallback.isEnabled = position != 1
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (position == 1) onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
-            else onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback)
-        }
+        setBackPressedEnabled(position != 1)
         val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
@@ -333,6 +345,18 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
+    private fun setBackPressedEnabled(enabled: Boolean) {
+        if (!::onBackPressedCallback.isInitialized || !::onBackInvokedCallback.isInitialized) return
+        onBackPressedCallback.isEnabled = enabled
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (enabled) onBackInvokedDispatcher.registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                onBackInvokedCallback
+            )
+            else onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
+        }
+    }
+
     private fun checkBackPressed() {
         when {
             binding.drawerLayoutMain.findViewById<androidx.drawerlayout.widget.DrawerLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer)
@@ -342,7 +366,14 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 binding.drawerLayoutMain.setDrawerOpen(false, true)
             }
 
-            else -> binding.mainMarginsTabLayout.selectTab(binding.mainMarginsTabLayout.getTabAt(1))
+            binding.mainMarginsTabLayout.selectedTabPosition != 1 -> {
+                binding.mainMarginsTabLayout.selectTab(binding.mainMarginsTabLayout.getTabAt(1))
+            }
+
+            else -> {
+                //should not get here, callback should be disabled/unregistered
+                finishAffinity()
+            }
         }
 
     }
