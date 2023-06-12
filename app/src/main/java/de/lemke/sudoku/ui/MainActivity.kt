@@ -31,7 +31,12 @@ import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
-import de.lemke.sudoku.domain.*
+import de.lemke.sudoku.domain.AppStart
+import de.lemke.sudoku.domain.CheckAppStartUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.ImportSudokuUseCase
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
+import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -316,7 +321,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     fun onTabItemSelected(position: Int, tab: TabLayout.Tab? = null) {
-        setBackPressedEnabled(position != 1)
         val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
@@ -364,10 +368,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                     binding.drawerLayoutMain.findViewById<LinearLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer_content)
                 ) -> {
                 binding.drawerLayoutMain.setDrawerOpen(false, true)
-            }
-
-            binding.mainMarginsTabLayout.selectedTabPosition != 1 -> {
-                binding.mainMarginsTabLayout.selectTab(binding.mainMarginsTabLayout.getTabAt(1))
             }
 
             else -> {
