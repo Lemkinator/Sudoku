@@ -201,7 +201,8 @@ class MainActivityTabHistory : Fragment() {
                     sudokuHistory.forEachIndexed { index, pair -> if (pair.first == null) selected[index] = false }
                     selected.forEach { (index, _) -> sudokuListAdapter.notifyItemChanged(index) }
                 }
-                drawerLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
+                val count = selected.values.count { it }
+                drawerLayout.setActionModeAllSelector(count, true, count == sudokuList.size)
             }
             mainTabs.isEnabled = false
             onBackPressedCallback.isEnabled = true
@@ -212,7 +213,7 @@ class MainActivityTabHistory : Fragment() {
             selecting = false
             for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
-            drawerLayout.setActionModeCount(0, sudokuList.size)
+            drawerLayout.setActionModeAllSelector(0, true, false)
             drawerLayout.dismissActionMode()
             mainTabs.isEnabled = true
             onBackPressedCallback.isEnabled = false
@@ -226,7 +227,8 @@ class MainActivityTabHistory : Fragment() {
         selected[position] = !selected[position]!!
         sudokuListAdapter.notifyItemChanged(position)
         checkAllListening = false
-        drawerLayout.setActionModeCount(selected.values.count { it }, sudokuList.size)
+        val count = selected.values.count { it }
+        drawerLayout.setActionModeAllSelector(count, true, count == sudokuList.size)
         checkAllListening = true
     }
 
