@@ -65,6 +65,7 @@ class MainActivityTabHistory : Fragment() {
     private var selecting = false
     private var checkAllListening = true
     private var savedPosition: Int? = null
+    private var onOffsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
@@ -99,7 +100,7 @@ class MainActivityTabHistory : Fragment() {
                 setSelecting(false)
             }
         }
-        drawerLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
+        onOffsetChangedListener = AppBarLayout.OnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
                 InputMethodManager::class.java,
@@ -109,6 +110,12 @@ class MainActivityTabHistory : Fragment() {
             if (totalScrollRange != 0) binding.historyNoEntryView.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
             else binding.historyNoEntryView.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
+        drawerLayout.appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        drawerLayout.appBarLayout.removeOnOffsetChangedListener(onOffsetChangedListener)
     }
 
     override fun onResume() {

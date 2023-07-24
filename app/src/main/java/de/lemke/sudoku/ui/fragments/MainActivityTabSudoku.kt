@@ -34,6 +34,7 @@ import kotlin.math.abs
 class MainActivityTabSudoku : Fragment() {
     private lateinit var binding: FragmentTabSudokuBinding
     private lateinit var loadingDialog: ProgressDialog
+    private var onOffsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -65,17 +66,18 @@ class MainActivityTabSudoku : Fragment() {
         loadingDialog = ProgressDialog(context)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
-        activity.findViewById<DrawerLayout>(R.id.drawer_layout_main)
-            .appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
-                val totalScrollRange = layout.totalScrollRange
-                val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
-                    InputMethodManager::class.java,
-                    activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
-                    "getInputMethodWindowVisibleHeight"
-                ) as Int
-                if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-                else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
-            }
+        onOffsetChangedListener = AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
+            val totalScrollRange = appBarLayout.totalScrollRange
+            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
+                InputMethodManager::class.java,
+                activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
+                "getInputMethodWindowVisibleHeight"
+            ) as Int
+            if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
+            else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
+        }
+
+        activity.findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
         SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
         binding.sizeSeekbar.setSeamless(true)
         binding.sizeSeekbar.max = 2
@@ -143,6 +145,12 @@ class MainActivityTabSudoku : Fragment() {
                 if (isDailySudokuCompleted()) R.style.ButtonStyle_Filled else R.style.ButtonStyle_Colored
             )
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        requireActivity().findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout
+            .removeOnOffsetChangedListener(onOffsetChangedListener)
     }
 }
 
