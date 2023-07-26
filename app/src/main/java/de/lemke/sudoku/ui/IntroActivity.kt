@@ -53,6 +53,9 @@ class IntroActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
+        }
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -511,7 +514,10 @@ class IntroActivity : AppCompatActivity() {
         if (!openedFromSettings) {
             updateUserSettings { it.copy(tosAccepted = true) }
             startActivity(Intent(applicationContext, MainActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            if (Build.VERSION.SDK_INT < 34) {
+                @Suppress("DEPRECATION")
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            }
         }
         finish()
     }
