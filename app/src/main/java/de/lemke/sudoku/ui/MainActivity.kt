@@ -6,9 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -37,6 +34,7 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
+import de.lemke.sudoku.domain.setCustomOnBackPressedLogic
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -45,6 +43,7 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,8 +51,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var onBackPressedCallback: OnBackPressedCallback
-    private lateinit var onBackInvokedCallback: OnBackInvokedCallback
+    private val backPressEnabled = MutableStateFlow(false)
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
@@ -147,7 +145,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun openMain() {
-        initOnBackPressed()
+        setCustomOnBackPressedLogic(triggerStateFlow = backPressEnabled, onBackPressedLogic = { checkBackPressed() })
         initDrawer()
         initTabs()
         initFragments()
@@ -229,11 +227,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 object : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
                     override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
                     override fun onDrawerOpened(drawerView: View) {
-                        setBackPressedEnabled(true)
+                        backPressEnabled.value = true
                     }
 
                     override fun onDrawerClosed(drawerView: View) {
-                        setBackPressedEnabled(false)
+                        backPressEnabled.value = false
                     }
 
                     override fun onDrawerStateChanged(newState: Int) {}
@@ -340,31 +338,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
-    }
-
-    private fun initOnBackPressed() {
-        //set custom callback to prevent app from exiting on back press when in search mode
-        onBackPressedCallback = object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                checkBackPressed()
-            }
-        }
-        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            onBackInvokedCallback = OnBackInvokedCallback { checkBackPressed() }
-        }
-    }
-
-    private fun setBackPressedEnabled(enabled: Boolean) {
-        if (!::onBackPressedCallback.isInitialized || !::onBackInvokedCallback.isInitialized) return
-        onBackPressedCallback.isEnabled = enabled
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (enabled) onBackInvokedDispatcher.registerOnBackInvokedCallback(
-                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                onBackInvokedCallback
-            )
-            else onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
-        }
     }
 
     private fun checkBackPressed() {

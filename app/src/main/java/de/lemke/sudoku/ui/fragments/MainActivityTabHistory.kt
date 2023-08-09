@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
-import android.os.Build
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -14,9 +13,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
@@ -38,12 +34,14 @@ import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetSudokuHistoryUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.setCustomOnBackPressedLogic
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import dev.oneuiproject.oneui.widget.Separator
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -59,8 +57,7 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mainTabs: MarginsTabLayout
-    private lateinit var onBackPressedCallback: OnBackPressedCallback
-    private lateinit var onBackInvokedCallback: OnBackInvokedCallback
+    private val backPressEnabled = MutableStateFlow(false)
     private var selected = HashMap<Int, Boolean>()
     private var selecting = false
     private var checkAllListening = true
@@ -90,16 +87,6 @@ class MainActivityTabHistory : Fragment() {
         val activity = requireActivity()
         drawerLayout = activity.findViewById(R.id.drawer_layout_main)
         mainTabs = activity.findViewById(R.id.main_margins_tab_layout)
-        onBackPressedCallback = object : OnBackPressedCallback(false) {
-            override fun handleOnBackPressed() {
-                setSelecting(false)
-            }
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            onBackInvokedCallback = OnBackInvokedCallback {
-                setSelecting(false)
-            }
-        }
         onOffsetChangedListener = AppBarLayout.OnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
             val totalScrollRange = layout.totalScrollRange
             val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
@@ -111,6 +98,7 @@ class MainActivityTabHistory : Fragment() {
             else binding.historyNoEntryView.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
         drawerLayout.appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
+        setCustomOnBackPressedLogic(triggerStateFlow = backPressEnabled) { setSelecting(false) }
     }
 
     override fun onDestroyView() {
@@ -125,7 +113,6 @@ class MainActivityTabHistory : Fragment() {
             savedPosition?.let { (binding.sudokuHistoryList.layoutManager as? LinearLayoutManager)?.scrollToPosition(it) }
             savedPosition = null
         }
-        requireActivity().onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     override fun onPause() {
@@ -212,10 +199,7 @@ class MainActivityTabHistory : Fragment() {
                 drawerLayout.setActionModeAllSelector(count, true, count == sudokuList.size)
             }
             mainTabs.isEnabled = false
-            onBackPressedCallback.isEnabled = true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requireActivity().onBackInvokedDispatcher.registerOnBackInvokedCallback(PRIORITY_DEFAULT, onBackInvokedCallback)
-            }
+            backPressEnabled.value = true
         } else {
             selecting = false
             for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
@@ -223,10 +207,7 @@ class MainActivityTabHistory : Fragment() {
             drawerLayout.setActionModeAllSelector(0, true, false)
             drawerLayout.dismissActionMode()
             mainTabs.isEnabled = true
-            onBackPressedCallback.isEnabled = false
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requireActivity().onBackInvokedDispatcher.unregisterOnBackInvokedCallback(onBackInvokedCallback)
-            }
+            backPressEnabled.value = false
         }
     }
 

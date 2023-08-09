@@ -11,8 +11,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import android.window.OnBackInvokedDispatcher
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
@@ -61,7 +59,9 @@ class IntroActivity : AppCompatActivity() {
 
         openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
 
-        initOnBackPressed()
+        setCustomOnBackPressedLogic {
+            backPressed()
+        }
 
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
@@ -143,18 +143,6 @@ class IntroActivity : AppCompatActivity() {
                 binding.introContinueLayout.visibility = View.VISIBLE
             }
         }
-    }
-
-    private fun initOnBackPressed() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            onBackInvokedDispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT) {
-                backPressed()
-            }
-        else onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                backPressed()
-            }
-        })
     }
 
     private fun backPressed() {
