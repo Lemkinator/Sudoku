@@ -36,10 +36,18 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
     }
 
     fun highlightNumber(number: Int?) {
-        sudoku.numberHighlightingUsed = true
-        fieldViews.forEach {
-            it?.isHighlightedNumber = number != null && it?.field?.value == number
-            it?.setBackground()
+        if (number == null) {
+            fieldViews.forEach {
+                it?.isHighlightedNumber = false
+                it?.setBackground()
+            }
+        } else {
+
+            sudoku.numberHighlightingUsed = true
+            fieldViews.forEach {
+                it?.isHighlightedNumber = it?.field?.value == number
+                it?.setBackground()
+            }
         }
     }
 

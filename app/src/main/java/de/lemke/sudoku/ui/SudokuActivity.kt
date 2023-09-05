@@ -19,6 +19,7 @@ import com.google.android.gms.games.PlayGames
 import com.google.android.play.core.review.ReviewManagerFactory
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.*
@@ -40,7 +41,8 @@ class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     private lateinit var toolbarMenu: Menu
-    private var colorPrimary: Int = 0
+    private lateinit var userSettings: UserSettings
+    private lateinit var colorPrimary: ColorStateList
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -92,12 +94,17 @@ class SudokuActivity : AppCompatActivity() {
 
         val typedValue = TypedValue()
         theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
-        colorPrimary = typedValue.data
+        colorPrimary = ColorStateList.valueOf(typedValue.data)
 
         binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
-        lifecycleScope.launch { initSudoku(SudokuId(id)) }
+        lifecycleScope.launch {
+            userSettings = getUserSettings()
+            val nullableSudoku = getSudoku(SudokuId(id))
+            if (nullableSudoku == null) finish()
+            else initSudoku(nullableSudoku)
+        }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
@@ -120,62 +127,15 @@ class SudokuActivity : AppCompatActivity() {
         return true
     }
 
-    private fun shareDialog() {
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.share_sudoku)
-            .setView(R.layout.dialog_share)
-            .setPositiveButton(R.string.share, null)
-            .setNegativeButton(R.string.sesl_cancel, null)
-            .create()
-        dialog.show()
-        dialog.findViewById<TextView>(R.id.share_statistics)?.text = sudoku.getLocalStatisticsString(resources)
-        DialogUtils.setDialogProgressForButton(dialog, DialogInterface.BUTTON_POSITIVE) {
-            lifecycleScope.launch {
-                when (dialog.findViewById<RadioGroup>(R.id.share_radio_group)?.checkedRadioButtonId) {
-                    R.id.radio_button_text -> {
-                        val sendIntent = Intent(Intent.ACTION_SEND)
-                        sendIntent.type = "text/plain"
-                        sendIntent.putExtra(Intent.EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
-                        sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_sudoku))
-                        sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        startActivity(Intent.createChooser(sendIntent, getString(R.string.share_sudoku)))
-                    }
-                    R.id.radio_button_initial -> shareGame(sudoku.getInitialSudoku())
-                    R.id.radio_button_current -> shareGame(sudoku.copy(modeLevel = Sudoku.MODE_NORMAL))
-                }
-                dialog.dismiss()
-            }
-        }
-    }
-
-    private suspend fun shareGame(sudoku: Sudoku) {
-        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
-        val uri = shareSudoku(sudoku)
-        val shareIntent = Intent(Intent.ACTION_SEND)
-        shareIntent.type = "application/sudoku" //octet-stream"
-        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
-        //for (ri in packageManager.queryIntentActivities(shareIntent, PackageManager.MATCH_DEFAULT_ONLY))
-        //    grantUriPermission(ri.activityInfo.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        startActivity(Intent.createChooser(shareIntent, getString(R.string.share)))
-    }
-
     private fun setToolbarMenuItemsVisible(pausePlay: Boolean = false, reset: Boolean = false) {
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, pausePlay)
         toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, reset)
-    }
-
-    private suspend fun initSudoku(id: SudokuId) {
-        val nullableSudoku = getSudoku(id)
-        if (nullableSudoku == null) finish()
-        else initSudoku(nullableSudoku)
     }
 
     private fun initSudoku(sudoku: Sudoku) {
         this.sudoku = sudoku
         setTitle()
         setSubtitle()
-        refreshHintButton()
         binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
         binding.gameRecycler.adapter = gameAdapter
@@ -185,7 +145,6 @@ class SudokuActivity : AppCompatActivity() {
             setToolbarMenuItemsVisible()
             binding.gameButtons.visibility = View.GONE
         } else resumeGame()
-        checkAnyNumberCompleted(null)
         loadingDialog.dismiss()
     }
 
@@ -215,40 +174,32 @@ class SudokuActivity : AppCompatActivity() {
         }
         for (index in sudokuButtons.indices) {
             sudokuButtons[index].visibility = View.VISIBLE
-            sudokuButtons[index].setOnClickListener {
-                lifecycleScope.launch { select(sudoku.itemCount + index) }
-            }
+            sudokuButtons[index].setOnClickListener { select(sudoku.itemCount + index) }
         }
-        binding.deleteButton.setOnClickListener {
-            lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
-        }
-        binding.hintButton.setOnClickListener {
-            lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) }
-        }
+        binding.deleteButton.setOnClickListener { select(sudoku.itemCount + sudoku.size) }
+        binding.hintButton.setOnClickListener { select(sudoku.itemCount + sudoku.size + 1) }
+        selectButton(null, false)
+        checkAnyNumberCompleted()
+        refreshHintButton()
     }
 
     @Suppress("unused_parameter")
     fun resumeGame(view: View? = null) {
-        lifecycleScope.launch {
-            binding.resumeButtonLayout.visibility = View.GONE
-            binding.gameLayout.visibility = View.VISIBLE
-            when {
-                sudoku.completed -> {
-                    setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
-                    binding.gameButtons.visibility = View.GONE
-                }
-                else -> {
-                    sudoku.startTimer()
-                    val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
-                    itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
-                    itemPausePlay.title = getString(R.string.pause)
-                    setToolbarMenuItemsVisible(pausePlay = true)
-                    binding.gameButtons.visibility = View.VISIBLE
-                }
-            }
-            checkErrorLimit()
-            if (getUserSettings().keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        binding.resumeButtonLayout.visibility = View.GONE
+        binding.gameLayout.visibility = View.VISIBLE
+        if (sudoku.completed) {
+            setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
+            binding.gameButtons.visibility = View.GONE
+        } else {
+            sudoku.startTimer()
+            val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
+            itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
+            itemPausePlay.title = getString(R.string.pause)
+            setToolbarMenuItemsVisible(pausePlay = true)
+            binding.gameButtons.visibility = View.VISIBLE
         }
+        checkErrorLimit()
+        if (userSettings.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     private fun pauseGame() {
@@ -261,40 +212,32 @@ class SudokuActivity : AppCompatActivity() {
         itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
         setToolbarMenuItemsVisible(pausePlay = true)
-        lifecycleScope.launch {
-            if (getUserSettings().keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
+        if (userSettings.keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     inner class SudokuGameListener : GameListener {
         override fun onFieldClicked(position: Position) {
-            lifecycleScope.launch { select(position.index) }
+            select(position.index)
         }
 
         override fun onFieldChanged(position: Position) {
             gameAdapter.updateFieldView(position.index)
-            checkAnyNumberCompleted(sudoku[position].value)
-            lifecycleScope.launch {
-                checkRowColumnBlockCompleted(position)
-                saveSudoku(sudoku)
-            }
+            checkAnyNumberCompleted()
+            checkRowColumnBlockCompleted(position)
+            lifecycleScope.launch { saveSudoku(sudoku) }
         }
 
         override fun onCompleted(position: Position) {
-            lifecycleScope.launch {
-                if (getUserSettings().animationsEnabled) animate(position, animateSudoku = true)?.invokeOnCompletion { onSudokuCompleted() }
-                else onSudokuCompleted()
-            }
+            if (userSettings.animationsEnabled) animate(position, animateSudoku = true)?.invokeOnCompletion { onSudokuCompleted() }
+            else onSudokuCompleted()
         }
 
         override fun onError() {
-            lifecycleScope.launch { checkErrorLimit() }
+            checkErrorLimit()
         }
 
         override fun onTimeChanged() {
-            lifecycleScope.launch {
-                setSubtitle()
-            }
+            lifecycleScope.launch { setSubtitle() }
         }
     }
 
@@ -353,11 +296,11 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun checkErrorLimit(): Boolean {
+    private fun checkErrorLimit(): Boolean {
         val errorLimit = when {
             sudoku.isDailySudoku -> Sudoku.MODE_DAILY_ERROR_LIMIT
             sudoku.isSudokuLevel -> Sudoku.MODE_LEVEL_ERROR_LIMIT
-            else -> getUserSettings().errorLimit
+            else -> userSettings.errorLimit
         }
         if (sudoku.errorLimitReached(errorLimit)) {
             sudoku.stopTimer()
@@ -375,85 +318,125 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun restartGame() {
+        loadingDialog.show()
+        sudoku.reset()
         lifecycleScope.launch {
-            loadingDialog.show()
-            sudoku.reset()
             saveSudoku(sudoku)
             initSudoku(sudoku)
-            selectButton(null, false)
         }
     }
 
-    private fun setTitle() {
-        when {
-            sudoku.isNormalSudoku -> {
-                binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
+    private fun select(newSelected: Int?) {
+        if (checkErrorLimit()) return
+        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(false, true)
+        when (selected) {
+            null -> {//nothing is selected
+                when (newSelected) {
+                    //selected nothing
+                    null -> {}
+                    //selected field
+                    in 0 until sudoku.itemCount -> {
+                        gameAdapter.selectFieldView(newSelected, userSettings.highlightRegional, userSettings.highlightNumber)
+                        selected = newSelected
+                    }
+                    //selected button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
+                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+                    //selected nothing
+                    else -> {}
+                }
             }
-            sudoku.isDailySudoku -> {
-                binding.sudokuToolbarLayout.setTitle(
-                    getString(R.string.app_name) + " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
-                )
-                //binding.hintButton.visibility = View.GONE
-                //binding.autoNotesButton.visibility = View.GONE
-            }
-            sudoku.isSudokuLevel -> {
-                binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (Level " + sudoku.modeLevel + ")")
-                //binding.hintButton.visibility = View.GONE
-                //binding.autoNotesButton.visibility = View.GONE
-            }
-        }
-    }
 
-    @SuppressLint("StringFormatInvalid")
-    private fun setSubtitle() {
-        lifecycleScope.launch {
-            val errorLimit = getUserSettings().errorLimit
-            val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " + getString(
-                R.string.current_progress,
-                sudoku.progress
-            ) + " | " + when {
-                sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_DAILY_ERROR_LIMIT)
-                sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_LEVEL_ERROR_LIMIT)
-                errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
-                else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
-            } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""
-            binding.sudokuToolbarLayout.setExpandedSubtitle(subtitle)
-            binding.sudokuToolbarLayout.setCollapsedSubtitle(subtitle)
-        }
-    }
+            in 0 until sudoku.itemCount -> { //field is selected
+                val position = Position.create(selected!!, sudoku.size)
+                when (newSelected) {
+                    //selected nothing
+                    null -> selected = null
+                    //selected same field
+                    selected -> selected = null
+                    //selected field
+                    in 0 until sudoku.itemCount -> selected = newSelected
+                    //selected number
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+                        sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
+                        selected = null
+                    }
+                    //selected delete
+                    sudoku.itemCount + sudoku.size -> {
+                        sudoku.move(position, null, notesEnabled)
+                        selected = null
+                    }
+                    //selected hint
+                    sudoku.itemCount + sudoku.size + 1 -> {
+                        sudoku.setHint(position)
+                        selected = null
+                        refreshHintButton()
+                    }
+                }
+                gameAdapter.selectFieldView(selected, userSettings.highlightRegional, userSettings.highlightNumber)
+            }
 
-    private fun checkAnyNumberCompleted(currentNumber: Int?) {
-        lifecycleScope.launch {
-            val completedNumbers = sudoku.getCompletedNumbers()
-            completedNumbers.forEach { pair ->
-                if (pair.second) {
-                    sudokuButtons[pair.first - 1].isEnabled = false
-                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.secondary_text_icon_color))
-                    if (currentNumber == pair.first && selected in sudoku.itemCount until sudoku.itemCount + sudoku.size)
-                        selectNextButton(currentNumber, completedNumbers)
-                } else {
-                    sudokuButtons[pair.first - 1].isEnabled = true
-                    sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.primary_text_icon_color))
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
+                when (newSelected) {
+                    //selected nothing
+                    null -> selectButton(null, userSettings.highlightNumber)
+                    //selected same button
+                    selected -> selectButton(null, userSettings.highlightNumber)
+                    //selected field
+                    in 0 until sudoku.itemCount -> {
+                        sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
+                        highlightCurrentNumber(selected!! - sudoku.itemCount + 1)
+                    }
+                    //selected button
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                        gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
+                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+                    }
+                    //selected nothing
+                    else -> selectButton(null, userSettings.highlightNumber)
+                }
+            }
+
+            sudoku.itemCount + sudoku.size -> { // delete button is selected
+                when (newSelected) {
+                    //selected nothing
+                    null -> selectButton(null, userSettings.highlightNumber)
+                    //selected same button
+                    selected -> selectButton(null, userSettings.highlightNumber)
+                    //selected field
+                    in 0 until sudoku.itemCount -> sudoku.move(newSelected, null, notesEnabled)
+                    //selected button(not delete)
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
+                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+                    //selected nothing
+                    else -> selectButton(null, userSettings.highlightNumber)
+                }
+            }
+
+            sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
+                when (newSelected) {
+                    //selected nothing
+                    null -> selectButton(null, userSettings.highlightNumber)
+                    //selected same button
+                    selected -> selectButton(null, userSettings.highlightNumber)
+                    //selected field
+                    in 0 until sudoku.itemCount -> {
+                        sudoku.setHint(newSelected)
+                        if (!sudoku.isHintAvailable) selected = null
+                        refreshHintButton()
+                    }
+                    //selected button(not hint)
+                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 ->
+                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+                    //selected nothing
+                    else -> selectButton(null, userSettings.highlightNumber)
                 }
             }
         }
     }
 
-    private suspend fun selectNextButton(currentNumber: Int, completedNumbers: List<Pair<Int, Boolean>>) {
-        var number = currentNumber
-        while (completedNumbers[number - 1].second) {
-            number++
-            if (number > completedNumbers.size) number = 1 //wrap around
-            if (number == currentNumber) { //all numbers are completed
-                selectButton(null, getUserSettings().highlightNumber)
-                return
-            }
-        }
-        selectButton(number - 1, getUserSettings().highlightNumber)
-    }
-
-    private suspend fun checkRowColumnBlockCompleted(position: Position) {
-        if (getUserSettings().animationsEnabled) animate(
+    private fun checkRowColumnBlockCompleted(position: Position) {
+        if (userSettings.animationsEnabled) animate(
             position,
             animateRow = sudoku.isRowCompleted(position.row),
             animateColumn = sudoku.isColumnCompleted(position.column),
@@ -506,16 +489,17 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
-        for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
-        binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
-        binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
+        val transparent = ColorStateList.valueOf(getColor(android.R.color.transparent))
+        for (button in sudokuButtons) button.backgroundTintList = transparent
+        binding.deleteButton.backgroundTintList = transparent
+        binding.hintButton.backgroundTintList = transparent
         if (i != null) {
             when (i) {
-                sudoku.size -> binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
-                sudoku.size + 1 -> binding.hintButton.backgroundTintList =
-                    ColorStateList.valueOf(colorPrimary)
+                sudoku.size -> binding.deleteButton.backgroundTintList = colorPrimary
+                sudoku.size + 1 -> binding.hintButton.backgroundTintList = colorPrimary
+
                 else -> {
-                    sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(colorPrimary)
+                    sudokuButtons[i].backgroundTintList = colorPrimary
                     if (highlightSelectedNumber) gameAdapter.highlightNumber(i + 1)
                 }
             }
@@ -526,12 +510,48 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
+    private fun selectNextButton(currentNumber: Int, completedNumbers: List<Pair<Int, Boolean>>) {
+        var number = currentNumber
+        while (completedNumbers[number - 1].second) {
+            number++
+            if (number > completedNumbers.size) number = 1 //wrap around
+            if (number == currentNumber) { //all numbers are completed
+                selectButton(null, userSettings.highlightNumber)
+                return
+            }
+        }
+        selectButton(number - 1, userSettings.highlightNumber)
+    }
+
+    private fun checkAnyNumberCompleted() {
+        sudoku.getCompletedNumbers().forEach { pair ->
+            if (pair.second) {
+                sudokuButtons[pair.first - 1].isEnabled = false
+                sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.secondary_text_icon_color))
+            } else {
+                sudokuButtons[pair.first - 1].isEnabled = true
+                sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.primary_text_icon_color))
+            }
+        }
+    }
+
+    private fun highlightCurrentNumber(currentNumber: Int) {
+        val completedNumbers = sudoku.getCompletedNumbers()
+        if (completedNumbers.find { it.first == currentNumber } != null) {
+            if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) {
+                selectNextButton(currentNumber, completedNumbers)
+            }
+        } else {
+            if (userSettings.highlightNumber) gameAdapter.highlightNumber(currentNumber)
+        }
+
+    }
+
     private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
         notesEnabled = enabled ?: !notesEnabled
-        binding.noteButton.backgroundTintList = ColorStateList.valueOf(
+        binding.noteButton.backgroundTintList =
             if (notesEnabled) colorPrimary
-            else resources.getColor(android.R.color.transparent, theme)
-        )
+            else ColorStateList.valueOf(resources.getColor(android.R.color.transparent, theme))
     }
 
     private fun refreshHintButton() {
@@ -539,218 +559,203 @@ class SudokuActivity : AppCompatActivity() {
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
-    private suspend fun select(newSelected: Int?) {
-        if (checkErrorLimit()) return
-        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(false, true)
-        val highlightSudokuNeighbors = getUserSettings().highlightRegional
-        val highlightSelectedNumber = getUserSettings().highlightNumber
-        when (selected) {
-            null -> {//nothing is selected
-                when (newSelected) {
-                    //selected nothing
-                    null -> {}
-                    //selected field
-                    in 0 until sudoku.itemCount -> {
-                        gameAdapter.selectFieldView(newSelected, highlightSudokuNeighbors, highlightSelectedNumber)
-                        selected = newSelected
-                    }
-                    //selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
-                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    //selected nothing
-                    else -> {}
-                }
+    private fun setTitle() {
+        when {
+            sudoku.isNormalSudoku -> {
+                binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
             }
-            in 0 until sudoku.itemCount -> { //field is selected
-                val position = Position.create(selected!!, sudoku.size)
-                when (newSelected) {
-                    //selected nothing
-                    null -> selected = null
-                    //selected same field
-                    selected -> selected = null
-                    //selected field
-                    in 0 until sudoku.itemCount -> selected = newSelected
-                    //selected number
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                        sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                        selected = null
-                    }
-                    //selected delete
-                    sudoku.itemCount + sudoku.size -> {
-                        sudoku.move(position, null, notesEnabled)
-                        selected = null
-                    }
-                    //selected hint
-                    sudoku.itemCount + sudoku.size + 1 -> {
-                        sudoku.setHint(position)
-                        selected = null
-                        refreshHintButton()
-                    }
-                }
-                gameAdapter.selectFieldView(selected, highlightSudokuNeighbors, highlightSelectedNumber)
+
+            sudoku.isDailySudoku -> {
+                binding.sudokuToolbarLayout.setTitle(
+                    getString(R.string.app_name) + " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
+                )
             }
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
-                when (newSelected) {
-                    //selected nothing
-                    null -> selectButton(null, highlightSelectedNumber)
-                    //selected same button
-                    selected -> selectButton(null, highlightSelectedNumber)
-                    //selected field
-                    in 0 until sudoku.itemCount -> {
-                        val number = selected!! - sudoku.itemCount + 1
-                        sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
-                        if (highlightSelectedNumber) gameAdapter.highlightNumber(number)
-                    }
-                    //selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                        gameAdapter.selectFieldView(null, highlightSudokuNeighbors, highlightSelectedNumber)
-                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    }
-                    //selected nothing
-                    else -> selectButton(null, highlightSelectedNumber)
-                }
-            }
-            sudoku.itemCount + sudoku.size -> { // delete button is selected
-                when (newSelected) {
-                    //selected nothing
-                    null -> selectButton(null, highlightSelectedNumber)
-                    //selected same button
-                    selected -> selectButton(null, highlightSelectedNumber)
-                    //selected field
-                    in 0 until sudoku.itemCount -> sudoku.move(newSelected, null, notesEnabled)
-                    //selected button(not delete)
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 ->
-                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    //selected nothing
-                    else -> selectButton(null, highlightSelectedNumber)
-                }
-            }
-            sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
-                when (newSelected) {
-                    //selected nothing
-                    null -> selectButton(null, highlightSelectedNumber)
-                    //selected same button
-                    selected -> selectButton(null, highlightSelectedNumber)
-                    //selected field
-                    in 0 until sudoku.itemCount -> {
-                        sudoku.setHint(newSelected)
-                        if (!sudoku.isHintAvailable) selected = null
-                        refreshHintButton()
-                    }
-                    //selected button(not hint)
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 ->
-                        selectButton(newSelected - sudoku.itemCount, highlightSelectedNumber)
-                    //selected nothing
-                    else -> selectButton(null, highlightSelectedNumber)
-                }
+
+            sudoku.isSudokuLevel -> {
+                binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (Level " + sudoku.modeLevel + ")")
             }
         }
+    }
+
+    @SuppressLint("StringFormatInvalid")
+    private fun setSubtitle() {
+        val errorLimit = userSettings.errorLimit
+        val subtitle = getString(R.string.current_time, sudoku.timeString) + " | " + getString(
+            R.string.current_progress,
+            sudoku.progress
+        ) + " | " + when {
+            sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_DAILY_ERROR_LIMIT)
+            sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_LEVEL_ERROR_LIMIT)
+            errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
+            else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+        } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""
+        binding.sudokuToolbarLayout.setExpandedSubtitle(subtitle)
+        binding.sudokuToolbarLayout.setCollapsedSubtitle(subtitle)
+    }
+
+    private fun shareDialog() {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.share_sudoku)
+            .setView(R.layout.dialog_share)
+            .setPositiveButton(R.string.share, null)
+            .setNegativeButton(R.string.sesl_cancel, null)
+            .create()
+        dialog.show()
+        dialog.findViewById<TextView>(R.id.share_statistics)?.text = sudoku.getLocalStatisticsString(resources)
+        DialogUtils.setDialogProgressForButton(dialog, DialogInterface.BUTTON_POSITIVE) {
+            lifecycleScope.launch {
+                when (dialog.findViewById<RadioGroup>(R.id.share_radio_group)?.checkedRadioButtonId) {
+                    R.id.radio_button_text -> shareStats()
+                    R.id.radio_button_initial -> shareGame(sudoku.getInitialSudoku())
+                    R.id.radio_button_current -> shareGame(sudoku.copy(modeLevel = Sudoku.MODE_NORMAL))
+                }
+                dialog.dismiss()
+            }
+        }
+    }
+
+    private fun shareStats() {
+        val sendIntent = Intent(Intent.ACTION_SEND)
+        sendIntent.type = "text/plain"
+        sendIntent.putExtra(Intent.EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
+        sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_sudoku))
+        sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        startActivity(Intent.createChooser(sendIntent, getString(R.string.share_sudoku)))
+    }
+
+    private suspend fun shareGame(sudoku: Sudoku) {
+        PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
+        val uri = shareSudoku(sudoku)
+        val shareIntent = Intent(Intent.ACTION_SEND)
+        shareIntent.type = "application/sudoku" //octet-stream"
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share_sudoku)))
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_1 -> {
-                lifecycleScope.launch { select(sudoku.itemCount) }
+                select(sudoku.itemCount)
                 true
             }
+
             KeyEvent.KEYCODE_2 -> {
-                lifecycleScope.launch { select(sudoku.itemCount + 1) }
+                select(sudoku.itemCount + 1)
                 true
             }
+
             KeyEvent.KEYCODE_3 -> {
-                lifecycleScope.launch { select(sudoku.itemCount + 2) }
+                select(sudoku.itemCount + 2)
                 true
             }
+
             KeyEvent.KEYCODE_4 -> {
-                lifecycleScope.launch { select(sudoku.itemCount + 3) }
+                select(sudoku.itemCount + 3)
                 true
             }
+
             KeyEvent.KEYCODE_5 -> {
                 if (sudoku.size > 4) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 4) }
+                    select(sudoku.itemCount + 4)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_6 -> {
                 if (sudoku.size > 4) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 5) }
+                    select(sudoku.itemCount + 5)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_7 -> {
                 if (sudoku.size > 4) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 6) }
+                    select(sudoku.itemCount + 6)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_8 -> {
                 if (sudoku.size > 4) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 7) }
+                    select(sudoku.itemCount + 7)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_9 -> {
                 if (sudoku.size > 4) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 8) }
+                    select(sudoku.itemCount + 8)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_A -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 9) }
+                    select(sudoku.itemCount + 9)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_B -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 10) }
+                    select(sudoku.itemCount + 10)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_C -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 11) }
+                    select(sudoku.itemCount + 11)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_D -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 12) }
-                } else lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
-                true
+                    select(sudoku.itemCount + 12)
+                    true
+                } else false
             }
+
             KeyEvent.KEYCODE_E -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 13) }
+                    select(sudoku.itemCount + 13)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_F -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 14) }
+                    select(sudoku.itemCount + 14)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_G -> {
                 if (sudoku.size > 9) {
-                    lifecycleScope.launch { select(sudoku.itemCount + 15) }
+                    select(sudoku.itemCount + 15)
                     true
                 } else false
             }
+
             KeyEvent.KEYCODE_DEL -> {
-                lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
+                select(sudoku.itemCount + sudoku.size)
                 true
             }
+
             KeyEvent.KEYCODE_H -> {
-                lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) }
+                select(sudoku.itemCount + sudoku.size + 1)
                 true
             }
+
             KeyEvent.KEYCODE_N -> {
                 toggleOrSetNoteButton()
                 true
             }
+
             KeyEvent.KEYCODE_ESCAPE -> {
-                lifecycleScope.launch { select(null) }
+                select(null)
                 true
             }
 
