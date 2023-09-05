@@ -4,12 +4,10 @@ import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
 import android.view.*
-import android.view.inputmethod.InputMethodManager
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -18,7 +16,6 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.play.core.review.ReviewManagerFactory
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -28,7 +25,6 @@ import de.lemke.sudoku.domain.model.*
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.utils.DialogUtils
-import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -37,7 +33,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.math.abs
 
 
 @AndroidEntryPoint
@@ -106,36 +101,6 @@ class SudokuActivity : AppCompatActivity() {
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.sudokuToolbarLayout.appBarLayout.addOnOffsetChangedListener { layout: AppBarLayout, verticalOffset: Int ->
-            val totalScrollRange = layout.totalScrollRange
-            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
-                InputMethodManager::class.java, getSystemService(INPUT_METHOD_SERVICE), "getInputMethodWindowVisibleHeight"
-            ) as Int
-            if (totalScrollRange != 0) {
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
-                binding.gameLayout.translationY = ((abs(verticalOffset) - totalScrollRange).toFloat())
-                binding.gameButtons.translationY = ((abs(verticalOffset) - totalScrollRange).toFloat())
-            } else {
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
-                binding.gameLayout.translationY = ((abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat())
-                binding.gameButtons.translationY = ((abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat())
-            }
-            /*val width = binding.gameRecycler.measuredWidth
-            val height = binding.gameRecycler.measuredHeight
-            val gameSize: Int
-            if (totalScrollRange != 0) {
-                gameSize = min(width, height - totalScrollRange - verticalOffset)
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - totalScrollRange) / 2f
-            } else {
-                gameSize = min(width, height - inputMethodWindowVisibleHeight - verticalOffset)
-                binding.resumeButtonLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight) / 2f
-            }
-            val params: ViewGroup.LayoutParams = binding.gameRecycler.layoutParams
-            params.width = gameSize
-            params.height = gameSize
-            binding.gameRecycler.translationX = max(0, width - gameSize) / 2f
-            binding.gameRecycler.layoutParams = params*/
-        }
     }
 
     override fun onPause() {
@@ -214,8 +179,6 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
         binding.gameRecycler.adapter = gameAdapter
-        binding.gameRecycler.seslSetFillBottomEnabled(true)
-        binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = SudokuGameListener()
         initSudokuButtons()
         if (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now()) {
@@ -573,9 +536,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun refreshHintButton() {
         binding.hintButton.visibility = if (sudoku.isHintAvailable) View.VISIBLE else View.GONE
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
-            binding.hintButton.text = sudoku.availableHints.toString()
-        else binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
+        binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
     private suspend fun select(newSelected: Int?) {
