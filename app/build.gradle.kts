@@ -19,8 +19,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 34
-        versionCode = 30
-        versionName = "3.0.7"
+        versionCode = 31
+        versionName = "3.0.8"
 
         kapt {
             arguments {
@@ -114,11 +114,11 @@ dependencies {
     implementation("de.sfuhrm:sudoku:5.0.1")
     implementation("com.airbnb.android:lottie:6.1.0")
     implementation("io.kjson:kjson:7.0")
-    implementation("net.pwall.json:json-kotlin-schema:0.40")
+    implementation("net.pwall.json:json-kotlin-schema:0.41")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.core:core-animation:1.0.0-rc01")
-    implementation("com.google.android.gms:play-services-games-v2:17.0.0")
+    implementation("com.google.android.gms:play-services-games-v2:19.0.0")
     implementation("com.google.android.play:core-ktx:1.8.1")
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
 

@@ -2,7 +2,7 @@ package de.lemke.sudoku.domain.model
 
 import kotlin.math.sqrt
 
-class Position private constructor(
+class Position(
     val size: Int,
     val index: Int,
     val row: Int,

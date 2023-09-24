@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import dagger.hilt.android.qualifiers.ActivityContext
-import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.parseJSON
@@ -27,12 +26,9 @@ class ImportSudokuUseCase @Inject constructor(
             val output = schema.validateBasic(json)
             output.errors?.forEach { Log.e("ImportSudokuUseCase", "${it.error} - ${it.instanceLocation}") }
             if (output.errors.isNullOrEmpty()) {
-                val sudokuExport = json.parseJSON<SudokuExport>()
-                if (sudokuExport != null) {
-                    val sudoku = sudokuFromExport(sudokuExport)
-                    saveSudoku(sudoku)
-                    return@withContext sudoku
-                }
+                val sudoku = sudokuFromExport(json.parseJSON())
+                saveSudoku(sudoku)
+                return@withContext sudoku
             } else {
                 Log.e("ImportDataUseCase", "JSON Schema validation failed")
             }
