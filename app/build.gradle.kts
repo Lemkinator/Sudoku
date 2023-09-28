@@ -114,7 +114,7 @@ dependencies {
     implementation("de.sfuhrm:sudoku:5.0.1")
     implementation("com.airbnb.android:lottie:6.1.0")
     implementation("io.kjson:kjson:7.0")
-    implementation("net.pwall.json:json-kotlin-schema:0.41")
+    implementation("net.pwall.json:json-kotlin-schema:0.42")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.core:core-animation:1.0.0-rc01")

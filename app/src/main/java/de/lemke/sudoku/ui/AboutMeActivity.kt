@@ -164,8 +164,8 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                     PlayGames.getAchievementsClient(this@AboutMeActivity).unlock(getString(R.string.achievement_share_app))
                     val sendIntent = Intent(Intent.ACTION_SEND)
                     sendIntent.type = "text/plain"
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_app_text) + packageName)
-                    sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_app))
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.playstore_link) + packageName)
+                    sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.app_name))
                     startActivity(Intent.createChooser(sendIntent, "Share Via"))
                 }
             }
