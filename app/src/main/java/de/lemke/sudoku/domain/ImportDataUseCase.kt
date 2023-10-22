@@ -52,9 +52,7 @@ class ImportDataUseCase @Inject constructor(
             val output = schema.validateBasic(json)
             output.errors?.forEach { Log.e("ImportDataUseCase", "${it.error} - ${it.instanceLocation}") }
             return if (output.errors.isNullOrEmpty()) {
-                json.parseJSON<List<SudokuExport>>()?.let {
-                    sudokusRepository.saveSudokus(it.map { sudokuExport -> sudokuFromExport(sudokuExport) })
-                }
+                sudokusRepository.saveSudokus(json.parseJSON<List<SudokuExport>>().map { sudokuExport -> sudokuFromExport(sudokuExport) })
                 true
             } else {
                 Log.e("ImportDataUseCase", "JSON Schema validation failed")
