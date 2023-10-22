@@ -51,8 +51,6 @@ class OOBEActivity : AppCompatActivity() {
     @Inject
     lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
-
-    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 34) {

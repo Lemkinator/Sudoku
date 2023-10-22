@@ -78,7 +78,7 @@
     <string name="keep_screen_on_summary">Keep screen on while playing</string>
     <string name="language">Language</string>
     <string name="change_language">Change app language</string>
-    <string name="change_language_not_supportet_by_device">Change language is not supported by your device.</string>
+    <string name="change_language_not_supported_by_device">Change language is not supported by your device.</string>
     <string name="animations">Animations</string>
     <string name="animations_summary">Animate fields</string>
     <string name="regional_highlight">Regional Highlight</string>

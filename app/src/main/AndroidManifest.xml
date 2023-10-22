@@ -25,7 +25,7 @@
         android:resizeableActivity="true"
         android:supportsRtl="true"
         android:theme="@style/Theme.Sudoku"
-        tools:targetApi="33">
+        tools:targetApi="34">
 
         <meta-data
             android:name="com.google.android.gms.games.APP_ID"

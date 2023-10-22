@@ -279,7 +279,7 @@ class SudokuActivity : AppCompatActivity() {
     private suspend fun opportunityToShowInAppReview() {
         val lastInAppReviewRequest = getUserSettings().lastInAppReviewRequest
         val daysSinceLastRequest = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastInAppReviewRequest)
-        if (daysSinceLastRequest < 7) return
+        if (daysSinceLastRequest < 14) return
         updateUserSettings { it.copy(lastInAppReviewRequest = System.currentTimeMillis()) }
         val manager = ReviewManagerFactory.create(this)
         //val manager = FakeReviewManager(context);

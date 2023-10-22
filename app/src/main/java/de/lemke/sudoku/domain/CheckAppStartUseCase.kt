@@ -19,6 +19,7 @@ class CheckAppStartUseCase @Inject constructor(
             Log.d("CheckAppStart", "Current version code: $versionCode , last version code: ${userSettings.lastVersionCode}")
             Log.d("CheckAppStart", "Current version name: $versionName , last version name: ${userSettings.lastVersionName}")
             if (userSettings.lastVersionCode < 15) updateUserSettings { it.copy(tosAccepted = false) }
+            if (userSettings.lastVersionCode < 31) updateUserSettings { it.copy(lastInAppReviewRequest = System.currentTimeMillis()) }
             return@withContext when {
                 userSettings.lastVersionCode == -1 -> AppStart.FIRST_TIME
                 userSettings.lastVersionCode < versionCode -> AppStart.FIRST_TIME_VERSION

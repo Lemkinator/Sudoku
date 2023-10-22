@@ -123,7 +123,7 @@ dependencies {
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    val roomVersion = "2.5.2"
+    val roomVersion = "2.6.0"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     //noinspection KaptUsageInsteadOfKsp
