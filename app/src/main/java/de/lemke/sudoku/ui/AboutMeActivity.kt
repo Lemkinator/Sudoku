@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.*
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.TooltipCompat
@@ -22,7 +23,6 @@ import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.setCustomOnBackPressedLogic
 import dev.oneuiproject.oneui.utils.ViewUtils
 import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils
-import dev.oneuiproject.oneui.widget.Toast
 import javax.inject.Inject
 import kotlin.math.abs
 
