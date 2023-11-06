@@ -123,27 +123,30 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         bottomContent.aboutBottomRelativePlayStore.isEnabled = enabled
     }
 
+    private fun openLink(link: String) = try {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
+    } catch (e: ActivityNotFoundException) {
+        Toast.makeText(this@AboutMeActivity, getString(R.string.no_browser_app_installed), Toast.LENGTH_SHORT).show()
+    }
+
     override fun onClick(v: View) {
         val uptimeMillis = SystemClock.uptimeMillis()
         if (uptimeMillis - lastClickTime > 600L) {
             when (v.id) {
-                binding.aboutHeaderGithub.id, bottomContent.aboutBottomRelativeGithub.id -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_github))))
-                }
-                binding.aboutHeaderWebsite.id, bottomContent.aboutBottomRelativeWebsite.id -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_website))))
-                }
-                binding.aboutHeaderPlayStore.id, bottomContent.aboutBottomRelativePlayStore.id -> {
-                    AlertDialog.Builder(this)
-                        .setTitle(getString(R.string.ad))
-                        .setMessage(getString(R.string.playstore_redirect_message))
-                        .setPositiveButton(getString(R.string.yes)) { _, _ ->
-                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.playstore_developer_page_link))))
-                        }
-                        .setNegativeButton(getString(R.string.sesl_cancel), null)
-                        .show()
-                }
-                binding.aboutHeaderInsta.id -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.my_insta))))
+                binding.aboutHeaderGithub.id, bottomContent.aboutBottomRelativeGithub.id -> openLink(getString(R.string.my_github))
+                binding.aboutHeaderWebsite.id, bottomContent.aboutBottomRelativeWebsite.id -> openLink(getString(R.string.my_website))
+                binding.aboutHeaderTiktok.id -> openLink(getString(R.string.rick_roll_troll_link))
+                binding.aboutHeaderInsta.id -> openLink(getString(R.string.my_insta))
+                bottomContent.aboutBottomRateApp.id -> openApp(packageName, false)
+                binding.aboutHeaderPlayStore.id, bottomContent.aboutBottomRelativePlayStore.id -> AlertDialog.Builder(this)
+                    .setTitle(getString(R.string.ad))
+                    .setMessage(getString(R.string.playstore_redirect_message))
+                    .setPositiveButton(getString(R.string.yes)) { _, _ ->
+                        openLink(getString(R.string.playstore_developer_page_link))
+                    }
+                    .setNegativeButton(getString(R.string.sesl_cancel), null)
+                    .show()
+
                 bottomContent.aboutBottomWriteEmail.id -> {
                     val intent = Intent(Intent.ACTION_SENDTO)
                     intent.data = Uri.parse("mailto:") // only email apps should handle this
@@ -156,17 +159,14 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                         Toast.makeText(this@AboutMeActivity, getString(R.string.no_email_app_installed), Toast.LENGTH_SHORT).show()
                     }
                 }
-                binding.aboutHeaderTiktok.id -> {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.rick_roll_troll_link))))
-                }
-                bottomContent.aboutBottomRateApp.id -> openApp(packageName, false)
+
                 bottomContent.aboutBottomShareApp.id -> {
                     PlayGames.getAchievementsClient(this@AboutMeActivity).unlock(getString(R.string.achievement_share_app))
-                    val sendIntent = Intent(Intent.ACTION_SEND)
-                    sendIntent.type = "text/plain"
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.playstore_link) + packageName)
-                    sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.app_name))
-                    startActivity(Intent.createChooser(sendIntent, "Share Via"))
+                    startActivity(Intent.createChooser(Intent().apply {
+                        action = Intent.ACTION_SEND
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, getString(R.string.playstore_link) + packageName)
+                    }, null))
                 }
             }
         }
