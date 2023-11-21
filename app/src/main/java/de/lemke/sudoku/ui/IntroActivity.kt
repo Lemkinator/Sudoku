@@ -59,8 +59,8 @@ class IntroActivity : AppCompatActivity() {
 
         openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
 
-        setCustomOnBackPressedLogic {
-            backPressed()
+        if (!openedFromSettings) {
+            setCustomOnBackPressedLogic { backPressed() }
         }
 
         loadingDialog = ProgressDialog(this)
@@ -147,7 +147,6 @@ class IntroActivity : AppCompatActivity() {
 
     private fun backPressed() {
         when {
-            openedFromSettings -> finish()
             System.currentTimeMillis() - time < 3000 -> finishAffinity()
             else -> {
                 Toast.makeText(this, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()

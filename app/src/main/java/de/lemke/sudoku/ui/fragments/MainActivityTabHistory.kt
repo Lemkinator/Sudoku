@@ -57,9 +57,8 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mainTabs: MarginsTabLayout
-    private val backPressEnabled = MutableStateFlow(false)
     private var selected = HashMap<Int, Boolean>()
-    private var selecting = false
+    private var selecting = MutableStateFlow(false)
     private var checkAllListening = true
     private var savedPosition: Int? = null
     private var onOffsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
@@ -98,7 +97,7 @@ class MainActivityTabHistory : Fragment() {
             else binding.historyNoEntryView.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
         drawerLayout.appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
-        setCustomOnBackPressedLogic(triggerStateFlow = backPressEnabled) { setSelecting(false) }
+        setCustomOnBackPressedLogic(selecting) { setSelecting(false) }
     }
 
     override fun onDestroyView() {
@@ -164,7 +163,7 @@ class MainActivityTabHistory : Fragment() {
 
     fun setSelecting(enabled: Boolean) {
         if (enabled) {
-            selecting = true
+            selecting.value = true
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             drawerLayout.actionModeBottomMenu.clear()
             drawerLayout.setActionModeMenu(R.menu.remove_menu)
@@ -199,15 +198,13 @@ class MainActivityTabHistory : Fragment() {
                 drawerLayout.setActionModeAllSelector(count, true, count == sudokuList.size)
             }
             mainTabs.isEnabled = false
-            backPressEnabled.value = true
         } else {
-            selecting = false
+            selecting.value = false
             for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
             sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             drawerLayout.setActionModeAllSelector(0, true, false)
             drawerLayout.dismissActionMode()
             mainTabs.isEnabled = true
-            backPressEnabled.value = false
         }
     }
 
@@ -240,7 +237,7 @@ class MainActivityTabHistory : Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val sudoku = sudokuHistory[position].first
             if (holder.isItem && sudoku != null) {
-                holder.checkBox.visibility = if (selecting) View.VISIBLE else View.GONE
+                holder.checkBox.visibility = if (selecting.value) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
                 holder.textView.text = sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(resources)
                 holder.imageView.setImageDrawable(
@@ -276,13 +273,13 @@ class MainActivityTabHistory : Fragment() {
 
                 }
                 holder.parentView.setOnClickListener {
-                    if (selecting) toggleItemSelected(position)
+                    if (selecting.value) toggleItemSelected(position)
                     else {
                         startActivity(Intent(context, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                     }
                 }
                 holder.parentView.setOnLongClickListener {
-                    if (!selecting) setSelecting(true)
+                    if (!selecting.value) setSelecting(true)
                     toggleItemSelected(position)
                     binding.sudokuHistoryList.seslStartLongPressMultiSelection()
                     true

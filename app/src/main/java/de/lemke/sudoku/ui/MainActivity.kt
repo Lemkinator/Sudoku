@@ -145,11 +145,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun openMain() {
-        setCustomOnBackPressedLogic(triggerStateFlow = backPressEnabled, onBackPressedLogic = { checkBackPressed() })
         initDrawer()
         initTabs()
         initFragments()
-        NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
         lifecycleScope.launch {
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             updatePlayGames(this@MainActivity)
@@ -158,6 +156,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             isUIReady = true
             checkImportedSudoku()
         }
+        setCustomOnBackPressedLogic(backPressEnabled) { checkBackPressed() }
+        NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
     }
 
     private suspend fun checkImportedSudoku() {

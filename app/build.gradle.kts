@@ -112,7 +112,7 @@ dependencies {
     implementation("io.github.oneuiproject:icons:1.1.0")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
-    implementation("com.airbnb.android:lottie:6.1.0")
+    implementation("com.airbnb.android:lottie:6.2.0")
     implementation("io.kjson:kjson:7.1")
     implementation("net.pwall.json:json-kotlin-schema:0.42")
 
