@@ -20,7 +20,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityAboutMeBinding
 import de.lemke.sudoku.databinding.ActivityAboutMeContentBinding
 import de.lemke.sudoku.domain.OpenAppUseCase
-import de.lemke.sudoku.domain.setCustomOnBackPressedLogic
 import dev.oneuiproject.oneui.utils.ViewUtils
 import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils
 import javax.inject.Inject
@@ -30,7 +29,6 @@ import kotlin.math.abs
 class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var binding: ActivityAboutMeBinding
     private lateinit var bottomContent: ActivityAboutMeContentBinding
-    private var enableBackToHeader = false
     private var lastClickTime: Long = 0
     private val appBarListener: AboutMeActivity.AboutMeAppBarListener = AboutMeAppBarListener()
 
@@ -48,10 +46,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         binding.aboutToolbar.setNavigationOnClickListener { finish() }
         resetAppBar(resources.configuration)
         initContent()
-        setCustomOnBackPressedLogic {
-            if (enableBackToHeader && binding.aboutAppBar.seslIsCollapsed()) binding.aboutAppBar.setExpanded(true)
-            else finish()
-        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -65,7 +59,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         ToolbarLayoutUtils.updateListBothSideMargin(this, binding.aboutBottomContainer)
         if (config.orientation != Configuration.ORIENTATION_LANDSCAPE && !isInMultiWindowMode) {
             binding.aboutAppBar.seslSetCustomHeightProportion(true, 0.5f)
-            enableBackToHeader = true
             binding.aboutAppBar.addOnOffsetChangedListener(appBarListener)
             binding.aboutAppBar.setExpanded(true, false)
             binding.aboutSwipeUpContainer.visibility = View.VISIBLE
@@ -73,7 +66,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
             lp.height = resources.displayMetrics.heightPixels / 2
         } else {
             binding.aboutAppBar.setExpanded(false, false)
-            enableBackToHeader = false
             binding.aboutAppBar.seslSetCustomHeightProportion(true, 0F)
             binding.aboutAppBar.removeOnOffsetChangedListener(appBarListener)
             binding.aboutBottomContainer.alpha = 1f

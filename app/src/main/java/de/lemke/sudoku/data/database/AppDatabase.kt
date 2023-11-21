@@ -20,10 +20,10 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         //delete column autoNotesUsed and rename column neighborHighlightingUsed to regionalHighlightingUsed
         //Drop column isn't supported by SQLite, so the data must manually be moved
-        with(database) {
+        with(db) {
             execSQL("CREATE TABLE sudoku_backup (id TEXT NOT NULL, size INTEGER NOT NULL, difficulty INTEGER NOT NULL, modeLevel INTEGER NOT NULL, regionalHighlightingUsed INTEGER NOT NULL, numberHighlightingUsed INTEGER NOT NULL, hintsUsed INTEGER NOT NULL, notesMade INTEGER NOT NULL, errorsMade INTEGER NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL, seconds INTEGER NOT NULL, PRIMARY KEY(id))")
             execSQL("INSERT INTO sudoku_backup SELECT id, size, difficulty, modeLevel, neighborHighlightingUsed, numberHighlightingUsed, hintsUsed, notesMade, errorsMade, created, updated, seconds FROM sudoku")
             execSQL("DROP TABLE sudoku")
