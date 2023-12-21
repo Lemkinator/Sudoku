@@ -114,7 +114,7 @@ dependencies {
     implementation("de.sfuhrm:sudoku:5.0.1")
     implementation("com.airbnb.android:lottie:6.2.0")
     implementation("io.kjson:kjson:7.1")
-    implementation("net.pwall.json:json-kotlin-schema:0.42")
+    implementation("net.pwall.json:json-kotlin-schema:0.43")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.core:core-animation:1.0.0-rc01")
@@ -124,7 +124,7 @@ dependencies {
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    val roomVersion = "2.6.0"
+    val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     //noinspection KaptUsageInsteadOfKsp
