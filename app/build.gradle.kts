@@ -113,11 +113,10 @@ dependencies {
 
     implementation("de.sfuhrm:sudoku:5.0.1")
     implementation("com.airbnb.android:lottie:6.3.0")
-    implementation("io.kjson:kjson:7.1")
-    implementation("net.pwall.json:json-kotlin-schema:0.43")
+    implementation("io.kjson:kjson:7.2")
+    implementation("net.pwall.json:json-kotlin-schema:0.44")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation("androidx.core:core-animation:1.0.0-rc01")
     implementation("com.google.android.gms:play-services-games-v2:19.0.0")
     implementation("com.google.android.play:core:1.10.3")
     implementation("com.google.android.play:core-ktx:1.8.1")
