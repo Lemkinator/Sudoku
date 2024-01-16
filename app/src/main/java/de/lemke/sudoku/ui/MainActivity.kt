@@ -145,12 +145,12 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         initTabs()
         initFragments()
         lifecycleScope.launch {
-            sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
-            updatePlayGames(this@MainActivity)
             //manually waiting for the animation to finish :/
             delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
             isUIReady = true
             checkImportedSudoku()
+            sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
+            updatePlayGames(this@MainActivity)
         }
         setCustomOnBackPressedLogic(backPressEnabled) { checkBackPressed() }
         NotificationManagerCompat.from(this).cancelAll() // cancel all notifications

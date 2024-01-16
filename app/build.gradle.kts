@@ -19,8 +19,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 34
-        versionCode = 31
-        versionName = "3.0.8"
+        versionCode = 32
+        versionName = "3.0.9"
 
         kapt {
             arguments {
@@ -139,8 +139,4 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.42")
     //noinspection GradleDependency
     kapt("com.google.dagger:hilt-compiler:2.42")
-
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
