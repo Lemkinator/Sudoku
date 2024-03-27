@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string
+        name="app_info">Información de la aplicación</string>
+    <string
+        name="cant_check_for_updates_phone">"No se pueden verificar actualizaciones. La conexión de red de su teléfono no es estable."</string>
+    <string
+        name="cant_check_for_updates_tablet">"No se pueden verificar actualizaciones. La conexión de red de su tableta no es estable."</string>
+    <string
+        name="dragndroplist_drag_move">Ahora en la posición %d</string>
+    <string
+        name="dragndroplist_drag_release">Elemento soltado en la posición %d.</string>
+    <string
+        name="dragndroplist_drag_start">Comenzó a arrastrar elemento en la posición %d.</string>
+    <string
+        name="dragndroplist_item_cannot_be_dragged">El elemento en la posición %d no se puede arrastrar.</string>
+    <string
+        name="latest_version">La última versión ya está instalada.</string>
+    <string
+        name="new_version_is_available">Hay disponible una nueva versión.</string>
+    <string
+        name="oui_action_mode_all_checkbox">Todo</string>
+    <string
+        name="oui_action_mode_n_selected">%d seleccionados</string>
+    <string
+        name="oui_action_mode_select_items">Seleccionar elementos</string>
+    <string
+        name="oui_common_add">Agregar</string>
+    <string
+        name="oui_common_apply">Aplicar</string>
+    <string
+        name="oui_common_button_yes">Sí</string>
+    <string
+        name="oui_common_cancel">Cancelar</string>
+    <string
+        name="oui_common_close">Cerrar</string>
+    <string
+        name="oui_common_continue">Continuar</string>
+    <string
+        name="oui_common_disable">Desactivar</string>
+    <string
+        name="oui_common_done">Listo</string>
+    <string
+        name="oui_common_edit">Editar</string>
+    <string
+        name="oui_navigation_drawer">Panel de navegación</string>
+    <string
+        name="oui_new_badge_text">N</string>
+    <string
+        name="oui_relative_description">¿Buscas algo más?</string>
+    <string
+        name="oui_time_dialog_end">Fin</string>
+    <string
+        name="oui_time_dialog_start">Inicio</string>
+    <string
+        name="retry">Reintentar</string>
+    <string
+        name="sem_tip_popup_hint_string">Toque dos veces este botón para obtener más información.</string>
+    <string
+        name="sesl_action_bar_up_description">Volver</string>
+    <string
+        name="sesl_action_menu_overflow_badge_description">Nuevo contenido disponible</string>
+    <string
+        name="sesl_action_menu_overflow_badge_text_n">N</string>
+    <string
+        name="sesl_action_menu_overflow_description">Más opciones</string>
+    <string
+        name="sesl_color_blue_text">Azul</string>
+    <string
+        name="sesl_color_green_text">Verde</string>
+    <string
+        name="sesl_color_hex_text">Hex</string>
+    <string
+        name="sesl_color_opacity_text">Opacidad</string>
+    <string
+        name="sesl_color_picker_azure">Azur</string>
+    <string
+        name="sesl_color_picker_black">Negro</string>
+    <string
+        name="sesl_color_picker_blue">Azul</string>
+    <string
+        name="sesl_color_picker_brightness">Brillo</string>
+    <string
+        name="sesl_color_picker_color_five">Color cinco</string>
+    <string
+        name="sesl_color_picker_color_four">Color cuatro</string>
+    <string
+        name="sesl_color_picker_color_one">Color uno</string>
+    <string
+        name="sesl_color_picker_color_six">Color seis</string>
+    <string
+        name="sesl_color_picker_color_three">Color tres</string>
+    <string
+        name="sesl_color_picker_color_two">Color dos</string>
+    <string
+        name="sesl_color_picker_color_wheel">Rueda de color</string>
+    <string
+        name="sesl_color_picker_current">Actual</string>
+    <string
+        name="sesl_color_picker_cyan">Cian</string>
+    <string
+        name="sesl_color_picker_dark_azure">Azur oscuro</string>
+    <string
+        name="sesl_color_picker_dark_blue">Azul oscuro</string>
+    <string
+        name="sesl_color_picker_dark_cyan">Cian oscuro</string>
+    <string
+        name="sesl_color_picker_dark_gray">Gris oscuro</string>
+    <string
+        name="sesl_color_picker_dark_green">Verde oscuro</string>
+    <string
+        name="sesl_color_picker_dark_magenta">Magenta oscuro</string>
+    <string
+        name="sesl_color_picker_dark_orange">Naranja oscuro</string>
+    <string
+        name="sesl_color_picker_dark_red">Rojo oscuro</string>
+    <string
+        name="sesl_color_picker_dark_spring_green">Verde primavera oscuro</string>
+    <string
+        name="sesl_color_picker_dark_violet">Violeta oscuro</string>
+    <string
+        name="sesl_color_picker_dark_yellow">Amarillo oscuro</string>
+    <string
+        name="sesl_color_picker_double_tap_to_select">Toque dos veces para seleccionar.</string>
+    <string
+        name="sesl_color_picker_gray">Gris</string>
+    <string
+        name="sesl_color_picker_green">Verde</string>
+    <string
+        name="sesl_color_picker_hue_and_saturation">Matiz y saturación</string>
+    <string
+        name="sesl_color_picker_light_azure">Azur claro</string>
+    <string
+        name="sesl_color_picker_light_blue">Azul claro</string>
+    <string
+        name="sesl_color_picker_light_cyan">Cian claro</string>
+    <string
+        name="sesl_color_picker_light_gray">Gris claro</string>
+    <string
+        name="sesl_color_picker_light_green">Verde claro</string>
+    <string
+        name="sesl_color_picker_light_magenta">Magenta claro</string>
+    <string
+        name="sesl_color_picker_light_orange">Naranja claro</string>
+    <string
+        name="sesl_color_picker_light_red">Rojo claro</string>
+    <string
+        name="sesl_color_picker_light_spring_green">Verde primavera claro</string>
+    <string
+        name="sesl_color_picker_light_violet">Violeta claro</string>
+    <string
+        name="sesl_color_picker_light_yellow">Amarillo claro</string>
+    <string
+        name="sesl_color_picker_magenta">Magenta</string>
+    <string
+        name="sesl_color_picker_new">Nuevo</string>
+    <string
+        name="sesl_color_picker_opacity">Opacidad</string>
+    <string
+        name="sesl_color_picker_option">Opción</string>
+    <string
+        name="sesl_color_picker_orange">Naranja</string>
+    <string
+        name="sesl_color_picker_recently_used_colors">Colores usados recientemente</string>
+    <string
+        name="sesl_color_picker_red">Rojo</string>
+    <string
+        name="sesl_color_picker_slider">Deslizador</string>
+    <string
+        name="sesl_color_picker_spectrum_text">Espectro</string>
+    <string
+        name="sesl_color_picker_spring_green">Verde primavera</string>
+    <string
+        name="sesl_color_picker_swatches_text">Muestras</string>
+    <string
+        name="sesl_color_picker_violet">Violeta</string>
+    <string
+        name="sesl_color_picker_white">Blanco</string>
+    <string
+        name="sesl_color_picker_yellow">Amarillo</string>
+    <string
+        name="sesl_color_red_text">Rojo</string>
+    <string
+        name="sesl_color_saturation_text">Saturación</string>
+    <string
+        name="sesl_date_picker_day">Día</string>
+    <string
+        name="sesl_date_picker_decrement_month">Mes anterior</string>
+    <string
+        name="sesl_date_picker_increment_month">Siguiente mes</string>
+    <string
+        name="sesl_date_picker_month">Mes</string>
+    <string
+        name="sesl_date_picker_switch_to_calendar_description">Toque dos veces para cambiar a vista de calendario.</string>
+    <string
+        name="sesl_date_picker_switch_to_wheel_description">Toque dos veces para cambiar a vista de rueda.</string>
+    <string
+        name="sesl_date_picker_year">Año</string>
+    <string
+        name="sesl_index_assistant_text">Desliza hacia arriba o hacia abajo con dos dedos para desplazarte.</string>
+    <string
+        name="sesl_index_scrollbar">Barra de desplazamiento</string>
+    <string
+        name="sesl_index_section">Sección de índice</string>
+    <string
+        name="sesl_index_selected">Seleccionado</string>
+    <string
+        name="sesl_material_badge_description">Nuevo contenido disponible</string>
+    <string
+        name="sesl_material_overflow_badge_text_n">N</string>
+    <string
+        name="sesl_more_item_label">Más</string>
+    <string
+        name="sesl_number_picker_invalid_value_entered">Valor ingresado no válido.</string>
+    <string
+        name="sesl_picker_cancel">Cancelar</string>
+    <string
+        name="sesl_picker_done">Listo</string>
+    <string
+        name="sesl_preferencecategory_added_title">Encabezado</string>
+    <string
+        name="sesl_search_hint">Buscar</string>
+    <string
+        name="sesl_searchview_description_clear">Borrar campo de búsqueda</string>
+    <string
+        name="sesl_searchview_description_query">Consulta de búsqueda</string>
+    <string
+        name="sesl_searchview_description_search">Buscar</string>
+    <string
+        name="sesl_searchview_description_submit">Enviar consulta</string>
+    <string
+        name="sesl_searchview_description_voice">Búsqueda por voz</string>
+    <string
+        name="sesl_switch_off">Desactivado</string>
+    <string
+        name="sesl_switch_on">Activado</string>
+    <string
+        name="sesl_switchbar_off_text">Desactivado</string>
+    <string
+        name="sesl_switchbar_on_text">Activado</string>
+    <string
+        name="sesl_time_picker_hour">Hora</string>
+    <string
+        name="sesl_time_picker_minute">Minuto</string>
+    <string
+        name="sesl_time_picker_set_title">Configurar hora</string>
+    <string
+        name="sesl_toolbar_collapse_description">Colapsar</string>
+    <string
+        name="update">Actualizar</string>
+    <string
+        name="version_info">Versión %s</string>
+    <string
+        name="intro">Cómo jugar</string>
+    <string
+        name="intro_text0">Una cuadrícula de Sudoku consta de cuadrados de 4x4, 9x9 o 16x16. Dependiendo del tamaño, solo se pueden usar los números del 1 al 4, 9 o 16. No puede haber números faltantes ni duplicados en cada bloque, fila o columna.</string>
+    <string
+        name="intro_text1">"El juego termina cuando todos los números se han introducido correctamente en la cuadrícula de Sudoku.
+La cantidad de números dados depende de la dificultad del Sudoku.
+Para Sudokus más difíciles, se dan menos números y a menudo se deben usar estrategias más complejas."</string>
+    <string
+        name="intro_text10">"Por último, pero no menos importante, está el botón de nota. Se puede activar o desactivar en cualquier momento para cambiar entre nota o número.
+
+¡Y aquí vamos, hay muchos rompecabezas de Sudoku esperando ser resueltos!"</string>
+    <string
+        name="intro_text2">En la primera fila, el último número que falta es el 5. Toca en el campo vacío para seleccionarlo.</string>
+    <string
+        name="intro_text3">Ahora toca en 5 para introducir el número.</string>
+    <string
+        name="intro_text4">¡Genial! Para acelerar la introducción de números, también puedes seleccionar un número primero y luego tocar en varios campos. Para continuar, toca en 2.</string>
+    <string
+        name="intro_text5">En el bloque del medio, falta el 2. Debido a que el 2 ya está presente en la fila 4 y 5, solo queda el campo vacío en la fila inferior del bloque del medio. Para introducir el 2, toca en este campo.</string>
+    <string
+        name="intro_text6">Como se describió anteriormente, varios campos se pueden llenar con el número seleccionado. El bloque superior derecho falta el 2. Toca en el campo vacío para introducir el 2.</string>
+    <string
+        name="intro_text7">"Los 2 procedimientos posibles resumidos nuevamente:
+1. Seleccionar un campo, luego un número
+2. Seleccionar un número, luego seleccionar varios campos."</string>
+    <string
+        name="intro_text8">¡Pero ten cuidado con qué número o campo está seleccionado actualmente para evitar errores!</string>
+    <string
+        name="intro_text9">"El mismo principio se aplica para eliminar números o usar pistas.
+Un número ingresado también se puede eliminar manteniendo presionado el campo correspondiente."</string>
+    <string
+        name="intro_title">Reglas</string>
+    <string
+        name="intro_title7">¡Muy bien!</string>
+    <string
+        name="intro_title8">¡Cuidado!</string>
+    <string
+        name="intro_title9">Eliminar y pistas</string>
+    <string
+        name="item_view_role_description">Pestaña</string>
+    <string
+        name="keep_screen_on">Mantener pantalla encendida</string>
+    <string
+        name="keep_screen_on_summary">Mantener la pantalla encendida mientras juegas</string>
+    <string
+        name="average_errors">Promedio de errores</string>
+    <string
+        name="average_hints">Promedio de pistas</string>
+    <string
+        name="average_notes">Promedio de notas</string>
+    <string
+        name="average_time">Tiempo promedio</string>
+    <string
+        name="best_time">Mejor tiempo</string>
+    <string
+        name="bottomsheet_action_expand_halfway">Expandir a la mitad</string>
+    <string
+        name="change_language">Cambiar idioma de la aplicación</string>
+    <string
+        name="change_language_not_supported_by_device">Cambiar el idioma no es compatible con tu dispositivo.</string>
+    <string
+        name="character_counter_content_description">Caracteres ingresados %1$d de %2$d</string>
+    <string
+        name="character_counter_overflowed_content_description">Se excedió el límite de caracteres %1$d de %2$d</string>
+    <string
+        name="clear_text_end_icon_content_description">Borrar texto</string>
+    <string
+        name="common_google_play_services_enable_button">Activar</string>
+    <string
+        name="common_google_play_services_enable_text">"%1$s no funcionará a menos que habilites los servicios de Google Play."</string>
+    <string
+        name="common_google_play_services_enable_title">Habilitar los servicios de Google Play</string>
+    <string
+        name="common_google_play_services_install_button">Instalar</string>
+    <string
+        name="common_google_play_services_install_text">"%1$s no se ejecutará sin los servicios de Google Play, que faltan en tu dispositivo."</string>
+    <string
+        name="common_google_play_services_install_title">Obtener los servicios de Google Play</string>
+    <string
+        name="common_google_play_services_notification_channel_name">Disponibilidad de los servicios de Google Play</string>
+    <string
+        name="common_google_play_services_notification_ticker">Error de los servicios de Google Play</string>
+    <string
+        name="common_google_play_services_unknown_issue">%1$s está teniendo problemas con los servicios de Google Play. Por favor, inténtalo de nuevo.</string>
+    <string
+        name="common_google_play_services_unsupported_text">"%1$s no se ejecutará sin los servicios de Google Play, que no son compatibles con tu dispositivo."</string>
+    <string
+        name="common_google_play_services_update_button">Actualizar</string>
+    <string
+        name="common_google_play_services_update_text">"%1$s no se ejecutará a menos que actualices los servicios de Google Play."</string>
+    <string
+        name="common_google_play_services_update_title">Actualizar los servicios de Google Play</string>
+    <string
+        name="common_google_play_services_updating_text">"%1$s no se ejecutará sin los servicios de Google Play, que se están actualizando en este momento."</string>
+    <string
+        name="common_google_play_services_wear_update_text">Se necesita una nueva versión de los servicios de Google Play. Se actualizará automáticamente en breve.</string>
+    <string
+        name="common_open_on_phone">Abrir en el teléfono</string>
+    <string
+        name="common_signin_button_text">Iniciar sesión</string>
+    <string
+        name="common_signin_button_text_long">Iniciar sesión con Google</string>
+    <string
+        name="completed_title">Completado</string>
+    <string
+        name="continue_game">Continuar (%1$s, %2$s)</string>
+    <string
+        name="copy">Copiar</string>
+    <string
+        name="current_errors">Errores: %1$d</string>
+    <string
+        name="current_errors_with_limit">Errores: %1$d/%2$d</string>
+    <string
+        name="current_hints">Pistas: %1$d</string>
+    <string
+        name="current_sudoku">Sudoku actual</string>
+    <string
+        name="daily_sudoku">Sudoku diario</string>
+    <string
+        name="daily_sudoku_info_message"
+        formatted="false">Los Sudokus diarios se generan para cada usuario con dificultades aleatorias según las siguientes probabilidades:
+
+Muy Fácil: 30%
+Fácil: 40%
+Medio: 20%
+Difícil: 10%
+Experto: 0%</string>
+    <string
+        name="daily_sudoku_notification_channel_description">Recibe una notificación cuando haya un nuevo sudoku diario disponible.</string>
+    <string
+        name="daily_sudoku_notification_channel_description_time">Recibe una notificación a las %1$s cuando haya un nuevo Sudoku diario disponible. Toca aquí para cambiar la hora.</string>
+    <string
+        name="daily_sudoku_notification_channel_name">Notificación de Sudoku diario</string>
+    <string
+        name="daily_sudoku_notification_text">¡Oye, es hora de tu Sudoku diario!</string>
+    <string
+        name="daily_sudokus">Sudokus diarios</string>
+    <string
+        name="decline_notifications">No</string>
+    <string
+        name="delete">Eliminar</string>
+    <string
+        name="delete_appdata_and_exit">Eliminar datos de la aplicación y salir</string>
+    <string
+        name="delete_appdata_and_exit_warning">Atención: Esto eliminará todos los datos personales. ¿Continuar?</string>
+    <string
+        name="design">Diseño</string>
+    <string
+        name="dev_options">Opciones de desarrollo</string>
+    <string
+        name="difficulty">Dificultad</string>
+    <string
+        name="easy">Fácil</string>
+    <string
+        name="email">sudoku@leonard-lemke.com</string>
+    <string
+        name="error_icon_content_description">Error</string>
+    <string
+        name="error_import_failed">Error al importar el Sudoku</string>
+    <string
+        name="error_limit">Límite de errores</string>
+    <string
+        name="error_limit_reached">Límite de errores de %1$d alcanzado.</string>
+    <string
+        name="error_no_file_selected">Error: No se seleccionó ningún archivo.</string>
+    <string
+        name="error_no_folder_selected">Error: No se seleccionó ninguna carpeta.</string>
+    <string
+        name="error_sign_in_failed">Error al iniciar sesión en Google Play Juegos</string>
+    <string
+        name="errors">Errores</string>
+    <string
+        name="expand_button_title">Avanzado</string>
+    <string
+        name="expert">Experto</string>
+    <string
+        name="export_data">Exportar datos</string>
+    <string
+        name="export_data_message">¡Precaución: La exportación puede llevar algo de tiempo! En la siguiente pantalla, selecciona una carpeta para la exportación. Allí se creará un archivo JSON con todos los datos existentes, que se pueden importar nuevamente utilizando la función de importación.</string>
+    <string
+        name="export_data_ongoing">Se están exportando los datos…</string>
+    <string
+        name="export_data_success">Datos exportados correctamente.</string>
+    <string
+        name="export_data_summary">Exportar archivo JSON</string>
+    <string
+        name="exposed_dropdown_menu_content_description">Mostrar menú desplegable</string>
+    <string
+        name="filter">Filtrar</string>
+    <string
+        name="gameover">Fin del juego</string>
+    <string
+        name="games">Juegos</string>
+    <string
+        name="games_completed">Juegos completados</string>
+    <string
+        name="games_started">Juegos iniciados</string>
+    <string
+        name="general">General</string>
+    <string
+        name="github">Github</string>
+    <string
+        name="hard">Difícil</string>
+    <string
+        name="hint">Pista (%1$d)</string>
+    <string
+        name="hints">Pistas</string>
+    <string
+        name="history">Historial</string>
+    <string
+        name="icon_content_description">Icono de diálogo</string>
+    <string
+        name="import_data">Importar datos</string>
+    <string
+        name="import_data_error_no_valid_file">Error: No hay un archivo válido.</string>
+    <string
+        name="import_data_error_no_valid_json">Error: No hay un archivo JSON válido.</string>
+    <string
+        name="import_data_message">¡Precaución: La importación puede llevar algo de tiempo! Los datos existentes pueden ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado durante la exportación. (por ejemplo: sudoku_export_[fecha].json)</string>
+    <string
+        name="leo_job">Estudiante, Desarrollador de Software de Matemáticas y Tecnologías</string>
+    <string
+        name="level">Nivel</string>
+    <string
+        name="material_clock_toggle_content_description">Seleccionar AM o PM</string>
+    <string
+        name="material_hour_selection">Seleccionar hora</string>
+    <string
+        name="material_hour_suffix">%1$s en punto</string>
+    <string
+        name="material_minute_selection">Seleccionar minutos</string>
+    <string
+        name="material_minute_suffix">%1$s minutos</string>
+    <string
+        name="material_timepicker_am">AM</string>
+    <string
+        name="material_timepicker_clock_mode_description">Cambiar a modo reloj para la entrada de tiempo.</string>
+    <string
+        name="material_timepicker_hour">Hora</string>
+    <string
+        name="material_timepicker_minute">Minuto</string>
+    <string
+        name="material_timepicker_pm">PM</string>
+    <string
+        name="material_timepicker_select_time">Seleccionar hora</string>
+    <string
+        name="material_timepicker_text_input_mode_description">Cambiar a modo de entrada de texto para la entrada de tiempo.</string>
+    <string
+        name="medium">Medio</string>
+    <string
+        name="more_information">Más información</string>
+    <string
+        name="most_errors">Más errores</string>
+    <string
+        name="most_games_started">Más juegos comenzados</string>
+    <string
+        name="most_games_won">Más juegos ganados</string>
+    <string
+        name="most_hints">Más pistas</string>
+    <string
+        name="most_notes">Más notas</string>
+    <string
+        name="mtrl_badge_numberless_content_description">Nueva notificación</string>
+    <string
+        name="mtrl_chip_close_icon_content_description">Eliminar %1$s</string>
+    <string
+        name="mtrl_exceed_max_badge_number_content_description">Más de %1$d nuevas notificaciones</string>
+    <string
+        name="mtrl_picker_a11y_next_month">Cambiar al mes siguiente</string>
+    <string
+        name="mtrl_picker_a11y_prev_month">Cambiar al mes anterior</string>
+    <string
+        name="mtrl_picker_announce_current_selection">Selección actual: %1$s</string>
+    <string
+        name="mtrl_picker_date_header_title">Seleccionar fecha</string>
+    <string
+        name="mtrl_picker_date_header_unselected">Fecha seleccionada</string>
+    <string
+        name="mtrl_picker_day_of_week_column_header">Columna de días: %1$s</string>
+    <string
+        name="mtrl_picker_invalid_format">Formato inválido.</string>
+    <string
+        name="mtrl_picker_invalid_format_example">Ejemplo: %1$s</string>
+    <string
+        name="mtrl_picker_invalid_format_use">Usar: %1$s</string>
+    <string
+        name="mtrl_picker_invalid_range">Rango inválido.</string>
+    <string
+        name="mtrl_picker_navigate_to_year_description">Navegar al año %1$s</string>
+    <string
+        name="mtrl_picker_out_of_range">Fuera de rango: %1$s</string>
+    <string
+        name="mtrl_picker_range_header_only_end_selected">Fecha de inicio – %1$s</string>
+    <string
+        name="mtrl_picker_range_header_only_start_selected">%1$s – Fecha de finalización</string>
+    <string
+        name="mtrl_picker_range_header_title">Seleccionar rango</string>
+    <string
+        name="mtrl_picker_range_header_unselected">Fecha de inicio – Fecha de finalización</string>
+    <string
+        name="mtrl_picker_save">Guardar</string>
+    <string
+        name="mtrl_picker_text_input_date_hint">Fecha</string>
+    <string
+        name="mtrl_picker_text_input_date_range_end_hint">Fecha de finalización</string>
+    <string
+        name="mtrl_picker_text_input_date_range_start_hint">Fecha de inicio</string>
+    <string
+        name="mtrl_picker_text_input_day_abbr">d</string>
+    <string
+        name="mtrl_picker_text_input_month_abbr">m</string>
+    <string
+        name="mtrl_picker_text_input_year_abbr">a</string>
+    <string
+        name="mtrl_picker_toggle_to_calendar_input_mode">Cambiar a modo de entrada de calendario</string>
+    <string
+        name="mtrl_picker_toggle_to_day_selection">Tocar para cambiar a seleccionar un día</string>
+    <string
+        name="mtrl_picker_toggle_to_text_input_mode">Cambiar a modo de entrada de texto</string>
+    <string
+        name="mtrl_picker_toggle_to_year_selection">Tocar para cambiar a seleccionar un año</string>
+    <string
+        name="new_game">Nuevo juego</string>
+    <string
+        name="next">Continuar</string>
+    <string
+        name="next_level">Siguiente nivel</string>
+    <string
+        name="no">No</string>
+    <string
+        name="no_browser_app_installed">No se ha instalado ninguna aplicación de navegador…</string>
+    <string
+        name="no_email_app_installed">No se ha instalado ninguna aplicación de correo electrónico…</string>
+    <string
+        name="no_game_played">Todavía no se ha jugado ningún juego</string>
+    <string
+        name="no_limit">Sin límite</string>
+    <string
+        name="normal_sudoku">Sudoku normal</string>
+    <string
+        name="normal_sudokus">Sudokus normales</string>
+    <string
+        name="not_set">No establecido</string>
+    <string
+        name="note">Nota</string>
+    <string
+        name="notes">Notas</string>
+    <string
+        name="notifications">Notificaciones</string>
+    <string
+        name="notifications_title">¿Timbre?</string>
+    <string
+        name="number_highlight">Resaltar número seleccionado</string>
+    <string
+        name="number_highlight_summary">Cuando se selecciona un número, se resaltarán todos los otros campos con el mismo número.</string>
+    <string
+        name="ok">Aceptar</string>
+    <string
+        name="oobe_onboard_msg1_summary">Una aplicación de Sudoku con diseño OneUI.</string>
+    <string
+        name="oobe_onboard_msg1_title">Diseño hermoso</string>
+    <string
+        name="oobe_onboard_msg2_summary">Sin suscripciones, sin compras dentro de la aplicación, sin costos en absoluto.</string>
+    <string
+        name="oobe_onboard_msg2_title">Gratis</string>
+    <string
+        name="oobe_onboard_msg3_summary">Sin anuncios molestos después de cada Sudoku.</string>
+    <string
+        name="oobe_onboard_msg3_title">Sin anuncios</string>
+    <string
+        name="oobe_tos_text">Al continuar, aceptas los %1$s.</string>
+    <string
+        name="open_in_playstore">Abrir en Play Store</string>
+    <string
+        name="settings">Ajustes</string>
+    <string
+        name="share">Compartir</string>
+    <string
+        name="share_app">Compartir esta aplicación</string>
+    <string
+        name="share_sudoku">Compartir Sudoku</string>
+    <string
+        name="show_all_sudokus">Mostrar todos los Sudokus</string>
+    <string
+        name="show_only_completed_sudokus">Mostrar solo Sudokus completados</string>
+    <string
+        name="size">Tamaño</string>
+    <string
+        name="skip">Omitir</string>
+    <string
+        name="statistics">Estadísticas</string>
+    <string
+        name="statistics_filter">Filtro de estadísticas</string>
+    <string
+        name="sudokuStatisticsString">"Tipo: %1$s 
+Tamaño: %2$d×%2$d 
+Dificultad: %3$s 
+Tiempo: %4$s 
+Errores: %5$d 
+Indicios: %6$d 
+Notas: %7$d 
+Resaltado regional usado: %8$s 
+Resaltado de número usado: %9$s 
+Creado: %10$s 
+Actualizado: %11$s"</string>
+    <string
+        name="sudoku_completed">"Mira, he completado con éxito un Sudoku:
+"</string>
+    <string
+        name="sudoku_level">Nivel de Sudoku</string>
+    <string
+        name="sudoku_lib">Biblioteca de Sudoku</string>
+    <string
+        name="sudoku_lib_license_text">Utiliza la biblioteca de Sudoku bajo la licencia LGPL 3.</string>
+    <string
+        name="sudoku_solving">"Mira, actualmente estoy resolviendo este Sudoku: 
+Progreso: %1$d%% 
+"</string>
+    <string
+        name="support_me">Apóyame</string>
+    <string
+        name="support_me_text">Si deseas apoyarme de alguna manera, no dudes en enviarme un correo electrónico</string>
+    <string
+        name="system_default">Predeterminado del sistema</string>
+    <string
+        name="time">Tiempo</string>
+    <string
+        name="tos">Términos de servicio</string>
+    <string
+        name="tos_content">"No se permite utilizar esta aplicación en contra de la moral o las leyes vigentes.
+
+También aceptas que no utilizarás esta aplicación para ningún propósito prohibido por la ley de Estados Unidos, incluyendo, entre otros, el desarrollo, diseño, fabricación o producción de misiles, armas químicas o biológicas.
+Sin embargo, esta restricción no se aplicará en caso de que ocurra (certificado por los Centros para el Control de Enfermedades de Estados Unidos o el organismo sucesor) una infección viral generalizada transmitida por mordeduras o contacto con fluidos corporales que cause que los cadáveres humanos se reanimen y busquen consumir carne humana viva, sangre, cerebro o tejido nervioso y probablemente resulte en la caída de la civilización organizada.
+
+Se proporcionará una consideración especial, que puede incluir una compensación monetaria, a un número limitado de usuarios que lean esta sección de los Términos y Servicios y se pongan en contacto conmigo en writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento sin previo aviso.
+
+Las preguntas adicionales serán respondidas en este-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com."</string>
+    <string
+        name="type">Tipo</string>
+    <string
+        name="useful_links">Enlaces útiles</string>
+    <string
+        name="v7_preference_off">APAGADO</string>
+    <string
+        name="v7_preference_on">ENCENDIDO</string>
+    <string
+        name="very_easy">Muy fácil</string>
+    <string
+        name="website">Sitio web</string>
+    <string
+        name="win_rate">Tasa de victoria</string>
+    <string
+        name="wins_without_error">Victorias sin errores</string>
+    <string
+        name="wins_without_hint">Victorias sin indicio</string>
+    <string
+        name="wins_without_notes">Victorias sin notas</string>
+    <string
+        name="write_email">Escribir un correo electrónico</string>
+    <string
+        name="write_review">Escribir una reseña</string>
+    <string
+        name="yes">Sí</string>
+    <string
+        name="language">Idioma</string>
+    <string
+        name="play_games_achievements">Logros</string>
+    <string
+        name="play_games_leaderboards">Tablas de clasificación</string>
+    <string
+        name="resume">Reanudar</string>
+    <string
+        name="about_app">Acerca de Sudoku</string>
+    <string
+        name="about_me">Acerca de mí</string>
+    <string
+        name="rate_app">Calificar la aplicación en Play Store</string>
+    <string
+        name="animations">Animaciones</string>
+    <string
+        name="animations_summary">Animar campos</string>
+    <string
+        name="regional_highlight">Resaltado regional</string>
+    <string
+        name="regional_highlight_summary">Cuando se selecciona un campo, se resaltarán la fila, la columna y el bloque.</string>
+    <string
+        name="privacy_information">Información de privacidad</string>
+</resources>
