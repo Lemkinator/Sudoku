@@ -29,7 +29,7 @@ android {
         }
         //ksp {arg("room.schemaLocation", "$projectDir/schemas") }
 
-        resourceConfigurations += listOf("en", "de")
+        resourceConfigurations += listOf("en", "de", "es")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

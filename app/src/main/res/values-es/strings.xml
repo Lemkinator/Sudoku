@@ -1,0 +1,196 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--General-->
+<string name="sesl_cancel">Cancelar</string>
+<string name="sesl_navigate_up">Volver</string>
+<string name="settings">Ajustes</string>
+<string name="history">Historial</string>
+<string name="statistics">Estadísticas</string>
+
+<string name="new_game">Nuevo juego</string>
+<string name="continue_game">Continuar (%1$s, %2$s)</string>
+
+<string name="daily_sudoku">Sudoku diario</string>
+<string name="daily_sudoku_info_message" formatted="false">Los sudokus diarios se generan para cada usuario con dificultades aleatorias según las siguientes probabilidades: \n\nMuy Fácil: 30\% \nFácil: 40\% \nMedio: 20\% \nDifícil: 10\% \nExperto: 0\% </string>
+<string name="show_only_completed_sudokus">Mostrar solo sudokus completados</string>
+<string name="show_all_sudokus">Mostrar todos los sudokus</string>
+<string name="level">Nivel</string>
+<string name="next_level">Siguiente nivel</string>
+
+<string name="no_game_played">No se ha jugado ningún juego aún</string>
+<string name="error_import_failed">Fallo al importar el sudoku</string>
+
+<!--Menu-->
+<string name="pause">Pausa</string>
+<string name="resume">Continuar</string>
+
+<!--About-->
+<string name="about_app">Acerca de Sudoku</string>
+<string name="about_page_optional_text">Una aplicación de Sudoku con un hermoso diseño basado en OneUI.</string>
+<string name="open_in_playstore">Ver en la Play Store</string>
+
+<string name="sudoku_lib">Biblioteca de Sudoku</string>
+<string name="sudoku_lib_license_text">Utiliza la biblioteca de Sudoku, licenciada bajo LGPL 3.</string>
+
+<!--About of me-->
+<string name="about_me">Acerca de mí</string>
+<string name="website">Sitio web</string>
+<string name="share">Compartir</string>
+<string name="share_app">Compartir aplicación</string>
+<string name="write_review">Escribir reseña</string>
+<string name="rate_app">Calificar aplicación en Play Store</string>
+<string name="write_email">Escribir correo electrónico</string>
+<string name="support_me_text">Si deseas apoyarme de alguna manera, no dudes en enviarme un correo electrónico</string>
+<string name="support_me">Apóyame</string>
+<string name="no_email_app_installed">Ninguna aplicación de correo electrónico instalada...</string>
+<string name="no_browser_app_installed">Ninguna aplicación de navegador instalada...</string>
+<string name="useful_links">Enlaces útiles</string>
+<string name="ad">¡PUBLICIDAD!!!&#129313;&#129396;</string>
+<string name="playstore_redirect_message">Según Google Play, esto es "Publicidad engañosa que simula o imita la interfaz de usuario de una función de la aplicación"... Dado que de lo contrario Google Play rechazaría las actualizaciones de la aplicación, ¿quieres continuar? Este botón (¿sorprendentemente?) te llevará a mi página de desarrollador en Google Play.</string>
+
+<!--Settings-->
+<string name="design">Diseño</string>
+<string name="system_default">Configuración del sistema</string>
+<string name="general">General</string>
+<string name="keep_screen_on">Mantener pantalla encendida</string>
+<string name="keep_screen_on_summary">No apagar la pantalla mientras juegas</string>
+<string name="language">Idioma</string>
+<string name="change_language">Cambiar idioma de la aplicación</string>
+<string name="change_language_not_supported_by_device">Cambiar el idioma no es compatible con este dispositivo.</string>
+<string name="animations">Animaciones</string>
+<string name="animations_summary">Animar casillas</string>
+<string name="regional_highlight">Resaltado regional</string>
+<string name="regional_highlight_summary">Cuando se selecciona una casilla, se resaltarán la fila, la columna y el bloque.</string>
+<string name="number_highlight">Resaltar número seleccionado</string>
+<string name="number_highlight_summary">Cuando se selecciona un número, se marcarán todas las otras casillas con el mismo número.</string>
+<string name="press_again_to_exit">Presiona de nuevo para salir.</string>
+<string name="delete_appdata_and_exit">Borrar datos de la aplicación y salir</string>
+<string name="delete_appdata_and_exit_warning">¡Atención! Esto borrará todos los datos personales. ¿Deseas continuar?</string>
+<string name="error_limit">Límite de errores</string>
+<string name="no_limit">Sin límite</string>
+<string name="error_limit_reached" tools:ignore="PluralsCandidate">Límite de errores alcanzado (%1$d).</string>
+<string name="dev_options">Opciones de desarrollador</string>
+<string name="privacy_information">Información de privacidad</string>
+<string name="more_information">Más información</string>
+<string name="export_data">Exportar datos</string>
+<string name="export_data_summary">Exportar archivo JSON</string>
+<string name="export_data_ongoing">Exportando datos</string>
+<string name="export_data_success">Datos exportados correctamente.</string>
+<string name="import_data">Importar datos</string>
+<string name="import_data_summary">Importar archivo JSON</string>
+<string name="import_data_success">Datos importados correctamente.</string>
+<string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
+<string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>
+<string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, "sudoku_export_[Fecha].json").</string>
+<string name="export_data_message">¡Atención! La exportación puede llevar algún tiempo. En la siguiente pantalla, elige una carpeta para la exportación. Se creará un archivo JSON con todos los datos existentes, que luego se puede importar mediante la función de importación.</string>
+<string name="error_no_folder_selected">Error: No se seleccionó ninguna carpeta</string>
+<string name="error_no_file_selected">Error: No se seleccionó ningún archivo</string>
+
+<!--Difficulties-->
+<string name="very_easy">Muy Fácil</string>
+<string name="easy">Fácil</string>
+<string name="medium">Medio</string>
+<string name="hard">Difícil</string>
+<string name="expert">Experto</string>
+
+<!--Game-->
+<string name="current_time">%1$s</string>
+<string name="current_errors">Errores: %1$d</string>
+<string name="current_errors_with_limit">Errores: %1$d/%2$d</string>
+<string name="current_hints">Pistas: %1$d</string>
+<string name="current_progress">%1$d\%%</string>
+<string name="completed_title">Completado</string>
+<string name="yes">Sí</string>
+<string name="no">No</string>
+<string name="sudoku_completed">Mira, he completado un Sudoku con éxito:\n</string>
+<string name="sudoku_solving">Mira, estoy resolviendo este Sudoku en este momento: \nProgreso: %1$d\%% \n</string>
+<string name="sudokuStatisticsString">Tipo: %1$s \nTamaño: %2$d×%2$d \nDificultad: %3$s \nTiempo: %4$s \nErrores: %5$d \nPistas: %6$d \nNotas: %7$d \nResaltado regional usado: %8$s \nNúmero seleccionado resaltado: %9$s \nCreado: %10$s \nModificado: %11$s</string>
+<string name="delete">Eliminar</string>
+<string name="note">Notas</string>
+<string name="hint">Pista (%1$d)</string>
+<string name="restart">Reiniciar</string>
+<string name="gameover">Fin del juego</string>
+<string name="share_sudoku">Compartir Sudoku</string>
+<string name="initial_sudoku">Sudoku original</string>
+<string name="current_sudoku">Sudoku actual</string>
+<string name="normal_sudoku">Sudoku normal</string>
+
+<!--Statistics-->
+<string name="size">Tamaño</string>
+<string name="type">Tipo</string>
+<string name="games">Juegos</string>
+<string name="games_started">Juegos iniciados</string>
+<string name="games_completed">Juegos completados</string>
+<string name="win_rate">Tasa de victoria</string>
+<string name="wins_without_error">Victorias sin errores</string>
+<string name="time">Tiempo</string>
+<string name="best_time">Mejor tiempo</string>
+<string name="average_time">Tiempo promedio</string>
+<string name="wins_without_hint">Victorias sin pista</string>
+<string name="most_errors">Más errores</string>
+<string name="average_errors">Errores promedio</string>
+<string name="most_hints">Más pistas</string>
+<string name="average_hints">Pistas promedio</string>
+<string name="errors">Errores</string>
+<string name="hints">Pistas</string>
+<string name="difficulty">Dificultad</string>
+<string name="most_games_started">Más juegos iniciados</string>
+<string name="most_games_won">Más juegos ganados</string>
+<string name="notes">Notas</string>
+<string name="wins_without_notes">Victorias sin notas</string>
+<string name="most_notes">Más notas</string>
+<string name="average_notes">Notas promedio</string>
+<string name="filter">Filtro</string>
+<string name="statistics_filter">Filtro de estadísticas</string>
+<string name="normal_sudokus">Sudokus normales</string>
+<string name="daily_sudokus">Sudokus diarios</string>
+<string name="sudoku_level">Nivel de Sudoku</string>
+
+<!--OOBE-->
+<string name="oobe_onboard_msg1_title">Diseño hermoso</string>
+<string name="oobe_onboard_msg2_title">Gratis</string>
+<string name="oobe_onboard_msg3_title">Sin publicidad</string>
+<string name="oobe_onboard_msg1_summary">Una aplicación de Sudoku con un hermoso diseño OneUI.</string>
+<string name="oobe_onboard_msg2_summary">Sin suscripciones, sin compras dentro de la aplicación, sin ningún costo.</string>
+<string name="oobe_onboard_msg3_summary">Sin publicidad molesta después de cada Sudoku.</string>
+<string name="tos">Términos de servicio</string>
+<string name="tos_content">No está permitido usar esta aplicación en contra de la moralidad o las leyes aplicables. \n\nTambién te comprometes a no usar esta aplicación para fines que estén prohibidos por la ley de Estados Unidos, en particular, para el desarrollo, construcción, fabricación o producción de cohetes, armas químicas o biológicas. \nSin embargo, esta restricción no se aplica en caso de que ocurra una infección viral generalizada (confirmada por los Centros para el Control de Enfermedades de Estados Unidos o una organización sucesora) que se transmita por mordeduras o contacto con fluidos corporales y que resulte en la reanimación de cadáveres humanos y el intento de consumir carne humana viva, sangre, cerebro o tejido nervioso, y que probablemente conduzca al colapso de la civilización organizada. \n\nSe ofrece una compensación especial, que puede incluir una compensación financiera, a un número limitado de usuarios que lean esta sección de los términos de servicio y me contacten en una-email-an-diese-adresse-zu-schreiben-wird-sie-10-euro-kosten@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento y sin previo aviso. \n\nCualquier otra pregunta será respondida en esta-email-ist-viel-zu-lang-und-hoffentlich-koennen-sie-nicht-kopieren-und-einfuegen@leonard-lemke.com.</string>
+<string name="oobe_tos_text">Al usar la aplicación, aceptas los %1$s.</string>
+<string name="next">Siguiente</string>
+
+<!--Notifications-->
+<string name="notifications">Notificaciones</string>
+<string name="notifications_title">¿Ding Dong?</string>
+<string name="decline_notifications">No me molestes</string>
+<string name="daily_sudoku_notification_text">¡Hey, es hora de tu Sudoku diario!</string>
+<string name="daily_sudoku_notification_channel_name">Sudoku diario</string>
+<string name="daily_sudoku_notification_channel_description">Recibe una notificación cuando haya un nuevo Sudoku diario disponible.</string>
+<string name="daily_sudoku_notification_channel_description_time">Recibe una notificación a las %1$s cuando haya un nuevo Sudoku diario disponible. Toca aquí para cambiar la hora.</string>
+
+<!--Google Play Games-->
+<string name="play_games_leaderboards">Tablas de clasificación</string>
+<string name="play_games_achievements">Logros</string>
+<string name="error_sign_in_failed">Error al iniciar sesión en Google Play Juegos</string>
+
+<!--Intro-->
+<string name="skip">Saltar</string>
+<string name="intro">Cómo jugar</string>
+<string name="intro_title">Reglas del juego</string>
+<string name="intro_text0">Una cuadrícula de Sudoku consta de cuadrados de 4x4, 9x9 o 16x16. Dependiendo del tamaño, solo se pueden usar números del 1 al 4, 9 o 16. En cada bloque, fila y columna no pueden faltar números ni repetirse.</string>
+<string name="intro_text1">El juego termina cuando todos los números se han colocado correctamente en la cuadrícula de Sudoku. \nLa cantidad de números dados depende de la dificultad del Sudoku. \nEn los Sudokus más difíciles, hay menos números dados y a menudo se necesitan estrategias de resolución más complejas.</string>
+<string name="intro_text2">En la primera fila falta el número 5 como último número. Primero toca en el campo vacío para seleccionarlo.</string>
+<string name="intro_text3">Ahora toca en el 5 para ingresar el número.</string>
+<string name="intro_text4">¡Genial! Para acelerar la entrada de números, también se puede seleccionar un número primero y luego ingresar en varios campos. Para continuar, toca en el 2.</string>
+<string name="intro_text5">En el bloque del medio falta, entre otros, el número 2. Dado que el 2 ya está presente en las filas 4 y 5, solo queda el campo vacío en la fila inferior del bloque medio. Para ingresar el 2, toca este campo.</string>
+<string name="intro_text6">Como se describió anteriormente, con un número seleccionado se pueden ingresar varios campos. En el bloque superior derecho, falta el número 2 como último número. Toca en el campo vacío para ingresar el 2 aquí también.</string>
+<string name="intro_title7">¡Muy bien!</string>
+<string name="intro_text7">Resumiendo las 2 formas posibles de proceder:\n1. Primero selecciona el campo, luego el número\n2. Primero selecciona el número, luego el (los) campo(s).</string>
+<string name="intro_title8">¡Cuidado!</string>
+<string name="intro_text8">¡Pero ten cuidado con qué número o campo está actualmente seleccionado para evitar errores al tocar incorrectamente!</string>
+<string name="intro_title9">Borrar e Indicaciones</string>
+<string name="intro_text9">El mismo principio se aplica para borrar números o usar indicaciones.\nUn número ingresado también se puede borrar manteniendo presionado el campo correspondiente.</string>
+<string name="intro_text10">Por último, está el botón de Nota. Esto se puede activar o desactivar en cualquier momento para cambiar entre Nota o Número.\n\n¡Y ahora, comienza! ¡Aquí tienes algunos Sudokus esperando ser resueltos!</string>
+
+<!--Others-->
+	
+</resources>
