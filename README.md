@@ -1,5 +1,5 @@
-<!--suppress CheckImageSize -->
-<div style="text-align: center;">
+<!--suppress CheckImageSize, HtmlDeprecatedAttribute -->
+<div align="center">
 
 [![](https://img.shields.io/website?down_color=red&down_message=offline&up_color=blue&up_message=online&url=https%3A%2F%2Fwww.leonard-lemke.com)](https://www.leonard-lemke.com/rr)
 [![](https://img.shields.io/github/last-commit/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku/commits/)
