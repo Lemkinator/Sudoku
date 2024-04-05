@@ -1,5 +1,4 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-
     <!--General-->
     <string name="sesl_cancel">Cancelar</string>
     <string name="sesl_navigate_up">Volver</string>
@@ -11,7 +10,7 @@
     <string name="continue_game">Continuar (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Sudoku diario</string>
-    <string name="daily_sudoku_info_message" formatted="false">Los sudokus diarios se generan para cada usuario con dificultades aleatorias según las siguientes probabilidades: \n\nMuy Fácil: 30\% \nFácil: 40\% \nMedio: 20\% \nDifícil: 10\% \nExperto: 0\% </string>
+    <string name="daily_sudoku_info_message" formatted="false">Los sudokus diarios se generan para cada usuario con dificultades aleatorias según las siguientes probabilidades: \n\nMuy Fácil: 30\% \nFácil: 40\% \nMedio: 20\% \nDifícil: 10\% \nExperto: 0\%</string>
     <string name="show_only_completed_sudokus">Mostrar solo sudokus completados</string>
     <string name="show_all_sudokus">Mostrar todos los sudokus</string>
     <string name="level">Nivel</string>
@@ -32,7 +31,7 @@
     <string name="sudoku_lib">Biblioteca de Sudoku</string>
     <string name="sudoku_lib_license_text">Utiliza la biblioteca de Sudoku, licenciada bajo LGPL 3.</string>
 
-    <!--About of me-->
+    <!--About Me-->
     <string name="about_me">Acerca de mí</string>
     <string name="website">Sitio web</string>
     <string name="share">Compartir</string>
@@ -46,7 +45,8 @@
     <string name="no_browser_app_installed">Ninguna aplicación de navegador instalada…</string>
     <string name="useful_links">Enlaces útiles</string>
     <string name="ad">¡PUBLICIDAD!!!&#129313;&#129396;</string>
-    <string name="playstore_redirect_message">Según Google Play, esto es "Publicidad engañosa que simula o imita la interfaz de usuario de una función de la aplicación"… Dado que de lo contrario Google Play rechazaría las actualizaciones de la aplicación, ¿quieres continuar? Este botón (¿sorprendentemente?) te llevará a mi página de desarrollador en Google Play.</string>
+    <string name="playstore_redirect_message">Según Google Play, esto es \"Publicidad engañosa que simula o imita la interfaz de usuario de una función de la aplicación\"… Dado que las actualizaciones de la aplicación son rechazadas por Google Play de otro modo, aquí tienes una nota: Este botón (¿sorprendentemente?&#129313;) a mi página de desarrollador en Google Play, ¿continuar?</string>
+
 
     <!--Settings-->
     <string name="design">Diseño</string>
@@ -82,7 +82,7 @@
     <string name="import_data_success">Datos importados correctamente.</string>
     <string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
     <string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>
-    <string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, "sudoku_export_[Fecha].json").</string>
+    <string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, \"sudoku_export_[Fecha].json\").</string>
     <string name="export_data_message">¡Atención! La exportación puede llevar algún tiempo. En la siguiente pantalla, elige una carpeta para la exportación. Se creará un archivo JSON con todos los datos existentes, que luego se puede importar mediante la función de importación.</string>
     <string name="error_no_folder_selected">Error: No se seleccionó ninguna carpeta</string>
     <string name="error_no_file_selected">Error: No se seleccionó ningún archivo</string>
@@ -155,7 +155,7 @@
     <string name="oobe_onboard_msg2_summary">Sin suscripciones, sin compras dentro de la aplicación, sin ningún costo.</string>
     <string name="oobe_onboard_msg3_summary">Sin publicidad molesta después de cada Sudoku.</string>
     <string name="tos">Términos de servicio</string>
-    <string name="tos_content">No está permitido usar esta aplicación en contra de la moralidad o las leyes aplicables. \n\nTambién te comprometes a no usar esta aplicación para fines que estén prohibidos por la ley de Estados Unidos, en particular, para el desarrollo, construcción, fabricación o producción de cohetes, armas químicas o biológicas. \nSin embargo, esta restricción no se aplica en caso de que ocurra una infección viral generalizada (confirmada por los Centros para el Control de Enfermedades de Estados Unidos o una organización sucesora) que se transmita por mordeduras o contacto con fluidos corporales y que resulte en la reanimación de cadáveres humanos y el intento de consumir carne humana viva, sangre, cerebro o tejido nervioso, y que probablemente conduzca al colapso de la civilización organizada. \n\nSe ofrece una compensación especial, que puede incluir una compensación financiera, a un número limitado de usuarios que lean esta sección de los términos de servicio y me contacten en una-email-an-diese-adresse-zu-schreiben-wird-sie-10-euro-kosten@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento y sin previo aviso. \n\nCualquier otra pregunta será respondida en esta-email-ist-viel-zu-lang-und-hoffentlich-koennen-sie-nicht-kopieren-und-einfuegen@leonard-lemke.com.</string>
+    <string name="tos_content">No está permitido usar esta aplicación en contra de la moralidad o las leyes aplicables. \n\nTambién te comprometes a no usar esta aplicación para fines que estén prohibidos por la ley de Estados Unidos, en particular, para el desarrollo, construcción, fabricación o producción de cohetes, armas químicas o biológicas. \nSin embargo, esta restricción no se aplica en caso de que ocurra una infección viral generalizada (confirmada por los Centros para el Control de Enfermedades de Estados Unidos o una organización sucesora) que se transmita por mordeduras o contacto con fluidos corporales y que resulte en la reanimación de cadáveres humanos y el intento de consumir carne humana viva, sangre, cerebro o tejido nervioso, y que probablemente conduzca al colapso de la civilización organizada. \n\nSe ofrece una compensación especial, que puede incluir una compensación financiera, a un número limitado de usuarios que lean esta sección de los términos de servicio y me contacten en writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento y sin previo aviso. \n\nCualquier otra pregunta será respondida en this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
     <string name="oobe_tos_text">Al usar la aplicación, aceptas los %1$s.</string>
     <string name="next">Siguiente</string>
 
@@ -168,7 +168,7 @@
     <string name="daily_sudoku_notification_channel_description">Recibe una notificación cuando haya un nuevo Sudoku diario disponible.</string>
     <string name="daily_sudoku_notification_channel_description_time">Recibe una notificación a las %1$s cuando haya un nuevo Sudoku diario disponible. Toca aquí para cambiar la hora.</string>
 
-    <!--Google Play Games-->
+    <!--Play Games-->
     <string name="play_games_leaderboards">Tablas de clasificación</string>
     <string name="play_games_achievements">Logros</string>
     <string name="error_sign_in_failed">Error al iniciar sesión en Google Play Juegos</string>
@@ -177,7 +177,7 @@
     <string name="skip">Saltar</string>
     <string name="intro">Cómo jugar</string>
     <string name="intro_title">Reglas del juego</string>
-    <string name="intro_text0">Una cuadrícula de Sudoku consta de cuadrados de 4x4, 9x9 o 16x16. Dependiendo del tamaño, solo se pueden usar números del 1 al 4, 9 o 16. En cada bloque, fila y columna no pueden faltar números ni repetirse.</string>
+    <string name="intro_text0">Una cuadrícula de Sudoku consta de cuadrados de 4×4, 9×9 o 16×16. Dependiendo del tamaño, solo se pueden usar números del 1 al 4, 9 o 16. En cada bloque, fila y columna no pueden faltar números ni repetirse.</string>
     <string name="intro_text1">El juego termina cuando todos los números se han colocado correctamente en la cuadrícula de Sudoku. \nLa cantidad de números dados depende de la dificultad del Sudoku. \nEn los Sudokus más difíciles, hay menos números dados y a menudo se necesitan estrategias de resolución más complejas.</string>
     <string name="intro_text2">En la primera fila falta el número 5 como último número. Primero toca en el campo vacío para seleccionarlo.</string>
     <string name="intro_text3">Ahora toca en el 5 para ingresar el número.</string>
@@ -187,9 +187,9 @@
     <string name="intro_title7">¡Muy bien!</string>
     <string name="intro_text7">Resumiendo las 2 formas posibles de proceder:\n1. Primero selecciona el campo, luego el número\n2. Primero selecciona el número, luego el (los) campo(s).</string>
     <string name="intro_title8">¡Cuidado!</string>
-    <string name="intro_text8">¡Pero ten cuidado con qué número o campo está actualmente seleccionado para evitar errores al tocar incorrectamente!</string>
+    <string name="intro_text8">¡Pero ten cuidado con qué número o campo está actualmente seleccionado para evitar errores debidos a una escritura incorrecta!</string>
     <string name="intro_title9">Borrar e Indicaciones</string>
-    <string name="intro_text9">El mismo principio se aplica para borrar números o usar indicaciones.\nUn número ingresado también se puede borrar manteniendo presionado el campo correspondiente.</string>
+    <string name="intro_text9">El mismo principio se aplica también a la eliminación de números o al uso de sugerencias. Un número introducido también se puede eliminar de nuevo manteniendo pulsado el campo correspondiente.</string>
     <string name="intro_text10">Por último, está el botón de Nota. Esto se puede activar o desactivar en cualquier momento para cambiar entre Nota o Número.\n\n¡Y ahora, comienza! ¡Aquí tienes algunos Sudokus esperando ser resueltos!</string>
 
     <!--Others-->

@@ -34,7 +34,7 @@
     <string name="continue_game">Continue (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Daily Sudoku</string>
-    <string name="daily_sudoku_info_message" formatted="false">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\% </string>
+    <string name="daily_sudoku_info_message" formatted="false">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\%</string>
     <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
     <string name="show_all_sudokus">Show all Sudokus</string>
     <string name="level">Level</string>
@@ -88,7 +88,7 @@
     <string name="number_highlight_summary">When a number is selected, all other fields with the same number will be highlighted.</string>
     <string name="press_again_to_exit">Press again to exit.</string>
     <string name="delete_appdata_and_exit">Delete App-Data and exit</string>
-    <string name="delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue? </string>
+    <string name="delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue?</string>
     <string name="error_limit">Error limit</string>
     <string name="no_limit">No limit</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Error limit of %1$d reached.</string>
@@ -105,12 +105,12 @@
     <string name="import_data_success">Data imported successfully.</string>
     <string name="import_data_error_no_valid_json">Error: No valid JSON file.</string>
     <string name="import_data_error_no_valid_file">Error: No valid file.</string>
-    <string name="import_data_message">Caution: Importing may take some time. Already existing data may be overwritten. In the following screen, please select the JSON file created during export. (e.g.: "sudoku_export_[date].json") </string>
-    <string name="export_data_message">Caution: Exporting may take some time. In the following screen, please select a folder for the export. There a JSON file will be created with all existing data, which can be imported again using the import function. </string>
+    <string name="import_data_message">Caution: Importing may take some time. Already existing data may be overwritten. In the following screen, please select the JSON file created during export (e.g.: \"sudoku_export_[date].json\").</string>
+    <string name="export_data_message">Caution: Exporting may take some time. In the following screen, please select a folder for the export. There a JSON file will be created with all existing data, which can be imported again using the import function.</string>
     <string name="error_no_folder_selected">Error: No folder selected.</string>
     <string name="error_no_file_selected">Error: No file selected.</string>
 
-    <!--Difficuilties-->
+    <!--Difficulties-->
     <string name="very_easy">Very easy</string>
     <string name="easy">Easy</string>
     <string name="medium">Medium</string>
@@ -201,7 +201,7 @@
     <string name="intro">How to play</string>
     <string name="intro_title">Rules</string>
     <string name="intro_text0">A Sudoku grid consists of 4×4, 9×9 or 16×16 squares. Depending on the size, only the numbers from 1 to 4, 9 or 16 can be used. No numbers may be missing or duplicated in each block, row or column.</string>
-    <string name="intro_text1">The game is finished when all numbers have been correctly entered into the Sudoku grid. \nThe amount of given numbers depends on the difficulty of the Sudoku. \nFor more difficult Sudokus, fewer numbers are given and often more complex strategies must be used. </string>
+    <string name="intro_text1">The game is finished when all numbers have been correctly entered into the Sudoku grid. \nThe amount of given numbers depends on the difficulty of the Sudoku. \nFor more difficult Sudokus, fewer numbers are given and often more complex strategies must be used.</string>
     <string name="intro_text2">In the first row the last number missing is 5. Tap on the empty field to select it.</string>
     <string name="intro_text3">Now tap on 5 to enter the number.</string>
     <string name="intro_text4">Nice! To speed up entering numbers you can also select a number first and then tap on multiple fields. To continue tap on 2.</string>

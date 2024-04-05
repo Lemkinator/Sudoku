@@ -10,7 +10,7 @@
     <string name="continue_game">Weiter (%1$s, %2$s)</string>
 
     <string name="daily_sudoku">Tägliches Sudoku</string>
-    <string name="daily_sudoku_info_message" formatted="false">Tägliche Sudokus werden für jeden Benutzer mit zufälligen Schwierigkeiten nach folgenden Wahrscheinlichkeiten generiert: \n\nSehr Einfach: 30\% \nEinfach: 40\% \nMittel: 20\% \nSchwer: 10\% \nExperte: 0\% </string>
+    <string name="daily_sudoku_info_message" formatted="false">Tägliche Sudokus werden für jeden Benutzer mit zufälligen Schwierigkeiten nach folgenden Wahrscheinlichkeiten generiert: \n\nSehr Einfach: 30\% \nEinfach: 40\% \nMittel: 20\% \nSchwer: 10\% \nExperte: 0\%</string>
     <string name="show_only_completed_sudokus">Nur abgeschlossene Sudokus anzeigen</string>
     <string name="show_all_sudokus">Alle Sudokus anzeigen</string>
     <string name="level">Level</string>
@@ -33,7 +33,7 @@
 
     <!--About Me-->
     <string name="about_me">Über mich</string>
-    <string name="website">Webseite</string>minor
+    <string name="website">Webseite</string>
     <string name="share">Teilen</string>
     <string name="share_app">App Teilen</string>
     <string name="write_review">Bewertung schreiben</string>
@@ -65,7 +65,7 @@
     <string name="number_highlight_summary">Wenn eine Zahl ausgewählt wird, werden alle anderen Felder mit derselben Zahl markiert.</string>
     <string name="press_again_to_exit">Zurück-Taste erneut drücken um zu Beenden.</string>
     <string name="delete_appdata_and_exit">App-Daten löschen und Beenden</string>
-    <string name="delete_appdata_and_exit_warning">Achtung: Dadurch werden alle persönlichen Daten gelöscht. Fortfahren? </string>
+    <string name="delete_appdata_and_exit_warning">Achtung: Dadurch werden alle persönlichen Daten gelöscht. Fortfahren?</string>
     <string name="error_limit">Fehlerlimit</string>
     <string name="no_limit">Kein Limit</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Fehlerlimit von %1$d erreicht.</string>
@@ -82,12 +82,12 @@
     <string name="import_data_success">Daten erfolgreich importiert.</string>
     <string name="import_data_error_no_valid_json">Fehler: Keine gültige JSON-Datei ausgewählt.</string>
     <string name="import_data_error_no_valid_file">Fehler: Keine gültige Datei ausgewählt.</string>
-    <string name="import_data_message">Achtung: Das Importieren kann einige Zeit in Anspruch nehmen. Bereits bestehende Daten werden evtl. überschrieben. Im folgenden Bildschirm bitte die beim Exportieren erstellte JSON-Datei auswählen. (z.B.: "sudoku_export_[Datum].json") </string>
-    <string name="export_data_message">Achtung: Das Exportieren kann einige Zeit in Anspruch nehmen. Im folgenden Bildschirm bitte einen Ordner für den Export auswählen. Dort wird eine JSON-Datei mit allen vorhandenen Daten erstellt, welche über die Import-Funktion wieder importiert werden kann. </string>
+    <string name="import_data_message">Achtung: Das Importieren kann einige Zeit in Anspruch nehmen. Bereits bestehende Daten werden evtl. überschrieben. Im folgenden Bildschirm bitte die beim Exportieren erstellte JSON-Datei auswählen (z.B.: \"sudoku_export_[Datum].json\").</string>
+    <string name="export_data_message">Achtung: Das Exportieren kann einige Zeit in Anspruch nehmen. Im folgenden Bildschirm bitte einen Ordner für den Export auswählen. Dort wird eine JSON-Datei mit allen vorhandenen Daten erstellt, welche über die Import-Funktion wieder importiert werden kann.</string>
     <string name="error_no_folder_selected">Fehler: Kein Ordner ausgewählt</string>
     <string name="error_no_file_selected">Fehler: Keine Datei ausgewählt</string>
 
-    <!--Difficuilties-->
+    <!--Difficulties-->
     <string name="very_easy">Sehr Einfach</string>
     <string name="easy">Einfach</string>
     <string name="medium">Mittel</string>
@@ -178,7 +178,7 @@
     <string name="intro">Wie man spielt</string>
     <string name="intro_title">Spielregeln</string>
     <string name="intro_text0">Ein Sudoku-Raster besteht aus 4×4-, 9×9- oder 16×16-Feldern. Je nach größe können nur die Zahlen von 1 bis 4, 9 oder 16 eingesetzt werden. Dabei dürfen in jedem Block, jeder Zeile und jeder Spalte keine Zahlen fehlen oder doppelt vorkommen.</string>
-    <string name="intro_text1">Das Spiel ist beendet, wenn alle Zahlen korrekt in das Sudoku-Raster eingetragen wurden. \nDie Anzahl der vorgegebenen Zahlen hängt vom Schwierigkeitsgrad des Sudokus ab. \nBei schwereren Sudokus sind weniger Zahlen vorgegeben und es müssen oftmals komplexere Lösungsstrategien angewendet werden. </string>
+    <string name="intro_text1">Das Spiel ist beendet, wenn alle Zahlen korrekt in das Sudoku-Raster eingetragen wurden. \nDie Anzahl der vorgegebenen Zahlen hängt vom Schwierigkeitsgrad des Sudokus ab. \nBei schwereren Sudokus sind weniger Zahlen vorgegeben und es müssen oftmals komplexere Lösungsstrategien angewendet werden.</string>
     <string name="intro_text2">In der ersten Zeile fehlt als letzte Zahl die 5. Tippe zuerst auf das freie Feld um es auszuwählen.</string>
     <string name="intro_text3">Tippe nun auf die 5 um die Zahl einzutragen.</string>
     <string name="intro_text4">Super! Um das Eintragen von Zahlen zu beschleunigen kann auch zuerst eine Zahl ausgewählt werden und anschließend in mehrere Felder eingetragen werden. Um fortzufahren tippe auf die 2.</string>
