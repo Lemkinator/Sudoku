@@ -108,7 +108,7 @@ class AboutActivity : AppCompatActivity() {
     private fun setExtraText() {
         val bib = getString(R.string.sudoku_lib)
         val license = getString(R.string.sudoku_lib_license)
-        val text = getString(R.string.about_page_optional_text) + "\n" + getString(R.string.sudoku_lib_license_text)
+        val text = getString(R.string.about_page_optional_text) + "\n" + getString(R.string.sudoku_lib_license_text, bib, license)
         val textLink = SpannableString(text)
         textLink.setSpan(
             object : ClickableSpan() {

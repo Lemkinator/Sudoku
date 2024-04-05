@@ -29,7 +29,7 @@
     <string name="open_in_playstore">Ver en la Play Store</string>
 
     <string name="sudoku_lib">Biblioteca de Sudoku</string>
-    <string name="sudoku_lib_license_text">Utiliza la biblioteca de Sudoku, licenciada bajo LGPL 3.</string>
+    <string name="sudoku_lib_license_text">Utiliza la %1$s, licenciada bajo %2$s.</string>
 
     <!--About Me-->
     <string name="about_me">Acerca de mí</string>

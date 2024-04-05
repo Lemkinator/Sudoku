@@ -53,7 +53,7 @@
     <string name="open_in_playstore">Open in Play Store</string>
     <string name="sudoku_lib">Sudoku library</string>
     <string name="sudoku_lib_license" translatable="false">LGPL 3</string>
-    <string name="sudoku_lib_license_text">Uses Sudoku library licensed under LGPL 3.</string>
+    <string name="sudoku_lib_license_text">Uses %1$s licensed under %2$s.</string>
 
     <!--About Me-->
     <string name="about_me">About me</string>
