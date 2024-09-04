@@ -1,5 +1,6 @@
 package de.lemke.sudoku.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.content.IntentSender.SendIntentException
 import android.graphics.Color
@@ -16,14 +17,17 @@ import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.View
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.tasks.Task
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.ActivityResult
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.google.android.play.core.tasks.Task
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
@@ -100,7 +104,8 @@ class AboutActivity : AppCompatActivity() {
     private fun setVersionTextView(textView: TextView, devModeEnabled: Boolean) {
         lifecycleScope.launch {
             textView.text = getString(
-                dev.oneuiproject.oneui.design.R.string.version_info, BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
+                dev.oneuiproject.oneui.design.R.string.version_info,
+                BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
             )
         }
     }
@@ -108,7 +113,8 @@ class AboutActivity : AppCompatActivity() {
     private fun setExtraText() {
         val bib = getString(R.string.sudoku_lib)
         val license = getString(R.string.sudoku_lib_license)
-        val text = getString(R.string.about_page_optional_text) + "\n" + getString(R.string.sudoku_lib_license_text, bib, license)
+        val text = getString(R.string.about_page_optional_text) + "\n" +
+                getString(R.string.sudoku_lib_license_text, bib, license)
         val textLink = SpannableString(text)
         textLink.setSpan(
             object : ClickableSpan() {
@@ -188,18 +194,22 @@ class AboutActivity : AppCompatActivity() {
 
     private fun startUpdateFlow() {
         try {
-            appUpdateManager.startUpdateFlowForResult( // Pass the intent that is returned by 'getAppUpdateInfo()'.
-                appUpdateInfo,  //AppUpdateType.FLEXIBLE,
-                AppUpdateType.IMMEDIATE,
-                this,
-                UPDATEREQUESTCODE
+            appUpdateManager.startUpdateFlowForResult(
+                appUpdateInfo,
+                registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+                    when (result.resultCode) {
+                        // For immediate updates, you might not receive RESULT_OK because
+                        // the update should already be finished by the time control is given back to your app.
+                        Activity.RESULT_OK -> Log.d("InAppUpdate", "Update successful")
+                        Activity.RESULT_CANCELED -> Log.d("InAppUpdate", "Update canceled")
+                        ActivityResult.RESULT_IN_APP_UPDATE_FAILED ->
+                            Log.d("InAppUpdate", "Update failed")
+                    }
+                },
+                AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
             )
         } catch (e: SendIntentException) {
             e.printStackTrace()
         }
-    }
-
-    companion object {
-        private const val UPDATEREQUESTCODE = 5
     }
 }

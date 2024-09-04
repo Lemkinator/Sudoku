@@ -19,8 +19,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 34
-        versionCode = 33
-        versionName = "3.1.0"
+        versionCode = 34
+        versionName = "3.0.11"
 
         kapt {
             arguments {
@@ -113,16 +113,19 @@ dependencies {
     implementation("io.github.oneuiproject:icons:1.1.0")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
-    implementation("com.airbnb.android:lottie:6.4.0")
+    implementation("com.airbnb.android:lottie:6.4.1")
     implementation("io.kjson:kjson:7.6")
     implementation("net.pwall.json:json-kotlin-schema:0.47")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation("com.google.android.gms:play-services-games-v2:20.0.0")
-    implementation("com.google.android.play:core:1.10.3")
-    implementation("com.google.android.play:core-ktx:1.8.1")
+    implementation("com.google.android.gms:play-services-games-v2:20.1.2")
+    implementation("com.google.android.play:review:2.0.1")
+    implementation("com.google.android.play:review-ktx:2.0.1")
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
 
+    //noinspection GradleDependency
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
