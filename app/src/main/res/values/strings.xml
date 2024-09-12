@@ -2,7 +2,7 @@
     <!--General-->
     <string name="app_name" translatable="false">Sudoku</string>
     <string name="leo" translatable="false">Leonard Lemke</string>
-    <string name="leo_job" translatable="false">Study Plus Mathem.-Tech. Softwaredeveloper</string>
+    <string name="leo_job" translatable="false">Softwaredeveloper</string>
     <string name="email" translatable="false">sudoku@leonard-lemke.com</string>
     <string name="my_website" translatable="false">https://www.leonard-lemke.com</string>
     <string name="my_insta" translatable="false">https://www.instagram.com/lemkinator5/</string>
