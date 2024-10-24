@@ -11,6 +11,7 @@ import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.TooltipCompat
 import com.google.android.gms.games.PlayGames
 import com.google.android.material.appbar.AppBarLayout
@@ -20,6 +21,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityAboutMeBinding
 import de.lemke.sudoku.databinding.ActivityAboutMeContentBinding
 import de.lemke.sudoku.domain.OpenAppUseCase
+import de.lemke.sudoku.domain.OpenLinkUseCase
 import dev.oneuiproject.oneui.utils.ViewUtils
 import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils
 import javax.inject.Inject
@@ -30,7 +32,10 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var binding: ActivityAboutMeBinding
     private lateinit var bottomContent: ActivityAboutMeContentBinding
     private var lastClickTime: Long = 0
-    private val appBarListener: AboutMeActivity.AboutMeAppBarListener = AboutMeAppBarListener()
+    private val appBarListener: AboutMeAppBarListener = AboutMeAppBarListener()
+
+    @Inject
+    lateinit var openLink: OpenLinkUseCase
 
     @Inject
     lateinit var openApp: OpenAppUseCase
@@ -84,7 +89,7 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
             ViewUtils.SEM_ROUNDED_CORNER_TOP_LEFT or ViewUtils.SEM_ROUNDED_CORNER_TOP_RIGHT,
             getColor(dev.oneuiproject.oneui.design.R.color.oui_round_and_bgcolor)
         )
-        val appIcon = getDrawable(R.drawable.me4_round)
+        val appIcon = AppCompatResources.getDrawable(this, R.drawable.me4_round)
         binding.aboutHeaderIcon.setImageDrawable(appIcon)
         binding.aboutBottomIcon.setImageDrawable(appIcon)
         binding.aboutHeaderGithub.setOnClickListener(this)
@@ -115,12 +120,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         bottomContent.aboutBottomRelativePlayStore.isEnabled = enabled
     }
 
-    private fun openLink(link: String) = try {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
-    } catch (e: ActivityNotFoundException) {
-        Toast.makeText(this@AboutMeActivity, getString(R.string.no_browser_app_installed), Toast.LENGTH_SHORT).show()
-    }
-
     override fun onClick(v: View) {
         val uptimeMillis = SystemClock.uptimeMillis()
         if (uptimeMillis - lastClickTime > 600L) {
@@ -147,7 +146,8 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                     intent.putExtra(Intent.EXTRA_TEXT, "")
                     try {
                         startActivity(intent)
-                    } catch (ex: ActivityNotFoundException) {
+                    } catch (e: ActivityNotFoundException) {
+                        e.printStackTrace()
                         Toast.makeText(this@AboutMeActivity, getString(R.string.no_email_app_installed), Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -165,7 +165,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         lastClickTime = uptimeMillis
     }
 
-    // kang from com.sec.android.app.launcher
     private inner class AboutMeAppBarListener : OnOffsetChangedListener {
         override fun onOffsetChanged(appBarLayout: AppBarLayout, verticalOffset: Int) {
             // Handle the SwipeUp anim view

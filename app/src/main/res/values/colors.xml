@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <color name="primary_color">#CF7200</color>
     <color name="primary_color_themed">@color/primary_color</color>
     <color name="primary_dark_color">#9C5500</color>
@@ -9,10 +9,7 @@
     <color name="secondary_text_icon_color">#ff8c8c8c</color>
     <color name="primary_text_icon_color_themed">@color/oui_primary_text_color</color>
     <color name="secondary_text_icon_color_themed">@color/sesl_list_subheader_text_color</color>
-    <color name="round_and_bg_color">@color/oui_round_and_bgcolor</color>
-    <color name="background_color">#fffcfcfc</color>
     <color name="filled_background_color">#e2e2e2</color>
-    <color name="ripple_color">#0d000000</color>
 
     <color name="field_userinput_text_color">@color/primary_text_icon_color</color>
     <color name="field_given_text_color">@color/primary_color_themed</color>
@@ -23,8 +20,5 @@
     <color name="field_background_highlighted">@color/primary_color_themed</color>
     <color name="field_background_highlighted_number">@color/primary_color_themed</color>
 
-
-    <color name="sesl_thumb_control_color_activated">@color/primary_color_themed</color>
-
-
+    <color name="sesl_thumb_control_color_activated" tools:ignore="PrivateResource">@color/primary_color_themed</color>
 </resources>

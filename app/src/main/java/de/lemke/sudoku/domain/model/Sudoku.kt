@@ -1,5 +1,6 @@
 package de.lemke.sudoku.domain.model
 
+import android.annotation.SuppressLint
 import android.content.res.Resources
 import de.lemke.sudoku.R
 import java.time.LocalDateTime
@@ -7,6 +8,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
+import kotlin.concurrent.timer
 import kotlin.math.sqrt
 
 @JvmInline
@@ -156,8 +158,6 @@ class Sudoku(
 
     val isNormalSudoku: Boolean get() = modeLevel == MODE_NORMAL
 
-    val errors: Int get() = fields.count { it.error }
-
     val completed: Boolean get() = fields.all { !it.error && it.value != null }
 
     val resumed: Boolean get() = timer != null
@@ -219,17 +219,14 @@ class Sudoku(
         gameListener = null
     }
 
-    fun startTimer(delay: Long = 1000) {
+    fun startTimer(delay: Long = 1000L) {
         if (completed) return
         timer?.cancel()
-        timer = Timer()
-        timer!!.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                seconds++
-                updated = LocalDateTime.now()
-                gameListener?.onTimeChanged()
-            }
-        }, delay, 1000)
+        timer = timer(initialDelay = delay, period = 1000L ) {
+            seconds++
+            updated = LocalDateTime.now()
+            gameListener?.onTimeChanged()
+        }
     }
 
     fun stopTimer() {
@@ -344,6 +341,7 @@ class Sudoku(
     fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.correct }
     fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
 
+    @Suppress("unused")
     private fun getPossibleValues(position: Position): List<Int> {
         val values = (1..size).toMutableList()
         getRow(position.row).forEach { values.remove(it.value) }
@@ -358,13 +356,6 @@ class Sudoku(
             if (field.correct) numbers[field.value!! - 1]++
         }
         return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size) }
-    }
-
-    fun clearAllNotes() {
-        fields.forEach { field ->
-            field.notes.clear()
-            gameListener?.onFieldChanged(field.position)
-        }
     }
 
     fun getLocalStatisticsString(resources: Resources): String = resources.getString(
@@ -386,6 +377,7 @@ class Sudoku(
         updated.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
     )
 
+    @SuppressLint("StringFormatInvalid")
     fun getLocalStatisticsStringShare(resources: Resources): String =
         if (completed) {
             resources.getString(R.string.sudoku_completed)

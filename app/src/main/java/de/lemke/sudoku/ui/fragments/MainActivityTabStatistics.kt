@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.*
 import android.widget.*
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.fragment.app.Fragment
@@ -20,7 +21,6 @@ import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.launch
 import java.util.*
@@ -43,11 +43,6 @@ class MainActivityTabStatistics : Fragment() {
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentTabStatisticsBinding.inflate(inflater, container, false)
         return binding.root
@@ -56,21 +51,6 @@ class MainActivityTabStatistics : Fragment() {
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch { updateStatistics() }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.menu_filter, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_item_filter -> {
-                StatisticsFilterDialog { lifecycleScope.launch { onResume() } }.show(childFragmentManager, "StatisticsFilterDialog")
-                return true
-            }
-        }
-        return super.onOptionsItemSelected(item)
     }
 
     @SuppressLint("SetTextI18n")
@@ -191,12 +171,14 @@ class MainActivityTabStatistics : Fragment() {
                         textView = parentView.findViewById(R.id.item_text)
                         textViewValue = parentView.findViewById(R.id.item_text_value)
                     }
+
                     isSeparator -> textView = itemView as TextView
                 }
             }
         }
     }
 
+    @SuppressLint("PrivateResource")
     inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val divider: Drawable?
         private val roundedCorner: SeslSubheaderRoundedCorner
@@ -227,7 +209,8 @@ class MainActivityTabStatistics : Fragment() {
         init {
             val outValue = TypedValue()
             context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = context.getDrawable(
+            divider = AppCompatResources.getDrawable(
+                context,
                 if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
                 else androidx.appcompat.R.drawable.sesl_list_divider_light
             )!!

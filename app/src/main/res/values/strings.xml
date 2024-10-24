@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
     <!--General-->
     <string name="app_name" translatable="false">Sudoku</string>
     <string name="leo" translatable="false">Leonard Lemke</string>
@@ -67,6 +67,7 @@
     <string name="support_me">Support me</string>
     <string name="no_email_app_installed">No e-mail app installed…</string>
     <string name="no_browser_app_installed">No browser app installed…</string>
+    <string name="error_cant_open_link">Error: Link could not be opened.</string>
     <string name="useful_links">Useful links</string>
     <string name="ad">ADVERTISEMENT!!!&#129313;&#129396;</string>
     <string name="playstore_redirect_message">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>

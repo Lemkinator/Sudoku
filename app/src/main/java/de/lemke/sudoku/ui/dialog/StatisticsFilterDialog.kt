@@ -51,7 +51,7 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
         lifecycleScope.launch {
             val userSettings = getUserSettings()
             binding.checkboxStatisticsFilterNormal.isChecked = userSettings.statisticsFilterFlags and TYPE_NORMAL != 0 ||
-                        userSettings.statisticsFilterFlags and TYPE_ALL != 0
+                    userSettings.statisticsFilterFlags and TYPE_ALL != 0
             binding.checkboxStatisticsFilterDaily.isChecked = userSettings.statisticsFilterFlags and TYPE_DAILY != 0 ||
                     userSettings.statisticsFilterFlags and TYPE_ALL != 0
             binding.checkboxStatisticsFilterLevel.isChecked = userSettings.statisticsFilterFlags and TYPE_LEVEL != 0 ||
@@ -85,14 +85,11 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
         binding.checkboxStatisticsFilterDifficultyMedium.setOnCheckedChangeListener(this)
         binding.checkboxStatisticsFilterDifficultyHard.setOnCheckedChangeListener(this)
         binding.checkboxStatisticsFilterDifficultyExpert.setOnCheckedChangeListener(this)
-
-        val builder = AlertDialog.Builder(requireContext())
+        return AlertDialog.Builder(requireContext())
             .setTitle(R.string.statistics_filter)
             .setView(binding.root)
             .setNeutralButton(R.string.ok) { _, _ -> dismiss() }
-            .setOnDismissListener { onDismissListener.onDismiss(it) }
-        return builder.create()
-
+            .create()
     }
 
     private fun updateFlags() {

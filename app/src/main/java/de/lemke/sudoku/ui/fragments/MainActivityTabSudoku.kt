@@ -23,9 +23,7 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.ButtonUtils
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import dev.oneuiproject.oneui.utils.SeekBarUtils
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
-import dev.oneuiproject.oneui.widget.HapticSeekBar
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -78,10 +76,7 @@ class MainActivityTabSudoku : Fragment() {
         }
 
         activity.findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
-        SeekBarUtils.showTickMark(binding.sizeSeekbar, true)
         binding.sizeSeekbar.setSeamless(true)
-        binding.sizeSeekbar.max = 2
-        SeekBarUtils.showTickMark(binding.difficultySeekbar, true)
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.setOnClickListener {
@@ -154,7 +149,7 @@ class MainActivityTabSudoku : Fragment() {
     }
 }
 
-private val HapticSeekBar.size: Int
+private val SeslSeekBar.size: Int
     get() = when (this.progress) {
         0 -> 4
         1 -> 9

@@ -21,8 +21,6 @@ class Position(
 
     fun next(): Position? = if (index < size * size - 1) create(index + 1, size) else null
 
-    fun previous(): Position? = if (index > 0) create(index - 1, size) else null
-
     companion object {
         fun create(index: Int, size: Int): Position {
             val blockSize = sqrt(size.toDouble()).toInt()

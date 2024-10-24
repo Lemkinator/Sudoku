@@ -59,7 +59,7 @@ class SettingsActivity : AppCompatActivity() {
     @AndroidEntryPoint
     class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener {
         private lateinit var settingsActivity: SettingsActivity
-        private lateinit var pickExportFolderActivityResultLauncher: ActivityResultLauncher<Uri>
+        private lateinit var pickExportFolderActivityResultLauncher: ActivityResultLauncher<Uri?>
         private lateinit var pickImportJsonActivityResultLauncher: ActivityResultLauncher<String>
         private lateinit var darkModePref: HorizontalRadioPreference
         private lateinit var autoDarkModePref: SwitchPreferenceCompat
@@ -88,6 +88,9 @@ class SettingsActivity : AppCompatActivity() {
 
         @Inject
         lateinit var importData: ImportDataUseCase
+
+        @Inject
+        lateinit var openLink: OpenLinkUseCase
 
         override fun onAttach(context: Context) {
             super.onAttach(context)
@@ -133,17 +136,14 @@ class SettingsActivity : AppCompatActivity() {
             dailySudokuNotificationPref.onPreferenceClickListener = OnPreferenceClickListener {
                 lifecycleScope.launch {
                     dailySudokuNotificationPref.isChecked = true
-                    dailySudokuNotificationPref.onPreferenceChangeListener.onPreferenceChange(dailySudokuNotificationPref, true)
+                    dailySudokuNotificationPref.onPreferenceChangeListener?.onPreferenceChange(dailySudokuNotificationPref, true)
                     val userSettings = getUserSettings()
                     val dialog = SeslTimePickerDialog(
                         settingsActivity,
                         { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
                             lifecycleScope.launch {
                                 updateUserSettings {
-                                    it.copy(
-                                        dailySudokuNotificationHour = hourOfDay,
-                                        dailySudokuNotificationMinute = minute
-                                    )
+                                    it.copy(dailySudokuNotificationHour = hourOfDay, dailySudokuNotificationMinute = minute)
                                 }
                                 setDailyNotificationPrefTime(hourOfDay, minute)
                                 setDailySudokuNotification(true)
@@ -172,8 +172,8 @@ class SettingsActivity : AppCompatActivity() {
                     try {
                         startActivity(intent)
                     } catch (e: ActivityNotFoundException) {
-                        Toast.makeText(settingsActivity, getString(R.string.change_language_not_supported_by_device), Toast.LENGTH_SHORT)
-                            .show()
+                        e.printStackTrace()
+                        Toast.makeText(settingsActivity, getString(R.string.change_language_not_supported_by_device), Toast.LENGTH_SHORT).show()
                     }
                     true
                 }
@@ -210,7 +210,7 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<PreferenceScreen>("privacy_pref")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.privacy_website))))
+                    openLink(getString(R.string.privacy_website))
                     true
                 }
 
@@ -282,8 +282,7 @@ class SettingsActivity : AppCompatActivity() {
                 dailySudokuNotificationPref.isChecked =
                     userSettings.dailySudokuNotificationEnabled && areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
                 setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
-                errorLimitPref.summary =
-                    if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
+                errorLimitPref.summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 //tipCard?.isVisible = showTipCard
                 //tipCardSpacing?.isVisible = showTipCard
             }
@@ -313,6 +312,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     return true
                 }
+
                 "dark_mode_auto" -> {
                     val autoDarkMode = newValue as Boolean
                     darkModePref.isEnabled = !autoDarkMode
@@ -326,22 +326,27 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     return true
                 }
+
                 "highlight_regional_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(highlightRegional = newValue as Boolean) } }
                     return true
                 }
+
                 "highlight_number_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = newValue as Boolean) } }
                     return true
                 }
+
                 "keep_screen_on_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(keepScreenOn = newValue as Boolean) } }
                     return true
                 }
+
                 "animations_pref" -> {
                     lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = newValue as Boolean) } }
                     return true
                 }
+
                 "daily_notification_pref" -> {
                     if (newValue as Boolean) {
                         when {
@@ -352,6 +357,7 @@ class SettingsActivity : AppCompatActivity() {
                                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 dailySudokuNotificationPref.isChecked = false
                             }
+
                             !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
                                 val settingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -360,6 +366,7 @@ class SettingsActivity : AppCompatActivity() {
                                 startActivity(settingsIntent)
                                 dailySudokuNotificationPref.isChecked = false
                             }
+
                             else -> {
                                 setDailySudokuNotification(true)
                             }
@@ -369,6 +376,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                     return true
                 }
+
                 "error_limit_pref" -> {
                     val errorLimit = (newValue as String).toIntOrNull() ?: 0
                     lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = errorLimit) } }
@@ -390,8 +398,7 @@ class SettingsActivity : AppCompatActivity() {
                             AboutMeActivity::class.java
                         )
                     )
-                }
-                    ?.show(this)
+                }?.show(this)
             }
         }
 
@@ -416,17 +423,21 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun areNotificationsEnabled(
-            channelId: String? = null,
+            channelId: String,
             notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext())
-        ): Boolean =
-            notificationManager.areNotificationsEnabled() && if (channelId != null) {
-                notificationManager.getNotificationChannel(channelId)?.importance != NotificationManagerCompat.IMPORTANCE_NONE &&
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) ==
-                                    PackageManager.PERMISSION_GRANTED
-                        } else true
-            } else true
+        ): Boolean {
+            return when {
+                !notificationManager.areNotificationsEnabled() -> false
+                notificationManager.getNotificationChannel(channelId)?.importance == NotificationManagerCompat.IMPORTANCE_NONE -> false
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                    ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
 
+                else -> true
+            }
+        }
     }
 }
 

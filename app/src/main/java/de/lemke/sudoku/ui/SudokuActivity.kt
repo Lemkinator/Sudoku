@@ -12,6 +12,7 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -40,7 +41,6 @@ import javax.inject.Inject
 class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
-    private lateinit var toolbarMenu: Menu
     private lateinit var userSettings: UserSettings
     private lateinit var colorPrimary: ColorStateList
     lateinit var sudoku: Sudoku
@@ -97,8 +97,6 @@ class SudokuActivity : AppCompatActivity() {
         colorPrimary = ColorStateList.valueOf(typedValue.data)
 
         binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
-        toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
-        setSupportActionBar(null)
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
@@ -118,6 +116,11 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.sudoku_menu, menu)
+        return true
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_pause_play -> if (sudoku.resumed) pauseGame() else resumeGame()
@@ -128,8 +131,8 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun setToolbarMenuItemsVisible(pausePlay: Boolean = false, reset: Boolean = false) {
-        toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_pause_play, pausePlay)
-        toolbarMenu.setGroupVisible(R.id.sudoku_menu_group_reset, reset)
+        binding.sudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.sudoku_menu_group_pause_play, pausePlay)
+        binding.sudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.sudoku_menu_group_reset, reset)
     }
 
     private fun initSudoku(sudoku: Sudoku) {
@@ -183,7 +186,7 @@ class SudokuActivity : AppCompatActivity() {
         refreshHintButton()
     }
 
-    @Suppress("unused_parameter")
+    @Suppress("unused")
     fun resumeGame(view: View? = null) {
         binding.resumeButtonLayout.visibility = View.GONE
         binding.gameLayout.visibility = View.VISIBLE
@@ -192,8 +195,8 @@ class SudokuActivity : AppCompatActivity() {
             binding.gameButtons.visibility = View.GONE
         } else {
             sudoku.startTimer()
-            val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
-            itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
+            val itemPausePlay: MenuItem = binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)
+            itemPausePlay.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
             itemPausePlay.title = getString(R.string.pause)
             setToolbarMenuItemsVisible(pausePlay = true)
             binding.gameButtons.visibility = View.VISIBLE
@@ -208,8 +211,8 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameLayout.visibility = View.GONE
         binding.gameButtons.visibility = View.GONE
         binding.resumeButtonLayout.visibility = View.VISIBLE
-        val itemPausePlay: MenuItem = toolbarMenu.findItem(R.id.menu_pause_play)
-        itemPausePlay.icon = getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
+        val itemPausePlay: MenuItem = binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)
+        itemPausePlay.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
         itemPausePlay.title = getString(R.string.resume)
         setToolbarMenuItemsVisible(pausePlay = true)
         if (userSettings.keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -560,21 +563,15 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun setTitle() {
-        when {
-            sudoku.isNormalSudoku -> {
-                binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (" + sudoku.difficulty.getLocalString(resources) + ")")
-            }
-
-            sudoku.isDailySudoku -> {
-                binding.sudokuToolbarLayout.setTitle(
-                    getString(R.string.app_name) + " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
-                )
-            }
-
-            sudoku.isSudokuLevel -> {
-                binding.sudokuToolbarLayout.setTitle(getString(R.string.app_name) + " (Level " + sudoku.modeLevel + ")")
-            }
-        }
+        binding.sudokuToolbarLayout.setTitle(
+            getString(R.string.app_name) +
+                    when {
+                        sudoku.isNormalSudoku -> " (" + sudoku.difficulty.getLocalString(this.resources) + ")"
+                        sudoku.isDailySudoku -> " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
+                        sudoku.isSudokuLevel -> " (Level " + sudoku.modeLevel + ")"
+                        else -> ""
+                    }
+        )
     }
 
     @SuppressLint("StringFormatInvalid")
@@ -635,130 +632,26 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         return when (keyCode) {
-            KeyEvent.KEYCODE_1 -> {
-                select(sudoku.itemCount)
-                true
-            }
-
-            KeyEvent.KEYCODE_2 -> {
-                select(sudoku.itemCount + 1)
-                true
-            }
-
-            KeyEvent.KEYCODE_3 -> {
-                select(sudoku.itemCount + 2)
-                true
-            }
-
-            KeyEvent.KEYCODE_4 -> {
-                select(sudoku.itemCount + 3)
-                true
-            }
-
-            KeyEvent.KEYCODE_5 -> {
-                if (sudoku.size > 4) {
-                    select(sudoku.itemCount + 4)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_6 -> {
-                if (sudoku.size > 4) {
-                    select(sudoku.itemCount + 5)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_7 -> {
-                if (sudoku.size > 4) {
-                    select(sudoku.itemCount + 6)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_8 -> {
-                if (sudoku.size > 4) {
-                    select(sudoku.itemCount + 7)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_9 -> {
-                if (sudoku.size > 4) {
-                    select(sudoku.itemCount + 8)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_A -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 9)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_B -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 10)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_C -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 11)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_D -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 12)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_E -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 13)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_F -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 14)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_G -> {
-                if (sudoku.size > 9) {
-                    select(sudoku.itemCount + 15)
-                    true
-                } else false
-            }
-
-            KeyEvent.KEYCODE_DEL -> {
-                select(sudoku.itemCount + sudoku.size)
-                true
-            }
-
-            KeyEvent.KEYCODE_H -> {
-                select(sudoku.itemCount + sudoku.size + 1)
-                true
-            }
-
-            KeyEvent.KEYCODE_N -> {
-                toggleOrSetNoteButton()
-                true
-            }
-
-            KeyEvent.KEYCODE_ESCAPE -> {
-                select(null)
-                true
-            }
-
+            KeyEvent.KEYCODE_1 -> select(sudoku.itemCount).let { true }
+            KeyEvent.KEYCODE_2 -> select(sudoku.itemCount + 1).let { true }
+            KeyEvent.KEYCODE_3 -> select(sudoku.itemCount + 2).let { true }
+            KeyEvent.KEYCODE_4 -> select(sudoku.itemCount + 3).let { true }
+            KeyEvent.KEYCODE_5 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 4) }?.let { true } == true
+            KeyEvent.KEYCODE_6 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 5) }?.let { true } == true
+            KeyEvent.KEYCODE_7 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 6) }?.let { true } == true
+            KeyEvent.KEYCODE_8 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 7) }?.let { true } == true
+            KeyEvent.KEYCODE_9 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 8) }?.let { true } == true
+            KeyEvent.KEYCODE_A -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 9) }?.let { true } == true
+            KeyEvent.KEYCODE_B -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 10) }?.let { true } == true
+            KeyEvent.KEYCODE_C -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 11) }?.let { true } == true
+            KeyEvent.KEYCODE_D -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 12) }?.let { true } == true
+            KeyEvent.KEYCODE_E -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 13) }?.let { true } == true
+            KeyEvent.KEYCODE_F -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 14) }?.let { true } == true
+            KeyEvent.KEYCODE_G -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 15) }?.let { true } == true
+            KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size).let { true }
+            KeyEvent.KEYCODE_H -> select(sudoku.itemCount + sudoku.size + 1).let { true }
+            KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
+            KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
             else -> super.onKeyUp(keyCode, event)
         }
     }

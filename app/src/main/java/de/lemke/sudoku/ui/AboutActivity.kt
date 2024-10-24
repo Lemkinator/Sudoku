@@ -1,13 +1,10 @@
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.content.Intent
-import android.content.IntentSender.SendIntentException
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
@@ -17,6 +14,8 @@ import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.View
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -34,6 +33,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityAboutBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.OpenAppUseCase
+import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import dev.oneuiproject.oneui.layout.AppInfoLayout.*
 import kotlinx.coroutines.launch
@@ -45,7 +45,11 @@ class AboutActivity : AppCompatActivity() {
     private lateinit var appUpdateManager: AppUpdateManager
     private lateinit var appUpdateInfo: AppUpdateInfo
     private lateinit var appUpdateInfoTask: Task<AppUpdateInfo>
+    private lateinit var activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>
     private var clicks = 0
+
+    @Inject
+    lateinit var openLink: OpenLinkUseCase
 
     @Inject
     lateinit var openApp: OpenAppUseCase
@@ -76,11 +80,18 @@ class AboutActivity : AppCompatActivity() {
             }
         })
         binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
-        binding.aboutBtnOpenOneuiGithub.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
-        }
+        binding.aboutBtnOpenOneuiGithub.setOnClickListener { openLink(getString(R.string.oneui_github_link)) }
         binding.aboutBtnAboutMe.setOnClickListener {
             startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
+        }
+        activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            when (result.resultCode) {
+                // For immediate updates, you might not receive RESULT_OK because
+                // the update should already be finished by the time control is given back to your app.
+                RESULT_OK -> Log.d("InAppUpdate", "Update successful")
+                RESULT_CANCELED -> Log.w("InAppUpdate", "Update canceled")
+                ActivityResult.RESULT_IN_APP_UPDATE_FAILED -> Log.e("InAppUpdate", "Update failed")
+            }
         }
         checkUpdate()
     }
@@ -104,8 +115,7 @@ class AboutActivity : AppCompatActivity() {
     private fun setVersionTextView(textView: TextView, devModeEnabled: Boolean) {
         lifecycleScope.launch {
             textView.text = getString(
-                dev.oneuiproject.oneui.design.R.string.version_info,
-                BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
+                dev.oneuiproject.oneui.design.R.string.version_info, BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
             )
         }
     }
@@ -119,7 +129,7 @@ class AboutActivity : AppCompatActivity() {
         textLink.setSpan(
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_lib_github_link))))
+                    openLink(getString(R.string.sudoku_lib_github_link))
                 }
 
                 override fun updateDrawState(ds: TextPaint) {
@@ -133,7 +143,7 @@ class AboutActivity : AppCompatActivity() {
         textLink.setSpan(
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_lib_license_github_link))))
+                    openLink(getString(R.string.sudoku_lib_license_github_link))
                 }
 
                 override fun updateDrawState(ds: TextPaint) {
@@ -144,11 +154,11 @@ class AboutActivity : AppCompatActivity() {
             text.indexOf(license), text.indexOf(license) + license.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
-        val optinalTextView = binding.appInfoLayout.addOptionalText("")
-        optinalTextView.text = textLink
-        optinalTextView.movementMethod = LinkMovementMethod.getInstance()
-        optinalTextView.highlightColor = Color.TRANSPARENT
-        optinalTextView.setLinkTextColor(getColor(R.color.primary_color_themed))
+        val optionalTextView = binding.appInfoLayout.addOptionalText("")
+        optionalTextView.text = textLink
+        optionalTextView.movementMethod = LinkMovementMethod.getInstance()
+        optionalTextView.highlightColor = Color.TRANSPARENT
+        optionalTextView.setLinkTextColor(getColor(R.color.primary_color_themed))
     }
 
     // Checks that the update is not stalled during 'onResume()'.
@@ -187,8 +197,8 @@ class AboutActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { appUpdateInfo: Exception ->
-                Log.w("AboutActivity", appUpdateInfo.message.toString())
                 binding.appInfoLayout.status = NOT_UPDATEABLE
+                Log.w("AboutActivity", appUpdateInfo.message.toString())
             }
     }
 
@@ -196,19 +206,11 @@ class AboutActivity : AppCompatActivity() {
         try {
             appUpdateManager.startUpdateFlowForResult(
                 appUpdateInfo,
-                registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-                    when (result.resultCode) {
-                        // For immediate updates, you might not receive RESULT_OK because
-                        // the update should already be finished by the time control is given back to your app.
-                        Activity.RESULT_OK -> Log.d("InAppUpdate", "Update successful")
-                        Activity.RESULT_CANCELED -> Log.d("InAppUpdate", "Update canceled")
-                        ActivityResult.RESULT_IN_APP_UPDATE_FAILED ->
-                            Log.d("InAppUpdate", "Update failed")
-                    }
-                },
+                activityResultLauncher,
                 AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
             )
-        } catch (e: SendIntentException) {
+        } catch (e: Exception) {
+            binding.appInfoLayout.status = NOT_UPDATEABLE
             e.printStackTrace()
         }
     }

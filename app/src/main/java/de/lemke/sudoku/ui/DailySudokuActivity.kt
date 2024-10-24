@@ -14,6 +14,7 @@ import android.widget.SectionIndexer
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -85,7 +86,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         savedPosition = (binding.dailySudokuRecycler.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.daily_sudoku_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
         lifecycleScope.launch {
@@ -230,6 +231,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         }
     }
 
+    @SuppressLint("PrivateResource")
     inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val divider: Drawable?
         private val roundedCorner: SeslSubheaderRoundedCorner
@@ -260,7 +262,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         init {
             val outValue = TypedValue()
             context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = context.getDrawable(
+            divider = AppCompatResources.getDrawable(context,
                 if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
                 else androidx.appcompat.R.drawable.sesl_list_divider_light
             )!!

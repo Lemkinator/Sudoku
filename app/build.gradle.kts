@@ -2,8 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
-    id("kotlin-kapt")
-    //id("com.google.devtools.ksp")
+    id("com.google.devtools.ksp")
 }
 
 val releaseStoreFile: String? by rootProject
@@ -13,23 +12,16 @@ val releaseKeyPassword: String? by rootProject
 
 android {
     namespace = "de.lemke.sudoku"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 34
-        versionName = "3.0.11"
-
-        kapt {
-            arguments {
-                arg("room.schemaLocation", "$projectDir/schemas")
-            }
-        }
-        //ksp {arg("room.schemaLocation", "$projectDir/schemas") }
-
+        targetSdk = 35
+        versionCode = 36
+        versionName = "3.1.1"
         resourceConfigurations += listOf("en", "de", "es", "es-rES")
+        ksp { arg("room.schemaLocation", "$projectDir/schemas") }
     }
 
     signingConfigs {
@@ -45,22 +37,14 @@ android {
 
     buildTypes {
         all {
-            signingConfig =
-                if (releaseStoreFile.isNullOrEmpty()) {
-                    signingConfigs.getByName("debug")
-                } else {
-                    signingConfigs.getByName("release")
-                }
+            signingConfig = signingConfigs.getByName(if (releaseStoreFile.isNullOrEmpty()) "debug" else "release")
         }
 
         release {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
 
             ndk {
                 debugSymbolLevel = "FULL"
@@ -70,10 +54,7 @@ android {
             isDebuggable = true
             isMinifyEnabled = false
             isShrinkResources = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
@@ -90,55 +71,65 @@ android {
         viewBinding = true
         buildConfig = true
     }
-}
 
-configurations.configureEach {
-    exclude("androidx.appcompat", "appcompat")
-    exclude("androidx.fragment", "fragment")
-    exclude("androidx.core", "core")
-    exclude("androidx.drawerlayout", "drawerlayout")
-    exclude("androidx.viewpager", "viewpager")
-    exclude("androidx.recyclerview", "recyclerview")
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 dependencies {
-    implementation("io.github.oneuiproject:design:1.2.6")
-    implementation("io.github.oneuiproject.sesl:appcompat:1.4.0")
-    implementation("io.github.oneuiproject.sesl:material:1.5.0")
-    implementation("io.github.oneuiproject.sesl:preference:1.1.0")
-    implementation("io.github.oneuiproject.sesl:recyclerview:1.4.1")
-    implementation("io.github.oneuiproject.sesl:picker-basic:1.2.0")
+    //sesl6 modules
+    implementation("sesl.androidx.core:core:1.15.0-rc01+1.0.11-sesl6+rev0")
+    implementation("sesl.androidx.core:core-ktx:1.15.0-rc01+1.0.0-sesl6+rev0")
+    implementation("sesl.androidx.appcompat:appcompat:1.7.0+1.0.34-sesl6+rev5")
+    implementation("sesl.androidx.preference:preference:1.2.1+1.0.4-sesl6+rev3")
+    implementation("sesl.androidx.picker:picker-basic:1.0.17+1.0.17-sesl6+rev2")
+
+    implementation("sesl.com.google.android.material:material:1.12.0+1.0.23-sesl6+rev1")
+    implementation("io.github.tribalfs:oneui-design:0.1.0+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
-    implementation("com.airbnb.android:lottie:6.4.1")
-    implementation("io.kjson:kjson:7.6")
-    implementation("net.pwall.json:json-kotlin-schema:0.47")
-
-    implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation("com.google.android.gms:play-services-games-v2:20.1.2")
-    implementation("com.google.android.play:review:2.0.1")
-    implementation("com.google.android.play:review-ktx:2.0.1")
-    implementation("com.google.android.play:app-update:2.1.0")
-    implementation("com.google.android.play:app-update-ktx:2.1.0")
-    implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
-
     //noinspection GradleDependency
+    implementation("io.kjson:kjson:7.6")
+    //noinspection GradleDependency
+    implementation("net.pwall.json:json-kotlin-schema:0.47")
+    implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
+    implementation("com.airbnb.android:lottie:6.5.2")
+
+    implementation("com.google.android.gms:play-services-games-v2:20.1.2")
+    implementation("com.google.android.play:review-ktx:2.0.2")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
+
+    implementation("androidx.core:core-splashscreen:1.2.0-alpha02")
+    //noinspection GradleDependency until https://issuetracker.google.com/u/0/issues/342671895 is fixed
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
-    //noinspection KaptUsageInsteadOfKsp
-    kapt("androidx.room:room-compiler:$roomVersion")
-    androidTestImplementation("androidx.room:room-testing:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+    implementation("com.google.dagger:hilt-android:2.52")
+    ksp("com.google.dagger:hilt-compiler:2.52")
+}
 
-    //noinspection GradleDependency
-    implementation("androidx.core:core-ktx:1.9.0")
-    //noinspection GradleDependency
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.5.1")
+configurations.implementation {
+    //Exclude official android jetpack modules
+    exclude("androidx.core", "core")
+    exclude("androidx.core", "core-ktx")
+    exclude("androidx.customview", "customview")
+    exclude("androidx.coordinatorlayout", "coordinatorlayout")
+    exclude("androidx.drawerlayout", "drawerlayout")
+    exclude("androidx.viewpager2", "viewpager2")
+    exclude("androidx.viewpager", "viewpager")
+    exclude("androidx.appcompat", "appcompat")
+    exclude("androidx.fragment", "fragment")
+    exclude("androidx.preference", "preference")
+    exclude("androidx.recyclerview", "recyclerview")
+    exclude("androidx.slidingpanelayout", "slidingpanelayout")
+    exclude("androidx.swiperefreshlayout", "swiperefreshlayout")
 
-    //noinspection GradleDependency
-    implementation("com.google.dagger:hilt-android:2.42")
-    //noinspection GradleDependency
-    kapt("com.google.dagger:hilt-compiler:2.42")
+    //Exclude official material components lib
+    exclude("com.google.android.material", "material")
 }

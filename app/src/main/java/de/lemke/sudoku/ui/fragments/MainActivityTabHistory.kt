@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -175,11 +176,12 @@ class MainActivityTabHistory : Fragment() {
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {
-                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] ?: false }.mapNotNull { it.first })
+                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] == true }.mapNotNull { it.first })
                             initList()
                             dialog.dismiss()
                         }
                     }
+
                     else -> {
                         Toast.makeText(context, item.title, Toast.LENGTH_SHORT).show()
                     }
@@ -323,12 +325,14 @@ class MainActivityTabHistory : Fragment() {
                         checkBox = parentView.findViewById(R.id.checkbox)
                         imageView = parentView.findViewById(R.id.item_icon)
                     }
+
                     isSeparator -> textView = itemView as TextView
                 }
             }
         }
     }
 
+    @SuppressLint("PrivateResource")
     inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val divider: Drawable?
         private val roundedCorner: SeslSubheaderRoundedCorner
@@ -359,7 +363,8 @@ class MainActivityTabHistory : Fragment() {
         init {
             val outValue = TypedValue()
             context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = context.getDrawable(
+            divider = AppCompatResources.getDrawable(
+                context,
                 if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
                 else androidx.appcompat.R.drawable.sesl_list_divider_light
             )!!

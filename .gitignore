@@ -22,6 +22,7 @@
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+.idea/**/runConfigurations.xml
 
 # Gradle
 .idea/**/gradle.xml
@@ -85,10 +86,13 @@ fabric.properties
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/deploymentTargetDropDown.xml
+.idea/**/deploymentTargetSelector.xml
 .DS_Store
 
 /build
 /release
+app/release
+!app/release/app-release.apk
 
 mobile/google-services.json
 /captures

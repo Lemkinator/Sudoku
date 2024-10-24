@@ -28,7 +28,7 @@
                 android:layout_weight="1"
                 android:gravity="start"
                 android:text="@string/size4"
-                android:textColor="@color/secondary_text_icon_color_themed"/>
+                android:textColor="@color/secondary_text_icon_color_themed" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -44,15 +44,19 @@
                 android:layout_weight="1"
                 android:gravity="end"
                 android:text="@string/size16"
-                android:textColor="@color/secondary_text_icon_color_themed"/>
+                android:textColor="@color/secondary_text_icon_color_themed" />
 
         </LinearLayout>
 
-        <dev.oneuiproject.oneui.widget.HapticSeekBar
+        <androidx.appcompat.widget.SeslSeekBar
             android:id="@+id/size_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="20dp"
+            android:max="2"
+            android:min="0"
+            app:seamless="true"
+            app:seslSeekBarMode="level_bar" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -85,11 +89,13 @@
 
         </LinearLayout>
 
-        <dev.oneuiproject.oneui.widget.HapticSeekBar
+        <androidx.appcompat.widget.SeslSeekBar
             android:id="@+id/difficulty_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp" />
+            android:layout_marginBottom="20dp"
+            app:seamless="true"
+            app:seslSeekBarMode="level_bar" />
 
         <LinearLayout
             android:layout_width="match_parent"

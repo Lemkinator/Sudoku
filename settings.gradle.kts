@@ -1,10 +1,2 @@
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        google()
-        mavenCentral()
-    }
-}
-
-rootProject.name = "Sudoku"
+rootProject.name = "OneURL"
 include(":app")

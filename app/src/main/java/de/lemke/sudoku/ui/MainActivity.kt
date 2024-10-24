@@ -3,12 +3,15 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -181,6 +184,13 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.menu_filter, menu).let { true }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
+        else -> super.onOptionsItemSelected(item)
+    }
+
     private fun initDrawer() {
         val achievementsOption = findViewById<LinearLayout>(R.id.draweritem_achievements)
         val leaderboardsOption = findViewById<LinearLayout>(R.id.draweritem_leaderboards)
@@ -209,7 +219,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         settingsOption.setOnClickListener {
             startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
         }
-        binding.drawerLayoutMain.setDrawerButtonIcon(getDrawable(dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
+        binding.drawerLayoutMain.setDrawerButtonIcon(
+            AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline)
+        )
         binding.drawerLayoutMain.setDrawerButtonOnClickListener {
             startActivity(Intent().setClass(this@MainActivity, AboutActivity::class.java))
         }
@@ -300,16 +312,20 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                             val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
                             if (binding.drawerLayoutMain.isExpanded) binding.drawerLayoutMain.setExpanded(false, true)
                             else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
-                            else StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(
-                                supportFragmentManager,
-                                "StatisticsFilterDialog"
-                            )
+                            else showStatisticsFilterDialog()
                         }
                     }
                 } catch (_: Exception) { //no required functionality -> ignore errors
                 }
             }
         })
+    }
+
+    private fun showStatisticsFilterDialog() {
+        StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(
+            supportFragmentManager,
+            "StatisticsFilterDialog"
+        )
     }
 
     private fun initFragments() {
@@ -334,6 +350,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
+        binding.drawerLayoutMain.toolbar.menu.setGroupVisible(R.id.menu_group_filter, position == 2)
     }
 
     private fun checkBackPressed() {

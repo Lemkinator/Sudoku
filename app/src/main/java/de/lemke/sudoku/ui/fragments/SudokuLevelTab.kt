@@ -14,6 +14,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SectionIndexer
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -162,20 +163,14 @@ class SudokuLevelTab(private val size: Int) : Fragment(), OnDataChangedListener 
 
         inner class ViewHolder internal constructor(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
             var isItem: Boolean = viewType == 0
-            var parentView: LinearLayout
-            var textView: TextView
-            var textViewSmall: TextView
-            var imageView: ImageView
-
-            init {
-                parentView = itemView as LinearLayout
-                textView = parentView.findViewById(R.id.item_text)
-                textViewSmall = parentView.findViewById(R.id.item_text_small)
-                imageView = parentView.findViewById(R.id.item_icon)
-            }
+            var parentView: LinearLayout = itemView as LinearLayout
+            var textView: TextView = parentView.findViewById(R.id.item_text)
+            var textViewSmall: TextView = parentView.findViewById(R.id.item_text_small)
+            var imageView: ImageView = parentView.findViewById(R.id.item_icon)
         }
     }
 
+    @SuppressLint("PrivateResource")
     inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val divider: Drawable?
         private val roundedCorner: SeslSubheaderRoundedCorner
@@ -206,7 +201,8 @@ class SudokuLevelTab(private val size: Int) : Fragment(), OnDataChangedListener 
         init {
             val outValue = TypedValue()
             context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = context.getDrawable(
+            divider = AppCompatResources.getDrawable(
+                context,
                 if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
                 else androidx.appcompat.R.drawable.sesl_list_divider_light
             )!!
