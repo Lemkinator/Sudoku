@@ -5,7 +5,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -37,7 +36,6 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
-import de.lemke.sudoku.domain.setCustomOnBackPressedLogic
 import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -46,7 +44,6 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -54,7 +51,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivityMainBinding
-    private val backPressEnabled = MutableStateFlow(false)
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
@@ -155,7 +151,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             updatePlayGames(this@MainActivity)
         }
-        setCustomOnBackPressedLogic(backPressEnabled) { checkBackPressed() }
         NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
     }
 
@@ -230,21 +225,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
                 binding.drawerLayoutMain.setButtonBadges(ToolbarLayout.N_BADGE, DrawerLayout.N_BADGE)
         }
-        binding.drawerLayoutMain.findViewById<androidx.drawerlayout.widget.DrawerLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer)
-            .addDrawerListener(
-                object : androidx.drawerlayout.widget.DrawerLayout.DrawerListener {
-                    override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
-                    override fun onDrawerOpened(drawerView: View) {
-                        backPressEnabled.value = true
-                    }
-
-                    override fun onDrawerClosed(drawerView: View) {
-                        backPressEnabled.value = false
-                    }
-
-                    override fun onDrawerStateChanged(newState: Int) {}
-                }
-            )
     }
 
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
@@ -351,22 +331,5 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
         newFragment.onResume()
         binding.drawerLayoutMain.toolbar.menu.setGroupVisible(R.id.menu_group_filter, position == 2)
-    }
-
-    private fun checkBackPressed() {
-        when {
-            binding.drawerLayoutMain.findViewById<androidx.drawerlayout.widget.DrawerLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer)
-                .isDrawerOpen(
-                    binding.drawerLayoutMain.findViewById<LinearLayout>(dev.oneuiproject.oneui.design.R.id.drawerlayout_drawer_content)
-                ) -> {
-                binding.drawerLayoutMain.setDrawerOpen(false, true)
-            }
-
-            else -> {
-                //should not get here, callback should be disabled/unregistered
-                finishAffinity()
-            }
-        }
-
     }
 }
