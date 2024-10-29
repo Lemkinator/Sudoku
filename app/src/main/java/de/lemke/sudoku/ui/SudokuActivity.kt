@@ -84,7 +84,7 @@ class SudokuActivity : AppCompatActivity() {
 
         val id = intent.getStringExtra("sudokuId")
         if (id == null) {
-            finish()
+            finishAfterTransition()
             return
         }
         loadingDialog = ProgressDialog(this)
@@ -100,11 +100,11 @@ class SudokuActivity : AppCompatActivity() {
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
-            if (nullableSudoku == null) finish()
+            if (nullableSudoku == null) finishAfterTransition()
             else initSudoku(nullableSudoku)
         }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
+        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
     }
 

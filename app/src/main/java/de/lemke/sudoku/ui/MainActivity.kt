@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             @Suppress("DEPRECATION")
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
-        finish()
+        finishAfterTransition()
     }
 
     private suspend fun checkTOS() {

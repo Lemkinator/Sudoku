@@ -66,7 +66,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.dailySudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
+        binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)

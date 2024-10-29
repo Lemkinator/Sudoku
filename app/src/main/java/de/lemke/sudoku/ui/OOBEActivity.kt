@@ -195,6 +195,6 @@ class OOBEActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
-        finish()
+        finishAfterTransition()
     }
 }
