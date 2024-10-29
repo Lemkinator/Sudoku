@@ -35,14 +35,13 @@ import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetSudokuHistoryUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.setCustomOnBackPressedLogic
 import de.lemke.sudoku.ui.SudokuActivity
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
+import dev.oneuiproject.oneui.layout.ToolbarLayout
 import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import dev.oneuiproject.oneui.widget.Separator
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -59,7 +58,6 @@ class MainActivityTabHistory : Fragment() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var mainTabs: MarginsTabLayout
     private var selected = HashMap<Int, Boolean>()
-    private var selecting = MutableStateFlow(false)
     private var checkAllListening = true
     private var savedPosition: Int? = null
     private var onOffsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
@@ -98,7 +96,6 @@ class MainActivityTabHistory : Fragment() {
             else binding.historyNoEntryView.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
         }
         drawerLayout.appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
-        setCustomOnBackPressedLogic(selecting) { setSelecting(false) }
     }
 
     override fun onDestroyView() {
@@ -160,53 +157,43 @@ class MainActivityTabHistory : Fragment() {
             override fun onLongPressMultiSelectionStarted(x: Int, y: Int) {}
             override fun onLongPressMultiSelectionEnded(x: Int, y: Int) {}
         })
-    }
+        drawerLayout.setOnActionModeListener(object : ToolbarLayout.ActionModeCallback {
+            override fun onShow(toolbarLayout: ToolbarLayout?) {
+                sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
+            }
 
-    fun setSelecting(enabled: Boolean) {
-        if (enabled) {
-            selecting.value = true
-            sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
-            drawerLayout.actionModeBottomMenu.clear()
-            drawerLayout.setActionModeMenu(R.menu.remove_menu)
-            drawerLayout.setActionModeMenuListener { item: MenuItem ->
-                when (item.itemId) {
-                    R.id.menuButtonRemove -> {
-                        val dialog = ProgressDialog(context)
-                        dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
-                        dialog.setCancelable(false)
-                        dialog.show()
-                        lifecycleScope.launch {
-                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] == true }.mapNotNull { it.first })
-                            initList()
-                            dialog.dismiss()
-                        }
-                    }
-
-                    else -> {
-                        Toast.makeText(context, item.title, Toast.LENGTH_SHORT).show()
+            override fun onDismiss(toolbarLayout: ToolbarLayout?) {
+                selected.replaceAll { _, _ -> false }
+                sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
+            }
+        })
+        drawerLayout.actionModeBottomMenu.clear()
+        drawerLayout.setActionModeMenu(R.menu.remove_menu)
+        drawerLayout.setActionModeMenuListener { item: MenuItem ->
+            when (item.itemId) {
+                R.id.menuButtonRemove -> {
+                    val dialog = ProgressDialog(context)
+                    dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+                    dialog.setCancelable(false)
+                    dialog.show()
+                    lifecycleScope.launch {
+                        deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] == true }.mapNotNull { it.first })
+                        initList()
+                        dialog.dismiss()
                     }
                 }
-                setSelecting(false)
-                true
             }
-            drawerLayout.showActionMode()
-            drawerLayout.setActionModeCheckboxListener { _, isChecked ->
-                if (checkAllListening) {
-                    selected.replaceAll { _, _ -> isChecked }
-                    sudokuHistory.forEachIndexed { index, pair -> if (pair.first == null) selected[index] = false }
-                    selected.forEach { (index, _) -> sudokuListAdapter.notifyItemChanged(index) }
-                }
-                val count = selected.values.count { it }
-                drawerLayout.setActionModeAllSelector(count, true, count == sudokuList.size)
-            }
-            mainTabs.isEnabled = false
-        } else {
-            selecting.value = false
-            for (i in 0 until sudokuListAdapter.itemCount) selected[i] = false
-            sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
-            drawerLayout.setActionModeAllSelector(0, true, false)
             drawerLayout.dismissActionMode()
-            mainTabs.isEnabled = true
+            true
+        }
+        drawerLayout.setActionModeCheckboxListener { _, isChecked ->
+            if (checkAllListening) {
+                selected.replaceAll { _, _ -> isChecked }
+                sudokuHistory.forEachIndexed { index, pair -> if (pair.first == null) selected[index] = false }
+                selected.forEach { (index, _) -> sudokuListAdapter.notifyItemChanged(index) }
+            }
+            val count = selected.values.count { it }
+            drawerLayout.setActionModeAllSelector(count, true, count == sudokuList.size)
         }
     }
 
@@ -239,7 +226,7 @@ class MainActivityTabHistory : Fragment() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val sudoku = sudokuHistory[position].first
             if (holder.isItem && sudoku != null) {
-                holder.checkBox.visibility = if (selecting.value) View.VISIBLE else View.GONE
+                holder.checkBox.visibility = if (drawerLayout.isActionMode) View.VISIBLE else View.GONE
                 holder.checkBox.isChecked = selected[position]!!
                 holder.textView.text = sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(resources)
                 holder.imageView.setImageDrawable(
@@ -275,13 +262,13 @@ class MainActivityTabHistory : Fragment() {
 
                 }
                 holder.parentView.setOnClickListener {
-                    if (selecting.value) toggleItemSelected(position)
+                    if (drawerLayout.isActionMode) toggleItemSelected(position)
                     else {
                         startActivity(Intent(context, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
                     }
                 }
                 holder.parentView.setOnLongClickListener {
-                    if (!selecting.value) setSelecting(true)
+                    if (!drawerLayout.isActionMode) drawerLayout.showActionMode()
                     toggleItemSelected(position)
                     binding.sudokuHistoryList.seslStartLongPressMultiSelection()
                     true
