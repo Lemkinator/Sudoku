@@ -111,7 +111,6 @@ class SudokuActivity : AppCompatActivity() {
         super.onPause()
         if (this::sudoku.isInitialized) {
             pauseGame()
-            lifecycleScope.launch { saveSudoku(sudoku) }
         }
     }
 
@@ -215,6 +214,7 @@ class SudokuActivity : AppCompatActivity() {
         itemPausePlay.title = getString(R.string.resume)
         setToolbarMenuItemsVisible(pausePlay = true)
         if (userSettings.keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        lifecycleScope.launch { saveSudoku(sudoku) }
     }
 
     inner class SudokuGameListener : GameListener {
@@ -275,6 +275,7 @@ class SudokuActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("InAppReview", "Error: ${e.message}")
             }
+            saveSudoku(sudoku)
         }
     }
 

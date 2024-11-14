@@ -32,7 +32,6 @@ import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.startActionMode
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -73,6 +72,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             observeSudokuHistory().flowWithLifecycle(lifecycle).collectLatest {
                 sudokuHistory = it
                 updateRecyclerView()
+                binding.sudokuHistoryList.smoothScrollToPosition(0)
             }
         }
         lifecycleScope.launch {
@@ -130,10 +130,6 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             else {
                 if (sudokuListItem is SudokuListItem.SudokuItem) {
                     startActivity(Intent(context, SudokuActivity::class.java).putExtra("sudokuId", sudokuListItem.sudoku.id.value))
-                    lifecycleScope.launch {
-                        delay(500)
-                        binding.sudokuHistoryList.smoothScrollToPosition(0)
-                    }
                 }
             }
         }
