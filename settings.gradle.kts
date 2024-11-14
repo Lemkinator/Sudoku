@@ -1,2 +1,2 @@
-rootProject.name = "OneURL"
+rootProject.name = "Sudoku"
 include(":app")

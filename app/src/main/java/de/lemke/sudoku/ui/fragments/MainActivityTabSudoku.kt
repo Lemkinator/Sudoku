@@ -6,12 +6,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.appbar.AppBarLayout
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
@@ -21,18 +18,17 @@ import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.ButtonUtils
+import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
+import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import dev.oneuiproject.oneui.utils.internal.ReflectUtils
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.abs
 
 @AndroidEntryPoint
-class MainActivityTabSudoku : Fragment() {
+class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
     private lateinit var loadingDialog: ProgressDialog
-    private var onOffsetChangedListener: AppBarLayout.OnOffsetChangedListener? = null
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -64,18 +60,8 @@ class MainActivityTabSudoku : Fragment() {
         loadingDialog = ProgressDialog(context)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
-        onOffsetChangedListener = AppBarLayout.OnOffsetChangedListener { appBarLayout, verticalOffset ->
-            val totalScrollRange = appBarLayout.totalScrollRange
-            val inputMethodWindowVisibleHeight = ReflectUtils.genericInvokeMethod(
-                InputMethodManager::class.java,
-                activity.getSystemService(AppCompatActivity.INPUT_METHOD_SERVICE),
-                "getInputMethodWindowVisibleHeight"
-            ) as Int
-            if (totalScrollRange != 0) binding.newSudokuLayout.translationY = (abs(verticalOffset) - totalScrollRange).toFloat() / 2.0f
-            else binding.newSudokuLayout.translationY = (abs(verticalOffset) - inputMethodWindowVisibleHeight).toFloat() / 2.0f
-        }
+        binding.newSudokuLayout.translateYWithAppBar(activity.findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout, this)
 
-        activity.findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout.addOnOffsetChangedListener(onOffsetChangedListener)
         binding.sizeSeekbar.setSeamless(true)
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
@@ -88,32 +74,25 @@ class MainActivityTabSudoku : Fragment() {
                 loadingDialog.dismiss()
             }
         }
-        binding.dailyButton.setOnClickListener {
-            startActivity(Intent(activity, DailySudokuActivity::class.java))
-        }
-        binding.levelsButton.setOnClickListener {
-            startActivity(Intent(activity, SudokuLevelActivity::class.java))
-        }
+        binding.dailyButton.setOnClickListener { startActivity(Intent(activity, DailySudokuActivity::class.java)) }
+        binding.levelsButton.setOnClickListener { startActivity(Intent(activity, SudokuLevelActivity::class.java)) }
         lifecycleScope.launch {
-            val sliderValue = getUserSettings().difficultySliderValue
-            binding.difficultySeekbar.progress = sliderValue
+            val userSettings = getUserSettings()
+            binding.difficultySeekbar.progress = userSettings.difficultySliderValue
             binding.difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
                     lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
                 }
-
+            })
+            binding.sizeSeekbar.progress = userSettings.sizeSliderValue
+            binding.sizeSeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
                 override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
-            })
-            val sizeValue = getUserSettings().sizeSliderValue
-            binding.sizeSeekbar.progress = sizeValue
-            binding.sizeSeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
                     lifecycleScope.launch { updateUserSettings { it.copy(sizeSliderValue = progress) } }
                 }
-
-                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
             })
         }
     }
@@ -140,12 +119,6 @@ class MainActivityTabSudoku : Fragment() {
                 if (isDailySudokuCompleted()) R.style.ButtonStyle_Filled else R.style.ButtonStyle_Colored
             )
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        requireActivity().findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout
-            .removeOnOffsetChangedListener(onOffsetChangedListener)
     }
 }
 

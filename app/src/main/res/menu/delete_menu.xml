@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
         <item
-            android:id="@+id/menuButtonRemove"
+            android:id="@+id/menuButtonDelete"
             android:icon="@drawable/ic_oui_delete_outline"
             android:title="@string/delete"
             app:showAsAction="always"

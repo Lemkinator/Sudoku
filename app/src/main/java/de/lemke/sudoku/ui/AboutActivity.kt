@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.setCustomBackPressAnimation
 import dev.oneuiproject.oneui.layout.AppInfoLayout.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -94,6 +95,7 @@ class AboutActivity : AppCompatActivity() {
             }
         }
         checkUpdate()
+        setCustomBackPressAnimation(binding.root)
     }
 
     private fun setVersionText() {

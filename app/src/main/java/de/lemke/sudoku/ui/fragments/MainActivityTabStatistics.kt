@@ -1,12 +1,15 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
+import android.app.ActionBar.LayoutParams
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.*
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
@@ -21,6 +24,8 @@ import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics.StatisticsListAdapter.ViewHolder
+import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.launch
 import java.util.*
@@ -29,16 +34,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivityTabStatistics : Fragment() {
     private lateinit var binding: FragmentTabStatisticsBinding
-    private lateinit var statisticsList: MutableList<Pair<String, String?>>
+    private var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
-
-    @Inject
-    lateinit var getAllDailySudokus: GetAllSudokusUseCase
-
-    @Inject
-    lateinit var getAllSudokuLevels: GetAllSudokusUseCase
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -116,15 +115,13 @@ class MainActivityTabStatistics : Fragment() {
         statisticsList.add(getString(R.string.most_games_started) to mostGamesStartedSize)
         statisticsList.add(getString(R.string.most_games_won) to mostGamesWonSize)
 
-        binding.statisticsListRecycler.layoutManager = LinearLayoutManager(context)
-        binding.statisticsListRecycler.adapter = StatisticsListAdapter()
-        binding.statisticsListRecycler.itemAnimator = null
-        binding.statisticsListRecycler.addItemDecoration(ItemDecoration(requireContext()))
-        binding.statisticsListRecycler.seslSetFastScrollerEnabled(true)
-        binding.statisticsListRecycler.seslSetFillBottomEnabled(true)
-        binding.statisticsListRecycler.seslSetGoToTopEnabled(true)
-        binding.statisticsListRecycler.seslSetLastRoundedCorner(true)
-        binding.statisticsListRecycler.seslSetSmoothScrollEnabled(true)
+        binding.statisticsListRecycler.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = StatisticsListAdapter()
+            itemAnimator = null
+            addItemDecoration(ItemDecoration(requireContext()))
+            enableCoreSeslFeatures()
+        }
     }
 
     private fun secondsToTimeString(seconds: Int): String =
@@ -134,45 +131,37 @@ class MainActivityTabStatistics : Fragment() {
             else -> String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
         }
 
-    inner class StatisticsListAdapter : RecyclerView.Adapter<StatisticsListAdapter.ViewHolder>() {
+    inner class StatisticsListAdapter : RecyclerView.Adapter<ViewHolder>() {
         override fun getItemCount(): Int = statisticsList.size
         override fun getItemId(position: Int): Long = position.toLong()
         override fun getItemViewType(position: Int): Int = if (statisticsList[position].second == null) 1 else 0
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = when (viewType) {
-            0 -> ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), viewType)
-            else -> ViewHolder(Separator(requireContext()), viewType)
+            0 -> ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), false)
+            else -> ViewHolder(Separator(requireContext()), true).apply {
+                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            }
         }
 
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            if (holder.isItem) {
+            if (holder.isSeparator) {
+                holder.textView.text = statisticsList[position].first
+            } else {
                 holder.textView.text = statisticsList[position].first
                 holder.textViewValue.text = statisticsList[position].second
             }
-            if (holder.isSeparator) {
-                holder.textView.layoutParams =
-                    ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                holder.textView.text = statisticsList[position].first
-            }
         }
 
-        inner class ViewHolder internal constructor(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
-            var isItem: Boolean = viewType == 0
-            var isSeparator: Boolean = viewType == 1
-            private lateinit var parentView: LinearLayout
-            lateinit var textView: TextView
+        inner class ViewHolder internal constructor(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
+            var textView: TextView
             lateinit var textViewValue: TextView
 
             init {
-                when {
-                    isItem -> {
-                        parentView = itemView as LinearLayout
-                        textView = parentView.findViewById(R.id.item_text)
-                        textViewValue = parentView.findViewById(R.id.item_text_value)
-                    }
-
-                    isSeparator -> textView = itemView as TextView
+                if (isSeparator) textView = itemView as TextView
+                else {
+                    textView = itemView.findViewById(R.id.item_text)
+                    textViewValue = itemView.findViewById(R.id.item_text_value)
                 }
             }
         }
@@ -186,10 +175,10 @@ class MainActivityTabStatistics : Fragment() {
             super.onDraw(c, parent, state)
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: StatisticsListAdapter.ViewHolder =
-                    binding.statisticsListRecycler.getChildViewHolder(child) as StatisticsListAdapter.ViewHolder
-                if (holder.isItem) {
-                    val top = (child.bottom + (child.layoutParams as ViewGroup.MarginLayoutParams).bottomMargin)
+                val holder: ViewHolder =
+                    binding.statisticsListRecycler.getChildViewHolder(child) as ViewHolder
+                if (!holder.isSeparator) {
+                    val top = (child.bottom + (child.layoutParams as MarginLayoutParams).bottomMargin)
                     val bottom = divider!!.intrinsicHeight + top
                     divider.setBounds(parent.left, top, parent.right, bottom)
                     divider.draw(c)
@@ -200,9 +189,9 @@ class MainActivityTabStatistics : Fragment() {
         override fun seslOnDispatchDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
             for (i in 0 until parent.childCount) {
                 val child = parent.getChildAt(i)
-                val holder: StatisticsListAdapter.ViewHolder =
-                    binding.statisticsListRecycler.getChildViewHolder(child) as StatisticsListAdapter.ViewHolder
-                if (!holder.isItem) roundedCorner.drawRoundedCorner(child, c)
+                val holder: ViewHolder =
+                    binding.statisticsListRecycler.getChildViewHolder(child) as ViewHolder
+                if (holder.isSeparator) roundedCorner.drawRoundedCorner(child, c)
             }
         }
 

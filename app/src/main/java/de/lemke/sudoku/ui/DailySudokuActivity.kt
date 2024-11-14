@@ -27,12 +27,11 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.formatFull
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
 import javax.inject.Inject
@@ -50,12 +49,6 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     lateinit var getAllDailySudokus: GetDailySudokusUseCase
 
     @Inject
-    lateinit var generateDailySudoku: GenerateDailySudokuUseCase
-
-    @Inject
-    lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
 
     @Inject
@@ -70,6 +63,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)
+        setCustomBackPressAnimation(binding.root)
     }
 
     override fun onResume() {
@@ -166,7 +160,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val sudoku = dailySudokus[position].first
             if (holder.isItem && sudoku != null) {
-                holder.textView.text = dailySudokus[position].second.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+                holder.textView.text = dailySudokus[position].second.formatFull
                 holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         this@DailySudokuActivity,

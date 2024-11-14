@@ -13,6 +13,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.setCustomBackPressAnimation
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -50,6 +51,7 @@ class SudokuLevelActivity : AppCompatActivity() {
                 override fun onPageScrollStateChanged(state: Int) {}
             })
         }
+        setCustomBackPressAnimation(binding.root)
     }
 
     override fun onResume() {

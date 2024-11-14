@@ -5,6 +5,7 @@
     android:id="@+id/sudoku_toolbar_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?roundedCornerColor"
     app:expandable="false"
     app:navigationIcon="@drawable/ic_oui_back"
     app:title="@string/app_name"

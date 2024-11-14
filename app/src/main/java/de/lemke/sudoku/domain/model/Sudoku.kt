@@ -3,6 +3,7 @@ package de.lemke.sudoku.domain.model
 import android.annotation.SuppressLint
 import android.content.res.Resources
 import de.lemke.sudoku.R
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -96,6 +97,21 @@ class Sudoku(
     }
 
     override fun hashCode(): Int = id.hashCode()
+
+    fun contentEquals(other: Sudoku): Boolean = id == other.id &&
+            regionalHighlightingUsed == other.regionalHighlightingUsed &&
+            numberHighlightingUsed == other.numberHighlightingUsed &&
+            eraserUsed == other.eraserUsed &&
+            isChecklist == other.isChecklist &&
+            isReverseChecklist == other.isReverseChecklist &&
+            checklistNumber == other.checklistNumber &&
+            hintsUsed == other.hintsUsed &&
+            notesMade == other.notesMade &&
+            errorsMade == other.errorsMade &&
+            created == other.created &&
+            updated == other.updated &&
+            seconds == other.seconds &&
+            fields == other.fields
 
     fun copy(
         sudokuId: SudokuId = this.id,
@@ -222,7 +238,7 @@ class Sudoku(
     fun startTimer(delay: Long = 1000L) {
         if (completed) return
         timer?.cancel()
-        timer = timer(initialDelay = delay, period = 1000L ) {
+        timer = timer(initialDelay = delay, period = 1000L) {
             seconds++
             updated = LocalDateTime.now()
             gameListener?.onTimeChanged()
@@ -248,6 +264,7 @@ class Sudoku(
                 gameListener?.onFieldChanged(position)
                 true
             }
+
             value == null -> {
                 if (field.value == null && field.notes.isEmpty()) return false
                 eraserUsed = true
@@ -256,6 +273,7 @@ class Sudoku(
                 gameListener?.onFieldChanged(position)
                 true
             }
+
             field.correct || field.value == value -> false
             else -> {
                 field.value = value
@@ -281,11 +299,13 @@ class Sudoku(
                 value > checklistNumber -> checklistNumber = value
                 else -> isChecklist = false
             }
+
             isReverseChecklist -> when {
                 value == checklistNumber -> return
                 value < checklistNumber -> checklistNumber = value
                 else -> isReverseChecklist = false
             }
+
             checklistNumber == 0 -> when (value) {
                 1 -> isChecklist = true
                 size -> isReverseChecklist = true
@@ -373,8 +393,8 @@ class Sudoku(
         notesMade,
         resources.getString(if (regionalHighlightingUsed) R.string.yes else R.string.no),
         resources.getString(if (numberHighlightingUsed) R.string.yes else R.string.no),
-        created.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
-        updated.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
+        created.formatFull,
+        updated.formatFull,
     )
 
     @SuppressLint("StringFormatInvalid")
@@ -394,4 +414,10 @@ interface GameListener {
     fun onError()
     fun onTimeChanged()
 }
+
+val LocalDateTime.dateFormatShort: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))
+val LocalDate.formatFull: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+val LocalDateTime.formatFull: String
+    get() = format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault()))
+
 

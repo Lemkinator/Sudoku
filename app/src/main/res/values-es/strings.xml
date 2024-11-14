@@ -64,7 +64,6 @@
     <string name="regional_highlight_summary">Cuando se selecciona una casilla, se resaltarán la fila, la columna y el bloque.</string>
     <string name="number_highlight">Resaltar número seleccionado</string>
     <string name="number_highlight_summary">Cuando se selecciona un número, se marcarán todas las otras casillas con el mismo número.</string>
-    <string name="press_again_to_exit">Presiona de nuevo para salir.</string>
     <string name="delete_appdata_and_exit">Borrar datos de la aplicación y salir</string>
     <string name="delete_appdata_and_exit_warning">¡Atención! Esto borrará todos los datos personales. ¿Deseas continuar?</string>
     <string name="error_limit">Límite de errores</string>

@@ -1,6 +1,7 @@
 package de.lemke.sudoku.data.database
 
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SudokuDao {
@@ -27,6 +28,10 @@ interface SudokuDao {
     @Transaction
     @Query("SELECT * FROM sudoku ORDER BY updated DESC")
     suspend fun getAll(): List<SudokuWithFields>
+
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE modeLevel = 0 ORDER BY updated DESC")
+    fun observeAllNormal(): Flow<List<SudokuWithFields>>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")

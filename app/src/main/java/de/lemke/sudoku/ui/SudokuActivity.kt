@@ -31,8 +31,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -106,6 +104,7 @@ class SudokuActivity : AppCompatActivity() {
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
+        setCustomBackPressAnimation(binding.root)
     }
 
     override fun onPause() {
@@ -567,7 +566,7 @@ class SudokuActivity : AppCompatActivity() {
             getString(R.string.app_name) +
                     when {
                         sudoku.isNormalSudoku -> " (" + sudoku.difficulty.getLocalString(this.resources) + ")"
-                        sudoku.isDailySudoku -> " (" + sudoku.created.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)) + ")"
+                        sudoku.isDailySudoku -> " (" + sudoku.created.dateFormatShort + ")"
                         sudoku.isSudokuLevel -> " (Level " + sudoku.modeLevel + ")"
                         else -> ""
                     }
@@ -591,6 +590,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun shareDialog() {
+        pauseGame()
         val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.share_sudoku)
             .setView(R.layout.dialog_share)
