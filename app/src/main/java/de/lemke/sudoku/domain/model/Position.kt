@@ -24,23 +24,20 @@ class Position(
     companion object {
         fun create(index: Int, size: Int): Position {
             val blockSize = sqrt(size.toDouble()).toInt()
-            return Position(
-                size = size,
-                index = index,
-                row = index / size,
-                column = index % size,
-                block = index / (size * size / blockSize) * blockSize + index % size / (size / blockSize)
-            )
+            val row = index / size
+            val column = index % size
+            val block = row / blockSize * blockSize + column / blockSize
+            return Position(size, index, row, column, block)
         }
 
         fun create(size: Int, row: Int, column: Int): Position {
-            val sqrtSize = sqrt(size.toDouble()).toInt()
+            val blockSize = sqrt(size.toDouble()).toInt()
             return Position(
                 size = size,
                 index = row * size + column,
                 row = row,
                 column = column,
-                block = row / (size / sqrtSize) * sqrtSize + column / (size / sqrtSize)
+                block = row / blockSize * blockSize + column / blockSize
             )
         }
     }
