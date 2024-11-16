@@ -32,7 +32,7 @@ class SudokuLevelActivity : AppCompatActivity() {
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.sudokuLevelToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.sudokuLevelToolbarLayout.setNavigationButtonOnClickListener { finish() }
+        binding.sudokuLevelToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.fragmentLevelSubTabs.seslSetSubTabStyle()
         binding.fragmentLevelSubTabs.tabMode = TabLayout.SESL_MODE_WEIGHT_AUTO
         binding.viewPagerLevel.adapter = ViewPager2AdapterTabLevelSubtabs(this)

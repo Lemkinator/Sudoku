@@ -14,6 +14,7 @@ import android.widget.SectionIndexer
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -26,12 +27,11 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.formatFull
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.*
 import javax.inject.Inject
@@ -59,7 +59,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.dailySudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finish() }
+        binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)
@@ -79,7 +79,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         savedPosition = (binding.dailySudokuRecycler.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.daily_sudoku_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
         lifecycleScope.launch {
@@ -159,7 +159,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val sudoku = dailySudokus[position].first
             if (holder.isItem && sudoku != null) {
-                holder.textView.text = dailySudokus[position].second.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+                holder.textView.text = dailySudokus[position].second.formatFull
                 holder.imageView.setImageDrawable(
                     ContextCompat.getDrawable(
                         this@DailySudokuActivity,
@@ -224,6 +224,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         }
     }
 
+    @SuppressLint("PrivateResource")
     inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val divider: Drawable?
         private val roundedCorner: SeslSubheaderRoundedCorner
@@ -254,7 +255,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         init {
             val outValue = TypedValue()
             context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = context.getDrawable(
+            divider = AppCompatResources.getDrawable(context,
                 if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
                 else androidx.appcompat.R.drawable.sesl_list_divider_light
             )!!

@@ -10,7 +10,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
@@ -39,7 +38,6 @@ class IntroActivity : AppCompatActivity() {
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     private var selected: Int? = null
-    private var time: Long = 0
     private var introStep = -1
     private var animation: Job? = null
     private var notesEnabled = false
@@ -59,10 +57,6 @@ class IntroActivity : AppCompatActivity() {
 
         openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
 
-        if (!openedFromSettings) {
-            setCustomOnBackPressedLogic { backPressed() }
-        }
-
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
@@ -76,7 +70,7 @@ class IntroActivity : AppCompatActivity() {
         toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
         setSupportActionBar(null)
         initSudoku()
-        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { backPressed() }
+        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.introContinueButton.setOnClickListener { lifecycleScope.launch { openMainActivity() } }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.introNextButton.setOnClickListener { nextIntroStep() }
@@ -92,44 +86,53 @@ class IntroActivity : AppCompatActivity() {
                 binding.introTextText.text = getString(R.string.intro_text0)
                 startAnimation(0)
             }
+
             1 -> {
                 stopAnimation(0)
                 binding.introTextText.text = getString(R.string.intro_text1)
             }
+
             2 -> {
                 binding.introTitle.visibility = View.GONE
                 binding.introTextText.text = getString(R.string.intro_text2)
                 startAnimation(2)
             }
+
             3 -> {
                 binding.introTextText.text = getString(R.string.intro_text3)
                 binding.otherButtons.visibility = View.GONE
                 binding.gameButtons.visibility = View.VISIBLE
                 stopAnimation(2)
             }
+
             4 -> {
                 binding.introTextText.text = getString(R.string.intro_text4)
             }
+
             5 -> {
                 binding.introTextText.text = getString(R.string.intro_text5)
                 startAnimation(5)
             }
+
             6 -> {
                 binding.introTextText.text = getString(R.string.intro_text6)
                 stopAnimation(5)
                 startAnimation(6)
             }
+
             7 -> {
                 binding.introTitleText.text = getString(R.string.intro_title7)
                 binding.introTitle.visibility = View.VISIBLE
                 binding.introTextText.text = getString(R.string.intro_text7)
                 stopAnimation(6)
             }
+
             8 -> {
                 binding.introTitleText.text = getString(R.string.intro_title8)
                 binding.introTextText.text = getString(R.string.intro_text8)
                 startAnimation(8)
             }
+
             9 -> {
                 binding.introTitleText.text = getString(R.string.intro_title9)
                 binding.introTextText.text = getString(R.string.intro_text9)
@@ -137,20 +140,11 @@ class IntroActivity : AppCompatActivity() {
                 binding.numberButtons.visibility = View.GONE
                 stopAnimation(8)
             }
+
             10 -> {
                 binding.introTitle.visibility = View.GONE
                 binding.introTextText.text = getString(R.string.intro_text10)
                 binding.introContinueLayout.visibility = View.VISIBLE
-            }
-        }
-    }
-
-    private fun backPressed() {
-        when {
-            System.currentTimeMillis() - time < 3000 -> finishAffinity()
-            else -> {
-                Toast.makeText(this, resources.getString(R.string.press_again_to_exit), Toast.LENGTH_SHORT).show()
-                time = System.currentTimeMillis()
             }
         }
     }
@@ -314,6 +308,7 @@ class IntroActivity : AppCompatActivity() {
                         column.forEach { animateIntroFieldText(it?.fieldViewValue) }
                     }
                 }
+
                 2 -> {
                     gameAdapter.fieldViews.filter { (it?.position?.row == 0) }.forEach {
                         it?.isHighlighted = true
@@ -321,6 +316,7 @@ class IntroActivity : AppCompatActivity() {
                     }
                     while (introStep == 2) animateIntroFieldView(gameAdapter.fieldViews[4])
                 }
+
                 5 -> {
                     gameAdapter.fieldViews.filter { (it?.position?.row == 3 || it?.position?.row == 4) }.forEach {
                         it?.isHighlighted = true
@@ -328,6 +324,7 @@ class IntroActivity : AppCompatActivity() {
                     }
                     while (introStep == 5) animateIntroFieldView(gameAdapter.fieldViews[49])
                 }
+
                 6 -> {
                     gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach {
                         it?.isHighlighted = true
@@ -335,6 +332,7 @@ class IntroActivity : AppCompatActivity() {
                     }
                     while (introStep == 6) animateIntroFieldView(gameAdapter.fieldViews[24])
                 }
+
                 8 -> {
                     val delayMillis = 1200L
                     while (introStep == 8) {
@@ -362,12 +360,13 @@ class IntroActivity : AppCompatActivity() {
     private fun stopAnimation(currentIntroStep: Int) {
         animation?.cancel()
         when (currentIntroStep) {
-            0,5,6 -> {
+            0, 5, 6 -> {
                 gameAdapter.fieldViews.forEach {
                     it?.isHighlighted = false
                     it?.setBackground()
                 }
             }
+
             8 -> {
                 selectButton(null)
                 gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
@@ -389,6 +388,7 @@ class IntroActivity : AppCompatActivity() {
             }?.start()
         delay(delay)
     }
+
     private suspend fun animateIntroFieldView(fieldView: FieldView?, duration: Long = 600, delay: Long = 2000) {
         fieldView?.animate()
             ?.scaleX(1.5f)
@@ -420,6 +420,7 @@ class IntroActivity : AppCompatActivity() {
                 sudoku.size -> binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
                 sudoku.size + 1 -> binding.hintButton.backgroundTintList =
                     ColorStateList.valueOf(colorPrimary)
+
                 else -> {
                     sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(colorPrimary)
                     gameAdapter.highlightNumber(i + 1)
@@ -463,6 +464,7 @@ class IntroActivity : AppCompatActivity() {
                     else -> {}
                 }
             }
+
             in 0 until sudoku.itemCount -> { //field is selected
                 val position = Position.create(selected!!, sudoku.size)
                 when (newSelected) {
@@ -479,6 +481,7 @@ class IntroActivity : AppCompatActivity() {
                     }
                 }
             }
+
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { //number button is selected
                 when (newSelected) {
                     //selected nothing
@@ -506,7 +509,7 @@ class IntroActivity : AppCompatActivity() {
                 overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
             }
         }
-        finish()
+        finishAfterTransition()
     }
 
     var sudoku: Sudoku = Sudoku.create(

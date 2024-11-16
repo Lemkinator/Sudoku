@@ -43,6 +43,7 @@
     <string name="support_me">Apóyame</string>
     <string name="no_email_app_installed">Ninguna aplicación de correo electrónico instalada…</string>
     <string name="no_browser_app_installed">Ninguna aplicación de navegador instalada…</string>
+    <string name="error_cant_open_link">No se puede abrir el enlace.</string>
     <string name="useful_links">Enlaces útiles</string>
     <string name="ad">¡PUBLICIDAD!!!&#129313;&#129396;</string>
     <string name="playstore_redirect_message">Según Google Play, esto es \"Publicidad engañosa que simula o imita la interfaz de usuario de una función de la aplicación\"… Dado que las actualizaciones de la aplicación son rechazadas por Google Play de otro modo, aquí tienes una nota: Este botón (¿sorprendentemente?&#129313;) a mi página de desarrollador en Google Play, ¿continuar?</string>
@@ -63,7 +64,6 @@
     <string name="regional_highlight_summary">Cuando se selecciona una casilla, se resaltarán la fila, la columna y el bloque.</string>
     <string name="number_highlight">Resaltar número seleccionado</string>
     <string name="number_highlight_summary">Cuando se selecciona un número, se marcarán todas las otras casillas con el mismo número.</string>
-    <string name="press_again_to_exit">Presiona de nuevo para salir.</string>
     <string name="delete_appdata_and_exit">Borrar datos de la aplicación y salir</string>
     <string name="delete_appdata_and_exit_warning">¡Atención! Esto borrará todos los datos personales. ¿Deseas continuar?</string>
     <string name="error_limit">Límite de errores</string>

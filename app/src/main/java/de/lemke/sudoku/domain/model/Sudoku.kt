@@ -1,12 +1,15 @@
 package de.lemke.sudoku.domain.model
 
+import android.annotation.SuppressLint
 import android.content.res.Resources
 import de.lemke.sudoku.R
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
+import kotlin.concurrent.timer
 import kotlin.math.sqrt
 
 @JvmInline
@@ -217,17 +220,14 @@ class Sudoku(
         gameListener = null
     }
 
-    fun startTimer(delay: Long = 1000) {
+    fun startTimer(delay: Long = 1000L) {
         if (completed) return
         timer?.cancel()
-        timer = Timer()
-        timer!!.scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                seconds++
-                updated = LocalDateTime.now()
-                gameListener?.onTimeChanged()
-            }
-        }, delay, 1000)
+        timer = timer(initialDelay = delay, period = 1000L) {
+            seconds++
+            updated = LocalDateTime.now()
+            gameListener?.onTimeChanged()
+        }
     }
 
     fun stopTimer() {
@@ -249,6 +249,7 @@ class Sudoku(
                 gameListener?.onFieldChanged(position)
                 true
             }
+
             value == null -> {
                 if (field.value == null && field.notes.isEmpty()) return false
                 eraserUsed = true
@@ -257,6 +258,7 @@ class Sudoku(
                 gameListener?.onFieldChanged(position)
                 true
             }
+
             field.correct || field.value == value -> false
             else -> {
                 field.value = value
@@ -282,11 +284,13 @@ class Sudoku(
                 value > checklistNumber -> checklistNumber = value
                 else -> isChecklist = false
             }
+
             isReverseChecklist -> when {
                 value == checklistNumber -> return
                 value < checklistNumber -> checklistNumber = value
                 else -> isReverseChecklist = false
             }
+
             checklistNumber == 0 -> when (value) {
                 1 -> isChecklist = true
                 size -> isReverseChecklist = true
@@ -342,6 +346,7 @@ class Sudoku(
     fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.correct }
     fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
 
+    @Suppress("unused")
     private fun getPossibleValues(position: Position): List<Int> {
         val values = (1..size).toMutableList()
         getRow(position.row).forEach { values.remove(it.value) }
@@ -373,10 +378,11 @@ class Sudoku(
         notesMade,
         resources.getString(if (regionalHighlightingUsed) R.string.yes else R.string.no),
         resources.getString(if (numberHighlightingUsed) R.string.yes else R.string.no),
-        created.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
-        updated.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault())),
+        created.formatFull,
+        updated.formatFull,
     )
 
+    @SuppressLint("StringFormatInvalid")
     fun getLocalStatisticsStringShare(resources: Resources): String =
         if (completed) {
             resources.getString(R.string.sudoku_completed)
@@ -393,4 +399,10 @@ interface GameListener {
     fun onError()
     fun onTimeChanged()
 }
+
+val LocalDateTime.dateFormatShort: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))
+val LocalDate.formatFull: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+val LocalDateTime.formatFull: String
+    get() = format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault()))
+
 

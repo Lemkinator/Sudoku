@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.net.Uri
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
@@ -34,6 +33,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityAboutBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.OpenAppUseCase
+import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import dev.oneuiproject.oneui.layout.AppInfoLayout.*
 import kotlinx.coroutines.launch
@@ -47,6 +47,9 @@ class AboutActivity : AppCompatActivity() {
     private lateinit var appUpdateInfoTask: Task<AppUpdateInfo>
     private lateinit var activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>
     private var clicks = 0
+
+    @Inject
+    lateinit var openLink: OpenLinkUseCase
 
     @Inject
     lateinit var openApp: OpenAppUseCase
@@ -77,9 +80,7 @@ class AboutActivity : AppCompatActivity() {
             }
         })
         binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
-        binding.aboutBtnOpenOneuiGithub.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.oneui_github_link))))
-        }
+        binding.aboutBtnOpenOneuiGithub.setOnClickListener { openLink(getString(R.string.oneui_github_link)) }
         binding.aboutBtnAboutMe.setOnClickListener {
             startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
         }
@@ -114,8 +115,7 @@ class AboutActivity : AppCompatActivity() {
     private fun setVersionTextView(textView: TextView, devModeEnabled: Boolean) {
         lifecycleScope.launch {
             textView.text = getString(
-                dev.oneuiproject.oneui.design.R.string.version_info,
-                BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
+                dev.oneuiproject.oneui.design.R.string.version_info, BuildConfig.VERSION_NAME + if (devModeEnabled) " (dev)" else ""
             )
         }
     }
@@ -129,7 +129,7 @@ class AboutActivity : AppCompatActivity() {
         textLink.setSpan(
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_lib_github_link))))
+                    openLink(getString(R.string.sudoku_lib_github_link))
                 }
 
                 override fun updateDrawState(ds: TextPaint) {
@@ -143,7 +143,7 @@ class AboutActivity : AppCompatActivity() {
         textLink.setSpan(
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.sudoku_lib_license_github_link))))
+                    openLink(getString(R.string.sudoku_lib_license_github_link))
                 }
 
                 override fun updateDrawState(ds: TextPaint) {
@@ -198,8 +198,8 @@ class AboutActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { appUpdateInfo: Exception ->
-                Log.w("AboutActivity", appUpdateInfo.message.toString())
                 binding.appInfoLayout.status = NOT_UPDATEABLE
+                Log.w("AboutActivity", appUpdateInfo.message.toString())
             }
     }
 

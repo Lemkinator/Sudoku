@@ -14,6 +14,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SectionIndexer
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.util.SeslRoundedCorner
 import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.core.content.ContextCompat
@@ -169,6 +170,7 @@ class SudokuLevelTab(private val size: Int) : Fragment(), OnDataChangedListener 
         }
     }
 
+    @SuppressLint("PrivateResource")
     inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val divider: Drawable?
         private val roundedCorner: SeslSubheaderRoundedCorner
@@ -199,7 +201,8 @@ class SudokuLevelTab(private val size: Int) : Fragment(), OnDataChangedListener 
         init {
             val outValue = TypedValue()
             context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = context.getDrawable(
+            divider = AppCompatResources.getDrawable(
+                context,
                 if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
                 else androidx.appcompat.R.drawable.sesl_list_divider_light
             )!!

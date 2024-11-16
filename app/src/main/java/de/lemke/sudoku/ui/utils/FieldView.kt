@@ -1,12 +1,14 @@
 package de.lemke.sudoku.ui.utils
 
 import android.animation.LayoutTransition
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.view.Gravity
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Field
@@ -49,13 +51,18 @@ class FieldView(context: Context) : LinearLayout(context) {
         if (fieldViewContainer == null) return
 
         when {
-            position.row % sudoku.blockSize == sudoku.blockSize -1 && position.row != sudoku.size -1 -> foreground = context.getDrawable(
-                if (position.column % sudoku.blockSize == sudoku.blockSize -1 && position.column != sudoku.size - 1)
-                    R.drawable.sudoku_view_item_fg_border_bottom_right
-                else R.drawable.sudoku_view_item_fg_border_bottom
-            )
-            position.column % sudoku.blockSize == sudoku.blockSize -1 && position.column != sudoku.size -1 ->
-                foreground = context.getDrawable(R.drawable.sudoku_view_item_fg_border_right)
+            position.row % sudoku.blockSize == sudoku.blockSize - 1 && position.row != sudoku.size - 1 -> foreground =
+                AppCompatResources.getDrawable(
+                    context,
+                    if (position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1) {
+                        R.drawable.sudoku_view_item_fg_border_bottom_right
+                    } else {
+                        R.drawable.sudoku_view_item_fg_border_bottom
+                    }
+                )
+
+            position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1 ->
+                foreground = AppCompatResources.getDrawable(context, R.drawable.sudoku_view_item_fg_border_right)
         }
         val rm = position.row % (sudoku.blockSize * 2)
         val cm = position.column % (sudoku.blockSize * 2)
@@ -97,6 +104,7 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     fun setBackground() = setBackgroundColor(getCurrentBackgroundColor())
 
+    @SuppressLint("PrivateResource")
     private fun getCurrentBackgroundColor(): Int = if (field.error) context.getColor(androidx.appcompat.R.color.sesl_error_color)
     else if (isSelected) context.getColor(R.color.control_color_selected)
     else if (isHighlightedNumber) context.getColor(R.color.control_color_highlighted_number)

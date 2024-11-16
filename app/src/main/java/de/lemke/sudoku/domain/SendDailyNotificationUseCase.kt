@@ -1,11 +1,14 @@
 package de.lemke.sudoku.domain
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
@@ -20,17 +23,14 @@ class SendDailyNotificationUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val getUserSettings: GetUserSettingsUseCase
 ) {
-    private lateinit var notificationBuilder: NotificationCompat.Builder
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
     private val notificationId = 5
     private val dailySudokuNotificationRequestCode = 55
 
     operator fun invoke() {
         createNotificationChannel()
-        initNotificationBuilder()
-        with(NotificationManagerCompat.from(context)) {
-            // notificationId is a unique int for each notification that you must define
-            notify(notificationId, notificationBuilder.build())
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            NotificationManagerCompat.from(context).notify(notificationId, createNotificationBuilder().build())
         }
     }
 
@@ -46,8 +46,7 @@ class SendDailyNotificationUseCase @Inject constructor(
         notificationManager.createNotificationChannel(channel)
     }
 
-
-    private fun initNotificationBuilder() {
+    private fun createNotificationBuilder(): NotificationCompat.Builder {
         // Create an explicit intent for an Activity in your app
         // Create an Intent for the activity you want to start
         val resultIntent = Intent(context, DailySudokuActivity::class.java)
@@ -58,7 +57,7 @@ class SendDailyNotificationUseCase @Inject constructor(
             // Get the PendingIntent containing the entire back stack
             getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         }
-        notificationBuilder = NotificationCompat.Builder(context, channelId)
+        return NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification_icon)
             .setContentTitle(context.getString(R.string.daily_sudoku))
             .setContentText(context.getString(R.string.daily_sudoku_notification_text))
@@ -74,15 +73,7 @@ class SendDailyNotificationUseCase @Inject constructor(
 
     private suspend fun enableDailySudokuNotification() {
         createNotificationChannel()
-        initNotificationBuilder()
-        val alarmIntent = Intent(context.applicationContext, AlarmReceiver::class.java).let { intent ->
-            PendingIntent.getBroadcast(
-                context.applicationContext,
-                dailySudokuNotificationRequestCode,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
+        val alarmIntent = createAlarmIntent()
         val userSettings = getUserSettings()
         val calendar: Calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, userSettings.dailySudokuNotificationHour)
@@ -98,10 +89,13 @@ class SendDailyNotificationUseCase @Inject constructor(
     }
 
     private fun disableDailySudokuNotification() {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, AlarmReceiver::class.java).let { intent ->
-            PendingIntent.getBroadcast(context, dailySudokuNotificationRequestCode, intent, 0 or PendingIntent.FLAG_IMMUTABLE)
-        }
-        alarmManager.cancel(intent)
+        (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(createAlarmIntent())
     }
+
+    private fun createAlarmIntent(): PendingIntent = PendingIntent.getBroadcast(
+        context.applicationContext,
+        dailySudokuNotificationRequestCode,
+        Intent(context.applicationContext, AlarmReceiver::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 }
