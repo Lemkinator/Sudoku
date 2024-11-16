@@ -26,33 +26,53 @@ class ImportDataUseCase @Inject constructor(
     suspend operator fun invoke(origin: Uri) = withContext(Dispatchers.Main) {
         val progressDialog = ProgressDialog(context)
         progressDialog.setCancelable(false)
+        progressDialog.isIndeterminate = true
+        progressDialog.max = 1
         progressDialog.setTitle(R.string.import_data)
+        progressDialog.setMessage(context.getString(R.string.import_data_ongoing))
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
         progressDialog.show()
         var result: String
-        val resultDialog = AlertDialog.Builder(context)
-            .setTitle(R.string.import_data)
-            .setPositiveButton(R.string.ok, null)
-            .create()
-        withContext(Dispatchers.Default) {
+        withContext(Dispatchers.IO) {
             val importFile = DocumentFile.fromSingleUri(context, origin)
             result = if (importFile != null && importFile.exists() && importFile.canRead() && importFile.type == "application/json") {
-                if (importJson(importFile)) context.getString(R.string.import_data_success)
+                if (importJson(importFile, progressDialog)) context.getString(R.string.import_data_success)
                 else context.getString(R.string.import_data_error_no_valid_json)
             } else context.getString(R.string.import_data_error_no_valid_file)
         }
         progressDialog.dismiss()
-        resultDialog.setMessage(result)
-        resultDialog.show()
+        AlertDialog.Builder(context)
+            .setTitle(R.string.import_data)
+            .setPositiveButton(R.string.ok, null)
+            .setMessage(result)
+            .show()
     }
 
-    private suspend fun importJson(jsonFile: DocumentFile): Boolean {
+    private suspend fun importJson(jsonFile: DocumentFile, progressDialog: ProgressDialog): Boolean {
         try {
             val schema = JSONSchema.parse(context.assets.open("schemas/sudoku_list.json").bufferedReader().use { it.readText() })
             val json = BufferedReader(InputStreamReader(context.contentResolver.openInputStream(jsonFile.uri))).readText()
             val output = schema.validateBasic(json)
             output.errors?.forEach { Log.e("ImportDataUseCase", "${it.error} - ${it.instanceLocation}") }
             return if (output.errors.isNullOrEmpty()) {
-                sudokusRepository.saveSudokus(json.parseJSON<List<SudokuExport>>().map { sudokuExport -> sudokuFromExport(sudokuExport) })
+                val exportSudokus = json.parseJSON<List<SudokuExport>>()
+                withContext(Dispatchers.Main) {
+                    progressDialog.isIndeterminate = false
+                    progressDialog.max = exportSudokus.size
+                    progressDialog.progress = 0
+                }
+                val sudokus = exportSudokus.map { sudokuExport ->
+                    withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
+                    sudokuFromExport(sudokuExport)
+                }
+                withContext(Dispatchers.Main) {
+                    progressDialog.progress = 0
+                    progressDialog.setMessage(context.getString(R.string.import_data_ongoing_processing))
+                }
+                sudokus.forEach { sudoku ->
+                    sudokusRepository.saveSudoku(sudoku)
+                    withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
+                }
                 true
             } else {
                 Log.e("ImportDataUseCase", "JSON Schema validation failed")

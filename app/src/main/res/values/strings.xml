@@ -99,9 +99,12 @@
     <string name="export_data">Export data</string>
     <string name="export_data_summary">Export JSON file</string>
     <string name="export_data_ongoing">Data is being exported…</string>
+    <string name="export_data_ongoing_writing_file">Data is being written to file…</string>
     <string name="export_data_success">Data exported successfully.</string>
     <string name="import_data">Import data</string>
     <string name="import_data_summary">Import JSON file</string>
+    <string name="import_data_ongoing">Data is being imported…</string>
+    <string name="import_data_ongoing_processing">Data is being processed…</string>
     <string name="import_data_success">Data imported successfully.</string>
     <string name="import_data_error_no_valid_json">Error: No valid JSON file.</string>
     <string name="import_data_error_no_valid_file">Error: No valid file.</string>
