@@ -1,6 +1,5 @@
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -88,8 +87,8 @@ class AboutActivity : AppCompatActivity() {
             when (result.resultCode) {
                 // For immediate updates, you might not receive RESULT_OK because
                 // the update should already be finished by the time control is given back to your app.
-                Activity.RESULT_OK -> Log.d("InAppUpdate", "Update successful")
-                Activity.RESULT_CANCELED -> Log.w("InAppUpdate", "Update canceled")
+                RESULT_OK -> Log.d("InAppUpdate", "Update successful")
+                RESULT_CANCELED -> Log.w("InAppUpdate", "Update canceled")
                 ActivityResult.RESULT_IN_APP_UPDATE_FAILED -> Log.e("InAppUpdate", "Update failed")
             }
         }
@@ -155,11 +154,12 @@ class AboutActivity : AppCompatActivity() {
             text.indexOf(license), text.indexOf(license) + license.length,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
-        val optinalTextView = binding.appInfoLayout.addOptionalText("")
-        optinalTextView.text = textLink
-        optinalTextView.movementMethod = LinkMovementMethod.getInstance()
-        optinalTextView.highlightColor = Color.TRANSPARENT
-        optinalTextView.setLinkTextColor(getColor(R.color.primary_color_themed))
+        binding.appInfoLayout.addOptionalText("").apply {
+            setText(textLink)
+            movementMethod = LinkMovementMethod.getInstance()
+            highlightColor = Color.TRANSPARENT
+            setLinkTextColor(getColor(R.color.primary_color_themed))
+        }
     }
 
     // Checks that the update is not stalled during 'onResume()'.

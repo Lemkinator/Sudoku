@@ -49,12 +49,6 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     lateinit var getAllDailySudokus: GetDailySudokusUseCase
 
     @Inject
-    lateinit var generateDailySudoku: GenerateDailySudokuUseCase
-
-    @Inject
-    lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
 
     @Inject

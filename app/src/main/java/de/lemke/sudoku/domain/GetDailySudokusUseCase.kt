@@ -29,7 +29,7 @@ class GetDailySudokusUseCase @Inject constructor(
             var offset = 0
             var oldDate: LocalDate? = null
             sudokuDatePairsCopy.forEachIndexed { index, pair -> // add a null entry for date separator
-                if (oldDate == null || oldDate?.month != pair.second.month) {
+                if (oldDate == null || oldDate.month != pair.second.month) {
                     sudokuDatePairs.add(index + offset, Pair(null, pair.second))
                     oldDate = pair.second
                     offset++

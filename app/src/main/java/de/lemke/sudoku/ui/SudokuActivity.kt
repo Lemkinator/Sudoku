@@ -183,7 +183,7 @@ class SudokuActivity : AppCompatActivity() {
         refreshHintButton()
     }
 
-    @Suppress("unused_parameter")
+    @Suppress("unused_parameter", "unused")
     fun resumeGame(view: View? = null) {
         binding.resumeButtonLayout.visibility = View.GONE
         binding.gameLayout.visibility = View.VISIBLE

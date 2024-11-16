@@ -37,14 +37,14 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
 
         removeAllViews()
         if (isIconView) {
-            View.inflate(mContext, R.layout.widget_cardview_icon, this)
+            inflate(mContext, R.layout.widget_cardview_icon, this)
             iconImageView = findViewById(R.id.cardview_icon)
             iconImageView.setImageDrawable(iconDrawable)
             if (iconColor != -1) {
                 iconImageView.drawable.setTint(iconColor)
             }
         } else {
-            View.inflate(mContext, R.layout.widget_cardview, this)
+            inflate(mContext, R.layout.widget_cardview, this)
         }
         parentView = findViewById(R.id.cardview_main_container)
         containerView = findViewById(R.id.cardview_container)
@@ -53,7 +53,7 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
         summaryTextView = findViewById(R.id.cardview_summary)
         if (summaryText1 != null && summaryText1!!.isNotEmpty()) {
             summaryTextView.text = summaryText1
-            summaryTextView.visibility = View.VISIBLE
+            summaryTextView.visibility = VISIBLE
         }
         dividerView = findViewById(R.id.cardview_divider)
         val lp: MarginLayoutParams = dividerView!!.layoutParams as MarginLayoutParams
@@ -64,7 +64,7 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
             R.dimen.cardview_icon_divider_margin_end
         )
         lp.marginEnd = resources.getDimensionPixelSize(R.dimen.cardview_icon_divider_margin_end)
-        dividerView!!.visibility = if (isDividerViewVisible) View.VISIBLE else View.GONE
+        dividerView!!.visibility = if (isDividerViewVisible) VISIBLE else GONE
     }
 
     override fun setEnabled(enabled: Boolean) {
@@ -88,6 +88,6 @@ class CardView(mContext: Context, attrs: AttributeSet) : LinearLayout(mContext, 
             if (text == null) text = ""
             summaryText1 = text
             summaryTextView.text = summaryText1
-            if (summaryText1!!.isEmpty()) summaryTextView.visibility = View.GONE else summaryTextView.visibility = View.VISIBLE
+            if (summaryText1!!.isEmpty()) summaryTextView.visibility = GONE else summaryTextView.visibility = VISIBLE
         }
 }

@@ -10,7 +10,7 @@ enum class Difficulty(val value: Int) {
     HARD(3),
     EXPERT(4);
 
-    fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficuilty)[this.ordinal]
+    fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficulty)[this.ordinal]
 
     private fun givenNumbers(size: Int): Int = when (size) {
         4 -> when (this) {

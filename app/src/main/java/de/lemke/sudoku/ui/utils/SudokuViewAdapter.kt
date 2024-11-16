@@ -8,16 +8,16 @@ import de.lemke.sudoku.domain.model.Sudoku
 
 class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
     val fieldViews: MutableList<FieldView?> = MutableList(itemCount) { FieldView((context)) }
-    private var selectedfield: Int? = null
+    private var selectedField: Int? = null
 
     override fun getItemCount(): Int = sudoku.itemCount
 
     fun updateFieldView(position: Int) = fieldViews[position]?.update()
 
     fun selectFieldView(position: Int?, highlightNeighbors: Boolean, highlightNumber: Boolean) {
-        if (position != selectedfield && highlightNeighbors) {
+        if (position != selectedField && highlightNeighbors) {
             sudoku.regionalHighlightingUsed = true
-            selectedfield = position
+            selectedField = position
             fieldViews.forEach {
                 it?.isHighlighted = false
                 it?.isHighlightedNumber = false
@@ -45,7 +45,7 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
 
             sudoku.numberHighlightingUsed = true
             fieldViews.forEach {
-                it?.isHighlightedNumber = it?.field?.value == number
+                it?.isHighlightedNumber = it.field.value == number
                 it?.setBackground()
             }
         }

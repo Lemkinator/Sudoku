@@ -175,7 +175,7 @@ class MainActivityTabHistory : Fragment() {
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {
-                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] ?: false }.mapNotNull { it.first })
+                            deleteSudoku(sudokuHistory.filterIndexed { index, _ -> selected[index] == true }.mapNotNull { it.first })
                             initList()
                             dialog.dismiss()
                         }

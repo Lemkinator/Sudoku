@@ -89,7 +89,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     }
 
     private fun updateNotes() {
-        fieldViewNotes?.visibility = if (field.notes.size == 0) View.GONE else View.VISIBLE
+        fieldViewNotes?.visibility = if (field.notes.isEmpty()) GONE else VISIBLE
         fieldViewNotes?.text = field.notes.stream().map { it.toSudokuString() }.collect(Collectors.joining())
         if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1))
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL

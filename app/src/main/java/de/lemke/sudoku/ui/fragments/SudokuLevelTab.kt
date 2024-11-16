@@ -162,17 +162,10 @@ class SudokuLevelTab(private val size: Int) : Fragment(), OnDataChangedListener 
 
         inner class ViewHolder internal constructor(itemView: View, viewType: Int) : RecyclerView.ViewHolder(itemView) {
             var isItem: Boolean = viewType == 0
-            var parentView: LinearLayout
-            var textView: TextView
-            var textViewSmall: TextView
-            var imageView: ImageView
-
-            init {
-                parentView = itemView as LinearLayout
-                textView = parentView.findViewById(R.id.item_text)
-                textViewSmall = parentView.findViewById(R.id.item_text_small)
-                imageView = parentView.findViewById(R.id.item_icon)
-            }
+            var parentView: LinearLayout = itemView as LinearLayout
+            var textView: TextView = parentView.findViewById(R.id.item_text)
+            var textViewSmall: TextView = parentView.findViewById(R.id.item_text_small)
+            var imageView: ImageView = parentView.findViewById(R.id.item_icon)
         }
     }
 
