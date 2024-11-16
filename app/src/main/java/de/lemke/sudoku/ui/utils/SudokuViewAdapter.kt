@@ -45,7 +45,7 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
 
             sudoku.numberHighlightingUsed = true
             fieldViews.forEach {
-                it?.isHighlightedNumber = it.field.value == number
+                it?.isHighlightedNumber = it?.field?.value == number
                 it?.setBackground()
             }
         }
