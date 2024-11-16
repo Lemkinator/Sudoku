@@ -17,9 +17,9 @@ data class FieldDb(
     val sudokuId: String,
     val gameSize: Int,
     val index: Int,
-    val value: Int?,
     val solution: Int?,
-    val notes: String,
+    val value: Int?,
     val given: Boolean,
     val hint: Boolean,
+    val notes: String,
 )

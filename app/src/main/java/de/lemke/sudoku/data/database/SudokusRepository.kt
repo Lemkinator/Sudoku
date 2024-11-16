@@ -30,7 +30,7 @@ class SudokusRepository @Inject constructor(
             sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { deleteSudoku(it) }
         }
         sudokuDao.upsert(sudokuToDb(sudoku))
-        sudoku.fields.forEach { field -> fieldDao.upsert(fieldToDb(field, sudoku.id)) }
+        fieldDao.upsert(sudoku.fields.map { fieldToDb(it, sudoku.id) })
     }
 
     private suspend fun getSudokuLevel(size: Int, level: Int): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size, level))

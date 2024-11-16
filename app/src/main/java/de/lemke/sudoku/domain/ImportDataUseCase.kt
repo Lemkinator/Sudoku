@@ -61,7 +61,7 @@ class ImportDataUseCase @Inject constructor(
                     progressDialog.max = exportSudokus.size
                     progressDialog.progress = 0
                 }
-                val sudokus = exportSudokus.map { sudokuExport ->
+                val sudokus = exportSudokus.mapNotNull { sudokuExport ->
                     withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
                     sudokuFromExport(sudokuExport)
                 }
