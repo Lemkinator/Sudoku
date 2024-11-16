@@ -23,25 +23,43 @@ class ExportDataUseCase @Inject constructor(
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(destination: Uri) = withContext(Dispatchers.Main) {
-        val dialog = ProgressDialog(context)
-        dialog.setCancelable(false)
-        dialog.setTitle(R.string.export_data)
-        dialog.setMessage(context.getString(R.string.export_data_ongoing))
-        dialog.show()
-        val resultDialog = AlertDialog.Builder(context)
-            .setTitle(R.string.export_data)
-            .setPositiveButton(R.string.ok, null)
-            .create()
+        val progressDialog = ProgressDialog(context)
+        progressDialog.setCancelable(false)
+        progressDialog.isIndeterminate = true
+        progressDialog.max = 1
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+        progressDialog.setTitle(R.string.export_data)
+        progressDialog.setMessage(context.getString(R.string.export_data_ongoing))
+        progressDialog.show()
         withContext(Dispatchers.IO) {
             val timestamp = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.GERMANY).format(Date())
             val jsonFile = DocumentFile.fromTreeUri(context, destination)!!
                 .createFile("application/json", "sudoku_export_$timestamp")
+            val sudokus = getAllSudokus()
+            withContext(Dispatchers.Main) {
+                progressDialog.isIndeterminate = false
+                progressDialog.max = sudokus.size
+                progressDialog.progress = 0
+            }
+            val exportSudokus = sudokus.map { sudoku ->
+                withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
+                sudokuToExport(sudoku)
+            }
+            withContext(Dispatchers.Main) {
+                progressDialog.isIndeterminate = true
+                progressDialog.max = 1
+                progressDialog.setMessage(context.getString(R.string.export_data_ongoing_writing_file))
+            }
+            val exportString = exportSudokus.stringifyJSON()
             context.contentResolver.openOutputStream(jsonFile!!.uri)!!.bufferedWriter()
-                .use { bufferedWriter -> bufferedWriter.write(getAllSudokus().map { sudokuToExport(it) }.stringifyJSON()) }
-            resultDialog.setMessage(context.getString(R.string.export_data_success))
+                .use { bufferedWriter -> bufferedWriter.write(exportString) }
         }
-        dialog.dismiss()
-        resultDialog.show()
+        progressDialog.dismiss()
+        AlertDialog.Builder(context)
+            .setTitle(R.string.export_data)
+            .setMessage(context.getString(R.string.export_data_success))
+            .setPositiveButton(R.string.ok, null)
+            .show()
     }
 }
 

@@ -22,6 +22,10 @@ class SudokusRepository @Inject constructor(
     suspend fun deleteSudoku(sudoku: Sudoku) = sudokuDao.delete(sudokuToDb(sudoku))
 
     suspend fun saveSudoku(sudoku: Sudoku) {
+        when {
+            sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { deleteSudoku(it) }
+            sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { deleteSudoku(it) }
+        }
         sudokuDao.upsert(sudokuToDb(sudoku))
         sudoku.fields.forEach { field -> fieldDao.upsert(fieldToDb(field, sudoku.id)) }
     }
@@ -31,14 +35,4 @@ class SudokusRepository @Inject constructor(
     suspend fun getMaxSudokuLevel(size: Int): Int = sudokuDao.getMaxSudokuLevel(size) ?: 0
 
     private suspend fun getDailySudoku(date: LocalDate): Sudoku? = sudokuFromDb(sudokuDao.getAllDaily().firstOrNull { it.sudoku.created.toLocalDate() == date })
-
-    suspend fun saveSudokus(sudokus: List<Sudoku>) {
-        sudokus.forEach { sudoku ->
-            when {
-                sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { deleteSudoku(it) }
-                sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { deleteSudoku(it) }
-            }
-            saveSudoku(sudoku)
-        }
-    }
 }

@@ -75,10 +75,13 @@
 
     <string name="export_data">Exportar datos</string>
     <string name="export_data_summary">Exportar archivo JSON</string>
-    <string name="export_data_ongoing">Exportando datos</string>
+    <string name="export_data_ongoing">Exportando datos…</string>
+    <string name="export_data_ongoing_writing_file">Escribiendo datos en el archivo…</string>
     <string name="export_data_success">Datos exportados correctamente.</string>
     <string name="import_data">Importar datos</string>
     <string name="import_data_summary">Importar archivo JSON</string>
+    <string name="import_data_ongoing">Importando datos…</string>
+    <string name="import_data_ongoing_processing">Procesando datos…</string>
     <string name="import_data_success">Datos importados correctamente.</string>
     <string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
     <string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>

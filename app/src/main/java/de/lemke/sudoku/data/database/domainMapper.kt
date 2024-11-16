@@ -23,7 +23,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? =
         seconds = sudokuWithFields.sudoku.seconds,
         timer = null,
         gameListener = null,
-        fields = sudokuWithFields.fields.mapNotNull{ fieldFromDb(it) }.toMutableList(),
+        fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList(),
     )
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -75,21 +75,21 @@ fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku =
         size = sudokuExport.size,
         difficulty = Difficulty.fromInt(sudokuExport.difficulty),
         modeLevel = sudokuExport.modeLevel,
-        regionalHighlightingUsed = sudokuExport.regionalHighlightingUsed,
-        numberHighlightingUsed = sudokuExport.numberHighlightingUsed,
-        eraserUsed = sudokuExport.eraserUsed,
-        isChecklist = sudokuExport.isChecklist,
-        isReverseChecklist = sudokuExport.isReverseChecklist,
-        checklistNumber = sudokuExport.checklistNumber,
-        hintsUsed = sudokuExport.hintsUsed,
-        notesMade = sudokuExport.notesMade,
-        errorsMade = sudokuExport.errorsMade,
+        regionalHighlightingUsed = sudokuExport.regionalHighlightingUsed == true,
+        numberHighlightingUsed = sudokuExport.numberHighlightingUsed == true,
+        eraserUsed = sudokuExport.eraserUsed == true,
+        isChecklist = sudokuExport.isChecklist == true,
+        isReverseChecklist = sudokuExport.isReverseChecklist == true,
+        checklistNumber = sudokuExport.checklistNumber ?: 0,
+        hintsUsed = sudokuExport.hintsUsed ?: 0,
+        notesMade = sudokuExport.notesMade ?: 0,
+        errorsMade = sudokuExport.errorsMade ?: 0,
         created = sudokuExport.created,
         updated = sudokuExport.updated,
         seconds = sudokuExport.seconds,
         timer = null,
         gameListener = null,
-        fields = sudokuExport.fields,
+        fields = sudokuExport.fields.map { fieldFromExport(it, sudokuExport.size) }.toMutableList(),
     )
 
 fun sudokuToExport(sudoku: Sudoku): SudokuExport =
@@ -98,17 +98,37 @@ fun sudokuToExport(sudoku: Sudoku): SudokuExport =
         size = sudoku.size,
         difficulty = sudoku.difficulty.ordinal,
         modeLevel = sudoku.modeLevel,
-        regionalHighlightingUsed = sudoku.regionalHighlightingUsed,
-        numberHighlightingUsed = sudoku.numberHighlightingUsed,
-        eraserUsed = sudoku.eraserUsed,
-        isChecklist = sudoku.isChecklist,
-        isReverseChecklist = sudoku.isReverseChecklist,
-        checklistNumber = sudoku.checklistNumber,
-        hintsUsed = sudoku.hintsUsed,
-        notesMade = sudoku.notesMade,
-        errorsMade = sudoku.errorsMade,
+        regionalHighlightingUsed = sudoku.regionalHighlightingUsed.takeIf { it },
+        numberHighlightingUsed = sudoku.numberHighlightingUsed.takeIf { it },
+        eraserUsed = sudoku.eraserUsed.takeIf { it },
+        isChecklist = sudoku.isChecklist.takeIf { it },
+        isReverseChecklist = sudoku.isReverseChecklist.takeIf { it },
+        checklistNumber = sudoku.checklistNumber.takeIf { it > 0 },
+        hintsUsed = sudoku.hintsUsed.takeIf { it > 0 },
+        notesMade = sudoku.notesMade.takeIf { it > 0 },
+        errorsMade = sudoku.errorsMade.takeIf { it > 0 },
         seconds = sudoku.seconds,
         created = sudoku.created,
         updated = sudoku.updated,
-        fields = sudoku.fields,
+        fields = sudoku.fields.map { fieldToExport(it) },
+    )
+
+fun fieldFromExport(fieldExport: FieldExport, size: Int): Field =
+    Field(
+        position = Position.create(fieldExport.index, size),
+        value = fieldExport.value,
+        solution = fieldExport.solution,
+        notes = fieldExport.notes?.toMutableList() ?: mutableListOf(),
+        given = fieldExport.given == true,
+        hint = fieldExport.hint == true,
+    )
+
+fun fieldToExport(field: Field): FieldExport =
+    FieldExport(
+        index = field.position.index,
+        value = field.value,
+        solution = field.solution,
+        notes = field.notes.ifEmpty { null },
+        given = field.given.takeIf { it },
+        hint = field.hint.takeIf { it },
     )

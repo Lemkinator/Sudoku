@@ -156,8 +156,6 @@ class Sudoku(
 
     val isNormalSudoku: Boolean get() = modeLevel == MODE_NORMAL
 
-    val errors: Int get() = fields.count { it.error }
-
     val completed: Boolean get() = fields.all { !it.error && it.value != null }
 
     val resumed: Boolean get() = timer != null
@@ -358,13 +356,6 @@ class Sudoku(
             if (field.correct) numbers[field.value!! - 1]++
         }
         return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size) }
-    }
-
-    fun clearAllNotes() {
-        fields.forEach { field ->
-            field.notes.clear()
-            gameListener?.onFieldChanged(field.position)
-        }
     }
 
     fun getLocalStatisticsString(resources: Resources): String = resources.getString(
