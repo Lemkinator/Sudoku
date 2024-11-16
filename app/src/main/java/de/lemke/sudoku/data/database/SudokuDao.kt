@@ -56,6 +56,7 @@ interface SudokuDao {
     @Query("SELECT * FROM sudoku WHERE modeLevel = 0 AND updated = (SELECT MAX(updated) FROM sudoku WHERE modeLevel = 0)")
     suspend fun getRecentlyUpdatedNormalSudoku(): SudokuWithFields?
 
+    @Transaction
     @Delete
     suspend fun delete(sudoku: SudokuDb)
 

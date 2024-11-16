@@ -14,33 +14,6 @@
     "modeLevel": {
       "type": "integer"
     },
-    "regionalHighlightingUsed": {
-      "type": "boolean"
-    },
-    "numberHighlightingUsed": {
-      "type": "boolean"
-    },
-    "eraserUsed": {
-      "type": "boolean"
-    },
-    "isChecklist": {
-      "type": "boolean"
-    },
-    "isReverseChecklist": {
-      "type": "boolean"
-    },
-    "checklistNumber": {
-      "type": "integer"
-    },
-    "hintsUsed": {
-      "type": "integer"
-    },
-    "notesMade": {
-      "type": "integer"
-    },
-    "errorsMade": {
-      "type": "integer"
-    },
     "created": {
       "type": "string"
     },
@@ -49,6 +22,60 @@
     },
     "seconds": {
       "type": "integer"
+    },
+    "regionalHighlightingUsed": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "numberHighlightingUsed": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "eraserUsed": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "isChecklist": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "isReverseChecklist": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "checklistNumber": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "hintsUsed": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "notesMade": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "errorsMade": {
+      "type": [
+        "integer",
+        "null"
+      ]
     },
     "fields": {
       "type": "array",
@@ -62,15 +89,6 @@
     "size",
     "difficulty",
     "modeLevel",
-    "regionalHighlightingUsed",
-    "numberHighlightingUsed",
-    "eraserUsed",
-    "isChecklist",
-    "isReverseChecklist",
-    "checklistNumber",
-    "hintsUsed",
-    "notesMade",
-    "errorsMade",
     "created",
     "updated",
     "seconds",
@@ -83,35 +101,37 @@
         "index": {
           "type": "integer"
         },
+        "solution": {
+          "type": "integer"
+        },
         "value": {
           "type": [
             "integer",
             "null"
           ]
         },
-        "solution": {
-          "type": "integer"
-        },
-        "notes": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          }
-        },
         "given": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
         },
         "hint": {
-          "type": "boolean"
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
         "index",
-        "value",
-        "solution",
-        "notes",
-        "given",
-        "hint"
+        "solution"
       ]
     }
   }

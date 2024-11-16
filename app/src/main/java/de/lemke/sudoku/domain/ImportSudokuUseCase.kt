@@ -27,6 +27,10 @@ class ImportSudokuUseCase @Inject constructor(
             output.errors?.forEach { Log.e("ImportSudokuUseCase", "${it.error} - ${it.instanceLocation}") }
             if (output.errors.isNullOrEmpty()) {
                 val sudoku = sudokuFromExport(json.parseJSON())
+                if (sudoku == null) {
+                    Log.e("ImportDataUseCase", "Invalid Sudoku")
+                    return@withContext null
+                }
                 saveSudoku(sudoku)
                 return@withContext sudoku
             } else {
