@@ -35,12 +35,6 @@ class MainActivityTabStatistics : Fragment() {
     lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Inject
-    lateinit var getAllDailySudokus: GetAllSudokusUseCase
-
-    @Inject
-    lateinit var getAllSudokuLevels: GetAllSudokusUseCase
-
-    @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {

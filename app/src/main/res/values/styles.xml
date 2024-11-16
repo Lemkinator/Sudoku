@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="Theme.Sudoku" parent="OneUITheme">
         <item name="colorPrimary">@color/primary_color_themed</item>
         <item name="colorPrimaryDark">@color/primary_dark_color_themed</item>
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:ignore="NewApi">true</item>
+    </style>
+
+    <style name="Theme.Sudoku.TransparentWindow" parent="Theme.Sudoku">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@color/transparent_window_bg_color</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
     </style>
 
     <style name="Theme.Sudoku.Splash" parent="Theme.SplashScreen">

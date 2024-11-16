@@ -98,6 +98,21 @@ class Sudoku(
 
     override fun hashCode(): Int = id.hashCode()
 
+    fun contentEquals(other: Sudoku): Boolean = id == other.id &&
+            regionalHighlightingUsed == other.regionalHighlightingUsed &&
+            numberHighlightingUsed == other.numberHighlightingUsed &&
+            eraserUsed == other.eraserUsed &&
+            isChecklist == other.isChecklist &&
+            isReverseChecklist == other.isReverseChecklist &&
+            checklistNumber == other.checklistNumber &&
+            hintsUsed == other.hintsUsed &&
+            notesMade == other.notesMade &&
+            errorsMade == other.errorsMade &&
+            created == other.created &&
+            updated == other.updated &&
+            seconds == other.seconds &&
+            fields == other.fields
+
     fun copy(
         sudokuId: SudokuId = this.id,
         size: Int = this.size,

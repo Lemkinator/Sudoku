@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?roundedCornerColor">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/about_app_bar"
@@ -25,7 +27,8 @@
                 android:layout_marginTop="@dimen/sesl_action_bar_height_with_padding"
                 android:gravity="center"
                 android:orientation="vertical"
-                app:isCustomTitle="true">
+                app:isCustomTitle="true"
+                tools:ignore="PrivateResource">
 
                 <androidx.appcompat.widget.AppCompatImageView
                     android:id="@+id/about_header_icon"

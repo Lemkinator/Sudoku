@@ -13,14 +13,14 @@ val releaseKeyPassword: String? by rootProject
 
 android {
     namespace = "de.lemke.sudoku"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 35
-        versionName = "3.0.12"
+        targetSdk = 35
+        versionCode = 37
+        versionName = "3.0.11-fix"
 
         kapt {
             arguments {

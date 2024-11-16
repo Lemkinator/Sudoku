@@ -47,30 +47,41 @@
             android:name="theming-meta-xml"
             android:value="@xml/meta_998_sesl_app" />
 
+        <activity android:name=".ui.OOBEActivity" />
+        <activity
+            android:name=".ui.AboutActivity"
+            android:theme="@style/Theme.Sudoku.TransparentWindow" />
+        <activity
+            android:name=".ui.AboutMeActivity"
+            android:theme="@style/Theme.Sudoku.TransparentWindow" />
+        <activity
+            android:name=".ui.DailySudokuActivity"
+            android:parentActivityName=".ui.MainActivity"
+            android:theme="@style/Theme.Sudoku.TransparentWindow" />
+        <activity
+            android:name=".ui.SudokuLevelActivity"
+            android:parentActivityName=".ui.MainActivity"
+            android:theme="@style/Theme.Sudoku.TransparentWindow" />
+        <activity
+            android:name=".ui.SudokuActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Sudoku.TransparentWindow"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
+        <activity
+            android:name=".ui.IntroActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Sudoku.TransparentWindow"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="true"
-            android:parentActivityName=".ui.MainActivity">
+            android:parentActivityName=".ui.MainActivity"
+            android:theme="@style/Theme.Sudoku.TransparentWindow">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.NOTIFICATION_PREFERENCES" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.AboutActivity" />
-        <activity android:name=".ui.AboutMeActivity" />
-        <activity
-            android:name=".ui.DailySudokuActivity"
-            android:parentActivityName=".ui.MainActivity" />
-        <activity
-            android:name=".ui.SudokuLevelActivity"
-            android:parentActivityName=".ui.MainActivity" />
-        <activity android:name=".ui.OOBEActivity" />
-        <activity android:name=".ui.SudokuActivity"
-            android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" />
-        <activity android:name=".ui.IntroActivity"
-            android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" />
         <activity
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"

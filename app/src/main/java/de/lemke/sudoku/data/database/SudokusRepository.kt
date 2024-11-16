@@ -2,6 +2,7 @@ package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -12,6 +13,8 @@ class SudokusRepository @Inject constructor(
     suspend fun getAllDailySudokus(): List<Sudoku> = sudokuDao.getAllDaily().mapNotNull { sudokuFromDb(it) }
 
     suspend fun getAllLevelSudokus(size:Int): List<Sudoku> = sudokuDao.getAllLevelWithSize(size).mapNotNull { sudokuFromDb(it) }
+
+    fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { it.mapNotNull { sudokuFromDb(it) } }
 
     suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
 
