@@ -11,8 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         FieldDb::class,
     ],
     exportSchema = true,
-
-    )
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun sudokuDao(): SudokuDao

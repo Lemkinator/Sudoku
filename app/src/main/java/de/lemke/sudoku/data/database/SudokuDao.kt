@@ -14,11 +14,6 @@ interface SudokuDao {
         }
     }
 
-    @Transaction
-    suspend fun upsert(sudokus: List<SudokuDb>) {
-        sudokus.forEach { upsert(it) }
-    }
-
     @Update
     suspend fun update(sudoku: SudokuDb)
 
