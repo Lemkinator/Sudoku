@@ -94,7 +94,6 @@ class SudokuActivity : AppCompatActivity() {
         theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
         colorPrimary = ColorStateList.valueOf(typedValue.data)
 
-        binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.sudoku_menu)
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
@@ -114,18 +113,13 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.sudoku_menu, menu)
-        return true
-    }
+    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.sudoku_menu, menu).let { true }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_pause_play -> if (sudoku.resumed) pauseGame() else resumeGame()
-            R.id.menu_reset -> restartGame()
-            R.id.menu_share -> shareDialog()
-        }
-        return true
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.menu_pause_play -> (if (sudoku.resumed) pauseGame() else resumeGame()).let { true }
+        R.id.menu_reset -> restartGame().let { true }
+        R.id.menu_share -> shareDialog().let { true }
+        else -> super.onOptionsItemSelected(item)
     }
 
     private fun setToolbarMenuItemsVisible(pausePlay: Boolean = false, reset: Boolean = false) {

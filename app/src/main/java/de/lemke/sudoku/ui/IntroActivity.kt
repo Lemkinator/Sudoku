@@ -33,7 +33,6 @@ import javax.inject.Inject
 class IntroActivity : AppCompatActivity() {
     private lateinit var binding: ActivityIntroBinding
     private lateinit var loadingDialog: ProgressDialog
-    private lateinit var toolbarMenu: Menu
     private var colorPrimary: Int = 0
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -66,9 +65,6 @@ class IntroActivity : AppCompatActivity() {
         theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
         colorPrimary = typedValue.data
 
-        binding.sudokuToolbarLayout.toolbar.inflateMenu(R.menu.intro_menu)
-        toolbarMenu = binding.sudokuToolbarLayout.toolbar.menu
-        setSupportActionBar(null)
         initSudoku()
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.introContinueButton.setOnClickListener { lifecycleScope.launch { openMainActivity() } }
@@ -150,11 +146,11 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_skip -> lifecycleScope.launch { openMainActivity() }
-        }
-        return true
+    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.intro_menu, menu).let { true }
+
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.menu_skip -> lifecycleScope.launch { openMainActivity() }.let { true }
+        else -> super.onOptionsItemSelected(item)
     }
 
 
