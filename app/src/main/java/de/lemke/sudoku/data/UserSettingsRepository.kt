@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -18,6 +19,9 @@ class UserSettingsRepository @Inject constructor(
 
     /** Observe user settings. */
     fun observeSettings(): Flow<UserSettings> = dataStore.data.map(::settingsFromPreferences)
+
+    /** Observe dailyShowUncompleted. */
+    fun observeDailyShowUncompleted(): Flow<Boolean> = dataStore.data.map { it[KEY_DAILY_SHOW_UNCOMPLETED] == true }.distinctUntilChanged()
 
     /**
      * Updates the current user settings and returns the new settings.
@@ -67,7 +71,7 @@ class UserSettingsRepository @Inject constructor(
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
         statisticsFilterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
             ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
-        dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] == true,
+        dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] != false,
         dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] != false,
         dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,
         dailySudokuNotificationMinute = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] ?: 0,

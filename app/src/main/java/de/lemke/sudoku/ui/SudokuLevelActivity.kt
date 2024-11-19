@@ -14,6 +14,7 @@ import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.setCustomBackPressAnimation
+import de.lemke.sudoku.domain.setWindowTransparent
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +33,7 @@ class SudokuLevelActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setWindowTransparent(true)
         binding.sudokuLevelToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.sudokuLevelToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.fragmentLevelSubTabs.seslSetSubTabStyle()
@@ -53,11 +55,6 @@ class SudokuLevelActivity : AppCompatActivity() {
         }
         setCustomBackPressAnimation(binding.root)
     }
-
-    override fun onResume() {
-        super.onResume()
-        supportFragmentManager.fragments.forEach { (it as OnDataChangedListener).onDataChanged() }
-    }
 }
 
 class ViewPager2AdapterTabLevelSubtabs(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
@@ -68,8 +65,4 @@ class ViewPager2AdapterTabLevelSubtabs(activity: AppCompatActivity) : FragmentSt
         2 -> SudokuLevelTab(16)
         else -> SudokuLevelTab(9)
     }
-}
-
-interface OnDataChangedListener {
-    fun onDataChanged()
 }

@@ -37,9 +37,6 @@ PersistenceModule : Application() {
 
     @Provides
     fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()
-
-    @Provides
-    fun provideFieldDao(database: AppDatabase): FieldDao = database.fieldDao()
 }
 
 

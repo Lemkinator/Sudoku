@@ -15,7 +15,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun sudokuDao(): SudokuDao
-    abstract fun fieldDao(): FieldDao
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {

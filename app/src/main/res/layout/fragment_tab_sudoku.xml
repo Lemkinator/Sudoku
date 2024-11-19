@@ -108,18 +108,18 @@
                 style="@style/ButtonStyle.Filled"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginRight="4dp"
+                android:layout_marginEnd="2dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_pen"
                 android:paddingVertical="10dp"
-                android:text="@string/new_game"
-                tools:ignore="RtlHardcoded" />
+                android:text="@string/new_game" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/continue_game_button"
                 style="@style/ButtonStyle.Colored"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
+                android:layout_marginStart="2dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_control_play"
                 android:paddingVertical="10dp"

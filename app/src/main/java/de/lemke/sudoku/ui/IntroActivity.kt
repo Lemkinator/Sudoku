@@ -53,6 +53,7 @@ class IntroActivity : AppCompatActivity() {
         }
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setWindowTransparent(true)
 
         openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
 

@@ -1,14 +1,12 @@
 package de.lemke.sudoku.ui.utils
 
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.dateFormatShort
 
 sealed class SudokuListItem {
     abstract val label: String
     abstract val stableId: Long
 
-    data class SudokuItem(val sudoku: Sudoku) : SudokuListItem() {
-        override val label: String get() = sudoku.updated.dateFormatShort
+    data class SudokuItem(val sudoku: Sudoku, override val label: String) : SudokuListItem() {
         override val stableId: Long get() = sudoku.hashCode().toLong()
 
         companion object {

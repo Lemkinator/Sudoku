@@ -415,9 +415,9 @@ interface GameListener {
     fun onTimeChanged()
 }
 
+val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 val LocalDateTime.dateFormatShort: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))
 val LocalDate.formatFull: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
 val LocalDateTime.formatFull: String
     get() = format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault()))
-
 

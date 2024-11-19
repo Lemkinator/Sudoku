@@ -73,6 +73,10 @@
             android:summary="@string/import_data_summary"
             android:title="@string/import_data" />
         <PreferenceScreen
+            android:key="delete_invalid_sudokus_pref"
+            android:summary="@string/delete_invalid_sudokus_summary"
+            android:title="@string/delete_invalid_sudokus" />
+        <PreferenceScreen
             android:key="delete_app_data_pref"
             android:title="@string/delete_appdata_and_exit" />
     </PreferenceCategory>

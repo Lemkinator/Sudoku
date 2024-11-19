@@ -5,20 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SudokuDao {
-
     @Transaction
-    suspend fun upsert(sudoku: SudokuDb) {
-        val rowId = insert(sudoku)
-        if (rowId == -1L) {
-            update(sudoku)
-        }
-    }
-
-    @Update
-    suspend fun update(sudoku: SudokuDb)
-
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(sudoku: SudokuDb): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(sudoku: SudokuDb, fields: List<FieldDb>)
 
     @Transaction
     @Query("SELECT * FROM sudoku ORDER BY updated DESC")
@@ -29,12 +18,20 @@ interface SudokuDao {
     fun observeAllNormal(): Flow<List<SudokuWithFields>>
 
     @Transaction
+    @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel > 0 ORDER BY modeLevel DESC")
+    fun observeSudokuLevel(size: Int): Flow<List<SudokuWithFields>>
+
+    @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")
-    suspend fun getAllDaily(): List<SudokuWithFields>
+    fun observeDailySudokus(): Flow<List<SudokuWithFields>>
+
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")
+    suspend fun getDailySudokus(): List<SudokuWithFields>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel > 0 ORDER BY modeLevel DESC")
-    suspend fun getAllLevelWithSize(size: Int): List<SudokuWithFields>
+    suspend fun getAllSudokuLevel(size: Int): List<SudokuWithFields>
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel = :level")
@@ -53,6 +50,5 @@ interface SudokuDao {
 
     @Transaction
     @Delete
-    suspend fun delete(sudoku: SudokuDb)
-
+    suspend fun delete(vararg sudokus: SudokuDb)
 }

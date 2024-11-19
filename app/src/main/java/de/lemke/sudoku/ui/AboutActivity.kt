@@ -36,6 +36,7 @@ import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.setCustomBackPressAnimation
+import de.lemke.sudoku.domain.setWindowTransparent
 import dev.oneuiproject.oneui.layout.AppInfoLayout.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -65,6 +66,7 @@ class AboutActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setWindowTransparent(true)
         appUpdateManager = AppUpdateManagerFactory.create(this)
         binding.appInfoLayout.status = LOADING
         setExtraText()

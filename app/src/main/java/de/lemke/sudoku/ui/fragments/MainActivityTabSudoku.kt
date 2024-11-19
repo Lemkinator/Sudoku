@@ -28,7 +28,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
-    private lateinit var loadingDialog: ProgressDialog
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -57,7 +56,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
-        loadingDialog = ProgressDialog(context)
+        val loadingDialog = ProgressDialog(context)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         binding.newSudokuLayout.translateYWithAppBar(activity.findViewById<DrawerLayout>(R.id.drawer_layout_main).appBarLayout, this)

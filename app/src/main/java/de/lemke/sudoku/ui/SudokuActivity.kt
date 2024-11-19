@@ -79,6 +79,7 @@ class SudokuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setWindowTransparent(true)
 
         val id = intent.getStringExtra("sudokuId")
         if (id == null) {

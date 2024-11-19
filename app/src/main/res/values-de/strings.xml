@@ -66,6 +66,8 @@
     <string name="number_highlight_summary">Wenn eine Zahl ausgewählt wird, werden alle anderen Felder mit derselben Zahl markiert.</string>
     <string name="delete_appdata_and_exit">App-Daten löschen und Beenden</string>
     <string name="delete_appdata_and_exit_warning">Achtung: Dadurch werden alle persönlichen Daten gelöscht. Fortfahren?</string>
+    <string name="delete_invalid_sudokus">Ungültige Sudokus löschen</string>
+    <string name="delete_invalid_sudokus_summary">Fehlerhaft generierte Sudokus oder Sudokus, die beim Speichern in der Datenbank beschädigt wurden, löschen.</string>
     <string name="error_limit">Fehlerlimit</string>
     <string name="no_limit">Kein Limit</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Fehlerlimit von %1$d erreicht.</string>

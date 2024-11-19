@@ -15,7 +15,8 @@ class ObserveSudokuHistoryUseCase @Inject constructor(
 ) {
     operator fun invoke() = observeAllNormalSudokus()
         .map { sudokus ->
-            val sudokuHistory: MutableList<SudokuListItem> = sudokus.map { SudokuListItem.SudokuItem(it) }.toMutableList()
+            val sudokuHistory: MutableList<SudokuListItem> =
+                sudokus.map { SudokuListItem.SudokuItem(it, it.updated.dateFormatShort) }.toMutableList()
             var offset = 0
             var oldDate: LocalDate? = null
             sudokus.forEachIndexed { index, sudoku ->

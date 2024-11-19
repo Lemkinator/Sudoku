@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.formatFull
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.delegates.MultiSelector
@@ -32,7 +33,8 @@ import kotlin.let
 
 class SudokuListAdapter(
     private val context: Context,
-    var errorLimit: Int = 0
+    var errorLimit: Int = 0,
+    val isDailyList: Boolean = false
 ) : RecyclerView.Adapter<SudokuListAdapter.ViewHolder>(),
     MultiSelector<Long> by MultiSelectorDelegate(isSelectable = { it != SeparatorItem.VIEW_TYPE }),
     SemSectionIndexer<SudokuListItem> by SectionIndexerDelegate(context, labelExtractor = { it.label }) {
@@ -44,11 +46,11 @@ class SudokuListAdapter(
     private val asyncListDiffer = AsyncListDiffer(this, object : DiffUtil.ItemCallback<SudokuListItem>() {
         override fun areItemsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when {
             oldItem is SudokuItem && newItem is SudokuItem -> {
-                oldItem.sudoku == newItem.sudoku
+                oldItem.sudoku.id == newItem.sudoku.id
             }
 
             oldItem is SeparatorItem && newItem is SeparatorItem -> {
-                oldItem.indexText == newItem.indexText
+                oldItem.stableId == newItem.stableId
             }
 
             else -> false
@@ -60,7 +62,7 @@ class SudokuListAdapter(
             }
 
             oldItem is SeparatorItem && newItem is SeparatorItem -> {
-                oldItem.indexText == newItem.indexText
+                oldItem == newItem
             }
 
             else -> false
@@ -97,9 +99,11 @@ class SudokuListAdapter(
                     }
                 }
 
-                itemView.setOnLongClickListener {
-                    onLongClickItem?.invoke()
-                    true
+                if (!isDailyList) {
+                    itemView.setOnLongClickListener {
+                        onLongClickItem?.invoke()
+                        true
+                    }
                 }
             }
         }
@@ -139,7 +143,8 @@ class SudokuListAdapter(
         }
     }
 
-    inner class ViewHolder(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
+    inner class ViewHolder(itemView: View, override val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView),
+        ItemDecorationViewHolder {
         var textView: TextView
         private var textViewSmall: TextView? = null
         private var checkBox: CheckBox? = null
@@ -158,7 +163,8 @@ class SudokuListAdapter(
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
         fun bindSudoku(sudoku: Sudoku) {
-            textView.text = sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
+            textView.text = if (isDailyList) sudoku.created.toLocalDate().formatFull
+            else sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
             imageView?.setImageDrawable(
                 ContextCompat.getDrawable(
                     context,
@@ -169,18 +175,22 @@ class SudokuListAdapter(
             if (sudoku.errorLimitReached(errorLimit)) imageView?.setImageDrawable(
                 ContextCompat.getDrawable(context, dev.oneuiproject.oneui.R.drawable.ic_oui_error)
             )
-            textViewSmall?.text = context.getString(R.string.current_time, sudoku.timeString) + " | " +
-                    if (!sudoku.completed) {
-                        context.getString(R.string.current_progress, sudoku.progress) + " | "
-                    } else {
-                        ""
-                    } +
+            textViewSmall?.text = buildString {
+                append(context.getString(R.string.current_time, sudoku.timeString))
+                if (!sudoku.completed) {
+                    append(" | ").append(context.getString(R.string.current_progress, sudoku.progress))
+                }
+                append(" | ").append(
                     if (errorLimit == 0) {
                         context.getString(R.string.current_errors, sudoku.errorsMade)
                     } else {
                         context.getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
-                    } +
-                    " | " + context.getString(R.string.current_hints, sudoku.hintsUsed)
+                    }
+                )
+                if (!isDailyList) {
+                    append(" | ").append(context.getString(R.string.current_hints, sudoku.hintsUsed))
+                }
+            }
         }
 
         fun bindActionMode(itemId: Long) {

@@ -66,6 +66,8 @@
     <string name="number_highlight_summary">Cuando se selecciona un número, se marcarán todas las otras casillas con el mismo número.</string>
     <string name="delete_appdata_and_exit">Borrar datos de la aplicación y salir</string>
     <string name="delete_appdata_and_exit_warning">¡Atención! Esto borrará todos los datos personales. ¿Deseas continuar?</string>
+    <string name="delete_invalid_sudokus">Eliminar Sudokus inválidos</string>
+    <string name="delete_invalid_sudokus_summary">Eliminar Sudokus generados incorrectamente o Sudokus que se corrompieron durante el guardado en la base de datos.</string>
     <string name="error_limit">Límite de errores</string>
     <string name="no_limit">Sin límite</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Límite de errores alcanzado (%1$d).</string>

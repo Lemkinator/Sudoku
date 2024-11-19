@@ -24,7 +24,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
         errorsMade = sudokuWithFields.sudoku.errorsMade,
         timer = null,
         gameListener = null,
-        fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList(),
+        fields = fields
     )
 }
 

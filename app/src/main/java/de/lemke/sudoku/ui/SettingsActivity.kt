@@ -23,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
@@ -37,7 +38,10 @@ import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.*
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
 import dev.oneuiproject.oneui.preference.internal.PreferenceRelatedCard
+import dev.oneuiproject.oneui.utils.DialogUtils
 import dev.oneuiproject.oneui.utils.PreferenceUtils.createRelatedCard
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
 import java.util.*
@@ -51,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setWindowTransparent(true)
         binding.toolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.toolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         if (savedInstanceState == null) supportFragmentManager.beginTransaction().replace(R.id.settings, SettingsFragment()).commit()
@@ -76,6 +81,9 @@ class SettingsActivity : AppCompatActivity() {
         private var relatedCard: PreferenceRelatedCard? = null
 
         @Inject
+        lateinit var observeUserSettings: ObserveUserSettingsUseCase
+
+        @Inject
         lateinit var getUserSettings: GetUserSettingsUseCase
 
         @Inject
@@ -89,6 +97,9 @@ class SettingsActivity : AppCompatActivity() {
 
         @Inject
         lateinit var importData: ImportDataUseCase
+
+        @Inject
+        lateinit var deleteInvalidSudokus: DeleteInvalidSudokusUseCase
 
         @Inject
         lateinit var openLink: OpenLinkUseCase
@@ -160,10 +171,22 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             lifecycleScope.launch {
-                val userSettings = getUserSettings()
-                autoDarkModePref.isChecked = userSettings.autoDarkMode
-                darkModePref.isEnabled = !autoDarkModePref.isChecked
-                darkModePref.value = if (userSettings.darkMode) "1" else "0"
+                observeUserSettings().flowWithLifecycle(lifecycle).collectLatest { userSettings ->
+                    autoDarkModePref.isChecked = userSettings.autoDarkMode
+                    darkModePref.isEnabled = !autoDarkModePref.isChecked
+                    darkModePref.value = if (userSettings.darkMode) "1" else "0"
+                    findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
+                    keepScreenOnPref.isChecked = userSettings.keepScreenOn
+                    regionalHighlightPref.isChecked = userSettings.highlightRegional
+                    numberHighlightPref.isChecked = userSettings.highlightNumber
+                    animationsPref.isChecked = userSettings.animationsEnabled
+                    dailySudokuNotificationPref.isChecked =
+                        userSettings.dailySudokuNotificationEnabled && areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
+                    setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
+                    errorLimitPref.summary =
+                        if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
+
+                }
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -174,7 +197,8 @@ class SettingsActivity : AppCompatActivity() {
                         startActivity(intent)
                     } catch (e: ActivityNotFoundException) {
                         e.printStackTrace()
-                        Toast.makeText(settingsActivity, getString(R.string.change_language_not_supported_by_device), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(settingsActivity, getString(R.string.change_language_not_supported_by_device), Toast.LENGTH_SHORT)
+                            .show()
                     }
                     true
                 }
@@ -192,7 +216,6 @@ class SettingsActivity : AppCompatActivity() {
                     .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
                         pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(Environment.getExternalStorageDirectory().absolutePath)))
                     }
-                    .create()
                     .show()
                 true
             }
@@ -204,8 +227,46 @@ class SettingsActivity : AppCompatActivity() {
                     .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
                         pickImportJsonActivityResultLauncher.launch("application/json")
                     }
-                    .create()
                     .show()
+                true
+            }
+            findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.setOnPreferenceClickListener {
+                val dialog = AlertDialog.Builder(settingsActivity)
+                    .setTitle(R.string.delete_invalid_sudokus)
+                    .setMessage(R.string.delete_invalid_sudokus_summary)
+                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setPositiveButton(R.string.ok, null)
+                    .create()
+                dialog.show()
+                DialogUtils.setDialogButtonTextColor(
+                    dialog,
+                    DialogInterface.BUTTON_POSITIVE,
+                    resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color, context?.theme)
+                )
+                DialogUtils.setDialogProgressForButton(dialog, DialogInterface.BUTTON_POSITIVE) {
+                    lifecycleScope.launch {
+                        deleteInvalidSudokus()
+                        delay(500)
+                        dialog.dismiss()
+                    }
+                }
+                true
+            }
+            findPreference<PreferenceScreen>("delete_app_data_pref")?.setOnPreferenceClickListener {
+                val dialog = AlertDialog.Builder(settingsActivity)
+                    .setTitle(R.string.delete_appdata_and_exit)
+                    .setMessage(R.string.delete_appdata_and_exit_warning)
+                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+                        (settingsActivity.getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
+                    }
+                    .create()
+                dialog.show()
+                DialogUtils.setDialogButtonTextColor(
+                    dialog,
+                    DialogInterface.BUTTON_POSITIVE,
+                    resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color, context?.theme)
+                )
                 true
             }
 
@@ -220,7 +281,6 @@ class SettingsActivity : AppCompatActivity() {
                     .setTitle(getString(R.string.tos))
                     .setMessage(getString(R.string.tos_content))
                     .setPositiveButton(R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
-                    .create()
                     .show()
                 true
             }
@@ -229,39 +289,8 @@ class SettingsActivity : AppCompatActivity() {
                 findPreference<Preference>("about_app_pref")?.widgetLayoutResource =
                     if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) R.layout.sesl_preference_badge else 0
             }
-            findPreference<PreferenceScreen>("delete_app_data_pref")?.setOnPreferenceClickListener {
-                AlertDialog.Builder(settingsActivity)
-                    .setTitle(R.string.delete_appdata_and_exit)
-                    .setMessage(R.string.delete_appdata_and_exit_warning)
-                    .setNegativeButton(R.string.sesl_cancel, null)
-                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
-                        (settingsActivity.getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
-                    }
-                    .create()
-                    .show()
-                true
-            }
 
-            /*
-            tipCard = findPreference("tip_card_preference")
-            tipCardSpacing = findPreference("spacing_tip_card")
-            tipCard?.setTipsCardListener(object : TipsCardViewPreference.TipsCardListener {
-                override fun onCancelClicked(view: View) {
-                    tipCard!!.isVisible = false
-                    tipCardSpacing?.isVisible = false
-                    lifecycleScope.launch {
-                        val hints: MutableSet<String> = getHints().toMutableSet()
-                        hints.remove("tipcard")
-                        hintsPref.values = hints
-                        setHints(hints)
-                    }
-                }
-
-                override fun onViewClicked(view: View) {
-                    startActivity(Intent(settingsActivity, HelpActivity::class.java))
-                }
-            })
-            */
+            setRelatedCardView()
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -269,25 +298,6 @@ class SettingsActivity : AppCompatActivity() {
             requireView().setBackgroundColor(
                 resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_background_color, settingsActivity.theme)
             )
-        }
-
-        override fun onStart() {
-            super.onStart()
-            lifecycleScope.launch {
-                findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
-                val userSettings = getUserSettings()
-                keepScreenOnPref.isChecked = userSettings.keepScreenOn
-                regionalHighlightPref.isChecked = userSettings.highlightRegional
-                numberHighlightPref.isChecked = userSettings.highlightNumber
-                animationsPref.isChecked = userSettings.animationsEnabled
-                dailySudokuNotificationPref.isChecked =
-                    userSettings.dailySudokuNotificationEnabled && areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
-                setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
-                errorLimitPref.summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
-                //tipCard?.isVisible = showTipCard
-                //tipCardSpacing?.isVisible = showTipCard
-            }
-            setRelatedCardView()
         }
 
         private fun setDailyNotificationPrefTime(hourOfDay: Int, minute: Int) {

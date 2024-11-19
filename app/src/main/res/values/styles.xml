@@ -8,13 +8,6 @@
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:ignore="NewApi">true</item>
     </style>
 
-    <style name="Theme.Sudoku.TransparentWindow" parent="Theme.Sudoku">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">@color/transparent_window_bg_color</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:backgroundDimEnabled">false</item>
-    </style>
-
     <style name="Theme.Sudoku.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/oui_round_and_bgcolor</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
