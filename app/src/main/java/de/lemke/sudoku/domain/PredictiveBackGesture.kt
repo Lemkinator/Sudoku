@@ -78,6 +78,7 @@ inline fun AppCompatActivity.setCustomAnimatedOnBackPressedLogic(
     backPressLogicEnabled: StateFlow<Boolean>? = null,
     crossinline onBackPressedLogic: () -> Unit = {}
 ) {
+    setWindowTransparent(true)
     val predictiveBackMargin = resources.getDimension(R.dimen.predictive_back_margin)
     var initialTouchY = -1f
     var outlineProvider = BackAnimationOutlineProvider()

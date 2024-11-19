@@ -14,7 +14,6 @@ import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.setCustomBackPressAnimation
-import de.lemke.sudoku.domain.setWindowTransparent
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,7 +32,7 @@ class SudokuLevelActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setWindowTransparent(true)
+        setCustomBackPressAnimation(binding.root)
         binding.sudokuLevelToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.sudokuLevelToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.fragmentLevelSubTabs.seslSetSubTabStyle()
@@ -53,7 +52,6 @@ class SudokuLevelActivity : AppCompatActivity() {
                 override fun onPageScrollStateChanged(state: Int) {}
             })
         }
-        setCustomBackPressAnimation(binding.root)
     }
 }
 

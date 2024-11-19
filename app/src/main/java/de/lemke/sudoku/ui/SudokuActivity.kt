@@ -79,7 +79,7 @@ class SudokuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setWindowTransparent(true)
+        setCustomBackPressAnimation(binding.root)
 
         val id = intent.getStringExtra("sudokuId")
         if (id == null) {
@@ -104,7 +104,6 @@ class SudokuActivity : AppCompatActivity() {
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        setCustomBackPressAnimation(binding.root)
     }
 
     override fun onPause() {

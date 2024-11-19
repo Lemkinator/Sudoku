@@ -53,7 +53,7 @@ class IntroActivity : AppCompatActivity() {
         }
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setWindowTransparent(true)
+        setCustomBackPressAnimation(binding.root)
 
         openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
 
@@ -73,7 +73,6 @@ class IntroActivity : AppCompatActivity() {
         binding.introNextButton.setOnClickListener { nextIntroStep() }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         nextIntroStep()
-        setCustomBackPressAnimation(binding.root)
     }
 
     private fun nextIntroStep() {

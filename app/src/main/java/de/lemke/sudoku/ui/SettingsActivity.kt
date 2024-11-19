@@ -55,11 +55,10 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setWindowTransparent(true)
+        setCustomBackPressAnimation(binding.root)
         binding.toolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.toolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         if (savedInstanceState == null) supportFragmentManager.beginTransaction().replace(R.id.settings, SettingsFragment()).commit()
-        setCustomBackPressAnimation(binding.root)
     }
 
     @AndroidEntryPoint

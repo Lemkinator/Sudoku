@@ -23,7 +23,6 @@ import de.lemke.sudoku.databinding.ActivityAboutMeContentBinding
 import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.setCustomBackPressAnimation
-import de.lemke.sudoku.domain.setWindowTransparent
 import dev.oneuiproject.oneui.utils.ViewUtils
 import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils
 import javax.inject.Inject
@@ -46,7 +45,7 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         binding = ActivityAboutMeBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setWindowTransparent(true)
+        setCustomBackPressAnimation(binding.root)
         bottomContent = binding.aboutBottomContent
         setSupportActionBar(binding.aboutToolbar)
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
@@ -54,7 +53,6 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         binding.aboutToolbar.setNavigationOnClickListener { finishAfterTransition() }
         resetAppBar(resources.configuration)
         initContent()
-        setCustomBackPressAnimation(binding.root)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

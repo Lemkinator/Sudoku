@@ -46,7 +46,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         super.onCreate(savedInstanceState)
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setWindowTransparent(true)
+        setCustomBackPressAnimation(binding.root)
         val progressDialog = ProgressDialog(this)
         progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         progressDialog.setCancelable(false)
@@ -63,7 +63,6 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         }
         binding.dailySudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
-        setCustomBackPressAnimation(binding.root)
     }
 
     private fun initRecycler() {
