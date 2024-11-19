@@ -70,9 +70,10 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
         initRecycler()
         lifecycleScope.launch {
             observeSudokuHistory().flowWithLifecycle(lifecycle).collectLatest {
+                val previousSize = sudokuHistory.size
                 sudokuHistory = it
                 updateRecyclerView()
-                binding.sudokuHistoryList.smoothScrollToPosition(0)
+                if (it.size > previousSize) binding.sudokuHistoryList.scrollToPosition(0)
             }
         }
         lifecycleScope.launch {
