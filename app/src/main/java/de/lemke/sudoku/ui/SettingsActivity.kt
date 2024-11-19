@@ -174,7 +174,7 @@ class SettingsActivity : AppCompatActivity() {
                     autoDarkModePref.isChecked = userSettings.autoDarkMode
                     darkModePref.isEnabled = !autoDarkModePref.isChecked
                     darkModePref.value = if (userSettings.darkMode) "1" else "0"
-                    findPreference<PreferenceCategory>("dev_options")?.isVisible = getUserSettings().devModeEnabled
+                    findPreference<PreferenceCategory>("dev_options")?.isVisible = userSettings.devModeEnabled
                     keepScreenOnPref.isChecked = userSettings.keepScreenOn
                     regionalHighlightPref.isChecked = userSettings.highlightRegional
                     numberHighlightPref.isChecked = userSettings.highlightNumber
