@@ -187,7 +187,7 @@ class SudokuActivity : AppCompatActivity() {
             binding.gameButtons.visibility = View.GONE
         } else {
             sudoku.startTimer()
-            binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play).let {
+            binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)?.let {
                 it.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
                 it.title = getString(R.string.pause)
             }
@@ -204,7 +204,7 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameLayout.visibility = View.GONE
         binding.gameButtons.visibility = View.GONE
         binding.resumeButtonLayout.visibility = View.VISIBLE
-        binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play).let {
+        binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)?.let {
             it.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
             it.title = getString(R.string.resume)
         }
