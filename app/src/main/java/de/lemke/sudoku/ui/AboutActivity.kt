@@ -82,7 +82,6 @@ class AboutActivity : AppCompatActivity() {
             }
         })
         binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
-        binding.aboutBtnOpenOneuiGithub.setOnClickListener { openLink(getString(R.string.oneui_github_link)) }
         binding.aboutBtnAboutMe.setOnClickListener {
             startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
         }

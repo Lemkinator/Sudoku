@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+        <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:id="@+id/game_layout"
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -35,7 +35,7 @@
                 android:overScrollMode="never"
                 android:scrollbars="none" />
 
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+        </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
         <LinearLayout
             android:id="@+id/intro_layout"
@@ -47,7 +47,7 @@
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/game_layout">
 
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            <dev.oneuiproject.oneui.widget.RoundedLinearLayout
                 android:id="@+id/intro_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,9 +74,9 @@
                     android:text="@string/next" />
 
 
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+            </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            <dev.oneuiproject.oneui.widget.RoundedLinearLayout
                 android:id="@+id/intro_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -94,10 +94,10 @@
                     android:textColor="@color/primary_text_icon_color"
                     android:textSize="18sp" />
 
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+            </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
 
-            <dev.oneuiproject.oneui.widget.RoundLinearLayout
+            <dev.oneuiproject.oneui.widget.RoundedLinearLayout
                 android:id="@+id/game_buttons"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -225,7 +225,7 @@
 
                 </LinearLayout>
 
-            </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+            </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
             <FrameLayout
                 android:id="@+id/intro_continue_layout"

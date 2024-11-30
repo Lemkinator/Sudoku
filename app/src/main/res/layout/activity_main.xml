@@ -4,9 +4,9 @@
     android:id="@+id/drawer_layout_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:title="@string/app_name"
+    app:drawerBackAnimation="true"
     app:expanded="true"
-    >
+    app:title="@string/app_name">
 
     <FrameLayout
         android:id="@+id/fragment_container"

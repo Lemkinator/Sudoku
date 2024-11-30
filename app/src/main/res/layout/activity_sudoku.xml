@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+        <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:id="@+id/game_layout"
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -34,7 +34,7 @@
                 android:overScrollMode="never"
                 android:scrollbars="none" />
 
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+        </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
         <androidx.core.widget.NestedScrollView
             android:id="@+id/resume_button_layout"
@@ -64,7 +64,7 @@
 
         </androidx.core.widget.NestedScrollView>
 
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+        <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:id="@+id/game_buttons"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -225,7 +225,7 @@
 
             </LinearLayout>
 
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+        </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:text="@string/support_me" />
 
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+        <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/oui_background_color"
@@ -38,14 +38,14 @@
                 app:TitleText="@string/share"
                 app:isDividerViewVisible="true" />
 
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+        </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
         <dev.oneuiproject.oneui.widget.Separator
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/playstore" />
 
-        <dev.oneuiproject.oneui.widget.RoundLinearLayout
+        <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="20dp"
@@ -60,7 +60,7 @@
                 app:SummaryText="@string/rate_app"
                 app:TitleText="@string/write_review" />
 
-        </dev.oneuiproject.oneui.widget.RoundLinearLayout>
+        </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
         <dev.oneuiproject.oneui.widget.RelatedCard
             android:layout_width="match_parent"
@@ -69,14 +69,14 @@
             app:title="@string/useful_links">
 
             <TextView
+                android:id="@+id/about_bottom_relative_tiktok"
+                style="@style/OneUI.RelativeLinkTextViewStyle"
+                android:text="@string/tiktok" />
+
+            <TextView
                 android:id="@+id/about_bottom_relative_website"
                 style="@style/OneUI.RelativeLinkTextViewStyle"
                 android:text="@string/website" />
-
-            <TextView
-                android:id="@+id/about_bottom_relative_github"
-                style="@style/OneUI.RelativeLinkTextViewStyle"
-                android:text="@string/github" />
 
             <TextView
                 android:id="@+id/about_bottom_relative_play_store"

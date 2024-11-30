@@ -41,7 +41,7 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.layout.ToolbarLayout
+import dev.oneuiproject.oneui.layout.Badge
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -222,7 +222,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         binding.drawerLayoutMain.setDrawerButtonTooltip(getText(R.string.about_app))
         AppUpdateManagerFactory.create(this).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
-                binding.drawerLayoutMain.setButtonBadges(ToolbarLayout.Badge.Dot(), ToolbarLayout.Badge.Dot())
+                binding.drawerLayoutMain.setButtonBadges(Badge.DOT, Badge.DOT)
         }
     }
 

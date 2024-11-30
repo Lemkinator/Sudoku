@@ -5,35 +5,34 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.widget.TooltipCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import com.google.android.gms.games.PlayGames
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.AppBarLayout.OnOffsetChangedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityAboutMeBinding
-import de.lemke.sudoku.databinding.ActivityAboutMeContentBinding
 import de.lemke.sudoku.domain.OpenAppUseCase
 import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.setCustomBackPressAnimation
-import dev.oneuiproject.oneui.utils.ViewUtils
+import dev.oneuiproject.oneui.ktx.isInMultiWindowModeCompat
+import dev.oneuiproject.oneui.ktx.semSetToolTipText
 import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils
 import javax.inject.Inject
 import kotlin.math.abs
 
 @AndroidEntryPoint
-class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
+class AboutMeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAboutMeBinding
-    private lateinit var bottomContent: ActivityAboutMeContentBinding
-    private var lastClickTime: Long = 0
-    private val appBarListener: AboutMeAppBarListener = AboutMeAppBarListener()
+    private val appBarListener: AboutAppBarListener = AboutAppBarListener()
 
     @Inject
     lateinit var openLink: OpenLinkUseCase
@@ -46,66 +45,78 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         binding = ActivityAboutMeBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackPressAnimation(binding.root)
-        bottomContent = binding.aboutBottomContent
-        setSupportActionBar(binding.aboutToolbar)
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
-        supportActionBar!!.setDisplayShowTitleEnabled(false)
-        binding.aboutToolbar.setNavigationOnClickListener { finishAfterTransition() }
-        resetAppBar(resources.configuration)
+
+        applyInsetIfNeeded()
+        setupToolbar()
+
         initContent()
+        refreshAppBar(resources.configuration)
+        setupOnClickListeners()
+    }
+
+    private fun applyInsetIfNeeded() {
+        if (Build.VERSION.SDK_INT >= 30 && !window.decorView.fitsSystemWindows) {
+            binding.root.setOnApplyWindowInsetsListener { _, insets ->
+                val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                binding.root.setPadding(
+                    systemBarsInsets.left, systemBarsInsets.top,
+                    systemBarsInsets.right, systemBarsInsets.bottom
+                )
+                insets
+            }
+        }
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(binding.aboutToolbar)
+        //Should be called after setSupportActionBar
+        binding.aboutToolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        supportActionBar!!.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowTitleEnabled(false)
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    private fun refreshAppBar(config: Configuration) {
+        ToolbarLayoutUtils.hideStatusBarForLandscape(this, config.orientation)
+        ToolbarLayoutUtils.updateListBothSideMargin(this, binding.aboutBottomContainer)
+        if (config.orientation != Configuration.ORIENTATION_LANDSCAPE && !isInMultiWindowModeCompat) {
+            binding.aboutAppBar.apply {
+                seslSetCustomHeightProportion(true, 0.5f)//expanded
+                addOnOffsetChangedListener(appBarListener)
+                setExpanded(true, false)
+            }
+            binding.aboutSwipeUpContainer.apply {
+                updateLayoutParams { height = resources.displayMetrics.heightPixels / 2 }
+                visibility = View.VISIBLE
+            }
+        } else {
+            binding.aboutAppBar.apply {
+                setExpanded(false, false)
+                seslSetCustomHeightProportion(true, 0f)
+                removeOnOffsetChangedListener(appBarListener)
+            }
+            binding.aboutBottomContainer.alpha = 1f
+            binding.aboutSwipeUpContainer.visibility = View.GONE
+            setBottomContentEnabled(true)
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        resetAppBar(newConfig)
-    }
-
-    @SuppressLint("RestrictedApi")
-    private fun resetAppBar(config: Configuration) {
-        ToolbarLayoutUtils.hideStatusBarForLandscape(this, config.orientation)
-        ToolbarLayoutUtils.updateListBothSideMargin(this, binding.aboutBottomContainer)
-        if (config.orientation != Configuration.ORIENTATION_LANDSCAPE && !isInMultiWindowMode) {
-            binding.aboutAppBar.seslSetCustomHeightProportion(true, 0.5f)
-            binding.aboutAppBar.addOnOffsetChangedListener(appBarListener)
-            binding.aboutAppBar.setExpanded(true, false)
-            binding.aboutSwipeUpContainer.visibility = View.VISIBLE
-            val lp: ViewGroup.LayoutParams = binding.aboutSwipeUpContainer.layoutParams
-            lp.height = resources.displayMetrics.heightPixels / 2
-        } else {
-            binding.aboutAppBar.setExpanded(false, false)
-            binding.aboutAppBar.seslSetCustomHeightProportion(true, 0F)
-            binding.aboutAppBar.removeOnOffsetChangedListener(appBarListener)
-            binding.aboutBottomContainer.alpha = 1f
-            setBottomContentEnabled(true)
-            binding.aboutSwipeUpContainer.visibility = View.GONE
-        }
+        refreshAppBar(newConfig)
     }
 
     private fun initContent() {
-        ViewUtils.semSetRoundedCorners(
-            binding.aboutBottomContent.root,
-            ViewUtils.SEM_ROUNDED_CORNER_TOP_LEFT or ViewUtils.SEM_ROUNDED_CORNER_TOP_RIGHT
-        )
-        ViewUtils.semSetRoundedCornerColor(
-            binding.aboutBottomContent.root,
-            ViewUtils.SEM_ROUNDED_CORNER_TOP_LEFT or ViewUtils.SEM_ROUNDED_CORNER_TOP_RIGHT,
-            getColor(dev.oneuiproject.oneui.design.R.color.oui_round_and_bgcolor)
-        )
         val appIcon = AppCompatResources.getDrawable(this, R.drawable.me4_round)
         binding.aboutHeaderIcon.setImageDrawable(appIcon)
         binding.aboutBottomIcon.setImageDrawable(appIcon)
-        binding.aboutHeaderGithub.setOnClickListener(this)
-        binding.aboutHeaderWebsite.setOnClickListener(this)
-        binding.aboutHeaderPlayStore.setOnClickListener(this)
-        binding.aboutHeaderInsta.setOnClickListener(this)
-        binding.aboutHeaderTiktok.setOnClickListener(this)
-        TooltipCompat.setTooltipText(binding.aboutHeaderGithub, getString(R.string.github))
-        bottomContent.aboutBottomRateApp.setOnClickListener(this)
-        bottomContent.aboutBottomShareApp.setOnClickListener(this)
-        bottomContent.aboutBottomWriteEmail.setOnClickListener(this)
-        bottomContent.aboutBottomRelativeWebsite.setOnClickListener(this)
-        bottomContent.aboutBottomRelativePlayStore.setOnClickListener(this)
-        bottomContent.aboutBottomRelativeGithub.setOnClickListener(this)
+        binding.aboutHeaderGithub.semSetToolTipText(getString(R.string.github))
+        binding.aboutHeaderPlayStore.semSetToolTipText(getString(R.string.playstore))
+        binding.aboutHeaderWebsite.semSetToolTipText(getString(R.string.website))
+        binding.aboutHeaderInsta.semSetToolTipText(getString(R.string.instagram))
+        binding.aboutHeaderTiktok.semSetToolTipText(getString(R.string.tiktok))
     }
 
     private fun setBottomContentEnabled(enabled: Boolean) {
@@ -114,60 +125,61 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
         binding.aboutHeaderPlayStore.isEnabled = !enabled
         binding.aboutHeaderInsta.isEnabled = !enabled
         binding.aboutHeaderTiktok.isEnabled = !enabled
-        bottomContent.aboutBottomRateApp.isEnabled = enabled
-        bottomContent.aboutBottomShareApp.isEnabled = enabled
-        bottomContent.aboutBottomWriteEmail.isEnabled = enabled
-        bottomContent.aboutBottomRelativeWebsite.isEnabled = enabled
-        bottomContent.aboutBottomRelativeGithub.isEnabled = enabled
-        bottomContent.aboutBottomRelativePlayStore.isEnabled = enabled
+        binding.aboutBottomContent.aboutBottomRateApp.isEnabled = enabled
+        binding.aboutBottomContent.aboutBottomShareApp.isEnabled = enabled
+        binding.aboutBottomContent.aboutBottomWriteEmail.isEnabled = enabled
+        binding.aboutBottomContent.aboutBottomRelativeTiktok.isEnabled = enabled
+        binding.aboutBottomContent.aboutBottomRelativeWebsite.isEnabled = enabled
+        binding.aboutBottomContent.aboutBottomRelativePlayStore.isEnabled = enabled
     }
 
-    override fun onClick(v: View) {
-        val uptimeMillis = SystemClock.uptimeMillis()
-        if (uptimeMillis - lastClickTime > 600L) {
-            when (v.id) {
-                binding.aboutHeaderGithub.id, bottomContent.aboutBottomRelativeGithub.id -> openLink(getString(R.string.my_github))
-                binding.aboutHeaderWebsite.id, bottomContent.aboutBottomRelativeWebsite.id -> openLink(getString(R.string.my_website))
-                binding.aboutHeaderTiktok.id -> openLink(getString(R.string.rick_roll_troll_link))
-                binding.aboutHeaderInsta.id -> openLink(getString(R.string.my_insta))
-                bottomContent.aboutBottomRateApp.id -> openApp(packageName, false)
-                binding.aboutHeaderPlayStore.id, bottomContent.aboutBottomRelativePlayStore.id -> AlertDialog.Builder(this)
-                    .setTitle(getString(R.string.ad))
-                    .setMessage(getString(R.string.playstore_redirect_message))
-                    .setPositiveButton(getString(R.string.yes)) { _, _ ->
-                        openLink(getString(R.string.playstore_developer_page_link))
-                    }
-                    .setNegativeButton(getString(R.string.sesl_cancel), null)
-                    .show()
+    private fun openPlayStore() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.ad))
+            .setMessage(getString(R.string.playstore_redirect_message))
+            .setPositiveButton(getString(R.string.yes)) { _, _ ->
+                openLink(getString(R.string.playstore_developer_page_link))
+            }
+            .setNegativeButton(getString(R.string.sesl_cancel), null)
+            .show()
+    }
 
-                bottomContent.aboutBottomWriteEmail.id -> {
-                    val intent = Intent(Intent.ACTION_SENDTO)
-                    intent.data = Uri.parse("mailto:") // only email apps should handle this
-                    intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(getString(R.string.email)))
-                    intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name))
-                    intent.putExtra(Intent.EXTRA_TEXT, "")
-                    try {
-                        startActivity(intent)
-                    } catch (e: ActivityNotFoundException) {
-                        e.printStackTrace()
-                        Toast.makeText(this@AboutMeActivity, getString(R.string.no_email_app_installed), Toast.LENGTH_SHORT).show()
-                    }
-                }
-
-                bottomContent.aboutBottomShareApp.id -> {
-                    PlayGames.getAchievementsClient(this@AboutMeActivity).unlock(getString(R.string.achievement_share_app))
-                    startActivity(Intent.createChooser(Intent().apply {
-                        action = Intent.ACTION_SEND
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, getString(R.string.playstore_link) + packageName)
-                    }, null))
+    private fun setupOnClickListeners() {
+        binding.aboutHeaderGithub.setOnClickListener { openLink(getString(R.string.my_github)) }
+        binding.aboutHeaderPlayStore.setOnClickListener { openPlayStore() }
+        binding.aboutHeaderWebsite.setOnClickListener { openLink(getString(R.string.my_website)) }
+        binding.aboutHeaderInsta.setOnClickListener { openLink(getString(R.string.my_insta)) }
+        binding.aboutHeaderTiktok.setOnClickListener { openLink(getString(R.string.rick_roll_troll_link)) }
+        with(binding.aboutBottomContent) {
+            aboutBottomRelativePlayStore.setOnClickListener { openPlayStore() }
+            aboutBottomRelativeWebsite.setOnClickListener { openLink(getString(R.string.my_website)) }
+            aboutBottomRelativeTiktok.setOnClickListener { openLink(getString(R.string.rick_roll_troll_link)) }
+            aboutBottomRateApp.setOnClickListener { openApp(packageName, false) }
+            aboutBottomShareApp.setOnClickListener {
+                PlayGames.getAchievementsClient(this@AboutMeActivity).unlock(getString(R.string.achievement_share_app))
+                startActivity(Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, getString(R.string.playstore_link) + packageName)
+                }, null))
+            }
+            aboutBottomWriteEmail.setOnClickListener {
+                val intent = Intent(Intent.ACTION_SENDTO)
+                intent.data = Uri.parse("mailto:") // only email apps should handle this
+                intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(getString(R.string.email)))
+                intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name))
+                intent.putExtra(Intent.EXTRA_TEXT, "")
+                try {
+                    startActivity(intent)
+                } catch (e: ActivityNotFoundException) {
+                    e.printStackTrace()
+                    Toast.makeText(this@AboutMeActivity, getString(R.string.no_email_app_installed), Toast.LENGTH_SHORT).show()
                 }
             }
         }
-        lastClickTime = uptimeMillis
     }
 
-    private inner class AboutMeAppBarListener : OnOffsetChangedListener {
+    private inner class AboutAppBarListener : OnOffsetChangedListener {
         override fun onOffsetChanged(appBarLayout: AppBarLayout, verticalOffset: Int) {
             // Handle the SwipeUp anim view
             val totalScrollRange = appBarLayout.totalScrollRange
@@ -180,24 +192,12 @@ class AboutMeActivity : AppCompatActivity(), View.OnClickListener {
                 setBottomContentEnabled(false)
             } else {
                 val offsetAlpha = appBarLayout.y / totalScrollRange
-                var arrowAlpha = 1 - offsetAlpha * -3
-                if (arrowAlpha < 0) {
-                    arrowAlpha = 0f
-                } else if (arrowAlpha > 1) {
-                    arrowAlpha = 1f
-                }
-                binding.aboutSwipeUpContainer.alpha = arrowAlpha
+                binding.aboutSwipeUpContainer.alpha = (1 - offsetAlpha * -3).coerceIn(0f, 1f)
             }
-
             // Handle the bottom part of the UI
-            val alphaRange: Float = binding.aboutCtl.height * 0.143f
+            val alphaRange = binding.aboutCtl.height * 0.143f
             val layoutPosition = abs(appBarLayout.top).toFloat()
-            var bottomAlpha: Float = (150.0f / alphaRange * (layoutPosition - binding.aboutCtl.height * 0.35f))
-            if (bottomAlpha < 0) {
-                bottomAlpha = 0f
-            } else if (bottomAlpha >= 255) {
-                bottomAlpha = 255f
-            }
+            val bottomAlpha = (150.0f / alphaRange * (layoutPosition - binding.aboutCtl.height * 0.35f)).coerceIn(0f, 255f)
             binding.aboutBottomContainer.alpha = bottomAlpha / 255
         }
     }

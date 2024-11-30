@@ -13,8 +13,6 @@
     <string name="playstore_developer_page_link" translatable="false">https://play.google.com/store/apps/dev?id=4759149701353957861</string>
     <string name="playstore_app_link" translatable="false">market://details?id=</string>
     <string name="playstore_link" translatable="false">https://play.google.com/store/apps/details?id=</string>
-    <string name="oneui_library_github" translatable="false">OneUI-Project Github</string>
-    <string name="oneui_github_link" translatable="false">https://github.com/OneUIProject</string>
     <string name="sudoku_lib_github_link" translatable="false">https://github.com/sfuhrm/sudoku</string>
     <string name="sudoku_lib_license_github_link" translatable="false">https://github.com/sfuhrm/sudoku/blob/master/LICENSE</string>
     <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
@@ -63,6 +61,8 @@
     <string name="write_review">Write a review</string>
     <string name="rate_app">Rate app in Play Store</string>
     <string name="write_email">Write an e-mail</string>
+    <string name="instagram" translatable="false">Instagram</string>
+    <string name="tiktok" translatable="false">TikTok</string>
     <string name="support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
     <string name="support_me">Support me</string>
     <string name="no_email_app_installed">No e-mail app installed…</string>

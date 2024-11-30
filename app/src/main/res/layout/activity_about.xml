@@ -16,11 +16,6 @@
         android:text="@string/open_in_playstore" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/about_btn_open_oneui_github"
-        style="@style/OneUI.AppInfoButton"
-        android:text="@string/oneui_library_github" />
-
-    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/about_btn_about_me"
         style="@style/OneUI.AppInfoButton"
         android:text="@string/about_me" />
