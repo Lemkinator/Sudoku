@@ -18,8 +18,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 35
-        versionCode = 41
-        versionName = "3.2.3"
+        versionCode = 42
+        versionName = "3.2.4"
         resourceConfigurations += listOf("en", "de", "es", "es-rES")
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -92,7 +92,7 @@ dependencies {
     implementation("sesl.androidx.picker:picker-basic:1.0.17+1.0.17-sesl6+rev2")
     //SESL6(OneUI 6) Material Components + Design Lib + Icons
     implementation("sesl.com.google.android.material:material:1.12.0+1.0.23-sesl6+rev2")
-    implementation("io.github.tribalfs:oneui-design:0.2.7+oneui6")
+    implementation("io.github.tribalfs:oneui-design:0.2.8+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
     implementation("de.sfuhrm:sudoku:5.0.1")

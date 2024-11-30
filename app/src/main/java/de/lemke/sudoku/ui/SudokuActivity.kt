@@ -187,9 +187,10 @@ class SudokuActivity : AppCompatActivity() {
             binding.gameButtons.visibility = View.GONE
         } else {
             sudoku.startTimer()
-            val itemPausePlay: MenuItem = binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)
-            itemPausePlay.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
-            itemPausePlay.title = getString(R.string.pause)
+            binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play).let {
+                it.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
+                it.title = getString(R.string.pause)
+            }
             setToolbarMenuItemsVisible(pausePlay = true)
             binding.gameButtons.visibility = View.VISIBLE
         }
@@ -203,9 +204,10 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameLayout.visibility = View.GONE
         binding.gameButtons.visibility = View.GONE
         binding.resumeButtonLayout.visibility = View.VISIBLE
-        val itemPausePlay: MenuItem = binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)
-        itemPausePlay.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
-        itemPausePlay.title = getString(R.string.resume)
+        binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play).let {
+            it.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
+            it.title = getString(R.string.resume)
+        }
         setToolbarMenuItemsVisible(pausePlay = true)
         if (userSettings.keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         lifecycleScope.launch { saveSudoku(sudoku) }
