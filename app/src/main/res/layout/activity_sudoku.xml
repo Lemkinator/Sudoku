@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="?roundedCornerColor"
     app:expandable="false"
-    app:navigationIcon="@drawable/ic_oui_back"
+    app:showNavButtonAsBack="true"
     app:title="@string/app_name"
     tools:context=".ui.SudokuActivity">
 
@@ -15,54 +15,49 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <dev.oneuiproject.oneui.widget.RoundedLinearLayout
-            android:id="@+id/game_layout"
+        <com.skydoves.transformationlayout.TransformationLayout
+            android:id="@+id/gameTransformationLayout"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:background="@color/oui_background_color"
             app:layout_constraintBottom_toTopOf="@id/game_buttons"
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:transformation_duration="400"
+            app:transformation_targetView="@+id/resumeButton">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/game_recycler"
+            <dev.oneuiproject.oneui.widget.RoundedLinearLayout
+                android:id="@+id/game_layout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:foreground="@drawable/sudoku_view_fg"
-                android:overScrollMode="never"
-                android:scrollbars="none" />
+                android:background="@color/oui_background_color">
 
-        </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/game_recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:foreground="@drawable/sudoku_view_fg"
+                    android:overScrollMode="never"
+                    android:scrollbars="none" />
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/resume_button_layout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:visibility="gone"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+            </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical">
+        </com.skydoves.transformationlayout.TransformationLayout>
 
-                <androidx.appcompat.widget.AppCompatButton
-                    style="@style/ButtonStyle.Filled"
-                    android:layout_width="90dp"
-                    android:layout_height="90dp"
-                    android:drawableTop="@drawable/ic_oui_control_play"
-                    android:onClick="resumeGame"
-                    android:paddingTop="20dp"
-                    android:text="@string/resume" />
-
-            </LinearLayout>
-
-        </androidx.core.widget.NestedScrollView>
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/resumeButton"
+            style="@style/ButtonStyle.Filled.Themed"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:drawableTop="@drawable/ic_oui_control_play"
+            android:onClick="resumeGame"
+            android:paddingTop="20dp"
+            android:text="@string/resume"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:id="@+id/game_buttons"
@@ -75,7 +70,6 @@
             android:gravity="center"
             android:orientation="vertical"
             android:padding="3dp"
-            android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent">

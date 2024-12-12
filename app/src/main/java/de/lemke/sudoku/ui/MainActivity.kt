@@ -5,7 +5,10 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.MarginLayoutParams
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +17,8 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.children
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
@@ -27,6 +32,8 @@ import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
+import com.skydoves.transformationlayout.TransformationCompat
+import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
@@ -36,20 +43,29 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
-import de.lemke.sudoku.ui.dialog.StatisticsFilterDialog
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.layout.Badge
+import dev.oneuiproject.oneui.layout.DrawerLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.sequences.forEach
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var drawerListView: LinearLayout
+    private val drawerItemTitles: MutableList<TextView> = mutableListOf()
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
@@ -74,6 +90,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
+        onTransformationStartContainer()
         time = System.currentTimeMillis()
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 34) {
@@ -162,7 +179,10 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             dialog.show()
             val sudoku = importSudoku(intent.data)
             if (sudoku != null) {
-                startActivity(Intent(this, SudokuActivity::class.java).putExtra("sudokuId", sudoku.id.value))
+                TransformationCompat.startActivity(
+                    findViewById(R.id.newGameTransformationLayout),
+                    Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+                )
             } else {
                 Toast.makeText(this@MainActivity, getString(R.string.error_import_failed), Toast.LENGTH_LONG).show()
             }
@@ -170,27 +190,41 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        lifecycleScope.launch {
-            delay(500) //delay, so closing the drawer is not visible for the user
-            binding.drawerLayoutMain.setDrawerOpen(false, false)
-        }
-    }
-
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.menu_filter, menu).let { true }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.setGroupVisible(R.id.menu_group_filter, selectedPosition == 2)
+        return super.onPrepareOptionsMenu(menu)
+    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
         else -> super.onOptionsItemSelected(item)
     }
 
+    fun closeDrawerAfterDelay() {
+        if (binding.drawerLayout.isLargeScreenMode) return
+        lifecycleScope.launch {
+            delay(500) //delay, so closing the drawer is not visible for the user
+            binding.drawerLayout.setDrawerOpen(false, false)
+        }
+    }
+
     private fun initDrawer() {
-        val achievementsOption = findViewById<LinearLayout>(R.id.draweritem_achievements)
-        val leaderboardsOption = findViewById<LinearLayout>(R.id.draweritem_leaderboards)
-        val aboutAppOption = findViewById<LinearLayout>(R.id.draweritem_about_app)
-        val aboutMeOption = findViewById<LinearLayout>(R.id.draweritem_about_me)
-        val settingsOption = findViewById<LinearLayout>(R.id.draweritem_settings)
+        val achievementsOption = findViewById<LinearLayout>(R.id.drawerItemAchievements)
+        val leaderboardsOption = findViewById<LinearLayout>(R.id.drawerItemLeaderboards)
+        val aboutAppOption = findViewById<LinearLayout>(R.id.drawerItemAboutApp)
+        val aboutMeOption = findViewById<LinearLayout>(R.id.drawerItemAboutMe)
+        val settingsOption = findViewById<LinearLayout>(R.id.drawerItemSettings)
+        drawerListView = findViewById(R.id.drawerListView)
+        drawerItemTitles.apply {
+            clear()
+            add(findViewById(R.id.drawerItemAchievementsTitle))
+            add(findViewById(R.id.drawerItemLeaderboardsTitle))
+            add(findViewById(R.id.drawerItemAboutAppTitle))
+            add(findViewById(R.id.drawerItemAboutMeTitle))
+            add(findViewById(R.id.drawerItemSettingsTitle))
+        }
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
         achievementsOption.setOnClickListener {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
@@ -205,24 +239,91 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             }
         }
         aboutAppOption.setOnClickListener {
-            startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+            startActivity(Intent(this, AboutActivity::class.java))
+            closeDrawerAfterDelay()
         }
         aboutMeOption.setOnClickListener {
-            startActivity(Intent(this@MainActivity, AboutMeActivity::class.java))
+            startActivity(Intent(this, AboutMeActivity::class.java))
+            closeDrawerAfterDelay()
         }
         settingsOption.setOnClickListener {
-            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+            startActivity(Intent(this, SettingsActivity::class.java))
+            closeDrawerAfterDelay()
         }
-        binding.drawerLayoutMain.setDrawerButtonIcon(
-            AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline)
-        )
-        binding.drawerLayoutMain.setDrawerButtonOnClickListener {
-            startActivity(Intent().setClass(this@MainActivity, AboutActivity::class.java))
+        binding.drawerLayout.apply {
+            setHeaderButtonIcon(AppCompatResources.getDrawable(this@MainActivity, dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
+            setHeaderButtonTooltip(getString(R.string.about_app))
+            setHeaderButtonOnClickListener {
+                startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                closeDrawerAfterDelay()
+            }
+            setNavRailContentMinSideMargin(14)
+            lockNavRailOnActionMode = true
+            lockNavRailOnSearchMode = true
         }
-        binding.drawerLayoutMain.setDrawerButtonTooltip(getText(R.string.about_app))
         AppUpdateManagerFactory.create(this).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
-                binding.drawerLayoutMain.setButtonBadges(Badge.DOT, Badge.DOT)
+                binding.drawerLayout.setButtonBadges(Badge.DOT, Badge.DOT)
+        }
+
+        //setupNavRailFadeEffect
+        binding.drawerLayout.apply {
+            if (!isLargeScreenMode) return
+            setDrawerStateListener {
+                when (it) {
+                    DrawerLayout.DrawerState.OPEN -> {
+                        offsetUpdaterJob?.cancel()
+                        updateOffset(1f)
+                    }
+
+                    DrawerLayout.DrawerState.CLOSE -> {
+                        offsetUpdaterJob?.cancel()
+                        updateOffset(0f)
+                    }
+
+                    DrawerLayout.DrawerState.CLOSING,
+                    DrawerLayout.DrawerState.OPENING -> {
+                        startOffsetUpdater()
+                    }
+                }
+            }
+        }
+
+        //Set initial offset
+        binding.drawerLayout.post {
+            updateOffset(binding.drawerLayout.drawerOffset)
+        }
+    }
+
+    private var offsetUpdaterJob: Job? = null
+    private fun startOffsetUpdater() {
+        //Ensure no duplicate job is running
+        if (offsetUpdaterJob?.isActive == true) return
+        offsetUpdaterJob = CoroutineScope(Dispatchers.Main).launch {
+            while (isActive) {
+                updateOffset(binding.drawerLayout.drawerOffset)
+                delay(50)
+            }
+        }
+    }
+
+    fun updateOffset(offset: Float) {
+        drawerItemTitles.forEach { it.alpha = offset }
+        drawerListView.children.forEach {
+            if (offset == 0f) {
+                it.post {
+                    it.updateLayoutParams<MarginLayoutParams> {
+                        width = if (it is LinearLayout) 52f.dpToPx(it.context.resources) //drawer item
+                        else 25f.dpToPx(it.context.resources) //divider item
+                    }
+                }
+            } else {
+                if (it.width != MATCH_PARENT) {
+                    it.updateLayoutParams<MarginLayoutParams> {
+                        width = MATCH_PARENT
+                    }
+                }
+            }
         }
     }
 
@@ -230,7 +331,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         gamesSignInClient.signIn().addOnCompleteListener { signInTask: Task<AuthenticationResult> ->
             if (signInTask.isSuccessful && signInTask.result.isAuthenticated) onSuccess()
             else {
-                binding.drawerLayoutMain.setDrawerOpen(false, true)
+                closeDrawerAfterDelay()
                 Toast.makeText(this@MainActivity, getString(R.string.error_sign_in_failed), Toast.LENGTH_LONG).show()
             }
         }
@@ -280,16 +381,16 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             override fun onTabReselected(tab: TabLayout.Tab) {
                 try {
                     when (tab.text) {
-                        getString(R.string.app_name) -> binding.drawerLayoutMain.setExpanded(!binding.drawerLayoutMain.isExpanded, true)
+                        getString(R.string.app_name) -> binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
                         getString(R.string.history) -> {
                             val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuHistoryList)
                             if (historyRecyclerView.canScrollVertically(-1)) historyRecyclerView.smoothScrollToPosition(0)
-                            else binding.drawerLayoutMain.setExpanded(!binding.drawerLayoutMain.isExpanded, true)
+                            else binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
                         }
 
                         getString(R.string.statistics) -> {
                             val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
-                            if (binding.drawerLayoutMain.isExpanded) binding.drawerLayoutMain.setExpanded(false, true)
+                            if (binding.drawerLayout.isExpanded) binding.drawerLayout.setExpanded(false, true)
                             else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
                             else showStatisticsFilterDialog()
                         }
@@ -301,15 +402,12 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun showStatisticsFilterDialog() {
-        StatisticsFilterDialog { lifecycleScope.launch { fragmentsInstance[2].onResume() } }.show(
-            supportFragmentManager,
-            "StatisticsFilterDialog"
-        )
+        FilterBottomSheet().show(supportFragmentManager, "StatisticsFilterDialog")
     }
 
     private fun initFragments() {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-        for (fragment in fragmentsInstance) transaction.add(R.id.fragment_container, fragment)
+        for (fragment in fragmentsInstance) transaction.add(R.id.fragmentContainer, fragment)
         transaction.commitAllowingStateLoss()
         supportFragmentManager.executePendingTransactions()
         onTabItemSelected(1)
@@ -329,6 +427,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
-        binding.drawerLayoutMain.toolbar.menu.setGroupVisible(R.id.menu_group_filter, position == 2)
+        invalidateOptionsMenu()
     }
 }

@@ -14,14 +14,19 @@ import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.SimpleColorFilter
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
+import com.skydoves.transformationlayout.TransformationCompat
+import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.restoreSearchAndActionMode
+import de.lemke.commonutils.saveSearchAndActionMode
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
 import de.lemke.sudoku.ui.SudokuActivity
-import de.lemke.sudoku.ui.utils.ItemDecoration
+import de.lemke.commonutils.widget.ItemDecoration
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import dev.oneuiproject.oneui.delegates.AllSelectorState
@@ -64,8 +69,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
-        drawerLayout = activity.findViewById(R.id.drawer_layout_main)
-        mainTabs = activity.findViewById(R.id.main_margins_tab_layout)
+        drawerLayout = activity.findViewById(R.id.drawerLayout)
+        mainTabs = activity.findViewById(R.id.mainMarginsTabLayout)
         binding.historyNoEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
         lifecycleScope.launch {
@@ -84,6 +89,17 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 }
             }
         }
+        savedInstanceState?.restoreSearchAndActionMode(
+            onActionMode = { launchActionMode(it) },
+        )
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.saveSearchAndActionMode(
+            isActionMode = drawerLayout.isActionMode,
+            selectedIds = sudokuListAdapter.getSelectedIds().asSet().toLongArray()
+        )
+        super.onSaveInstanceState(outState)
     }
 
     private fun initRecycler() {
@@ -130,7 +146,13 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             if (isActionMode) onToggleItem(sudokuListItem.stableId, position)
             else {
                 if (sudokuListItem is SudokuListItem.SudokuItem) {
-                    startActivity(Intent(context, SudokuActivity::class.java).putExtra("sudokuId", sudokuListItem.sudoku.id.value))
+                    TransformationCompat.startActivity(
+                        viewHolder.itemView as TransformationLayout,
+                        Intent(context, SudokuActivity::class.java).putExtra(
+                            KEY_SUDOKU_ID,
+                            sudokuListItem.sudoku.id.value
+                        )
+                    )
                 }
             }
         }

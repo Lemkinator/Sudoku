@@ -2,8 +2,6 @@ package de.lemke.sudoku.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.ActivityManager
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -33,13 +31,14 @@ import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.*
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
 import dev.oneuiproject.oneui.preference.internal.PreferenceRelatedCard
 import dev.oneuiproject.oneui.utils.DialogUtils
-import dev.oneuiproject.oneui.utils.PreferenceUtils.createRelatedCard
+import dev.oneuiproject.oneui.utils.PreferenceUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -56,8 +55,6 @@ class SettingsActivity : AppCompatActivity() {
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackPressAnimation(binding.root)
-        binding.toolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.toolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         if (savedInstanceState == null) supportFragmentManager.beginTransaction().replace(R.id.settings, SettingsFragment()).commit()
     }
 
@@ -99,9 +96,6 @@ class SettingsActivity : AppCompatActivity() {
 
         @Inject
         lateinit var deleteInvalidSudokus: DeleteInvalidSudokusUseCase
-
-        @Inject
-        lateinit var openLink: OpenLinkUseCase
 
         override fun onAttach(context: Context) {
             super.onAttach(context)
@@ -191,15 +185,7 @@ class SettingsActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 findPreference<PreferenceScreen>("language_pref")!!.isVisible = true
                 findPreference<PreferenceScreen>("language_pref")!!.onPreferenceClickListener = OnPreferenceClickListener {
-                    val intent = Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.parse("package:${settingsActivity.packageName}"))
-                    try {
-                        startActivity(intent)
-                    } catch (e: ActivityNotFoundException) {
-                        e.printStackTrace()
-                        Toast.makeText(settingsActivity, getString(R.string.change_language_not_supported_by_device), Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                    true
+                    openAppLocaleSettings()
                 }
             }
 
@@ -212,7 +198,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setTitle(R.string.export_data)
                     .setMessage(R.string.export_data_message)
                     .setNegativeButton(R.string.sesl_cancel, null)
-                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+                    .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                         pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(Environment.getExternalStorageDirectory().absolutePath)))
                     }
                     .show()
@@ -223,7 +209,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setTitle(R.string.import_data)
                     .setMessage(R.string.import_data_message)
                     .setNegativeButton(R.string.sesl_cancel, null)
-                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+                    .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                         pickImportJsonActivityResultLauncher.launch("application/json")
                     }
                     .show()
@@ -234,7 +220,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setTitle(R.string.delete_invalid_sudokus)
                     .setMessage(R.string.delete_invalid_sudokus_summary)
                     .setNegativeButton(R.string.sesl_cancel, null)
-                    .setPositiveButton(R.string.ok, null)
+                    .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
                     .create()
                 dialog.show()
                 DialogUtils.setDialogButtonTextColor(
@@ -251,27 +237,11 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 true
             }
-            findPreference<PreferenceScreen>("delete_app_data_pref")?.setOnPreferenceClickListener {
-                val dialog = AlertDialog.Builder(settingsActivity)
-                    .setTitle(R.string.delete_appdata_and_exit)
-                    .setMessage(R.string.delete_appdata_and_exit_warning)
-                    .setNegativeButton(R.string.sesl_cancel, null)
-                    .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
-                        (settingsActivity.getSystemService(ACTIVITY_SERVICE) as ActivityManager).clearApplicationUserData()
-                    }
-                    .create()
-                dialog.show()
-                DialogUtils.setDialogButtonTextColor(
-                    dialog,
-                    DialogInterface.BUTTON_POSITIVE,
-                    resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color, context?.theme)
-                )
-                true
-            }
+            findPreference<PreferenceScreen>("delete_app_data_pref")?.setOnPreferenceClickListener { deleteAppDataAndExit() }
 
             findPreference<PreferenceScreen>("privacy_pref")!!.onPreferenceClickListener =
                 OnPreferenceClickListener {
-                    openLink(getString(R.string.privacy_website))
+                    openURL(getString(R.string.privacy_website))
                     true
                 }
 
@@ -279,7 +249,7 @@ class SettingsActivity : AppCompatActivity() {
                 AlertDialog.Builder(requireContext())
                     .setTitle(getString(R.string.tos))
                     .setMessage(getString(R.string.tos_content))
-                    .setPositiveButton(R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
+                    .setPositiveButton(de.lemke.commonutils.R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
                     .show()
                 true
             }
@@ -399,8 +369,7 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun setRelatedCardView() {
             if (relatedCard == null) {
-                relatedCard = createRelatedCard(settingsActivity)
-                relatedCard?.setTitleText(getString(dev.oneuiproject.oneui.design.R.string.oui_relative_description))
+                relatedCard = PreferenceUtils.createRelatedCard(requireContext())
                 relatedCard?.addButton(getString(R.string.about_me)) { startActivity(Intent(settingsActivity, AboutMeActivity::class.java)) }?.show(this)
             }
         }

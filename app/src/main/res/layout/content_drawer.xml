@@ -8,183 +8,168 @@
     app:layout_location="drawer_panel">
 
     <LinearLayout
+        android:id="@+id/drawerListView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:background="@drawable/drawer_item_selector"
         android:orientation="vertical">
 
         <LinearLayout
-            android:id="@+id/draweritem_achievements"
+            android:id="@+id/drawerItemAchievements"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/drawer_item_selector"
-            android:foreground="@drawable/drawer_item_list_ripple"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingVertical="10dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp">
+            android:background="@drawable/drawer_item_list_ripple"
+            android:gravity="center_vertical">
 
-            <ImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_oui_game_outline"
-                tools:ignore="ContentDescription" />
+                android:layout_marginStart="14dp"
+                android:gravity="start|center"
+                android:paddingEnd="14dp"
+                android:src="@drawable/ic_oui_game_detail_outline"
+                tools:ignore="RtlSymmetry" />
 
             <TextView
-                style="?android:attr/textAppearanceLarge"
+                android:id="@+id/drawerItemAchievementsTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="marquee"
-                android:paddingStart="15dp"
+                android:paddingVertical="12dp"
                 android:singleLine="true"
                 android:text="@string/play_games_achievements"
-                android:textAlignment="viewStart"
-                android:textSize="18sp"
-                tools:ignore="RtlSymmetry" />
+                android:textColor="?android:textColorPrimary"
+                android:textSize="17sp" />
+
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/draweritem_leaderboards"
+            android:id="@+id/drawerItemLeaderboards"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/drawer_item_selector"
-            android:foreground="@drawable/drawer_item_list_ripple"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingVertical="10dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp">
+            android:background="@drawable/drawer_item_list_ripple"
+            android:gravity="center_vertical">
 
-            <ImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:gravity="start|center"
+                android:paddingEnd="14dp"
                 android:src="@drawable/ic_oui_game_outline"
-                tools:ignore="ContentDescription" />
+                tools:ignore="RtlSymmetry" />
 
             <TextView
-                style="?android:attr/textAppearanceLarge"
+                android:id="@+id/drawerItemLeaderboardsTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="marquee"
-                android:paddingStart="15dp"
+                android:paddingVertical="12dp"
                 android:singleLine="true"
                 android:text="@string/play_games_leaderboards"
-                android:textAlignment="viewStart"
-                android:textSize="18sp"
-                tools:ignore="RtlSymmetry" />
+                android:textColor="?android:textColorPrimary"
+                android:textSize="17sp" />
+
         </LinearLayout>
 
         <View style="@style/DrawerDividerStyle" />
 
         <LinearLayout
-            android:id="@+id/draweritem_about_app"
+            android:id="@+id/drawerItemAboutApp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/drawer_item_selector"
-            android:foreground="@drawable/drawer_item_list_ripple"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingVertical="10dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp">
+            android:background="@drawable/drawer_item_list_ripple"
+            android:gravity="center_vertical">
 
-            <ImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:gravity="start|center"
+                android:paddingEnd="14dp"
                 android:src="@drawable/ic_oui_info_outline"
-                tools:ignore="ContentDescription" />
+                tools:ignore="RtlSymmetry" />
 
             <TextView
-                style="?android:attr/textAppearanceLarge"
+                android:id="@+id/drawerItemAboutAppTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="marquee"
-                android:paddingStart="15dp"
+                android:paddingVertical="12dp"
                 android:singleLine="true"
                 android:text="@string/about_app"
-                android:textAlignment="viewStart"
-                android:textSize="18sp"
-                tools:ignore="RtlSymmetry" />
+                android:textColor="?android:textColorPrimary"
+                android:textSize="17sp" />
+
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/draweritem_about_me"
+            android:id="@+id/drawerItemAboutMe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/drawer_item_selector"
-            android:foreground="@drawable/drawer_item_list_ripple"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingVertical="10dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp">
+            android:background="@drawable/drawer_item_list_ripple"
+            android:gravity="center_vertical">
 
-            <ImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:gravity="start|center"
+                android:paddingEnd="14dp"
                 android:src="@drawable/ic_oui_contact_outline"
-                tools:ignore="ContentDescription" />
+                tools:ignore="RtlSymmetry" />
 
             <TextView
-                style="?android:attr/textAppearanceLarge"
+                android:id="@+id/drawerItemAboutMeTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="marquee"
-                android:paddingStart="15dp"
+                android:paddingVertical="12dp"
                 android:singleLine="true"
                 android:text="@string/about_me"
-                android:textAlignment="viewStart"
-                android:textSize="18sp"
-                tools:ignore="RtlSymmetry" />
+                android:textColor="?android:textColorPrimary"
+                android:textSize="17sp" />
+
         </LinearLayout>
 
         <View style="@style/DrawerDividerStyle" />
 
         <LinearLayout
-            android:id="@+id/draweritem_settings"
+            android:id="@+id/drawerItemSettings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/drawer_item_selector"
-            android:foreground="@drawable/drawer_item_list_ripple"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingVertical="10dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp">
+            android:background="@drawable/drawer_item_list_ripple"
+            android:gravity="center_vertical">
 
-            <ImageView
+            <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:gravity="start|center"
+                android:paddingEnd="14dp"
                 android:src="@drawable/ic_oui_settings_outline"
-                tools:ignore="ContentDescription" />
+                tools:ignore="RtlSymmetry" />
 
             <TextView
-                style="?android:attr/textAppearanceLarge"
+                android:id="@+id/drawerItemSettingsTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="marquee"
-                android:paddingStart="15dp"
+                android:paddingVertical="12dp"
                 android:singleLine="true"
                 android:text="@string/settings"
-                android:textAlignment="viewStart"
-                android:textSize="18sp"
-                tools:ignore="RtlSymmetry" />
+                android:textColor="?android:textColorPrimary"
+                android:textSize="17sp" />
+
         </LinearLayout>
 
     </LinearLayout>
+
 </ScrollView>

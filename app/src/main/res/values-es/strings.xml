@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--General-->
     <string name="sesl_cancel">Cancelar</string>
-    <string name="sesl_navigate_up">Volver</string>
     <string name="settings">Ajustes</string>
     <string name="history">Historial</string>
     <string name="statistics">Estadísticas</string>
@@ -18,6 +17,7 @@
 
     <string name="no_game_played">No se ha jugado ningún juego aún</string>
     <string name="error_import_failed">Fallo al importar el sudoku</string>
+    <string name="error_sudoku_not_found">Sudoku no encontrado…</string>
 
     <!--Menu-->
     <string name="pause">Pausa</string>
@@ -43,7 +43,7 @@
     <string name="support_me">Apóyame</string>
     <string name="no_email_app_installed">Ninguna aplicación de correo electrónico instalada…</string>
     <string name="no_browser_app_installed">Ninguna aplicación de navegador instalada…</string>
-    <string name="error_cant_open_link">No se puede abrir el enlace.</string>
+    <string name="error_cant_open_url">No se puede abrir el enlace.</string>
     <string name="useful_links">Enlaces útiles</string>
     <string name="ad">¡PUBLICIDAD!!!&#129313;&#129396;</string>
     <string name="playstore_redirect_message">Según Google Play, esto es \"Publicidad engañosa que simula o imita la interfaz de usuario de una función de la aplicación\"… Dado que las actualizaciones de la aplicación son rechazadas por Google Play de otro modo, aquí tienes una nota: Este botón (¿sorprendentemente?&#129313;) a mi página de desarrollador en Google Play, ¿continuar?</string>

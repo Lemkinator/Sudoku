@@ -10,6 +10,7 @@
             android:id="@+id/menu_pause_play"
             android:icon="@drawable/ic_oui_control_pause"
             android:title="@string/pause"
+            app:iconTint="?actionMenuTextColor"
             app:showAsAction="always"
             tools:ignore="AppCompatResource" />
     </group>

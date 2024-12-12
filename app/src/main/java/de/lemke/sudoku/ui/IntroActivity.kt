@@ -15,6 +15,7 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
 import de.lemke.sudoku.domain.*
@@ -67,9 +68,7 @@ class IntroActivity : AppCompatActivity() {
         colorPrimary = typedValue.data
 
         initSudoku()
-        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.introContinueButton.setOnClickListener { lifecycleScope.launch { openMainActivity() } }
-        binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
         binding.introNextButton.setOnClickListener { nextIntroStep() }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         nextIntroStep()

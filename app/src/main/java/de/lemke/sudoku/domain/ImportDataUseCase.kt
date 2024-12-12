@@ -43,7 +43,7 @@ class ImportDataUseCase @Inject constructor(
         progressDialog.dismiss()
         AlertDialog.Builder(context)
             .setTitle(R.string.import_data)
-            .setPositiveButton(R.string.ok, null)
+            .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
             .setMessage(result)
             .show()
     }

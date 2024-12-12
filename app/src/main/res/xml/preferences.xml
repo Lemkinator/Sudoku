@@ -89,14 +89,6 @@
         <PreferenceScreen
             android:key="privacy_pref"
             android:title="@string/privacy_information" />
-
-        <PreferenceScreen
-            android:key="about_app_pref"
-            android:title="@string/about_app">
-            <intent
-                android:targetClass="de.lemke.sudoku.ui.AboutActivity"
-                android:targetPackage="de.lemke.sudoku" />
-        </PreferenceScreen>
     </PreferenceCategory>
 
 </PreferenceScreen>

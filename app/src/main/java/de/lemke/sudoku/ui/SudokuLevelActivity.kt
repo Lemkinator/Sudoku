@@ -8,18 +8,20 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.skydoves.transformationlayout.TransformationAppCompatActivity
+import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import de.lemke.sudoku.domain.setCustomBackPressAnimation
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SudokuLevelActivity : AppCompatActivity() {
+class SudokuLevelActivity : TransformationAppCompatActivity() {
     private lateinit var binding: ActivitySudokuLevelBinding
 
     @Inject
@@ -29,12 +31,11 @@ class SudokuLevelActivity : AppCompatActivity() {
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        onTransformationStartContainer()
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackPressAnimation(binding.root)
-        binding.sudokuLevelToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.sudokuLevelToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
         binding.fragmentLevelSubTabs.seslSetSubTabStyle()
         binding.fragmentLevelSubTabs.tabMode = TabLayout.SESL_MODE_WEIGHT_AUTO
         binding.viewPagerLevel.adapter = ViewPager2AdapterTabLevelSubtabs(this)

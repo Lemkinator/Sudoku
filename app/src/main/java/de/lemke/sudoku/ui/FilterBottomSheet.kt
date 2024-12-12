@@ -1,15 +1,16 @@
-package de.lemke.sudoku.ui.dialog
+package de.lemke.sudoku.ui
 
 import android.app.Dialog
-import android.content.DialogInterface
 import android.os.Bundle
-import android.widget.CompoundButton
-import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.DialogFragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.sudoku.R
-import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
+import de.lemke.sudoku.databinding.BottomsheetStatisticsFilterBinding
 import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EASY
 import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EXPERT
@@ -28,11 +29,11 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.apply
 
 @AndroidEntryPoint
-class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDismissListener) : DialogFragment(),
-    CompoundButton.OnCheckedChangeListener {
-    lateinit var binding: DialogStatisticsFilterBinding
+class FilterBottomSheet: BottomSheetDialogFragment() {
+    private lateinit var binding: BottomsheetStatisticsFilterBinding
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -40,13 +41,21 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
     @Inject
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
-    override fun onDismiss(dialog: DialogInterface) {
-        super.onDismiss(dialog)
-        onDismissListener.onDismiss(dialog)
-    }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View = BottomsheetStatisticsFilterBinding.inflate(inflater, container, false).also { binding = it }.root
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        binding = DialogStatisticsFilterBinding.inflate(layoutInflater)
+        return (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
+            behavior.skipCollapsed = true
+            setOnShowListener { behavior.state = BottomSheetBehavior.STATE_EXPANDED }
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         updateFlags()
         lifecycleScope.launch {
             val userSettings = getUserSettings()
@@ -74,22 +83,17 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
             binding.checkboxStatisticsFilterDifficultyExpert.isChecked = userSettings.statisticsFilterFlags and DIFFICULTY_EXPERT != 0 ||
                     userSettings.statisticsFilterFlags and DIFFICULTY_ALL != 0
         }
-        binding.checkboxStatisticsFilterNormal.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterDaily.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterLevel.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterSize4.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterSize9.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterSize16.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterDifficultyVeryEasy.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterDifficultyEasy.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterDifficultyMedium.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterDifficultyHard.setOnCheckedChangeListener(this)
-        binding.checkboxStatisticsFilterDifficultyExpert.setOnCheckedChangeListener(this)
-        return AlertDialog.Builder(requireContext())
-            .setTitle(R.string.statistics_filter)
-            .setView(binding.root)
-            .setNeutralButton(R.string.ok) { _, _ -> dismiss() }
-            .create()
+        binding.checkboxStatisticsFilterNormal.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterDaily.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterLevel.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterSize4.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterSize9.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterSize16.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterDifficultyVeryEasy.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterDifficultyEasy.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterDifficultyMedium.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterDifficultyHard.setOnCheckedChangeListener { _, _ -> updateFlags() }
+        binding.checkboxStatisticsFilterDifficultyExpert.setOnCheckedChangeListener { _, _ -> updateFlags() }
     }
 
     private fun updateFlags() {
@@ -120,9 +124,5 @@ class StatisticsFilterDialog(private val onDismissListener: DialogInterface.OnDi
             flags = flags or DIFFICULTY_ALL
         }
         lifecycleScope.launch { updateUserSettings { it.copy(statisticsFilterFlags = flags) } }
-    }
-
-    override fun onCheckedChanged(buttonView: CompoundButton?, isChecked: Boolean) {
-        updateFlags()
     }
 }

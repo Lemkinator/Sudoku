@@ -28,7 +28,7 @@ import de.lemke.sudoku.databinding.ActivityOobeBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import de.lemke.sudoku.ui.utils.TipsItemView
+import de.lemke.commonutils.widget.TipsItemView
 import dev.oneuiproject.oneui.utils.DialogUtils
 import kotlinx.coroutines.launch
 import java.util.*
@@ -87,7 +87,7 @@ class OOBEActivity : AppCompatActivity() {
                     AlertDialog.Builder(this@OOBEActivity)
                         .setTitle(getString(R.string.tos))
                         .setMessage(getString(R.string.tos_content))
-                        .setPositiveButton(R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
+                        .setPositiveButton(de.lemke.commonutils.R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
                         .show()
                 }
 
@@ -148,7 +148,7 @@ class OOBEActivity : AppCompatActivity() {
                     openIntroActivity()
                 }
             }
-            .setPositiveButton(R.string.ok) { _: DialogInterface, _: Int ->
+            .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch {
                     //Enable Notifications when < Android 13 or permission is granted, else ask for permission
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(

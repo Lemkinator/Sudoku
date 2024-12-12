@@ -184,10 +184,9 @@
         android:focusable="false">
 
         <com.airbnb.lottie.LottieAnimationView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingHorizontal="70dp"
-            android:paddingTop="100dp"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_gravity="center"
             app:lottie_autoPlay="true"
             app:lottie_colorFilter="@color/secondary_text_icon_color_themed"
             app:lottie_loop="true"

@@ -6,6 +6,7 @@
     <item
         android:id="@+id/menu_skip"
         android:title="@string/skip"
+        app:iconTint="?actionMenuTextColor"
         app:showAsAction="always"
         tools:ignore="AppCompatResource" />
 

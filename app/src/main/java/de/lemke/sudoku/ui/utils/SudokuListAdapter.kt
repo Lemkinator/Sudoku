@@ -8,14 +8,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.MarginLayoutParams
-import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import de.lemke.commonutils.widget.ItemDecorationViewHolder
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.formatFull
@@ -25,6 +24,7 @@ import dev.oneuiproject.oneui.delegates.MultiSelector
 import dev.oneuiproject.oneui.delegates.MultiSelectorDelegate
 import dev.oneuiproject.oneui.delegates.SectionIndexerDelegate
 import dev.oneuiproject.oneui.delegates.SemSectionIndexer
+import dev.oneuiproject.oneui.widget.SelectableLinearLayout
 import dev.oneuiproject.oneui.widget.Separator
 import kotlin.apply
 import kotlin.collections.map
@@ -34,7 +34,7 @@ import kotlin.let
 class SudokuListAdapter(
     private val context: Context,
     var errorLimit: Int = 0,
-    val isDailyList: Boolean = false
+    val mode: Mode = Mode.NORMAL,
 ) : RecyclerView.Adapter<SudokuListAdapter.ViewHolder>(),
     MultiSelector<Long> by MultiSelectorDelegate(isSelectable = { it != SeparatorItem.VIEW_TYPE }),
     SemSectionIndexer<SudokuListItem> by SectionIndexerDelegate(context, labelExtractor = { it.label }) {
@@ -99,7 +99,7 @@ class SudokuListAdapter(
                     }
                 }
 
-                if (!isDailyList) {
+                if (mode == Mode.NORMAL) {
                     itemView.setOnLongClickListener {
                         onLongClickItem?.invoke()
                         true
@@ -123,7 +123,7 @@ class SudokuListAdapter(
         else {
             for (payload in payloads.toSet()) {
                 when (payload) {
-                    Payload.SELECTION_MODE -> holder.bindActionMode(getItemId(position))
+                    Payload.SELECTION_MODE -> holder.bindActionModeAnimate(getItemId(position))
                     Payload.HIGHLIGHT -> when (val item = currentList[position]) {
                         is SudokuItem -> holder.bindSudoku(item.sudoku)
                         is SeparatorItem -> Unit
@@ -146,25 +146,28 @@ class SudokuListAdapter(
     inner class ViewHolder(itemView: View, override val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView),
         ItemDecorationViewHolder {
         var textView: TextView
+        var selectableLayout: SelectableLinearLayout? = null
         private var textViewSmall: TextView? = null
-        private var checkBox: CheckBox? = null
         private var imageView: ImageView? = null
 
         init {
             if (isSeparator) {
                 textView = itemView as TextView
             } else {
+                selectableLayout = itemView.findViewById(R.id.item_selectable_layout)
                 textView = itemView.findViewById(R.id.item_text)
                 textViewSmall = itemView.findViewById(R.id.item_text_small)
-                checkBox = itemView.findViewById(R.id.checkbox)
                 imageView = itemView.findViewById(R.id.item_icon)
             }
         }
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
         fun bindSudoku(sudoku: Sudoku) {
-            textView.text = if (isDailyList) sudoku.created.toLocalDate().formatFull
-            else sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
+            textView.text = when(mode) {
+                Mode.DAILY -> sudoku.created.toLocalDate().formatFull
+                Mode.LEVEL -> "Level ${sudoku.modeLevel}"
+                else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
+            }
             imageView?.setImageDrawable(
                 ContextCompat.getDrawable(
                     context,
@@ -187,16 +190,23 @@ class SudokuListAdapter(
                         context.getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
                     }
                 )
-                if (!isDailyList) {
+                if (mode == Mode.NORMAL) {
                     append(" | ").append(context.getString(R.string.current_hints, sudoku.hintsUsed))
                 }
             }
         }
 
-        fun bindActionMode(itemId: Long) {
-            checkBox?.apply {
-                isVisible = isActionMode
-                isChecked = isSelected(itemId)
+        fun bindActionMode(itemId: Long){
+            selectableLayout?.apply {
+                isSelectionMode = isActionMode
+                setSelected(isSelected(itemId))
+            }
+        }
+
+        fun bindActionModeAnimate(itemId: Long){
+            selectableLayout?.apply {
+                isSelectionMode = isActionMode
+                setSelectedAnimate(isSelected(itemId))
             }
         }
     }
@@ -204,5 +214,11 @@ class SudokuListAdapter(
     enum class Payload {
         SELECTION_MODE,
         HIGHLIGHT
+    }
+
+    enum class Mode {
+        NORMAL,
+        LEVEL,
+        DAILY
     }
 }

@@ -58,7 +58,7 @@ class ExportDataUseCase @Inject constructor(
         AlertDialog.Builder(context)
             .setTitle(R.string.export_data)
             .setMessage(context.getString(R.string.export_data_success))
-            .setPositiveButton(R.string.ok, null)
+            .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
             .show()
     }
 }

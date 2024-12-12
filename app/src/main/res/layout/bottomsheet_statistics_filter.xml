@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:background="@null">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:text="@string/statistics_filter"
+                android:textAlignment="center"
+                android:textColor="?android:textColorPrimary"
+                android:textSize="25sp" />
+
+            <com.google.android.material.textview.MaterialTextView
+                style="?android:listSeparatorTextViewStyle"
+                android:backgroundTint="@android:color/transparent"
+                android:text="@string/size" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_size_4"
+                style="@style/StatisticCheckBox"
+                android:text="@string/size4" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_size_9"
+                style="@style/StatisticCheckBox"
+                android:text="@string/size9" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_size_16"
+                style="@style/StatisticCheckBox"
+                android:text="@string/size16" />
+
+            <com.google.android.material.textview.MaterialTextView
+                style="?android:listSeparatorTextViewStyle"
+                android:backgroundTint="@android:color/transparent"
+                android:text="@string/difficulty" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_difficulty_very_easy"
+                style="@style/StatisticCheckBox"
+                android:text="@string/very_easy" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_difficulty_easy"
+                style="@style/StatisticCheckBox"
+                android:text="@string/easy" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_difficulty_medium"
+                style="@style/StatisticCheckBox"
+                android:text="@string/medium" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_difficulty_hard"
+                style="@style/StatisticCheckBox"
+                android:text="@string/hard" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_difficulty_expert"
+                style="@style/StatisticCheckBox"
+                android:text="@string/expert" />
+
+            <com.google.android.material.textview.MaterialTextView
+                style="?android:listSeparatorTextViewStyle"
+                android:backgroundTint="@android:color/transparent"
+                android:text="@string/type" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_normal"
+                style="@style/StatisticCheckBox"
+                android:text="@string/normal_sudokus" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_daily"
+                style="@style/StatisticCheckBox"
+                android:text="@string/daily_sudokus" />
+
+            <androidx.appcompat.widget.AppCompatCheckBox
+                android:id="@+id/checkbox_statistics_filter_level"
+                style="@style/StatisticCheckBox"
+                android:text="@string/sudoku_level" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="15dp" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

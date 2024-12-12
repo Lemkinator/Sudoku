@@ -8,17 +8,20 @@ import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
 import android.view.*
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import com.google.android.play.core.review.ReviewManagerFactory
+import com.skydoves.transformationlayout.TransformationAppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
@@ -36,7 +39,11 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class SudokuActivity : AppCompatActivity() {
+class SudokuActivity : TransformationAppCompatActivity() {
+    companion object {
+        const val KEY_SUDOKU_ID = "key_sudoku_id"
+    }
+
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     private lateinit var userSettings: UserSettings
@@ -46,6 +53,8 @@ class SudokuActivity : AppCompatActivity() {
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     private var notesEnabled = false
     private var selected: Int? = null
+    private var menuPausePlayVisible = false
+    private var menuResetVisible = false
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -81,8 +90,10 @@ class SudokuActivity : AppCompatActivity() {
         setContentView(binding.root)
         setCustomBackPressAnimation(binding.root)
 
-        val id = intent.getStringExtra("sudokuId")
+        val id = intent.getStringExtra(KEY_SUDOKU_ID)
         if (id == null) {
+            Log.e("SudokuActivity", "Sudoku ID not found")
+            toast(R.string.error_sudoku_not_found)
             finishAfterTransition()
             return
         }
@@ -98,12 +109,13 @@ class SudokuActivity : AppCompatActivity() {
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
-            if (nullableSudoku == null) finishAfterTransition()
-            else initSudoku(nullableSudoku)
+            if (nullableSudoku == null) {
+                Log.e("SudokuActivity", "Sudoku not found")
+                toast(R.string.error_sudoku_not_found)
+                finishAfterTransition()
+            } else initSudoku(nullableSudoku)
         }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        binding.sudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
-        binding.sudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
     }
 
     override fun onPause() {
@@ -115,16 +127,26 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.sudoku_menu, menu).let { true }
 
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        if (!this::sudoku.isInitialized) return false
+        menu?.findItem(R.id.menu_pause_play)?.let {
+            it.icon = AppCompatResources.getDrawable(
+                this,
+                if (sudoku.resumed) dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause
+                else dev.oneuiproject.oneui.R.drawable.ic_oui_control_play
+            )
+            it.title = getString(if (sudoku.resumed) R.string.pause else R.string.resume)
+        }
+        menu?.findItem(R.id.menu_reset)?.isVisible = menuResetVisible
+        menu?.findItem(R.id.menu_pause_play)?.isVisible = menuPausePlayVisible
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.menu_pause_play -> (if (sudoku.resumed) pauseGame() else resumeGame()).let { true }
         R.id.menu_reset -> restartGame().let { true }
         R.id.menu_share -> shareDialog().let { true }
         else -> super.onOptionsItemSelected(item)
-    }
-
-    private fun setToolbarMenuItemsVisible(pausePlay: Boolean = false, reset: Boolean = false) {
-        binding.sudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.sudoku_menu_group_pause_play, pausePlay)
-        binding.sudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.sudoku_menu_group_reset, reset)
     }
 
     private fun initSudoku(sudoku: Sudoku) {
@@ -137,8 +159,10 @@ class SudokuActivity : AppCompatActivity() {
         sudoku.gameListener = SudokuGameListener()
         initSudokuButtons()
         if (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now()) {
-            setToolbarMenuItemsVisible()
-            binding.gameButtons.visibility = View.GONE
+            menuResetVisible = false
+            menuPausePlayVisible = false
+            invalidateOptionsMenu()
+            animateGameButtonsVisibility(false)
         } else resumeGame()
         loadingDialog.dismiss()
     }
@@ -180,20 +204,18 @@ class SudokuActivity : AppCompatActivity() {
 
     @Suppress("unused")
     fun resumeGame(view: View? = null) {
-        binding.resumeButtonLayout.visibility = View.GONE
-        binding.gameLayout.visibility = View.VISIBLE
+        binding.gameTransformationLayout.finishTransform()
         if (sudoku.completed) {
-            setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
-            binding.gameButtons.visibility = View.GONE
+            menuPausePlayVisible = false
+            menuResetVisible = true
+            animateGameButtonsVisibility(false)
         } else {
             sudoku.startTimer()
-            binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)?.let {
-                it.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause)
-                it.title = getString(R.string.pause)
-            }
-            setToolbarMenuItemsVisible(pausePlay = true)
-            binding.gameButtons.visibility = View.VISIBLE
+            menuPausePlayVisible = true
+            menuResetVisible = false
+            animateGameButtonsVisibility(true)
         }
+        invalidateOptionsMenu()
         checkErrorLimit()
         if (userSettings.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
@@ -201,16 +223,19 @@ class SudokuActivity : AppCompatActivity() {
     private fun pauseGame() {
         sudoku.stopTimer()
         if (sudoku.completed) return
-        binding.gameLayout.visibility = View.GONE
-        binding.gameButtons.visibility = View.GONE
-        binding.resumeButtonLayout.visibility = View.VISIBLE
-        binding.sudokuToolbarLayout.toolbar.menu.findItem(R.id.menu_pause_play)?.let {
-            it.icon = AppCompatResources.getDrawable(this, dev.oneuiproject.oneui.R.drawable.ic_oui_control_play)
-            it.title = getString(R.string.resume)
-        }
-        setToolbarMenuItemsVisible(pausePlay = true)
+        binding.gameTransformationLayout.startTransform()
+        animateGameButtonsVisibility(false)
+        menuResetVisible = false
+        menuPausePlayVisible = true
+        invalidateOptionsMenu()
         if (userSettings.keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         lifecycleScope.launch { saveSudoku(sudoku) }
+    }
+
+    private fun animateGameButtonsVisibility(visible: Boolean) {
+        val value = if (visible) 1f else 0f
+        binding.gameButtons.animate().setInterpolator(AccelerateDecelerateInterpolator())
+            .alpha(value).scaleX(value).scaleY(value).setDuration(300L).start()
     }
 
     inner class SudokuGameListener : GameListener {
@@ -241,10 +266,14 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onSudokuCompleted() {
         setSubtitle()
+        menuResetVisible = true
+        menuPausePlayVisible = false
+        invalidateOptionsMenu()
+        animateGameButtonsVisibility(false)
         val dialog = AlertDialog.Builder(this@SudokuActivity)
             .setTitle(R.string.completed_title)
             .setMessage(sudoku.getLocalStatisticsString(resources))
-        dialog.setNeutralButton(R.string.ok, null)
+        dialog.setNeutralButton(de.lemke.commonutils.R.string.ok, null)
         lifecycleScope.launch {
             if (sudoku.isSudokuLevel && getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
                 lifecycleScope.launch {
@@ -263,9 +292,7 @@ class SudokuActivity : AppCompatActivity() {
                 }
             }
             dialog.show()
-            setToolbarMenuItemsVisible(reset = !sudoku.isDailySudoku)
             updatePlayGames(this@SudokuActivity, sudoku)
-            binding.gameButtons.visibility = View.GONE
             try {
                 opportunityToShowInAppReview()
             } catch (e: Exception) {
@@ -304,12 +331,14 @@ class SudokuActivity : AppCompatActivity() {
         if (sudoku.errorLimitReached(errorLimit)) {
             sudoku.stopTimer()
             setSubtitle()
-            binding.gameButtons.visibility = View.GONE
-            setToolbarMenuItemsVisible(reset = true)
+            animateGameButtonsVisibility(false)
+            menuResetVisible = true
+            menuPausePlayVisible = false
+            invalidateOptionsMenu()
             AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.gameover)
                 .setMessage(getString(R.string.error_limit_reached, errorLimit))
                 .setPositiveButton(R.string.restart) { _, _ -> restartGame() }
-                .setNeutralButton(R.string.ok, null)
+                .setNeutralButton(de.lemke.commonutils.R.string.ok, null)
                 .show()
             return true
         }

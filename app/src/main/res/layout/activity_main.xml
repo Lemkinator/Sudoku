@@ -1,25 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<dev.oneuiproject.oneui.layout.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<dev.oneuiproject.oneui.layout.NavDrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/drawer_layout_main"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:drawerBackAnimation="true"
     app:expanded="true"
-    app:title="@string/app_name">
+    app:title="@string/app_name"
+    tools:isOpen="true">
 
     <FrameLayout
-        android:id="@+id/fragment_container"
+        android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_location="main_content" />
 
     <dev.oneuiproject.oneui.widget.MarginsTabLayout
-        android:id="@+id/main_margins_tab_layout"
+        android:id="@+id/mainMarginsTabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_location="footer" />
 
     <include layout="@layout/content_drawer" />
 
-</dev.oneuiproject.oneui.layout.DrawerLayout>
+</dev.oneuiproject.oneui.layout.NavDrawerLayout>

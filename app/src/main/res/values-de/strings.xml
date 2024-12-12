@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--General-->
     <string name="sesl_cancel">Abbrechen</string>
-    <string name="sesl_navigate_up">Zurück</string>
     <string name="settings">Einstellungen</string>
     <string name="history">Verlauf</string>
     <string name="statistics">Statistik</string>
@@ -18,6 +17,7 @@
 
     <string name="no_game_played">Noch kein Spiel gespielt</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
+    <string name="error_sudoku_not_found">Sudoku nicht gefunden…</string>
 
     <!--Menu-->
     <string name="pause">Pause</string>
@@ -43,7 +43,7 @@
     <string name="support_me">Unterstütz mich</string>
     <string name="no_email_app_installed">Keine E-Mail App installiert…</string>
     <string name="no_browser_app_installed">Keine Browser-App installiert…</string>
-    <string name="error_cant_open_link">Fehler: Link konnte nicht geöffnet werden.</string>
+    <string name="error_cant_open_url">Fehler: Link konnte nicht geöffnet werden.</string>
     <string name="useful_links">Nützliche Links</string>
     <string name="ad">WERBUNG!!!&#129313;&#129396;</string>
     <string name="playstore_redirect_message">Laut Google Play handelt es sich hierbei um \"Irreführende Werbung, welche die Benutzeroberfläche einer App-Funktion simuliert oder nachahmt\"… Weil App-Updates andernfalls von Google Play abgelehnt werden, hier ein Hinweis: Dieser Button führt (überaschenderweise?&#129313;) zu meiner Entwicklerseite bei Google Play, fortfahren?</string>

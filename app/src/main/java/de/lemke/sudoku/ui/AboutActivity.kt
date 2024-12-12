@@ -1,6 +1,5 @@
 package de.lemke.sudoku.ui
 
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.net.ConnectivityManager
@@ -12,6 +11,8 @@ import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
@@ -28,14 +29,15 @@ import com.google.android.play.core.install.model.ActivityResult
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.openApp
+import de.lemke.commonutils.openApplicationSettings
+import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityAboutBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.OpenAppUseCase
-import de.lemke.sudoku.domain.OpenLinkUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import de.lemke.sudoku.domain.setCustomBackPressAnimation
+import de.lemke.sudoku.domain.openURL
 import dev.oneuiproject.oneui.layout.AppInfoLayout.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -48,12 +50,6 @@ class AboutActivity : AppCompatActivity() {
     private lateinit var appUpdateInfoTask: Task<AppUpdateInfo>
     private lateinit var activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>
     private var clicks = 0
-
-    @Inject
-    lateinit var openLink: OpenLinkUseCase
-
-    @Inject
-    lateinit var openApp: OpenAppUseCase
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -82,9 +78,6 @@ class AboutActivity : AppCompatActivity() {
             }
         })
         binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
-        binding.aboutBtnAboutMe.setOnClickListener {
-            startActivity(Intent(this@AboutActivity, AboutMeActivity::class.java))
-        }
         activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             when (result.resultCode) {
                 // For immediate updates, you might not receive RESULT_OK because
@@ -130,7 +123,7 @@ class AboutActivity : AppCompatActivity() {
         textLink.setSpan(
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    openLink(getString(R.string.sudoku_lib_github_link))
+                    openURL(getString(R.string.sudoku_lib_github_link))
                 }
 
                 override fun updateDrawState(ds: TextPaint) {
@@ -144,7 +137,7 @@ class AboutActivity : AppCompatActivity() {
         textLink.setSpan(
             object : ClickableSpan() {
                 override fun onClick(widget: View) {
-                    openLink(getString(R.string.sudoku_lib_license_github_link))
+                    openURL(getString(R.string.sudoku_lib_license_github_link))
                 }
 
                 override fun updateDrawState(ds: TextPaint) {
@@ -174,6 +167,19 @@ class AboutActivity : AppCompatActivity() {
                     startUpdateFlow()
                 }
             }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(de.lemke.commonutils.R.menu.menu_about, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == de.lemke.commonutils.R.id.menu_app_info) {
+            openApplicationSettings()
+            return true
+        }
+        return false
     }
 
     private fun checkUpdate() {

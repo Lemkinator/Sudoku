@@ -2,31 +2,28 @@ package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
 import android.app.ActionBar.LayoutParams
-import android.content.Context
-import android.graphics.Canvas
-import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.util.TypedValue
 import android.view.*
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.*
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.appcompat.util.SeslRoundedCorner
-import androidx.appcompat.util.SeslSubheaderRoundedCorner
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.widget.ItemDecoration
+import de.lemke.commonutils.widget.ItemDecorationViewHolder
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.ObserveStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.widget.Separator
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -40,21 +37,34 @@ class MainActivityTabStatistics : Fragment() {
     lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
+    lateinit var observeStatisticsFilterFlags: ObserveStatisticsFilterFlagsUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentTabStatisticsBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    override fun onResume() {
-        super.onResume()
-        lifecycleScope.launch { updateStatistics() }
+    @SuppressLint("NotifyDataSetChanged")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding.statisticsListRecycler.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = StatisticsListAdapter()
+            itemAnimator = null
+            addItemDecoration(ItemDecoration(requireContext()))
+            enableCoreSeslFeatures()
+        }
+        lifecycleScope.launch {
+            observeStatisticsFilterFlags().flowWithLifecycle(lifecycle).collectLatest {
+                updateStatistics(it)
+                binding.statisticsListRecycler.adapter?.notifyDataSetChanged()
+            }
+        }
     }
 
     @SuppressLint("SetTextI18n")
-    private suspend fun updateStatistics() {
-        val sudokus = getAllSudokus(getUserSettings().statisticsFilterFlags) //.filter { !it.autoNotesUsed }
+    private suspend fun updateStatistics(statisticsFilterFlags: Int) {
+        val sudokus = getAllSudokus(statisticsFilterFlags) //.filter { !it.autoNotesUsed }
         statisticsList = mutableListOf()
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size
@@ -114,14 +124,6 @@ class MainActivityTabStatistics : Fragment() {
         statisticsList.add(getString(R.string.size) to null)
         statisticsList.add(getString(R.string.most_games_started) to mostGamesStartedSize)
         statisticsList.add(getString(R.string.most_games_won) to mostGamesWonSize)
-
-        binding.statisticsListRecycler.apply {
-            layoutManager = LinearLayoutManager(context)
-            adapter = StatisticsListAdapter()
-            itemAnimator = null
-            addItemDecoration(ItemDecoration(requireContext()))
-            enableCoreSeslFeatures()
-        }
     }
 
     private fun secondsToTimeString(seconds: Int): String =
@@ -153,7 +155,8 @@ class MainActivityTabStatistics : Fragment() {
             }
         }
 
-        inner class ViewHolder internal constructor(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
+        inner class ViewHolder internal constructor(itemView: View, override var isSeparator: Boolean) :
+            RecyclerView.ViewHolder(itemView), ItemDecorationViewHolder {
             var textView: TextView
             lateinit var textViewValue: TextView
 
@@ -164,47 +167,6 @@ class MainActivityTabStatistics : Fragment() {
                     textViewValue = itemView.findViewById(R.id.item_text_value)
                 }
             }
-        }
-    }
-
-    @SuppressLint("PrivateResource")
-    inner class ItemDecoration(context: Context) : RecyclerView.ItemDecoration() {
-        private val divider: Drawable?
-        private val roundedCorner: SeslSubheaderRoundedCorner
-        override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
-            super.onDraw(c, parent, state)
-            for (i in 0 until parent.childCount) {
-                val child = parent.getChildAt(i)
-                val holder: ViewHolder =
-                    binding.statisticsListRecycler.getChildViewHolder(child) as ViewHolder
-                if (!holder.isSeparator) {
-                    val top = (child.bottom + (child.layoutParams as MarginLayoutParams).bottomMargin)
-                    val bottom = divider!!.intrinsicHeight + top
-                    divider.setBounds(parent.left, top, parent.right, bottom)
-                    divider.draw(c)
-                }
-            }
-        }
-
-        override fun seslOnDispatchDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
-            for (i in 0 until parent.childCount) {
-                val child = parent.getChildAt(i)
-                val holder: ViewHolder =
-                    binding.statisticsListRecycler.getChildViewHolder(child) as ViewHolder
-                if (holder.isSeparator) roundedCorner.drawRoundedCorner(child, c)
-            }
-        }
-
-        init {
-            val outValue = TypedValue()
-            context.theme.resolveAttribute(androidx.appcompat.R.attr.isLightTheme, outValue, true)
-            divider = AppCompatResources.getDrawable(
-                context,
-                if (outValue.data == 0) androidx.appcompat.R.drawable.sesl_list_divider_dark
-                else androidx.appcompat.R.drawable.sesl_list_divider_light
-            )!!
-            roundedCorner = SeslSubheaderRoundedCorner(context)
-            roundedCorner.roundedCorners = SeslRoundedCorner.ROUNDED_CORNER_ALL
         }
     }
 }

@@ -1,29 +1,16 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
     <!--General-->
     <string name="app_name" translatable="false">Sudoku</string>
-    <string name="leo" translatable="false">Leonard Lemke</string>
-    <string name="leo_job" translatable="false">Softwaredeveloper</string>
     <string name="email" translatable="false">sudoku@leonard-lemke.com</string>
-    <string name="my_website" translatable="false">https://www.leonard-lemke.com</string>
-    <string name="my_insta" translatable="false">https://www.instagram.com/lemkinator5/</string>
-    <string name="my_github" translatable="false">https://github.com/Lemkinator</string>
-    <string name="github" translatable="false">Github</string>
     <string name="privacy_website" translatable="false">https://www.leonard-lemke.com/apps/sudoku/privacy-policy</string>
-    <string name="playstore" translatable="false">Play Store</string>
-    <string name="playstore_developer_page_link" translatable="false">https://play.google.com/store/apps/dev?id=4759149701353957861</string>
-    <string name="playstore_app_link" translatable="false">market://details?id=</string>
-    <string name="playstore_link" translatable="false">https://play.google.com/store/apps/details?id=</string>
     <string name="sudoku_lib_github_link" translatable="false">https://github.com/sfuhrm/sudoku</string>
     <string name="sudoku_lib_license_github_link" translatable="false">https://github.com/sfuhrm/sudoku/blob/master/LICENSE</string>
-    <string name="rick_roll_troll_link" translatable="false">https://www.leonard-lemke.com/rr</string>
     <string name="daily_sudoku_notification_channel_id" translatable="false">Daily_Sudoku_Notification_Channel</string>
     <string name="size4" translatable="false">4×4</string>
     <string name="size9" translatable="false">9×9</string>
     <string name="size16" translatable="false">16×16</string>
 
-    <string name="ok" translatable="false" tools:ignore="ButtonCase,Typos">Ok</string>
     <string name="sesl_cancel">Cancel</string>
-    <string name="sesl_navigate_up">Back</string>
     <string name="settings">Settings</string>
     <string name="history">History</string>
     <string name="statistics">Statistics</string>
@@ -40,6 +27,7 @@
 
     <string name="no_game_played">No game played yet</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
+    <string name="error_sudoku_not_found">Sudoku not found…</string>
 
     <!--Menu-->
     <string name="pause">Pause</string>
@@ -61,13 +49,11 @@
     <string name="write_review">Write a review</string>
     <string name="rate_app">Rate app in Play Store</string>
     <string name="write_email">Write an e-mail</string>
-    <string name="instagram" translatable="false">Instagram</string>
-    <string name="tiktok" translatable="false">TikTok</string>
     <string name="support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
     <string name="support_me">Support me</string>
     <string name="no_email_app_installed">No e-mail app installed…</string>
     <string name="no_browser_app_installed">No browser app installed…</string>
-    <string name="error_cant_open_link">Error: Link could not be opened.</string>
+    <string name="error_cant_open_url">Error: Link could not be opened.</string>
     <string name="useful_links">Useful links</string>
     <string name="ad">ADVERTISEMENT!!!&#129313;&#129396;</string>
     <string name="playstore_redirect_message">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>

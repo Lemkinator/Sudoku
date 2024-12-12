@@ -11,6 +11,7 @@
             android:id="@+id/menu_item_filter"
             android:icon="@drawable/ic_oui_list_filter"
             android:title="@string/filter"
+            app:iconTint="?actionMenuTextColor"
             app:showAsAction="always"
             tools:ignore="AppCompatResource" />
 

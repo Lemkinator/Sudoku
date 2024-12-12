@@ -3,18 +3,23 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.skydoves.transformationlayout.TransformationAppCompatActivity
+import com.skydoves.transformationlayout.TransformationCompat
+import com.skydoves.transformationlayout.TransformationLayout
+import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.widget.InfoBottomSheet
+import de.lemke.commonutils.widget.ItemDecoration
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
 import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.ui.utils.ItemDecoration
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -25,10 +30,11 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
+class DailySudokuActivity : TransformationAppCompatActivity() {
     private lateinit var binding: ActivityDailySudokuBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private var dailySudokus: List<SudokuListItem> = emptyList()
+    private var dailyShowUncompleted = true
 
     @Inject
     lateinit var initDailySudokus: InitDailySudokusUseCase
@@ -43,6 +49,7 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        onTransformationStartContainer()
         super.onCreate(savedInstanceState)
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -54,6 +61,8 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
         initRecycler()
         lifecycleScope.launch {
             initDailySudokus()
+            dailyShowUncompleted = getUserSettings().dailyShowUncompleted
+            invalidateOptionsMenu()
             observeDailySudokus().flowWithLifecycle(lifecycle).collectLatest {
                 dailySudokus = it
                 sudokuListAdapter.submitList(it)
@@ -61,14 +70,12 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
                 progressDialog.dismiss()
             }
         }
-        binding.dailySudokuToolbarLayout.setNavigationButtonTooltip(getString(R.string.sesl_navigate_up))
-        binding.dailySudokuToolbarLayout.setNavigationButtonOnClickListener { finishAfterTransition() }
     }
 
     private fun initRecycler() {
         binding.dailySudokuRecycler.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = SudokuListAdapter(context, errorLimit = Sudoku.MODE_DAILY_ERROR_LIMIT, isDailyList = true).also {
+            adapter = SudokuListAdapter(context, errorLimit = Sudoku.MODE_DAILY_ERROR_LIMIT, mode = SudokuListAdapter.Mode.DAILY).also {
                 it.setupOnClickListeners()
                 sudokuListAdapter = it
             }
@@ -81,8 +88,9 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuListItem.SudokuItem) {
-                startActivity(
-                    Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra("sudokuId", sudokuListItem.sudoku.id.value)
+                TransformationCompat.startActivity(
+                    viewHolder.itemView as TransformationLayout,
+                    Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
                 )
             }
         }
@@ -91,37 +99,36 @@ class DailySudokuActivity : AppCompatActivity(R.layout.activity_daily_sudoku) {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.daily_sudoku_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
-        lifecycleScope.launch {
-            val showUncompleted = getUserSettings().dailyShowUncompleted
-            binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, !showUncompleted)
-            binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, showUncompleted)
-        }
         return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.setGroupVisible(R.id.group_show_all_sudokus, !dailyShowUncompleted)
+        menu?.setGroupVisible(R.id.group_show_only_completed_sudokus, dailyShowUncompleted)
+        return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menuitem_daily_sudoku_info -> {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.daily_sudoku)
-                    .setMessage(R.string.daily_sudoku_info_message)
-                    .setPositiveButton(R.string.ok, null)
-                    .show()
+                InfoBottomSheet.newInstance(
+                    title = getString(R.string.daily_sudoku),
+                    message = getString(R.string.daily_sudoku_info_message),
+                    textGravity = Gravity.START
+                ).show(supportFragmentManager, "daily_sudoku_info")
             }
 
             R.id.menuitem_show_all_sudokus -> {
                 lifecycleScope.launch {
                     updateUserSettings { it.copy(dailyShowUncompleted = true) }
-                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, false)
-                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, true)
+                    invalidateOptionsMenu()
                 }
             }
 
             R.id.menuitem_show_only_completed_sudokus -> {
                 lifecycleScope.launch {
                     updateUserSettings { it.copy(dailyShowUncompleted = false) }
-                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_all_sudokus, true)
-                    binding.dailySudokuToolbarLayout.toolbar.menu.setGroupVisible(R.id.group_show_only_completed_sudokus, false)
+                    invalidateOptionsMenu()
                 }
             }
         }

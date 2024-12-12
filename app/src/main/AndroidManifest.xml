@@ -17,7 +17,7 @@
         android:localeConfig="@xml/locale_config"
         android:resizeableActivity="true"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Sudoku"
+        android:theme="@style/OneUITheme"
         tools:targetApi="34">
 
         <meta-data
@@ -42,35 +42,35 @@
 
         <meta-data
             android:name="theming-meta"
-            android:value="meta_998_sesl_app" />
+            android:value="meta_sudoku" />
         <meta-data
             android:name="theming-meta-xml"
-            android:value="@xml/meta_998_sesl_app" />
+            android:value="@xml/meta_sudoku" />
 
         <activity android:name=".ui.OOBEActivity" />
         <activity android:name=".ui.AboutActivity" />
-        <activity
-            android:name=".ui.AboutMeActivity"
-            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize" />
+        <activity android:name=".ui.AboutMeActivity"/>
         <activity
             android:name=".ui.DailySudokuActivity"
+            android:configChanges="orientation|screenLayout|screenSize"
             android:parentActivityName=".ui.MainActivity" />
         <activity
             android:name=".ui.SudokuLevelActivity"
+            android:configChanges="orientation|screenLayout|screenSize"
             android:parentActivityName=".ui.MainActivity" />
         <activity
             android:name=".ui.SudokuActivity"
-            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
+            android:configChanges="orientation|screenLayout|screenSize"
             android:screenOrientation="portrait"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.IntroActivity"
-            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
+            android:configChanges="orientation|screenLayout|screenSize"
             android:screenOrientation="portrait"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".ui.SettingsActivity"
-            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
+            android:configChanges="orientation|screenLayout|screenSize"
             android:exported="true"
             android:parentActivityName=".ui.MainActivity">
             <intent-filter>
@@ -82,7 +82,7 @@
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="true"
-            android:theme="@style/Theme.Sudoku.Splash">
+            android:theme="@style/AppTheme.Starting">
             <!--Launcher-->
             <meta-data
                 android:name="com.sec.android.app.launcher.icon_theme"

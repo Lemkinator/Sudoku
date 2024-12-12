@@ -23,6 +23,12 @@ class UserSettingsRepository @Inject constructor(
     /** Observe dailyShowUncompleted. */
     fun observeDailyShowUncompleted(): Flow<Boolean> = dataStore.data.map { it[KEY_DAILY_SHOW_UNCOMPLETED] == true }.distinctUntilChanged()
 
+    /** Observe statisticsFilterFlags. */
+    fun observeStatisticsFilterFlags(): Flow<Int> = dataStore.data.map {
+        it[KEY_STATISTICS_FILTER_FLAGS]
+            ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL)
+    }.distinctUntilChanged()
+
     /**
      * Updates the current user settings and returns the new settings.
      * @param f Invoked with the current settings; The settings returned from this function will replace the current ones.
