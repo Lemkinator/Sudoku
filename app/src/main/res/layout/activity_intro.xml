@@ -62,7 +62,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="@color/primary_text_icon_color"
+                    android:textColor="@color/commonutils_primary_text_icon_color"
                     android:textSize="18sp" />
 
                 <androidx.appcompat.widget.AppCompatButton
@@ -90,7 +90,7 @@
                     android:id="@+id/intro_text_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/primary_text_icon_color"
+                    android:textColor="@color/commonutils_primary_text_icon_color"
                     android:textSize="18sp" />
 
             </dev.oneuiproject.oneui.widget.RoundedLinearLayout>

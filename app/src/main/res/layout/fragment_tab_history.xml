@@ -54,7 +54,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/no_game_played"
-                android:textColor="@color/primary_text_icon_color_themed"
+                android:textColor="@color/commonutils_primary_text_icon_color_themed"
                 android:textSize="17.0sp" />
 
         </LinearLayout>

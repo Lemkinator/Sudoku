@@ -17,7 +17,7 @@
         android:localeConfig="@xml/locale_config"
         android:resizeableActivity="true"
         android:supportsRtl="true"
-        android:theme="@style/OneUITheme"
+        android:theme="@style/AppTheme"
         tools:targetApi="34">
 
         <meta-data

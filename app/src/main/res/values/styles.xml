@@ -1,44 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="ButtonStyle.Colored" parent="OneUI.ButtonStyleColored">
-        <item name="android:backgroundTint">@color/primary_color_themed</item>
-        <item name="android:textColor">@color/primary_text_icon_color</item>
-        <item name="android:drawableTint">@color/primary_text_icon_color</item>
-        <item name="tint">@color/primary_text_icon_color</item>
-    </style>
-
-    <style name="ButtonStyle.Transparent" parent="OneUI.ButtonStyleTransparent">
-        <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/primary_text_icon_color</item>
-        <item name="android:drawableTint">@color/primary_text_icon_color</item>
-        <item name="tint">@color/primary_text_icon_color</item>
-    </style>
-
-    <style name="ButtonStyle.Transparent.Colored" parent="OneUI.ButtonStyleTransparent">
-        <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/primary_color_themed</item>
-        <item name="android:drawableTint">@color/primary_color_themed</item>
-        <item name="tint">@color/primary_color_themed</item>
-    </style>
-
-    <style name="ButtonStyle.Filled" parent="Widget.AppCompat.Button">
-        <item name="android:backgroundTint">@color/filled_background_color</item>
-        <item name="android:textColor">@color/primary_text_icon_color</item>
-        <item name="android:drawableTint">@color/primary_text_icon_color</item>
-        <item name="tint">@color/primary_text_icon_color</item>
-    </style>
-
-    <style name="ButtonStyle.Filled.Themed" parent="ButtonStyle.Filled">
-        <item name="android:backgroundTint">@color/filled_background_color_themed</item>
-        <item name="android:textColor">@color/primary_text_icon_color_themed</item>
-        <item name="android:drawableTint">@color/primary_text_icon_color_themed</item>
-        <item name="tint">@color/primary_text_icon_color_themed</item>
-    </style>
 
     <style name="ButtonStyle.SudokuButton" parent="Widget.AppCompat.Button">
         <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/primary_text_icon_color</item>
-        <item name="android:drawableTint">@color/primary_text_icon_color</item>
+        <item name="android:textColor">@color/commonutils_primary_text_icon_color</item>
+        <item name="android:drawableTint">@color/commonutils_primary_text_icon_color</item>
         <item name="android:layout_weight">1</item>
     </style>
 
@@ -60,13 +26,6 @@
     <style name="ButtonStyle.NumberButton.Land" parent="ButtonStyle.NumberButton">
         <item name="android:layout_width">50dp</item>
         <item name="android:layout_height">0dp</item>
-    </style>
-
-    <style name="StatisticCheckBox">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginHorizontal">24dp</item>
-        <item name="android:buttonTint">@color/primary_color_themed</item>
     </style>
 
 </resources>

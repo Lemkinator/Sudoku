@@ -29,7 +29,7 @@
                 android:layout_weight="1"
                 android:gravity="start"
                 android:text="@string/size4"
-                android:textColor="@color/secondary_text_icon_color_themed" />
+                android:textColor="@color/commonutils_secondary_text_icon_color_themed" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -37,7 +37,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="@string/size9"
-                android:textColor="@color/secondary_text_icon_color_themed" />
+                android:textColor="@color/commonutils_secondary_text_icon_color_themed" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -45,7 +45,7 @@
                 android:layout_weight="1"
                 android:gravity="end"
                 android:text="@string/size16"
-                android:textColor="@color/secondary_text_icon_color_themed" />
+                android:textColor="@color/commonutils_secondary_text_icon_color_themed" />
 
         </LinearLayout>
 
@@ -71,7 +71,7 @@
                 android:layout_weight="1"
                 android:gravity="start"
                 android:text="@string/very_easy"
-                android:textColor="@color/secondary_text_icon_color_themed" />
+                android:textColor="@color/commonutils_secondary_text_icon_color_themed" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -79,7 +79,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="@string/medium"
-                android:textColor="@color/secondary_text_icon_color_themed" />
+                android:textColor="@color/commonutils_secondary_text_icon_color_themed" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -87,7 +87,7 @@
                 android:layout_weight="1"
                 android:gravity="end"
                 android:text="@string/expert"
-                android:textColor="@color/secondary_text_icon_color_themed" />
+                android:textColor="@color/commonutils_secondary_text_icon_color_themed" />
 
         </LinearLayout>
 

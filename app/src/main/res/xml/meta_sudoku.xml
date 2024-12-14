@@ -5,7 +5,7 @@
     <AppMetaData
         Name="Sudoku"
         TargetApi="21"
-        TargetPackageName="de.lemke.sudoku"
+        TargetPackageName="de.lemke.sudoku.debug"
         VersionCode="1"
         VersionName="">
         <Include RefName="SESL" />
@@ -16,22 +16,6 @@
             DestAttribName="primary_color_themed"
             UID="5"
             ValueRef="1-A"
-            ValueType="Color" />
-
-        <Property
-            Comment="Icon or Text Color"
-            DefaultValue="074d4"
-            DestAttribName="primary_text_icon_color_themed"
-            UID="55"
-            ValueRef="1-11-3"
-            ValueType="Color" />
-
-        <Property
-            Comment="Themed Background Fill Color"
-            DefaultValue="#fffcfcfc"
-            DestAttribName="filled_background_color_themed"
-            UID="555"
-            ValueRef="1-18-1"
             ValueType="Color" />
 
         <Property

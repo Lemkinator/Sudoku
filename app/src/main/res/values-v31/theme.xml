@@ -2,7 +2,7 @@
 <resources>
 
     <style name="AppTheme.Starting" parent="Theme.SplashScreen">
-        <item name="postSplashScreenTheme">@style/OneUITheme</item>
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
         <item name="android:windowSplashScreenBackground">@color/oui_round_and_bgcolor</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_animated</item>
         <item name="android:windowSplashScreenAnimationDuration">800</item>

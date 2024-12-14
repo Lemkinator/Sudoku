@@ -2,16 +2,10 @@
 <resources>
     <color name="primary_color">#CF7200</color>
     <color name="primary_color_themed">@color/primary_color</color>
-    <color name="primary_text_icon_color">#010101</color>
-    <color name="primary_text_icon_color_themed">@color/oui_primary_text_color</color>
-    <color name="secondary_text_icon_color">#ff8c8c8c</color>
-    <color name="secondary_text_icon_color_themed">@color/sesl_list_subheader_text_color</color>
-    <color name="filled_background_color">#e2e2e2</color>
-    <color name="filled_background_color_themed">@color/filled_background_color</color>
 
-    <color name="field_userinput_text_color">@color/primary_text_icon_color</color>
+    <color name="field_userinput_text_color">@color/commonutils_primary_text_icon_color</color>
     <color name="field_given_text_color">@color/primary_color_themed</color>
-    <color name="field_hint_text_color">@color/secondary_text_icon_color</color>
+    <color name="field_hint_text_color">@color/commonutils_secondary_text_icon_color</color>
     <!-- Background colors, alpha is set in separate res. -->
     <color name="field_background_normal">@color/primary_color_themed</color>
     <color name="field_background_selected">@color/primary_color_themed</color>

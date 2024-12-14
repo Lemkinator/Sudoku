@@ -11,8 +11,6 @@ import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
@@ -30,7 +28,6 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.openApp
-import de.lemke.commonutils.openApplicationSettings
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
@@ -63,21 +60,20 @@ class AboutActivity : AppCompatActivity() {
         setContentView(binding.root)
         setCustomBackPressAnimation(binding.root)
         appUpdateManager = AppUpdateManagerFactory.create(this)
-        binding.appInfoLayout.status = LOADING
+        binding.appInfoLayout.updateStatus = Status.Loading
         setExtraText()
         setVersionText()
-        //status: LOADING NO_UPDATE UPDATE_AVAILABLE NOT_UPDATEABLE NO_CONNECTION
         binding.appInfoLayout.setMainButtonClickListener(object : OnClickListener {
-            override fun onUpdateClicked(v: View?) {
+            override fun onUpdateClicked(v: View) {
                 startUpdateFlow()
             }
 
-            override fun onRetryClicked(v: View?) {
-                binding.appInfoLayout.status = LOADING
+            override fun onRetryClicked(v: View) {
+                binding.appInfoLayout.updateStatus = Status.Loading
                 checkUpdate()
             }
         })
-        binding.aboutBtnOpenInStore.setOnClickListener { openApp(packageName, false) }
+        binding.aboutButtonOpenInStore.setOnClickListener { openApp(packageName, false) }
         activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             when (result.resultCode) {
                 // For immediate updates, you might not receive RESULT_OK because
@@ -169,24 +165,11 @@ class AboutActivity : AppCompatActivity() {
             }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(de.lemke.commonutils.R.menu.menu_about, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == de.lemke.commonutils.R.id.menu_app_info) {
-            openApplicationSettings()
-            return true
-        }
-        return false
-    }
-
     private fun checkUpdate() {
         val connectivityManager = getSystemService(ConnectivityManager::class.java)
         val caps = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
         if (caps == null || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
-            binding.appInfoLayout.status = NO_CONNECTION
+            binding.appInfoLayout.updateStatus = Status.NoConnection
             return
         }
 
@@ -197,14 +180,14 @@ class AboutActivity : AppCompatActivity() {
             .addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
                 this.appUpdateInfo = appUpdateInfo
                 if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
-                    binding.appInfoLayout.status = UPDATE_AVAILABLE
+                    binding.appInfoLayout.updateStatus = Status.UpdateAvailable
                 }
                 if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_NOT_AVAILABLE) {
-                    binding.appInfoLayout.status = NO_UPDATE
+                    binding.appInfoLayout.updateStatus = Status.NoUpdate
                 }
             }
             .addOnFailureListener { appUpdateInfo: Exception ->
-                binding.appInfoLayout.status = NOT_UPDATEABLE
+                binding.appInfoLayout.updateStatus = Status.NotUpdatable
                 Log.w("AboutActivity", appUpdateInfo.message.toString())
             }
     }
@@ -217,7 +200,7 @@ class AboutActivity : AppCompatActivity() {
                 AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
             )
         } catch (e: Exception) {
-            binding.appInfoLayout.status = NOT_UPDATEABLE
+            binding.appInfoLayout.updateStatus = Status.NotUpdatable
             e.printStackTrace()
         }
     }

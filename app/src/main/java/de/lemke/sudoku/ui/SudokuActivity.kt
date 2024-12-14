@@ -555,10 +555,10 @@ class SudokuActivity : TransformationAppCompatActivity() {
         sudoku.getCompletedNumbers().forEach { pair ->
             if (pair.second) {
                 sudokuButtons[pair.first - 1].isEnabled = false
-                sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.secondary_text_icon_color))
+                sudokuButtons[pair.first - 1].setTextColor(getColor(de.lemke.commonutils.R.color.commonutils_secondary_text_icon_color))
             } else {
                 sudokuButtons[pair.first - 1].isEnabled = true
-                sudokuButtons[pair.first - 1].setTextColor(getColor(R.color.primary_text_icon_color))
+                sudokuButtons[pair.first - 1].setTextColor(getColor(de.lemke.commonutils.R.color.commonutils_primary_text_icon_color))
             }
         }
     }

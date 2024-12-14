@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.skydoves.transformationlayout.TransformationCompat
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.setStyle
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.*
@@ -19,7 +20,6 @@ import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.SudokuLevelActivity
-import de.lemke.sudoku.ui.utils.ButtonUtils
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -133,10 +133,9 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
                     )
                 }
             } else binding.continueTransformationLayout.visibility = View.GONE
-            ButtonUtils.setButtonStyle(
-                requireContext(),
-                binding.dailyButton,
-                if (isDailySudokuCompleted()) R.style.ButtonStyle_Filled_Themed else R.style.ButtonStyle_Colored
+            binding.dailyButton.setStyle(
+                if (isDailySudokuCompleted()) de.lemke.commonutils.R.style.ButtonStyle_Filled_Themed
+                else de.lemke.commonutils.R.style.ButtonStyle_Colored
             )
         }
     }

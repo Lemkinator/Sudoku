@@ -36,17 +36,23 @@
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_size_4"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/size4" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_size_9"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/size9" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_size_16"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/size16" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -56,27 +62,37 @@
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_difficulty_very_easy"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/very_easy" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_difficulty_easy"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/easy" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_difficulty_medium"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/medium" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_difficulty_hard"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/hard" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_difficulty_expert"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/expert" />
 
             <com.google.android.material.textview.MaterialTextView
@@ -86,17 +102,23 @@
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_normal"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/normal_sudokus" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_daily"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/daily_sudokus" />
 
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/checkbox_statistics_filter_level"
-                style="@style/StatisticCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
                 android:text="@string/sudoku_level" />
 
             <View
