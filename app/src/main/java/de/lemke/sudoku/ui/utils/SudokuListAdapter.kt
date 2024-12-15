@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import de.lemke.commonutils.widget.ItemDecorationViewHolder
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.formatFull
@@ -143,8 +142,7 @@ class SudokuListAdapter(
         }
     }
 
-    inner class ViewHolder(itemView: View, override val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView),
-        ItemDecorationViewHolder {
+    inner class ViewHolder(itemView: View, val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
         var textView: TextView
         var selectableLayout: SelectableLinearLayout? = null
         private var textViewSmall: TextView? = null

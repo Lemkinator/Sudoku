@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.skydoves.transformationlayout.TransformationCompat
 import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.widget.ItemDecoration
 import de.lemke.sudoku.databinding.FragmentTabLevelBinding
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
@@ -26,7 +25,10 @@ import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.SemItemDecoration
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -94,7 +96,10 @@ class SudokuLevelTab(private val size: Int) : Fragment() {
                 sudokuListAdapter = it
             }
             itemAnimator = null
-            addItemDecoration(ItemDecoration(context))
+            addItemDecoration(
+                SemItemDecoration(context, dividerRule = ItemDecorRule.ALL, subHeaderRule = ItemDecorRule.NONE)
+                    .apply { setDividerInsetStart(64.dpToPx(resources)) }
+            )
             enableCoreSeslFeatures()
         }
     }

@@ -14,7 +14,6 @@ import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.widget.InfoBottomSheet
-import de.lemke.commonutils.widget.ItemDecoration
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
 import de.lemke.sudoku.domain.*
@@ -23,7 +22,10 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.SemItemDecoration
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -80,7 +82,17 @@ class DailySudokuActivity : TransformationAppCompatActivity() {
                 sudokuListAdapter = it
             }
             itemAnimator = null
-            addItemDecoration(ItemDecoration(context))
+            addItemDecoration(
+                SemItemDecoration(
+                    context,
+                    dividerRule = ItemDecorRule.SELECTED {
+                        it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
+                    },
+                    subHeaderRule = ItemDecorRule.SELECTED {
+                        it.itemViewType == SudokuListItem.SeparatorItem.VIEW_TYPE
+                    }
+                ).apply { setDividerInsetStart(64.dpToPx(resources)) }
+            )
             enableCoreSeslFeatures()
         }
     }

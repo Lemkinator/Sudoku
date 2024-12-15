@@ -13,8 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.widget.ItemDecoration
-import de.lemke.commonutils.widget.ItemDecorationViewHolder
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
@@ -22,6 +20,8 @@ import de.lemke.sudoku.domain.ObserveStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -51,7 +51,15 @@ class MainActivityTabStatistics : Fragment() {
             layoutManager = LinearLayoutManager(context)
             adapter = StatisticsListAdapter()
             itemAnimator = null
-            addItemDecoration(ItemDecoration(requireContext()))
+            addItemDecoration(
+                SemItemDecoration(context,
+                    dividerRule = ItemDecorRule.SELECTED {
+                        it.itemViewType == 0
+                    },
+                    subHeaderRule = ItemDecorRule.SELECTED {
+                        it.itemViewType == 1
+                    })
+            )
             enableCoreSeslFeatures()
         }
         lifecycleScope.launch {
@@ -155,8 +163,7 @@ class MainActivityTabStatistics : Fragment() {
             }
         }
 
-        inner class ViewHolder internal constructor(itemView: View, override var isSeparator: Boolean) :
-            RecyclerView.ViewHolder(itemView), ItemDecorationViewHolder {
+        inner class ViewHolder internal constructor(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
             var textView: TextView
             lateinit var textViewValue: TextView
 

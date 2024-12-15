@@ -25,7 +25,6 @@ import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
 import de.lemke.sudoku.ui.SudokuActivity
-import de.lemke.commonutils.widget.ItemDecoration
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListItem
@@ -33,9 +32,12 @@ import dev.oneuiproject.oneui.delegates.AllSelectorState
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.startActionMode
+import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -110,7 +112,15 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 sudokuListAdapter = it
             }
             itemAnimator = null
-            addItemDecoration(ItemDecoration(context))
+            addItemDecoration(SemItemDecoration(
+                context,
+                dividerRule = ItemDecorRule.SELECTED {
+                    it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
+                },
+                subHeaderRule = ItemDecorRule.SELECTED {
+                    it.itemViewType == SudokuListItem.SeparatorItem.VIEW_TYPE
+                }
+            ).apply { setDividerInsetStart(64.dpToPx(resources)) })
             enableCoreSeslFeatures()
         }
 
