@@ -5,7 +5,7 @@
     <AppMetaData
         Name="Sudoku"
         TargetApi="21"
-        TargetPackageName="de.lemke.sudoku.debug"
+        TargetPackageName="de.lemke.sudoku"
         VersionCode="1"
         VersionName="">
         <Include RefName="SESL" />
