@@ -23,8 +23,8 @@ import de.lemke.sudoku.domain.openURL
 import de.lemke.sudoku.domain.sendEmailAboutMe
 import dev.oneuiproject.oneui.ktx.isInMultiWindowModeCompat
 import dev.oneuiproject.oneui.ktx.semSetToolTipText
-import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils.updateAdaptiveSideMargins
-import dev.oneuiproject.oneui.utils.internal.ToolbarLayoutUtils.updateStatusBarVisibility
+import dev.oneuiproject.oneui.layout.internal.util.ToolbarLayoutUtils.updateAdaptiveSideMargins
+import dev.oneuiproject.oneui.layout.internal.util.ToolbarLayoutUtils.updateStatusBarVisibility
 import kotlin.math.abs
 
 @AndroidEntryPoint

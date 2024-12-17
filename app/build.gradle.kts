@@ -94,10 +94,10 @@ dependencies {
     implementation("sesl.androidx.picker:picker-basic:1.0.17+1.0.17-sesl6+rev2")
     //SESL6(OneUI 6) Material Components + Design Lib + Icons
     implementation("sesl.com.google.android.material:material:1.12.0+1.0.23-sesl6+rev2")
-    implementation("io.github.tribalfs:oneui-design:0.3.3+oneui6")
+    implementation("io.github.tribalfs:oneui-design:0.3.4+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
-    implementation("io.github.lemkinator:common-utils:0.3.8")
+    implementation("io.github.lemkinator:common-utils:0.4.4")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
     //noinspection GradleDependency
