@@ -99,7 +99,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     override fun onSaveInstanceState(outState: Bundle) {
         outState.saveSearchAndActionMode(
             isActionMode = drawerLayout.isActionMode,
-            selectedIds = sudokuListAdapter.getSelectedIds().asSet().toLongArray()
+            selectedIds = sudokuListAdapter.getSelectedIds()
         )
         super.onSaveInstanceState(outState)
     }
