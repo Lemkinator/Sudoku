@@ -17,8 +17,6 @@ import com.airbnb.lottie.value.LottieValueCallback
 import com.skydoves.transformationlayout.TransformationCompat
 import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.restoreSearchAndActionMode
-import de.lemke.commonutils.saveSearchAndActionMode
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
@@ -91,17 +89,6 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 }
             }
         }
-        savedInstanceState?.restoreSearchAndActionMode(
-            onActionMode = { launchActionMode(it) },
-        )
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.saveSearchAndActionMode(
-            isActionMode = drawerLayout.isActionMode,
-            selectedIds = sudokuListAdapter.getSelectedIds()
-        )
-        super.onSaveInstanceState(outState)
     }
 
     private fun initRecycler() {
