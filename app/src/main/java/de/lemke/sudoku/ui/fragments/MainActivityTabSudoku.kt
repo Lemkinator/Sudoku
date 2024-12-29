@@ -23,6 +23,7 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -66,7 +67,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
         binding.sizeSeekbar.setSeamless(true)
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
-        binding.newGameButton.setOnClickListener {
+        binding.newGameButton.onSingleClick {
             loadingDialog.show()
             lifecycleScope.launch {
                 val sudoku = generateSudoku(binding.sizeSeekbar.size, Difficulty.fromInt(binding.difficultySeekbar.progress))
@@ -78,7 +79,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
                 loadingDialog.dismiss()
             }
         }
-        binding.dailyButton.setOnClickListener {
+        binding.dailyButton.onSingleClick {
             //TransformationCompat.startActivity(binding.dailyTransformationLayout, Intent(activity, DailySudokuActivity::class.java))
             //cant use bc transitionNames should be unique within the view hierarchy.
             val bundle = binding.dailyTransformationLayout.withActivity(requireActivity(), "DailySudokuActivityTransition")
@@ -86,7 +87,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
             intent.putExtra("com.skydoves.transformationlayout", binding.dailyTransformationLayout.getParcelableParams())
             startActivity(intent, bundle)
         }
-        binding.levelsButton.setOnClickListener {
+        binding.levelsButton.onSingleClick {
             //TransformationCompat.startActivity(binding.levelsTransformationLayout, Intent(activity, SudokuLevelActivity::class.java))
             //cant use bc transitionNames should be unique within the view hierarchy.
             val bundle = binding.levelsTransformationLayout.withActivity(requireActivity(), "SudokuLevelActivityTransition")
@@ -126,7 +127,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
                     sudoku.sizeString,
                     sudoku.difficulty.getLocalString(resources)
                 )
-                binding.continueGameButton.setOnClickListener {
+                binding.continueGameButton.onSingleClick {
                     TransformationCompat.startActivity(
                         binding.continueTransformationLayout,
                         Intent(activity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)

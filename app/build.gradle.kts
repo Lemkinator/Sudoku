@@ -94,7 +94,7 @@ dependencies {
     implementation("sesl.androidx.picker:picker-basic:1.0.17+1.0.17-sesl6+rev2")
     //SESL6(OneUI 6) Material Components + Design Lib + Icons
     implementation("sesl.com.google.android.material:material:1.12.0+1.0.23-sesl6+rev2")
-    implementation("io.github.tribalfs:oneui-design:0.3.4+oneui6")
+    implementation("io.github.tribalfs:oneui-design:0.3.6+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
     implementation("io.github.lemkinator:common-utils:0.5.7")
@@ -118,8 +118,8 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
-    implementation("com.google.dagger:hilt-android:2.53.1")
-    ksp("com.google.dagger:hilt-compiler:2.53.1")
+    implementation("com.google.dagger:hilt-android:2.54")
+    ksp("com.google.dagger:hilt-compiler:2.54")
 }
 
 configurations.implementation {

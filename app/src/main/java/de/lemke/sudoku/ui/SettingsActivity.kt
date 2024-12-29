@@ -31,14 +31,16 @@ import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.openApp
 import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.shareApp
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.*
+import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
-import dev.oneuiproject.oneui.preference.internal.PreferenceRelatedCard
 import dev.oneuiproject.oneui.utils.DialogUtils
-import dev.oneuiproject.oneui.utils.PreferenceUtils
+import dev.oneuiproject.oneui.widget.RelativeLink
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -71,10 +73,6 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var animationsPref: SwitchPreferenceCompat
         private lateinit var dailySudokuNotificationPref: SeslSwitchPreferenceScreen
         private lateinit var errorLimitPref: DropDownPreference
-
-        //private var tipCard: TipsCardViewPreference? = null
-        //private var tipCardSpacing: PreferenceCategory? = null
-        private var relatedCard: PreferenceRelatedCard? = null
 
         @Inject
         lateinit var observeUserSettings: ObserveUserSettingsUseCase
@@ -258,14 +256,16 @@ class SettingsActivity : AppCompatActivity() {
                 findPreference<Preference>("about_app_pref")?.widgetLayoutResource =
                     if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) R.layout.sesl_preference_badge else 0
             }
-
-            setRelatedCardView()
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
             requireView().setBackgroundColor(
                 resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_background_color, settingsActivity.theme)
+            )
+            addRelativeLinksCard(
+                RelativeLink(getString(de.lemke.commonutils.R.string.share_app)) { shareApp() },
+                RelativeLink(getString(de.lemke.commonutils.R.string.rate_app)) { openApp(settingsActivity.packageName, false) }
             )
         }
 
@@ -365,13 +365,6 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             return false
-        }
-
-        private fun setRelatedCardView() {
-            if (relatedCard == null) {
-                relatedCard = PreferenceUtils.createRelatedCard(requireContext())
-                relatedCard?.addButton(getString(R.string.about_me)) { startActivity(Intent(settingsActivity, AboutMeActivity::class.java)) }?.show(this)
-            }
         }
 
         private val requestPermissionLauncher =

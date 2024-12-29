@@ -190,7 +190,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 }
             },
             onSelectAll = { isChecked: Boolean -> sudokuListAdapter.onToggleSelectAll(isChecked) },
-            allSelectorStateFlow = allSelectorStateFlow,
+            allSelectorStateFlow = allSelectorStateFlow
         )
     }
 }

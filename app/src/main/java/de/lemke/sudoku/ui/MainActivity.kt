@@ -49,6 +49,7 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.ktx.dpToPx
+import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.Badge
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.CoroutineScope
@@ -221,27 +222,27 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             add(findViewById(R.id.drawerItemSettingsTitle))
         }
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
-        findViewById<LinearLayout>(R.id.drawerItemAchievements).setOnClickListener {
+        findViewById<LinearLayout>(R.id.drawerItemAchievements).onSingleClick {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
                 if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openAchievements()
                 else signInPlayGames(gamesSignInClient) { openAchievements() }
             }
         }
-        findViewById<LinearLayout>(R.id.drawerItemLeaderboards).setOnClickListener {
+        findViewById<LinearLayout>(R.id.drawerItemLeaderboards).onSingleClick {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
                 if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openLeaderboards()
                 else signInPlayGames(gamesSignInClient) { openLeaderboards() }
             }
         }
-        findViewById<LinearLayout>(R.id.drawerItemAboutApp).setOnClickListener {
+        findViewById<LinearLayout>(R.id.drawerItemAboutApp).onSingleClick {
             startActivity(Intent(this, AboutActivity::class.java))
             closeDrawerAfterDelay()
         }
-        findViewById<LinearLayout>(R.id.drawerItemAboutMe).setOnClickListener {
+        findViewById<LinearLayout>(R.id.drawerItemAboutMe).onSingleClick {
             startActivity(Intent(this, AboutMeActivity::class.java))
             closeDrawerAfterDelay()
         }
-        findViewById<LinearLayout>(R.id.drawerItemSettings).setOnClickListener {
+        findViewById<LinearLayout>(R.id.drawerItemSettings).onSingleClick {
             startActivity(Intent(this, SettingsActivity::class.java))
             closeDrawerAfterDelay()
         }
