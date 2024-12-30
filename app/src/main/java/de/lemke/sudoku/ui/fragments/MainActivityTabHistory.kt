@@ -14,6 +14,7 @@ import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.SimpleColorFilter
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
+import com.google.android.material.tabs.TabLayout
 import com.skydoves.transformationlayout.TransformationCompat
 import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,7 +37,6 @@ import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.startActionMode
 import dev.oneuiproject.oneui.utils.ItemDecorRule
 import dev.oneuiproject.oneui.utils.SemItemDecoration
-import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -47,7 +47,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     private lateinit var binding: FragmentTabHistoryBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var drawerLayout: DrawerLayout
-    private lateinit var mainTabs: MarginsTabLayout
+    private lateinit var mainTabs: TabLayout
     private var sudokuHistory: List<SudokuListItem> = emptyList()
     private val allSelectorStateFlow: MutableStateFlow<AllSelectorState> = MutableStateFlow(AllSelectorState())
 
@@ -70,7 +70,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         drawerLayout = activity.findViewById(R.id.drawerLayout)
-        mainTabs = activity.findViewById(R.id.mainMarginsTabLayout)
+        mainTabs = activity.findViewById(R.id.mainTabLayout)
         binding.historyNoEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
         lifecycleScope.launch {

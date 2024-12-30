@@ -16,8 +16,8 @@
         android:layout_height="match_parent"
         app:layout_location="main_content" />
 
-    <dev.oneuiproject.oneui.widget.MarginsTabLayout
-        android:id="@+id/mainMarginsTabLayout"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/mainTabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_location="footer" />

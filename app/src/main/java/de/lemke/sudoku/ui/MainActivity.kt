@@ -365,11 +365,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun initTabs() {
-        binding.mainMarginsTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
-        binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.history)))
-        binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.app_name)))
-        binding.mainMarginsTabLayout.addTab(binding.mainMarginsTabLayout.newTab().setText(getString(R.string.statistics)))
-        binding.mainMarginsTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
+        binding.mainTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
+        binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.history)))
+        binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.app_name)))
+        binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.statistics)))
+        binding.mainTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 onTabItemSelected(tab.position, tab)
             }
@@ -420,7 +420,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             }
             transaction.show(newFragment).commitAllowingStateLoss()
             supportFragmentManager.executePendingTransactions()
-            val newTab = tab ?: binding.mainMarginsTabLayout.getTabAt(position)
+            val newTab = tab ?: binding.mainTabLayout.getTabAt(position)
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
