@@ -18,8 +18,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 35
-        versionCode = 43
-        versionName = "3.2.5"
+        versionCode = 44
+        versionName = "3.3.1"
         resourceConfigurations += listOf("en", "de", "es", "es-rES")
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
