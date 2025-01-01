@@ -33,6 +33,7 @@ import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.skydoves.transformationlayout.TransformationCompat
+import com.skydoves.transformationlayout.TransformationLayout
 import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -164,15 +165,14 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             //manually waiting for the animation to finish :/
             delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
             isUIReady = true
-            checkImportedSudoku()
+            checkImportedSudokuOrNotificationClicked()
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             updatePlayGames(this@MainActivity)
         }
         NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
     }
 
-    private suspend fun checkImportedSudoku() {
-        val intent = intent
+    private suspend fun checkImportedSudokuOrNotificationClicked() {
         if (intent != null && intent.data != null) {
             val dialog = ProgressDialog(this)
             dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
@@ -188,6 +188,16 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 Toast.makeText(this@MainActivity, getString(R.string.error_import_failed), Toast.LENGTH_LONG).show()
             }
             dialog.dismiss()
+        }
+        if (intent.getBooleanExtra("openDailySudoku", false)) {
+            val dailyTransformationLayout = findViewById<TransformationLayout>(R.id.dailyTransformationLayout)
+            //TransformationCompat.startActivity(binding.dailyTransformationLayout, Intent(activity, DailySudokuActivity::class.java))
+            //cant use bc transitionNames should be unique within the view hierarchy.
+            val bundle = dailyTransformationLayout.withActivity(this, "DailySudokuActivityTransition")
+            val intent = Intent(this, DailySudokuActivity::class.java)
+                .putExtra("com.skydoves.transformationlayout", dailyTransformationLayout.getParcelableParams())
+                .putExtra("openDailySudoku", true)
+            startActivity(intent, bundle)
         }
     }
 

@@ -14,7 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.TaskStackBuilder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.R
-import de.lemke.sudoku.ui.DailySudokuActivity
+import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.utils.AlarmReceiver
 import java.util.*
 import javax.inject.Inject
@@ -49,7 +49,7 @@ class SendDailyNotificationUseCase @Inject constructor(
     private fun createNotificationBuilder(): NotificationCompat.Builder {
         // Create an explicit intent for an Activity in your app
         // Create an Intent for the activity you want to start
-        val resultIntent = Intent(context, DailySudokuActivity::class.java)
+        val resultIntent = Intent(context, MainActivity::class.java).putExtra("openDailySudoku", true)
         // Create the TaskStackBuilder
         val resultPendingIntent: PendingIntent? = TaskStackBuilder.create(context).run {
             // Add the intent, which inflates the back stack
