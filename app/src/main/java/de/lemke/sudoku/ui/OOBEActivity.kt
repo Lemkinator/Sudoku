@@ -28,7 +28,7 @@ import de.lemke.sudoku.databinding.ActivityOobeBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import dev.oneuiproject.oneui.utils.DialogUtils
+import dev.oneuiproject.oneui.R as designR
 import dev.oneuiproject.oneui.widget.OnboardingTipsItemView
 import kotlinx.coroutines.launch
 import java.util.*
@@ -61,9 +61,9 @@ class OOBEActivity : AppCompatActivity() {
 
     private fun initTipsItems() {
         val tipsData = listOf(
-            Triple(R.string.oobe_onboard_msg1_title, R.string.oobe_onboard_msg1_summary, dev.oneuiproject.oneui.R.drawable.ic_oui_palette),
-            Triple(R.string.oobe_onboard_msg2_title, R.string.oobe_onboard_msg2_summary, dev.oneuiproject.oneui.R.drawable.ic_oui_credit_card_outline),
-            Triple(R.string.oobe_onboard_msg3_title, R.string.oobe_onboard_msg3_summary, dev.oneuiproject.oneui.R.drawable.ic_oui_decline)
+            Triple(R.string.oobe_onboard_msg1_title, R.string.oobe_onboard_msg1_summary, designR.drawable.ic_oui_palette),
+            Triple(R.string.oobe_onboard_msg2_title, R.string.oobe_onboard_msg2_summary, designR.drawable.ic_oui_credit_card_outline),
+            Triple(R.string.oobe_onboard_msg3_title, R.string.oobe_onboard_msg3_summary, designR.drawable.ic_oui_decline)
         )
         val defaultLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         tipsData.forEach { (titleRes, summaryRes, iconRes) ->
@@ -163,11 +163,8 @@ class OOBEActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         dialog.show()
-        DialogUtils.setDialogButtonTextColor(
-            dialog,
-            DialogInterface.BUTTON_NEGATIVE,
-            getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color)
-        )
+        dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
+            .setTextColor(getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color))
     }
 
 

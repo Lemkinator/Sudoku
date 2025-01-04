@@ -38,8 +38,8 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.*
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
+import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
-import dev.oneuiproject.oneui.utils.DialogUtils
 import dev.oneuiproject.oneui.widget.RelativeLink
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -221,16 +221,14 @@ class SettingsActivity : AppCompatActivity() {
                     .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
                     .create()
                 dialog.show()
-                DialogUtils.setDialogButtonTextColor(
-                    dialog,
-                    DialogInterface.BUTTON_POSITIVE,
-                    resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color, context?.theme)
-                )
-                DialogUtils.setDialogProgressForButton(dialog, DialogInterface.BUTTON_POSITIVE) {
-                    lifecycleScope.launch {
-                        deleteInvalidSudokus()
-                        delay(500)
-                        dialog.dismiss()
+                dialog.getButton(DialogInterface.BUTTON_POSITIVE).apply {
+                    setTextColor(requireContext().getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color))
+                    setOnClickListenerWithProgress { button, progressBar ->
+                        lifecycleScope.launch {
+                            deleteInvalidSudokus()
+                            delay(500)
+                            dialog.dismiss()
+                        }
                     }
                 }
                 true

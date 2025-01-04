@@ -29,7 +29,7 @@ import de.lemke.sudoku.domain.*
 import de.lemke.sudoku.domain.model.*
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.utils.DialogUtils
+import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -273,8 +273,9 @@ class SudokuActivity : TransformationAppCompatActivity() {
         val dialog = AlertDialog.Builder(this@SudokuActivity)
             .setTitle(R.string.completed_title)
             .setMessage(sudoku.getLocalStatisticsString(resources))
-        dialog.setNeutralButton(de.lemke.commonutils.R.string.ok, null)
+            .setNeutralButton(de.lemke.commonutils.R.string.ok, null)
         lifecycleScope.launch {
+            saveSudoku(sudoku)
             if (sudoku.isSudokuLevel && getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
                 lifecycleScope.launch {
                     loadingDialog.show()
@@ -298,7 +299,6 @@ class SudokuActivity : TransformationAppCompatActivity() {
             } catch (e: Exception) {
                 Log.e("InAppReview", "Error: ${e.message}")
             }
-            saveSudoku(sudoku)
         }
     }
 
@@ -625,7 +625,7 @@ class SudokuActivity : TransformationAppCompatActivity() {
             .create()
         dialog.show()
         dialog.findViewById<TextView>(R.id.share_statistics)?.text = sudoku.getLocalStatisticsString(resources)
-        DialogUtils.setDialogProgressForButton(dialog, DialogInterface.BUTTON_POSITIVE) {
+        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListenerWithProgress { button, progressBar ->
             lifecycleScope.launch {
                 when (dialog.findViewById<RadioGroup>(R.id.share_radio_group)?.checkedRadioButtonId) {
                     R.id.radio_button_text -> shareStats()
