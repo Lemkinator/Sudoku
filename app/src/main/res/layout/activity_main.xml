@@ -21,7 +21,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:applySideMargin="true"
-        app:layout_location="footer" />
+        app:layout_location="footer" >
+
+    <com.google.android.material.tabs.TabItem
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/history"/>
+
+    <com.google.android.material.tabs.TabItem
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"/>
+
+    <com.google.android.material.tabs.TabItem
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/statistics"/>
+
+    </dev.oneuiproject.oneui.widget.MarginsTabLayout>
 
     <include layout="@layout/content_drawer" />
 

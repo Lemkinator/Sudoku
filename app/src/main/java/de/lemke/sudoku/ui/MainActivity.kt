@@ -375,26 +375,21 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun initTabs() {
-        binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.history)))
-        binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.app_name)))
-        binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.statistics)))
         binding.mainTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                onTabItemSelected(tab.position, tab)
-            }
-
+            override fun onTabSelected(tab: TabLayout.Tab) = onTabItemSelected(tab.position, tab)
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
                 try {
-                    when (tab.text) {
-                        getString(R.string.app_name) -> binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
-                        getString(R.string.history) -> {
+                    when (tab.position) {
+                        0 -> {
                             val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuHistoryList)
                             if (historyRecyclerView.canScrollVertically(-1)) historyRecyclerView.smoothScrollToPosition(0)
                             else binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
                         }
 
-                        getString(R.string.statistics) -> {
+                        1 -> binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
+
+                        2 -> {
                             val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
                             if (binding.drawerLayout.isExpanded) binding.drawerLayout.setExpanded(false, true)
                             else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
