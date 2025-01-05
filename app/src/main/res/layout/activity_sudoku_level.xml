@@ -14,10 +14,12 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <com.google.android.material.tabs.TabLayout
+        <dev.oneuiproject.oneui.widget.MarginsTabLayout
             android:id="@+id/fragmentLevelSubTabs"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            app:applySideMargin="true"
+            app:seslDepthStyle="sesl_sub" />
 
         <dev.oneuiproject.oneui.widget.RoundedFrameLayout
             android:layout_width="match_parent"

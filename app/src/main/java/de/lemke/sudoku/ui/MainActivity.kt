@@ -375,7 +375,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun initTabs() {
-        binding.mainTabLayout.tabMode = TabLayout.SESL_MODE_FIXED_AUTO
         binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.history)))
         binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.app_name)))
         binding.mainTabLayout.addTab(binding.mainTabLayout.newTab().setText(getString(R.string.statistics)))

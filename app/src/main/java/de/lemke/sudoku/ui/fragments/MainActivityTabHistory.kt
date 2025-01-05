@@ -14,7 +14,7 @@ import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.SimpleColorFilter
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
-import com.google.android.material.tabs.TabLayout
+import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import com.skydoves.transformationlayout.TransformationCompat
 import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -47,7 +47,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     private lateinit var binding: FragmentTabHistoryBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var drawerLayout: DrawerLayout
-    private lateinit var mainTabs: TabLayout
+    private lateinit var mainTabs: MarginsTabLayout
     private var sudokuHistory: List<SudokuListItem> = emptyList()
     private val allSelectorStateFlow: MutableStateFlow<AllSelectorState> = MutableStateFlow(AllSelectorState())
 

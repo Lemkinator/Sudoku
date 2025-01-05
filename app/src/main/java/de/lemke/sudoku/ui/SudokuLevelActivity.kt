@@ -6,7 +6,6 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.skydoves.transformationlayout.TransformationAppCompatActivity
 import com.skydoves.transformationlayout.onTransformationStartContainer
@@ -36,8 +35,6 @@ class SudokuLevelActivity : TransformationAppCompatActivity() {
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackPressAnimation(binding.root)
-        binding.fragmentLevelSubTabs.seslSetSubTabStyle()
-        binding.fragmentLevelSubTabs.tabMode = TabLayout.SESL_MODE_WEIGHT_AUTO
         binding.viewPagerLevel.adapter = ViewPager2AdapterTabLevelSubtabs(this)
         TabLayoutMediator(binding.fragmentLevelSubTabs, binding.viewPagerLevel) { tab, position ->
             tab.text = arrayOf(getString(R.string.size4), getString(R.string.size9), getString(R.string.size16))[position]
