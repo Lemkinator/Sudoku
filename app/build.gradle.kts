@@ -20,12 +20,14 @@ android {
         targetSdk = 35
         versionCode = 45
         versionName = "3.3.2"
-        resourceConfigurations += listOf("en", "de", "es", "es-rES")
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
             arg("room.generateKotlin", "true")
         }
     }
+
+    @Suppress("UnstableApiUsage")
+    androidResources.localeFilters += listOf("en", "de", "es", "es-rES")
 
     signingConfigs {
         create("release") {
@@ -118,8 +120,8 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
-    implementation("com.google.dagger:hilt-android:2.54")
-    ksp("com.google.dagger:hilt-compiler:2.54")
+    implementation("com.google.dagger:hilt-android:2.55")
+    ksp("com.google.dagger:hilt-compiler:2.55")
 }
 
 configurations.implementation {
