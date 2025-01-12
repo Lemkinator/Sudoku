@@ -318,7 +318,7 @@ class Sudoku(
         get(position).notes.clear()
         gameListener?.onFieldChanged(position)
         getNeighbors(position).forEach {
-            if (it.notes.remove(value)) gameListener?.onFieldChanged(it.position)
+            if (it.removeNote(value)) gameListener?.onFieldChanged(it.position)
         }
     }
 
@@ -413,6 +413,20 @@ interface GameListener {
     fun onCompleted(position: Position)
     fun onError()
     fun onTimeChanged()
+}
+
+fun Int?.toSudokuString(): CharSequence? = when (this) {
+    null -> null
+    in 1..9 -> this.toString()
+    in 10..16 -> ('A' + (this - 10)).toString()
+    else -> null
+}
+
+fun Int?.toSudokuChar(): Char? = when (this) {
+    null -> null
+    in 1..9 -> '0' + this
+    in 10..16 -> 'A' + (this - 10)
+    else -> null
 }
 
 val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))

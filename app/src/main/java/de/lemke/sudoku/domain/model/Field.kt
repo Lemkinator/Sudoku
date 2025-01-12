@@ -6,7 +6,7 @@ class Field(
     var value: Int? = null,
     var given: Boolean = false,
     var hint: Boolean = false,
-    val notes: MutableList<Int> = mutableListOf(),
+    val notes: MutableList<Char> = mutableListOf(),
 ) {
     val error: Boolean
         get() = value != null && value != solution
@@ -22,14 +22,17 @@ class Field(
         hint = false,
     )
 
-    fun toggleNote(note: Int): Boolean {
-        if (!notes.remove(note)) {
-            notes.add(note)
+    fun toggleNote(note: Int?): Boolean {
+        val noteChar = note.toSudokuChar() ?: return false
+        if (!notes.remove(noteChar)) {
+            notes.add(noteChar)
             notes.sort()
             return true
         }
         return false
     }
+
+    fun removeNote(note: Int?) = notes.remove(note.toSudokuChar())
 
     fun setHint() {
         hint = true
@@ -40,7 +43,7 @@ class Field(
         position: Position = this.position,
         solution: Int = this.solution,
         value: Int? = this.value,
-        notes: MutableList<Int> = this.notes.toMutableList(),
+        notes: MutableList<Char> = this.notes.toMutableList(),
         given: Boolean = this.given,
         hint: Boolean = this.hint,
     ): Field = Field(

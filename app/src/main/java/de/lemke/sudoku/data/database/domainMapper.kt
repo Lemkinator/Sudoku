@@ -56,7 +56,7 @@ fun fieldFromDb(fieldDb: FieldDb?): Field? =
         value = fieldDb.value,
         given = fieldDb.given,
         hint = fieldDb.hint,
-        notes = fieldDb.notes.map { it.digitToInt() }.toMutableList(),
+        notes = fieldDb.notes.toMutableList(),
     )
 
 fun fieldToDb(field: Field, sudokuId: SudokuId): FieldDb =
@@ -126,7 +126,7 @@ fun fieldFromExport(fieldExport: FieldExport, size: Int): Field? =
         solution = fieldExport.solution,
         given = fieldExport.given == true,
         hint = fieldExport.hint == true,
-        notes = fieldExport.notes?.map { it.digitToInt() }?.toMutableList() ?: mutableListOf(),
+        notes = fieldExport.notes?.toMutableList() ?: mutableListOf(),
     )
 
 fun fieldToExport(field: Field): FieldExport =

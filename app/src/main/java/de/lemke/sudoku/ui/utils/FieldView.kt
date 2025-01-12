@@ -14,7 +14,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import java.util.stream.Collectors
+import de.lemke.sudoku.domain.model.toSudokuString
 
 
 class FieldView(context: Context) : LinearLayout(context) {
@@ -97,7 +97,7 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     private fun updateNotes() {
         fieldViewNotes?.visibility = if (field.notes.isEmpty()) GONE else VISIBLE
-        fieldViewNotes?.text = field.notes.stream().map { it.toSudokuString() }.collect(Collectors.joining())
+        fieldViewNotes?.text = field.notes.joinToString("")
         if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1))
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
     }
@@ -115,16 +115,4 @@ class FieldView(context: Context) : LinearLayout(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, widthMeasureSpec)
     }
-}
-
-private fun Int?.toSudokuString(): CharSequence? = when (this) {
-    null -> null
-    10 -> "A"
-    11 -> "B"
-    12 -> "C"
-    13 -> "D"
-    14 -> "E"
-    15 -> "F"
-    16 -> "G"
-    else -> this.toString()
 }
