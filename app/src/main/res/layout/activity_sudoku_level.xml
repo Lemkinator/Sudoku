@@ -18,7 +18,8 @@
             android:id="@+id/fragmentLevelSubTabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:applySideMargin="true"
+            app:tabMode="sesl_weight_auto"
+            app:tabGravity="fill"
             app:seslDepthStyle="sesl_sub" />
 
         <dev.oneuiproject.oneui.widget.RoundedFrameLayout

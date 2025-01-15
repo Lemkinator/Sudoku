@@ -20,7 +20,8 @@
         android:id="@+id/mainTabLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:applySideMargin="true"
+        app:tabMode="sesl_weight_auto"
+        app:tabGravity="fill"
         app:layout_location="footer" >
 
     <com.google.android.material.tabs.TabItem

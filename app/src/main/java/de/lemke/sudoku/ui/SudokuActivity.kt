@@ -611,8 +611,8 @@ class SudokuActivity : TransformationAppCompatActivity() {
             errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
             else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
         } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""
-        binding.sudokuToolbarLayout.setExpandedSubtitle(subtitle)
-        binding.sudokuToolbarLayout.setCollapsedSubtitle(subtitle)
+        binding.sudokuToolbarLayout.expandedSubtitle = subtitle
+        binding.sudokuToolbarLayout.collapsedSubtitle = subtitle
     }
 
     private fun shareDialog() {
