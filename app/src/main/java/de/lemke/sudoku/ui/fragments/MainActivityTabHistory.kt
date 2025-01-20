@@ -14,7 +14,6 @@ import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.SimpleColorFilter
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
-import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import com.skydoves.transformationlayout.TransformationCompat
 import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,10 +32,12 @@ import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.ktx.setTabsEnabled
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.startActionMode
 import dev.oneuiproject.oneui.utils.ItemDecorRule
 import dev.oneuiproject.oneui.utils.SemItemDecoration
+import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -160,15 +161,13 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     }
 
     private fun launchActionMode(initialSelected: Array<Long>? = null) {
+        mainTabs.setTabsEnabled(false)
+        sudokuListAdapter.onToggleActionMode(true, initialSelected)
         drawerLayout.startActionMode(
-            onInflateMenu = { menu ->
-                mainTabs.isEnabled = false
-                sudokuListAdapter.onToggleActionMode(true, initialSelected)
-                requireActivity().menuInflater.inflate(R.menu.delete_menu, menu)
-            },
+            onInflateMenu = { menu, menuInflater -> menuInflater.inflate(R.menu.delete_menu, menu) },
             onEnd = {
                 sudokuListAdapter.onToggleActionMode(false)
-                mainTabs.isEnabled = true
+                mainTabs.setTabsEnabled(true)
             },
             onSelectMenuItem = {
                 when (it.itemId) {
