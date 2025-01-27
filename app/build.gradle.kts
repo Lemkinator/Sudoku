@@ -99,7 +99,7 @@ dependencies {
     implementation("io.github.tribalfs:oneui-design:0.5.0+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
-    implementation("io.github.lemkinator:common-utils:0.6.3")
+    implementation("io.github.lemkinator:common-utils:0.6.5")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
     //noinspection GradleDependency
