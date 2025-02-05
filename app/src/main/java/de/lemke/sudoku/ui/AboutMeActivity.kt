@@ -15,6 +15,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.AppBarLayout.OnOffsetChangedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.openApp
+import de.lemke.commonutils.prepareActivityTransformationTo
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.shareApp
 import de.lemke.sudoku.R
@@ -32,6 +33,7 @@ class AboutMeActivity : AppCompatActivity() {
     private val appBarListener: AboutAppBarListener = AboutAppBarListener()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        prepareActivityTransformationTo()
         super.onCreate(savedInstanceState)
         binding = ActivityAboutMeBinding.inflate(layoutInflater)
         setContentView(binding.root)

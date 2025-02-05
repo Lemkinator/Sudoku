@@ -3,16 +3,15 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.skydoves.transformationlayout.TransformationAppCompatActivity
-import com.skydoves.transformationlayout.TransformationCompat
-import com.skydoves.transformationlayout.TransformationLayout
-import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.prepareActivityTransformationBetween
 import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.transformToActivity
 import de.lemke.commonutils.widget.InfoBottomSheet
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
@@ -32,7 +31,7 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class DailySudokuActivity : TransformationAppCompatActivity() {
+class DailySudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDailySudokuBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private var dailySudokus: List<SudokuListItem> = emptyList()
@@ -51,7 +50,7 @@ class DailySudokuActivity : TransformationAppCompatActivity() {
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        onTransformationStartContainer()
+        prepareActivityTransformationBetween()
         super.onCreate(savedInstanceState)
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -100,8 +99,7 @@ class DailySudokuActivity : TransformationAppCompatActivity() {
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuListItem.SudokuItem) {
-                TransformationCompat.startActivity(
-                    viewHolder.itemView as TransformationLayout,
+                viewHolder.itemView.transformToActivity(
                     Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
                 )
             }
@@ -120,30 +118,32 @@ class DailySudokuActivity : TransformationAppCompatActivity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menuitem_daily_sudoku_info -> {
-                InfoBottomSheet.newInstance(
-                    title = getString(R.string.daily_sudoku),
-                    message = getString(R.string.daily_sudoku_info_message),
-                    textGravity = Gravity.START
-                ).show(supportFragmentManager, "daily_sudoku_info")
-            }
-
-            R.id.menuitem_show_all_sudokus -> {
-                lifecycleScope.launch {
-                    updateUserSettings { it.copy(dailyShowUncompleted = true) }
-                    invalidateOptionsMenu()
-                }
-            }
-
-            R.id.menuitem_show_only_completed_sudokus -> {
-                lifecycleScope.launch {
-                    updateUserSettings { it.copy(dailyShowUncompleted = false) }
-                    invalidateOptionsMenu()
-                }
-            }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.menuitem_daily_sudoku_info -> {
+            InfoBottomSheet.newInstance(
+                title = getString(R.string.daily_sudoku),
+                message = getString(R.string.daily_sudoku_info_message),
+                textGravity = Gravity.START
+            ).show(supportFragmentManager, "daily_sudoku_info")
+            true
         }
-        return super.onOptionsItemSelected(item)
+
+        R.id.menuitem_show_all_sudokus -> {
+            lifecycleScope.launch {
+                updateUserSettings { it.copy(dailyShowUncompleted = true) }
+                invalidateOptionsMenu()
+            }
+            true
+        }
+
+        R.id.menuitem_show_only_completed_sudokus -> {
+            lifecycleScope.launch {
+                updateUserSettings { it.copy(dailyShowUncompleted = false) }
+                invalidateOptionsMenu()
+            }
+            true
+        }
+
+        else -> super.onOptionsItemSelected(item)
     }
 }

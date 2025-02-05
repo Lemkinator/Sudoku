@@ -100,7 +100,7 @@ dependencies {
     implementation("io.github.tribalfs:oneui-design:0.5.3+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
-    implementation("io.github.lemkinator:common-utils:0.6.8")
+    implementation("io.github.lemkinator:common-utils:0.7.0")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
     //noinspection GradleDependency
@@ -113,7 +113,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-oss-licenses:17.1.0")
     implementation("com.google.android.play:review-ktx:2.0.2")
     implementation("com.google.android.play:app-update-ktx:2.1.0")
-    implementation("com.github.skydoves:transformationlayout:1.1.5")
 
     implementation("androidx.core:core-splashscreen:1.2.0-alpha02")
     //noinspection GradleDependency until https://issuetracker.google.com/u/0/issues/342671895 is fixed

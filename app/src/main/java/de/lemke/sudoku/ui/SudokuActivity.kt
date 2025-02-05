@@ -12,16 +12,19 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import com.google.android.play.core.review.ReviewManagerFactory
-import com.skydoves.transformationlayout.TransformationAppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.prepareActivityTransformationTo
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.toast
+import de.lemke.commonutils.transformTo
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
@@ -39,7 +42,7 @@ import javax.inject.Inject
 
 
 @AndroidEntryPoint
-class SudokuActivity : TransformationAppCompatActivity() {
+class SudokuActivity : AppCompatActivity() {
     companion object {
         const val KEY_SUDOKU_ID = "key_sudoku_id"
     }
@@ -85,6 +88,7 @@ class SudokuActivity : TransformationAppCompatActivity() {
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
+        prepareActivityTransformationTo()
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -204,7 +208,7 @@ class SudokuActivity : TransformationAppCompatActivity() {
 
     @Suppress("unused")
     fun resumeGame(view: View? = null) {
-        binding.gameTransformationLayout.finishTransform()
+        binding.resumeButton.transformTo(binding.gameLayout)
         if (sudoku.completed) {
             menuPausePlayVisible = false
             menuResetVisible = true
@@ -223,7 +227,7 @@ class SudokuActivity : TransformationAppCompatActivity() {
     private fun pauseGame() {
         sudoku.stopTimer()
         if (sudoku.completed) return
-        binding.gameTransformationLayout.startTransform()
+        if (binding.gameLayout.isVisible) binding.gameLayout.transformTo(binding.resumeButton)
         animateGameButtonsVisibility(false)
         menuResetVisible = false
         menuPausePlayVisible = true

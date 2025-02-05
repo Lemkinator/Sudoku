@@ -9,9 +9,9 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.skydoves.transformationlayout.TransformationCompat
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.setStyle
+import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.*
@@ -58,11 +58,10 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
     @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val activity = requireActivity()
         val loadingDialog = ProgressDialog(context)
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
-        binding.newSudokuLayout.translateYWithAppBar(activity.findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
+        binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
 
         binding.sizeSeekbar.setSeamless(true)
         binding.difficultySeekbar.setSeamless(true)
@@ -72,28 +71,23 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
             lifecycleScope.launch {
                 val sudoku = generateSudoku(binding.sizeSeekbar.size, Difficulty.fromInt(binding.difficultySeekbar.progress))
                 saveSudoku(sudoku)
-                TransformationCompat.startActivity(
-                    binding.newGameTransformationLayout,
-                    Intent(activity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+                binding.newGameButton.transformToActivity(
+                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
                 )
                 loadingDialog.dismiss()
             }
         }
         binding.dailyButton.onSingleClick {
-            //TransformationCompat.startActivity(binding.dailyTransformationLayout, Intent(activity, DailySudokuActivity::class.java))
-            //cant use bc transitionNames should be unique within the view hierarchy.
-            val bundle = binding.dailyTransformationLayout.withActivity(requireActivity(), "DailySudokuActivityTransition")
-            val intent = Intent(requireContext(), DailySudokuActivity::class.java)
-            intent.putExtra("com.skydoves.transformationlayout", binding.dailyTransformationLayout.getParcelableParams())
-            startActivity(intent, bundle)
+            binding.dailyButton.transformToActivity(
+                Intent(requireActivity(), DailySudokuActivity::class.java),
+                "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
+            )
         }
         binding.levelsButton.onSingleClick {
-            //TransformationCompat.startActivity(binding.levelsTransformationLayout, Intent(activity, SudokuLevelActivity::class.java))
-            //cant use bc transitionNames should be unique within the view hierarchy.
-            val bundle = binding.levelsTransformationLayout.withActivity(requireActivity(), "SudokuLevelActivityTransition")
-            val intent = Intent(requireContext(), SudokuLevelActivity::class.java)
-            intent.putExtra("com.skydoves.transformationlayout", binding.levelsTransformationLayout.getParcelableParams())
-            startActivity(intent, bundle)
+            binding.levelsButton.transformToActivity(
+                Intent(requireActivity(), SudokuLevelActivity::class.java),
+                "SudokuLevelActivityTransition" // transitionNames should be unique within the view hierarchy
+            )
         }
         lifecycleScope.launch {
             val userSettings = getUserSettings()
@@ -121,19 +115,18 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
         lifecycleScope.launch {
             val sudoku = getRecentSudoku()
             if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(getUserSettings().errorLimit)) {
-                binding.continueTransformationLayout.visibility = View.VISIBLE
+                binding.continueGameButton.visibility = View.VISIBLE
                 binding.continueGameButton.text = getString(
                     R.string.continue_game,
                     sudoku.sizeString,
                     sudoku.difficulty.getLocalString(resources)
                 )
                 binding.continueGameButton.onSingleClick {
-                    TransformationCompat.startActivity(
-                        binding.continueTransformationLayout,
-                        Intent(activity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+                    binding.continueGameButton.transformToActivity(
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
                     )
                 }
-            } else binding.continueTransformationLayout.visibility = View.GONE
+            } else binding.continueGameButton.visibility = View.GONE
             binding.dailyButton.setStyle(
                 if (isDailySudokuCompleted()) de.lemke.commonutils.R.style.ButtonStyle_Filled_Themed
                 else de.lemke.commonutils.R.style.ButtonStyle_Colored

@@ -9,9 +9,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.skydoves.transformationlayout.TransformationCompat
-import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.databinding.FragmentTabLevelBinding
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
@@ -110,12 +109,8 @@ class SudokuLevelTab(private val size: Int) : Fragment() {
                 progressDialog.show()
                 lifecycleScope.launch {
                     if (position == 0 && nextLevelSudoku != null) saveSudoku(sudokuListItem.sudoku)
-                    TransformationCompat.startActivity(
-                        viewHolder.itemView as TransformationLayout,
-                        Intent(requireContext(), SudokuActivity::class.java).putExtra(
-                            KEY_SUDOKU_ID,
-                            sudokuListItem.sudoku.id.value
-                        )
+                    viewHolder.itemView.transformToActivity(
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
                     )
                     progressDialog.dismiss()
                 }

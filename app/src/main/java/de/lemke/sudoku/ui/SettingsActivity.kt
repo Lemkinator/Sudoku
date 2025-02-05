@@ -32,6 +32,7 @@ import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.openApp
+import de.lemke.commonutils.prepareActivityTransformationTo
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.shareApp
 import de.lemke.sudoku.R
@@ -53,6 +54,7 @@ import javax.inject.Inject
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     override fun onCreate(savedInstanceState: Bundle?) {
+        prepareActivityTransformationTo()
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)

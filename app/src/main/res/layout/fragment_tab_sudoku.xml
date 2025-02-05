@@ -106,46 +106,28 @@
             android:baselineAligned="false"
             android:orientation="horizontal">
 
-            <com.skydoves.transformationlayout.TransformationLayout
-                android:id="@+id/newGameTransformationLayout"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/newGameButton"
+                style="@style/ButtonStyle.Filled.Themed"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginEnd="2dp"
                 android:layout_weight="1"
-                app:transformation_duration="400"
-                app:transformation_fadeMode="through">
+                android:drawableTop="@drawable/ic_oui_pen"
+                android:paddingVertical="10dp"
+                android:text="@string/new_game" />
 
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/newGameButton"
-                    style="@style/ButtonStyle.Filled.Themed"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:drawableTop="@drawable/ic_oui_pen"
-                    android:paddingVertical="10dp"
-                    android:text="@string/new_game" />
-
-            </com.skydoves.transformationlayout.TransformationLayout>
-
-            <com.skydoves.transformationlayout.TransformationLayout
-                android:id="@+id/continueTransformationLayout"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/continueGameButton"
+                style="@style/ButtonStyle.Colored"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="2dp"
                 android:layout_weight="1"
-                android:visibility="gone"
-                app:transformation_duration="400"
-                app:transformation_fadeMode="through">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/continueGameButton"
-                    style="@style/ButtonStyle.Colored"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:drawableTop="@drawable/ic_oui_control_play"
-                    android:paddingVertical="10dp"
-                    android:text="@string/continue_game" />
-
-            </com.skydoves.transformationlayout.TransformationLayout>
+                android:drawableTop="@drawable/ic_oui_control_play"
+                android:paddingVertical="10dp"
+                android:text="@string/continue_game"
+                android:visibility="gone" />
 
         </LinearLayout>
 
@@ -155,47 +137,29 @@
             android:baselineAligned="false"
             android:orientation="horizontal">
 
-            <com.skydoves.transformationlayout.TransformationLayout
-                android:id="@+id/levelsTransformationLayout"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/levelsButton"
+                style="@style/ButtonStyle.Filled.Themed"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginEnd="2dp"
                 android:layout_weight="1"
-                app:transformation_duration="400"
-                app:transformation_fadeMode="through">
+                android:drawableTop="@drawable/ic_oui_list"
+                android:paddingVertical="10dp"
+                android:text="@string/level"
+                tools:ignore="RtlHardcoded" />
 
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/levelsButton"
-                    style="@style/ButtonStyle.Filled.Themed"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:drawableTop="@drawable/ic_oui_list"
-                    android:paddingVertical="10dp"
-                    android:text="@string/level"
-                    tools:ignore="RtlHardcoded" />
-
-            </com.skydoves.transformationlayout.TransformationLayout>
-
-            <com.skydoves.transformationlayout.TransformationLayout
-                android:id="@+id/dailyTransformationLayout"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/dailyButton"
+                style="@style/ButtonStyle.Filled.Themed"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_marginStart="2dp"
                 android:layout_weight="1"
-                app:transformation_duration="400"
-                app:transformation_fadeMode="through">
-
-                <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/dailyButton"
-                    style="@style/ButtonStyle.Filled.Themed"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:drawableTop="@drawable/ic_oui_calendar_task"
-                    android:paddingVertical="10dp"
-                    android:text="@string/daily_sudoku"
-                    tools:ignore="RtlHardcoded" />
-
-            </com.skydoves.transformationlayout.TransformationLayout>
+                android:drawableTop="@drawable/ic_oui_calendar_task"
+                android:paddingVertical="10dp"
+                android:text="@string/daily_sudoku"
+                tools:ignore="RtlHardcoded" />
 
         </LinearLayout>
 

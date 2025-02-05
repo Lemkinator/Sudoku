@@ -7,9 +7,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
-import com.skydoves.transformationlayout.TransformationAppCompatActivity
-import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.prepareActivityTransformationBetween
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
@@ -20,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SudokuLevelActivity : TransformationAppCompatActivity() {
+class SudokuLevelActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuLevelBinding
 
     @Inject
@@ -30,7 +29,7 @@ class SudokuLevelActivity : TransformationAppCompatActivity() {
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        onTransformationStartContainer()
+        prepareActivityTransformationBetween()
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)

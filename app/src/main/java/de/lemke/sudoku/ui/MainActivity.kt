@@ -7,6 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.MarginLayoutParams
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -14,6 +15,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -32,10 +34,9 @@ import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
-import com.skydoves.transformationlayout.TransformationCompat
-import com.skydoves.transformationlayout.TransformationLayout
-import com.skydoves.transformationlayout.onTransformationStartContainer
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.prepareActivityTransformationFrom
+import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.domain.AppStart
@@ -92,8 +93,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        onTransformationStartContainer()
         time = System.currentTimeMillis()
+        prepareActivityTransformationFrom()
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= 34) {
             overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
@@ -180,24 +181,19 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             dialog.show()
             val sudoku = importSudoku(intent.data)
             if (sudoku != null) {
-                TransformationCompat.startActivity(
-                    findViewById(R.id.newGameTransformationLayout),
+                findViewById<AppCompatButton>(R.id.newGameButton).transformToActivity(
                     Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
                 )
             } else {
-                Toast.makeText(this@MainActivity, getString(R.string.error_import_failed), Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.error_import_failed), Toast.LENGTH_LONG).show()
             }
             dialog.dismiss()
         }
         if (intent.getBooleanExtra("openDailySudoku", false)) {
-            val dailyTransformationLayout = findViewById<TransformationLayout>(R.id.dailyTransformationLayout)
-            //TransformationCompat.startActivity(binding.dailyTransformationLayout, Intent(activity, DailySudokuActivity::class.java))
-            //cant use bc transitionNames should be unique within the view hierarchy.
-            val bundle = dailyTransformationLayout.withActivity(this, "DailySudokuActivityTransition")
-            val intent = Intent(this, DailySudokuActivity::class.java)
-                .putExtra("com.skydoves.transformationlayout", dailyTransformationLayout.getParcelableParams())
-                .putExtra("openDailySudoku", true)
-            startActivity(intent, bundle)
+            findViewById<AppCompatButton>(R.id.dailyButton).transformToActivity(
+                Intent(this, DailySudokuActivity::class.java).putExtra("openDailySudoku", true),
+                "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
+            )
         }
     }
 
@@ -244,23 +240,30 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 else signInPlayGames(gamesSignInClient) { openLeaderboards() }
             }
         }
-        findViewById<LinearLayout>(R.id.drawerItemAboutApp).onSingleClick {
-            startActivity(Intent(this, AboutActivity::class.java))
-            closeDrawerAfterDelay()
+        findViewById<LinearLayout>(R.id.drawerItemAboutApp).apply {
+            onSingleClick {
+                transformToActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                closeDrawerAfterDelay()
+            }
         }
-        findViewById<LinearLayout>(R.id.drawerItemAboutMe).onSingleClick {
-            startActivity(Intent(this, AboutMeActivity::class.java))
-            closeDrawerAfterDelay()
+        findViewById<LinearLayout>(R.id.drawerItemAboutMe).apply {
+            onSingleClick {
+                transformToActivity(Intent(this@MainActivity, AboutMeActivity::class.java))
+                closeDrawerAfterDelay()
+            }
         }
-        findViewById<LinearLayout>(R.id.drawerItemSettings).onSingleClick {
-            startActivity(Intent(this, SettingsActivity::class.java))
-            closeDrawerAfterDelay()
+        findViewById<LinearLayout>(R.id.drawerItemSettings).apply {
+            onSingleClick {
+                transformToActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                closeDrawerAfterDelay()
+            }
         }
         binding.drawerLayout.apply {
             setHeaderButtonIcon(AppCompatResources.getDrawable(this@MainActivity, dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
             setHeaderButtonTooltip(getString(R.string.about_app))
             setHeaderButtonOnClickListener {
-                startActivity(Intent(this@MainActivity, AboutActivity::class.java))
+                findViewById<ImageButton>(dev.oneuiproject.oneui.design.R.id.drawer_header_button)
+                    .transformToActivity(Intent(this@MainActivity, AboutActivity::class.java))
                 closeDrawerAfterDelay()
             }
             setNavRailContentMinSideMargin(14)

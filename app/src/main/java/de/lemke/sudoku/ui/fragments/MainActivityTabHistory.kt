@@ -14,9 +14,8 @@ import com.airbnb.lottie.LottieProperty
 import com.airbnb.lottie.SimpleColorFilter
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
-import com.skydoves.transformationlayout.TransformationCompat
-import com.skydoves.transformationlayout.TransformationLayout
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
@@ -144,12 +143,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             if (isActionMode) onToggleItem(sudokuListItem.stableId, position)
             else {
                 if (sudokuListItem is SudokuListItem.SudokuItem) {
-                    TransformationCompat.startActivity(
-                        viewHolder.itemView as TransformationLayout,
-                        Intent(context, SudokuActivity::class.java).putExtra(
-                            KEY_SUDOKU_ID,
-                            sudokuListItem.sudoku.id.value
-                        )
+                    viewHolder.itemView.transformToActivity(
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
                     )
                 }
             }
