@@ -62,6 +62,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.sequences.forEach
+import dev.oneuiproject.oneui.design.R as designR
 
 
 @AndroidEntryPoint
@@ -162,6 +163,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         initDrawer()
         initTabs()
         initFragments()
+        NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
         lifecycleScope.launch {
             //manually waiting for the animation to finish :/
             delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
@@ -170,7 +172,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             updatePlayGames(this@MainActivity)
         }
-        NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
     }
 
     private suspend fun checkImportedSudokuOrNotificationClicked() {
@@ -209,14 +210,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         else -> super.onOptionsItemSelected(item)
     }
 
-    fun closeDrawerAfterDelay() {
-        if (binding.drawerLayout.isLargeScreenMode) return
-        lifecycleScope.launch {
-            delay(500) //delay, so closing the drawer is not visible for the user
-            binding.drawerLayout.setDrawerOpen(false, false)
-        }
-    }
-
     private fun initDrawer() {
         drawerListView = findViewById(R.id.drawerListView)
         drawerItemTitles.apply {
@@ -240,68 +233,36 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 else signInPlayGames(gamesSignInClient) { openLeaderboards() }
             }
         }
-        findViewById<LinearLayout>(R.id.drawerItemAboutApp).apply {
-            onSingleClick {
-                transformToActivity(Intent(this@MainActivity, AboutActivity::class.java))
-                closeDrawerAfterDelay()
-            }
-        }
-        findViewById<LinearLayout>(R.id.drawerItemAboutMe).apply {
-            onSingleClick {
-                transformToActivity(Intent(this@MainActivity, AboutMeActivity::class.java))
-                closeDrawerAfterDelay()
-            }
-        }
-        findViewById<LinearLayout>(R.id.drawerItemSettings).apply {
-            onSingleClick {
-                transformToActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                closeDrawerAfterDelay()
-            }
-        }
+        findViewById<LinearLayout>(R.id.drawerItemAboutApp).apply { onSingleClick { transformToActivity(AboutActivity::class.java) } }
+        findViewById<LinearLayout>(R.id.drawerItemAboutMe).apply { onSingleClick { transformToActivity(AboutMeActivity::class.java) } }
+        findViewById<LinearLayout>(R.id.drawerItemSettings).apply { onSingleClick { transformToActivity(SettingsActivity::class.java) } }
         binding.drawerLayout.apply {
             setHeaderButtonIcon(AppCompatResources.getDrawable(this@MainActivity, dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
             setHeaderButtonTooltip(getString(R.string.about_app))
             setHeaderButtonOnClickListener {
-                findViewById<ImageButton>(dev.oneuiproject.oneui.design.R.id.drawer_header_button)
-                    .transformToActivity(Intent(this@MainActivity, AboutActivity::class.java))
-                closeDrawerAfterDelay()
+                findViewById<ImageButton>(designR.id.drawer_header_button).transformToActivity(AboutActivity::class.java)
             }
             setNavRailContentMinSideMargin(14)
             lockNavRailOnActionMode = true
             lockNavRailOnSearchMode = true
             closeNavRailOnBack = true
+
+            //setupNavRailFadeEffect
+            if (isLargeScreenMode) {
+                setDrawerStateListener {
+                    when (it) {
+                        DrawerLayout.DrawerState.OPEN -> offsetUpdaterJob?.cancel().also { updateOffset(1f) }
+                        DrawerLayout.DrawerState.CLOSE -> offsetUpdaterJob?.cancel().also { updateOffset(0f) }
+                        DrawerLayout.DrawerState.CLOSING, DrawerLayout.DrawerState.OPENING -> startOffsetUpdater()
+                    }
+                    //Set initial offset
+                    post { updateOffset(binding.drawerLayout.drawerOffset) }
+                }
+            }
         }
         AppUpdateManagerFactory.create(this).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
                 binding.drawerLayout.setButtonBadges(Badge.DOT, Badge.DOT)
-        }
-
-        //setupNavRailFadeEffect
-        binding.drawerLayout.apply {
-            if (!isLargeScreenMode) return
-            setDrawerStateListener {
-                when (it) {
-                    DrawerLayout.DrawerState.OPEN -> {
-                        offsetUpdaterJob?.cancel()
-                        updateOffset(1f)
-                    }
-
-                    DrawerLayout.DrawerState.CLOSE -> {
-                        offsetUpdaterJob?.cancel()
-                        updateOffset(0f)
-                    }
-
-                    DrawerLayout.DrawerState.CLOSING,
-                    DrawerLayout.DrawerState.OPENING -> {
-                        startOffsetUpdater()
-                    }
-                }
-            }
-        }
-
-        //Set initial offset
-        binding.drawerLayout.post {
-            updateOffset(binding.drawerLayout.drawerOffset)
         }
     }
 
@@ -320,18 +281,14 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     fun updateOffset(offset: Float) {
         drawerItemTitles.forEach { it.alpha = offset }
         drawerListView.children.forEach {
-            if (offset == 0f) {
-                it.post {
+            it.post {
+                if (offset == 0f) {
                     it.updateLayoutParams<MarginLayoutParams> {
                         width = if (it is LinearLayout) 52f.dpToPx(it.context.resources) //drawer item
                         else 25f.dpToPx(it.context.resources) //divider item
                     }
-                }
-            } else {
-                if (it.width != MATCH_PARENT) {
-                    it.updateLayoutParams<MarginLayoutParams> {
-                        width = MATCH_PARENT
-                    }
+                } else if (it.width != MATCH_PARENT) {
+                    it.updateLayoutParams<MarginLayoutParams> { width = MATCH_PARENT }
                 }
             }
         }
@@ -340,10 +297,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
         gamesSignInClient.signIn().addOnCompleteListener { signInTask: Task<AuthenticationResult> ->
             if (signInTask.isSuccessful && signInTask.result.isAuthenticated) onSuccess()
-            else {
-                closeDrawerAfterDelay()
-                Toast.makeText(this@MainActivity, getString(R.string.error_sign_in_failed), Toast.LENGTH_LONG).show()
-            }
+            else Toast.makeText(this@MainActivity, getString(R.string.error_sign_in_failed), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -353,11 +307,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             .addOnSuccessListener { intent ->
                 playGamesActivityResultLauncher.launch(
                     intent,
-                    ActivityOptionsCompat.makeCustomAnimation(
-                        this,
-                        android.R.anim.slide_in_left,
-                        android.R.anim.slide_out_right
-                    )
+                    ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                 )
             }
     }
@@ -368,11 +318,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             .addOnSuccessListener { intent ->
                 playGamesActivityResultLauncher.launch(
                     intent,
-                    ActivityOptionsCompat.makeCustomAnimation(
-                        this,
-                        android.R.anim.slide_in_left,
-                        android.R.anim.slide_out_right
-                    )
+                    ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                 )
             }
     }
@@ -405,9 +351,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         })
     }
 
-    private fun showStatisticsFilterDialog() {
-        FilterBottomSheet().show(supportFragmentManager, "StatisticsFilterDialog")
-    }
+    private fun showStatisticsFilterDialog() = FilterBottomSheet().show(supportFragmentManager, "StatisticsFilterDialog")
 
     private fun initFragments() {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
