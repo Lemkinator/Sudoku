@@ -1,7 +1,9 @@
 package de.lemke.sudoku.ui
 
+import android.R.anim.fade_in
+import android.R.anim.fade_out
 import android.content.Intent
-import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -97,9 +99,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         time = System.currentTimeMillis()
         prepareActivityTransformationFrom()
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= 34) {
-            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
-        }
+        if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         splashScreen.setKeepOnScreenCondition { !isUIReady }
@@ -147,9 +147,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         //manually waiting for the animation to finish :/
         delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
         startActivity(Intent(applicationContext, OOBEActivity::class.java))
-        if (Build.VERSION.SDK_INT < 34) {
+        if (SDK_INT < 34) {
             @Suppress("DEPRECATION")
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            overridePendingTransition(fade_in, fade_out)
         }
         finishAfterTransition()
     }

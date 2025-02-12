@@ -27,6 +27,7 @@ import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
 import androidx.preference.*
 import androidx.preference.Preference.OnPreferenceClickListener
+import com.google.android.gms.games.PlayGames
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.UpdateAvailability
@@ -264,7 +265,10 @@ class SettingsActivity : AppCompatActivity() {
                 resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_background_color, settingsActivity.theme)
             )
             addRelativeLinksCard(
-                RelativeLink(getString(de.lemke.commonutils.R.string.share_app)) { shareApp() },
+                RelativeLink(getString(de.lemke.commonutils.R.string.share_app)) {
+                    PlayGames.getAchievementsClient(settingsActivity).unlock(getString(R.string.achievement_share_app))
+                    shareApp()
+                },
                 RelativeLink(getString(de.lemke.commonutils.R.string.rate_app)) { openApp(settingsActivity.packageName, false) }
             )
         }
