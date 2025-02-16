@@ -243,8 +243,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 findViewById<ImageButton>(designR.id.drawer_header_button).transformToActivity(AboutActivity::class.java)
             }
             setNavRailContentMinSideMargin(14)
-            lockNavRailOnActionMode = true
-            lockNavRailOnSearchMode = true
             closeNavRailOnBack = true
 
             //setupNavRailFadeEffect
@@ -255,9 +253,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                         DrawerLayout.DrawerState.CLOSE -> offsetUpdaterJob?.cancel().also { updateOffset(0f) }
                         DrawerLayout.DrawerState.CLOSING, DrawerLayout.DrawerState.OPENING -> startOffsetUpdater()
                     }
-                    //Set initial offset
-                    post { updateOffset(binding.drawerLayout.drawerOffset) }
                 }
+                //Set initial offset
+                post { updateOffset(binding.drawerLayout.drawerOffset) }
             }
         }
         AppUpdateManagerFactory.create(this).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
