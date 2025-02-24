@@ -6,7 +6,6 @@
     android:background="?roundedCornerColor"
     app:expanded="false"
     app:showNavButtonAsBack="true"
-    app:subtitle="@string/app_name"
     app:title="@string/level">
 
     <LinearLayout
