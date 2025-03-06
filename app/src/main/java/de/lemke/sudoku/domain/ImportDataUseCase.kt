@@ -23,7 +23,7 @@ class ImportDataUseCase @Inject constructor(
     @ActivityContext private val context: Context,
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(origin: Uri) = withContext(Dispatchers.Main) {
+    suspend operator fun invoke(origin: Uri): Unit = withContext(Dispatchers.Main) {
         val progressDialog = ProgressDialog(context)
         progressDialog.setCancelable(false)
         progressDialog.isIndeterminate = true

@@ -22,7 +22,7 @@ class ExportDataUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase
 ) {
     @SuppressLint("Recycle")
-    suspend operator fun invoke(destination: Uri) = withContext(Dispatchers.Main) {
+    suspend operator fun invoke(destination: Uri): Unit = withContext(Dispatchers.Main) {
         val progressDialog = ProgressDialog(context)
         progressDialog.setCancelable(false)
         progressDialog.isIndeterminate = true
