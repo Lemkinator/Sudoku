@@ -2,7 +2,10 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.*
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
 import androidx.lifecycle.flowWithLifecycle
@@ -12,10 +15,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.prepareActivityTransformationBetween
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.transformToActivity
-import de.lemke.commonutils.widget.InfoBottomSheet
+import de.lemke.commonutils.widget.InfoBottomSheet.Companion.showInfoBottomSheet
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
-import de.lemke.sudoku.domain.*
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.InitDailySudokusUseCase
+import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
@@ -119,30 +125,21 @@ class DailySudokuActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.menuitem_daily_sudoku_info -> {
-            InfoBottomSheet.newInstance(
-                title = getString(R.string.daily_sudoku),
-                message = getString(R.string.daily_sudoku_info_message),
-                textGravity = Gravity.START
-            ).show(supportFragmentManager, "daily_sudoku_info")
-            true
-        }
+        R.id.menuitem_daily_sudoku_info -> showInfoBottomSheet(
+            title = getString(R.string.daily_sudoku),
+            message = getString(R.string.daily_sudoku_info_message),
+            textGravity = Gravity.START
+        ).let { true }
 
-        R.id.menuitem_show_all_sudokus -> {
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(dailyShowUncompleted = true) }
-                invalidateOptionsMenu()
-            }
-            true
-        }
+        R.id.menuitem_show_all_sudokus -> lifecycleScope.launch {
+            updateUserSettings { it.copy(dailyShowUncompleted = true) }
+            invalidateOptionsMenu()
+        }.let { true }
 
-        R.id.menuitem_show_only_completed_sudokus -> {
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(dailyShowUncompleted = false) }
-                invalidateOptionsMenu()
-            }
-            true
-        }
+        R.id.menuitem_show_only_completed_sudokus -> lifecycleScope.launch {
+            updateUserSettings { it.copy(dailyShowUncompleted = false) }
+            invalidateOptionsMenu()
+        }.let { true }
 
         else -> super.onOptionsItemSelected(item)
     }
