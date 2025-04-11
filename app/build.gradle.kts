@@ -103,12 +103,10 @@ dependencies {
     implementation("io.github.lemkinator:common-utils:0.7.5")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
-    //noinspection GradleDependency
-    implementation("io.kjson:kjson:7.6")
-    //noinspection GradleDependency
-    implementation("net.pwall.json:json-kotlin-schema:0.47")
-    implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.0.0")
-    implementation("com.airbnb.android:lottie:6.6.4")
+    implementation("io.kjson:kjson:9.7")
+    implementation("net.pwall.json:json-kotlin-schema:0.56")
+    implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.1.0")
+    implementation("com.airbnb.android:lottie:6.6.6")
     implementation("com.google.android.gms:play-services-games-v2:20.1.2")
     implementation("com.google.android.gms:play-services-oss-licenses:17.1.0")
     implementation("com.google.android.play:review-ktx:2.0.2")
@@ -117,7 +115,7 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.2.0-beta01")
     //noinspection GradleDependency until https://issuetracker.google.com/u/0/issues/342671895 is fixed
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-    val roomVersion = "2.6.1"
+    val roomVersion = "2.7.0"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
