@@ -58,7 +58,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
     @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val loadingDialog = ProgressDialog(context)
+        val loadingDialog = ProgressDialog(requireContext())
         loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)

@@ -354,8 +354,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private fun initFragments() {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
         for (fragment in fragmentsInstance) transaction.add(R.id.fragmentContainer, fragment)
-        transaction.commitAllowingStateLoss()
-        supportFragmentManager.executePendingTransactions()
+        transaction.commitNowAllowingStateLoss()
         onTabItemSelected(1)
     }
 
@@ -364,11 +363,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         if (selectedPosition != position) {
             selectedPosition = position
             val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-            for (fragment in supportFragmentManager.fragments) {
-                transaction.hide(fragment)
-            }
-            transaction.show(newFragment).commitAllowingStateLoss()
-            supportFragmentManager.executePendingTransactions()
+            for (fragment in supportFragmentManager.fragments) transaction.hide(fragment)
+            transaction.show(newFragment).commitNowAllowingStateLoss()
             val newTab = tab ?: binding.mainTabLayout.getTabAt(position)
             if (newTab?.isSelected == false) newTab.select()
         }

@@ -167,7 +167,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             onSelectMenuItem = {
                 when (it.itemId) {
                     R.id.menuButtonDelete -> {
-                        val dialog = ProgressDialog(context)
+                        val dialog = ProgressDialog(requireContext())
                         dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
                         dialog.setCancelable(false)
                         dialog.show()
