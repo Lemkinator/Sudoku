@@ -25,12 +25,15 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
-import androidx.preference.*
+import androidx.preference.DropDownPreference
+import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceClickListener
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceScreen
+import androidx.preference.SeslSwitchPreferenceScreen
+import androidx.preference.SwitchPreferenceCompat
 import com.google.android.gms.games.PlayGames
-import com.google.android.play.core.appupdate.AppUpdateInfo
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.openApp
 import de.lemke.commonutils.prepareActivityTransformationTo
@@ -38,7 +41,16 @@ import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.shareApp
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
-import de.lemke.sudoku.domain.*
+import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
+import de.lemke.sudoku.domain.ExportDataUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.ImportDataUseCase
+import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.deleteAppDataAndExit
+import de.lemke.sudoku.domain.openAppLocaleSettings
+import de.lemke.sudoku.domain.openURL
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
@@ -47,7 +59,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.*
+import java.util.Calendar
 import javax.inject.Inject
 
 
@@ -251,11 +263,6 @@ class SettingsActivity : AppCompatActivity() {
                     .setPositiveButton(de.lemke.commonutils.R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
                     .show()
                 true
-            }
-
-            AppUpdateManagerFactory.create(requireContext()).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
-                findPreference<Preference>("about_app_pref")?.widgetLayoutResource =
-                    if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) R.layout.sesl_preference_badge else 0
             }
         }
 

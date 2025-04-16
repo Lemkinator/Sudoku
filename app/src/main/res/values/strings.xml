@@ -35,7 +35,7 @@
 
     <!--About-->
     <string name="about_app">About Sudoku</string>
-    <string name="about_page_optional_text">A Sudoku app with OneUI-Design.</string>
+    <string name="app_description">A Sudoku app with OneUI-Design.</string>
     <string name="open_in_playstore">Open in Play Store</string>
     <string name="sudoku_lib">Sudoku library</string>
     <string name="sudoku_lib_license" translatable="false">LGPL 3</string>

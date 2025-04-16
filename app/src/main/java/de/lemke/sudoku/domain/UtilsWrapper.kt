@@ -7,7 +7,6 @@ import androidx.fragment.app.Fragment
 import de.lemke.commonutils.deleteAppDataAndExit
 import de.lemke.commonutils.openAppLocaleSettings
 import de.lemke.commonutils.openURL
-import de.lemke.commonutils.sendEmailAboutMe
 import de.lemke.sudoku.R
 
 fun Fragment.openURL(url: String) =
@@ -25,5 +24,3 @@ fun Fragment.deleteAppDataAndExit(): Boolean = deleteAppDataAndExit(
     cancel = getString(R.string.sesl_cancel)
 )
 
-fun Context.sendEmailAboutMe() =
-    sendEmailAboutMe(getString(R.string.email), getString(R.string.app_name), getString(R.string.no_email_app_installed))

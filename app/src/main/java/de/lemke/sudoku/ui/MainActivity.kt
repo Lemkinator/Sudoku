@@ -3,26 +3,25 @@ package de.lemke.sudoku.ui
 import android.R.anim.fade_in
 import android.R.anim.fade_out
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.style.ClickableSpan
 import android.view.Menu
 import android.view.MenuItem
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.ViewGroup.MarginLayoutParams
-import android.widget.ImageButton
+import android.view.View
 import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.view.children
-import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
@@ -33,12 +32,14 @@ import com.google.android.gms.games.PlayGames
 import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
-import com.google.android.play.core.appupdate.AppUpdateInfo
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.google.android.play.core.install.model.UpdateAvailability
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.AboutActivity
+import de.lemke.commonutils.AboutMeActivity
 import de.lemke.commonutils.prepareActivityTransformationFrom
+import de.lemke.commonutils.setup
+import de.lemke.commonutils.setupCommonActivities
 import de.lemke.commonutils.transformToActivity
+import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.domain.AppStart
@@ -47,31 +48,22 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.openURL
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.onSingleClick
-import dev.oneuiproject.oneui.layout.Badge
-import dev.oneuiproject.oneui.layout.DrawerLayout
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.sequences.forEach
-import dev.oneuiproject.oneui.design.R as designR
 
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var drawerListView: LinearLayout
-    private val drawerItemTitles: MutableList<TextView> = mutableListOf()
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
     private var time: Long = 0
@@ -81,6 +73,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
+
+    @Inject
+    lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     @Inject
     lateinit var importSudoku: ImportSudokuUseCase
@@ -160,6 +155,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun openMain() {
+        setupCommonUtilsActivities()
         initDrawer()
         initTabs()
         initFragments()
@@ -210,16 +206,56 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         else -> super.onOptionsItemSelected(item)
     }
 
-    private fun initDrawer() {
-        drawerListView = findViewById(R.id.drawerListView)
-        drawerItemTitles.apply {
-            clear()
-            add(findViewById(R.id.drawerItemAchievementsTitle))
-            add(findViewById(R.id.drawerItemLeaderboardsTitle))
-            add(findViewById(R.id.drawerItemAboutAppTitle))
-            add(findViewById(R.id.drawerItemAboutMeTitle))
-            add(findViewById(R.id.drawerItemSettingsTitle))
+    private fun setupCommonUtilsActivities() {
+        val bib = getString(R.string.sudoku_lib)
+        val license = getString(R.string.sudoku_lib_license)
+        val text = getString(R.string.app_description) + "\n" + getString(R.string.sudoku_lib_license_text, bib, license)
+        val optionalText = SpannableString(text)
+        optionalText.setSpan(
+            object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    openURL(getString(R.string.sudoku_lib_github_link))
+                }
+
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                }
+            },
+            text.indexOf(bib), text.indexOf(bib) + bib.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        optionalText.setSpan(
+            object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    openURL(getString(R.string.sudoku_lib_license_github_link))
+                }
+
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                }
+            },
+            text.indexOf(license), text.indexOf(license) + license.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        lifecycleScope.launch {
+            setupCommonActivities(
+                appName = getString(R.string.app_name),
+                appVersion = BuildConfig.VERSION_NAME,
+                optionalText = optionalText,
+                email = getString(R.string.email),
+                devModeEnabled = getUserSettings().devModeEnabled,
+                onDevModeChanged = { newDevModeEnabled: Boolean -> updateUserSettings { it.copy(devModeEnabled = newDevModeEnabled) } },
+                onShareApp = { activity -> PlayGames.getAchievementsClient(activity).unlock(getString(R.string.achievement_share_app)) },
+                cantOpenURLMessage = getString(R.string.error_cant_open_url),
+                noBrowserInstalledMessage = getString(R.string.no_browser_app_installed),
+                noEmailAppInstalledText = getString(R.string.no_email_app_installed),
+            )
         }
+    }
+
+    private fun initDrawer() {
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
         findViewById<LinearLayout>(R.id.drawerItemAchievements).onSingleClick {
             gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
@@ -236,60 +272,17 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         findViewById<LinearLayout>(R.id.drawerItemAboutApp).apply { onSingleClick { transformToActivity(AboutActivity::class.java) } }
         findViewById<LinearLayout>(R.id.drawerItemAboutMe).apply { onSingleClick { transformToActivity(AboutMeActivity::class.java) } }
         findViewById<LinearLayout>(R.id.drawerItemSettings).apply { onSingleClick { transformToActivity(SettingsActivity::class.java) } }
-        binding.drawerLayout.apply {
-            setHeaderButtonIcon(AppCompatResources.getDrawable(this@MainActivity, dev.oneuiproject.oneui.R.drawable.ic_oui_info_outline))
-            setHeaderButtonTooltip(getString(R.string.about_app))
-            setHeaderButtonOnClickListener {
-                findViewById<ImageButton>(designR.id.drawer_header_button).transformToActivity(AboutActivity::class.java)
-            }
-            setNavRailContentMinSideMargin(14)
-            closeNavRailOnBack = true
-
-            //setupNavRailFadeEffect
-            if (isLargeScreenMode) {
-                setDrawerStateListener {
-                    when (it) {
-                        DrawerLayout.DrawerState.OPEN -> offsetUpdaterJob?.cancel().also { updateOffset(1f) }
-                        DrawerLayout.DrawerState.CLOSE -> offsetUpdaterJob?.cancel().also { updateOffset(0f) }
-                        DrawerLayout.DrawerState.CLOSING, DrawerLayout.DrawerState.OPENING -> startOffsetUpdater()
-                    }
-                }
-                //Set initial offset
-                post { updateOffset(binding.drawerLayout.drawerOffset) }
-            }
-        }
-        AppUpdateManagerFactory.create(this).appUpdateInfo.addOnSuccessListener { appUpdateInfo: AppUpdateInfo ->
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
-                binding.drawerLayout.setButtonBadges(Badge.DOT, Badge.DOT)
-        }
-    }
-
-    private var offsetUpdaterJob: Job? = null
-    private fun startOffsetUpdater() {
-        //Ensure no duplicate job is running
-        if (offsetUpdaterJob?.isActive == true) return
-        offsetUpdaterJob = CoroutineScope(Dispatchers.Main).launch {
-            while (isActive) {
-                updateOffset(binding.drawerLayout.drawerOffset)
-                delay(50)
-            }
-        }
-    }
-
-    fun updateOffset(offset: Float) {
-        drawerItemTitles.forEach { it.alpha = offset }
-        drawerListView.children.forEach {
-            it.post {
-                if (offset == 0f) {
-                    it.updateLayoutParams<MarginLayoutParams> {
-                        width = if (it is LinearLayout) 52f.dpToPx(it.context.resources) //drawer item
-                        else 25f.dpToPx(it.context.resources) //divider item
-                    }
-                } else if (it.width != MATCH_PARENT) {
-                    it.updateLayoutParams<MarginLayoutParams> { width = MATCH_PARENT }
-                }
-            }
-        }
+        binding.drawerLayout.setup(
+            getString(R.string.about_app),
+            mutableListOf(
+                findViewById(R.id.drawerItemAchievementsTitle),
+                findViewById(R.id.drawerItemLeaderboardsTitle),
+                findViewById(R.id.drawerItemAboutAppTitle),
+                findViewById(R.id.drawerItemAboutMeTitle),
+                findViewById(R.id.drawerItemSettingsTitle),
+            ),
+            findViewById(R.id.drawerListView)
+        )
     }
 
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {

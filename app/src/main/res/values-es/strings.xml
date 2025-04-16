@@ -25,7 +25,7 @@
 
     <!--About-->
     <string name="about_app">Acerca de Sudoku</string>
-    <string name="about_page_optional_text">Una aplicación de Sudoku con un hermoso diseño basado en OneUI.</string>
+    <string name="app_description">Una aplicación de Sudoku con un hermoso diseño basado en OneUI.</string>
     <string name="open_in_playstore">Ver en la Play Store</string>
 
     <string name="sudoku_lib">Biblioteca de Sudoku</string>

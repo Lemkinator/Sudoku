@@ -48,8 +48,6 @@
             android:value="@xml/meta_sudoku" />
 
         <activity android:name=".ui.OOBEActivity" />
-        <activity android:name=".ui.AboutActivity" />
-        <activity android:name=".ui.AboutMeActivity"/>
         <activity
             android:name=".ui.DailySudokuActivity"
             android:configChanges="orientation|screenLayout|screenSize"
