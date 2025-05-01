@@ -39,8 +39,8 @@
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/resumeButton"
             style="@style/ButtonStyle.Filled.Themed"
-            android:layout_width="90dp"
-            android:layout_height="90dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:drawableTop="@drawable/ic_oui_control_play"
             android:onClick="resumeGame"
             android:paddingTop="20dp"

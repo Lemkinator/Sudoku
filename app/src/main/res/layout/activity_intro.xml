@@ -50,7 +50,7 @@
                 android:id="@+id/intro_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
+                android:gravity="center"
                 android:layout_marginTop="4dp"
                 android:background="@color/oui_background_color"
                 android:orientation="horizontal"
@@ -70,7 +70,7 @@
                     style="@style/ButtonStyle.Colored"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/next" />
+                    android:text="@string/oui_common_continue" />
 
 
             </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
@@ -229,17 +229,17 @@
             <FrameLayout
                 android:id="@+id/intro_continue_layout"
                 android:layout_width="match_parent"
-                android:layout_height="44.0dp"
+                android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:visibility="gone">
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/intro_continue_button"
-                    style="@style/OOBE.Button"
-                    android:layout_width="296.0dp"
-                    android:layout_height="44.0dp"
+                    style="@style/ButtonStyle.Colored"
+                    android:layout_width="296dp"
+                    android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="@string/next" />
+                    android:text="@string/oui_common_continue" />
 
             </FrameLayout>
 

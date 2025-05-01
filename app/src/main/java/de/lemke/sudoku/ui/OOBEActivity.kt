@@ -1,23 +1,26 @@
 package de.lemke.sudoku.ui
 
-import android.Manifest
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.R.anim.fade_in
+import android.R.anim.fade_out
 import android.annotation.SuppressLint
 import android.content.DialogInterface
+import android.content.DialogInterface.BUTTON_NEGATIVE
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Color
-import android.graphics.Typeface
-import android.os.Build
+import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
-import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import androidx.activity.result.contract.ActivityResultContracts
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.LinearLayout.LayoutParams
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -28,11 +31,12 @@ import de.lemke.sudoku.databinding.ActivityOobeBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import dev.oneuiproject.oneui.R as designR
 import dev.oneuiproject.oneui.widget.OnboardingTipsItemView
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Locale
 import javax.inject.Inject
+import dev.oneuiproject.oneui.R as oneuiR
+import dev.oneuiproject.oneui.design.R as designR
 
 @AndroidEntryPoint
 class OOBEActivity : AppCompatActivity() {
@@ -49,9 +53,7 @@ class OOBEActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= 34) {
-            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
-        }
+        if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityOobeBinding.inflate(layoutInflater)
         setContentView(binding.root)
         initTipsItems()
@@ -61,17 +63,16 @@ class OOBEActivity : AppCompatActivity() {
 
     private fun initTipsItems() {
         val tipsData = listOf(
-            Triple(R.string.oobe_onboard_msg1_title, R.string.oobe_onboard_msg1_summary, designR.drawable.ic_oui_palette),
-            Triple(R.string.oobe_onboard_msg2_title, R.string.oobe_onboard_msg2_summary, designR.drawable.ic_oui_credit_card_outline),
-            Triple(R.string.oobe_onboard_msg3_title, R.string.oobe_onboard_msg3_summary, designR.drawable.ic_oui_decline)
+            Triple(R.string.oobe_onboard_msg1_title, R.string.oobe_onboard_msg1_summary, oneuiR.drawable.ic_oui_palette),
+            Triple(R.string.oobe_onboard_msg2_title, R.string.oobe_onboard_msg2_summary, oneuiR.drawable.ic_oui_credit_card_outline),
+            Triple(R.string.oobe_onboard_msg3_title, R.string.oobe_onboard_msg3_summary, oneuiR.drawable.ic_oui_decline)
         )
-        val defaultLp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         tipsData.forEach { (titleRes, summaryRes, iconRes) ->
             OnboardingTipsItemView(this).apply {
                 setIcon(iconRes)
                 title = getString(titleRes)
                 summary = getString(summaryRes)
-                binding.oobeIntroTipsContainer.addView(this, defaultLp)
+                binding.oobeIntroTipsContainer.addView(this, LayoutParams(MATCH_PARENT, WRAP_CONTENT))
             }
         }
     }
@@ -89,11 +90,6 @@ class OOBEActivity : AppCompatActivity() {
                         .setPositiveButton(de.lemke.commonutils.R.string.ok) { dialog: DialogInterface, _: Int -> dialog.dismiss() }
                         .show()
                 }
-
-                override fun updateDrawState(ds: TextPaint) {
-                    super.updateDrawState(ds)
-                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-                }
             },
             tosText.indexOf(tos), tosText.length - if (Locale.getDefault().language == "de") 4 else 1,
             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -105,7 +101,7 @@ class OOBEActivity : AppCompatActivity() {
 
     private fun initFooterButton() {
         if (resources.configuration.screenWidthDp < 360) {
-            binding.oobeIntroFooterButton.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+            binding.oobeIntroFooterButton.layoutParams.width = MATCH_PARENT
         }
         binding.oobeIntroFooterButton.setOnClickListener {
             binding.oobeIntroFooterTosText.isEnabled = false
@@ -122,7 +118,7 @@ class OOBEActivity : AppCompatActivity() {
     // Register the permissions callback, which handles the user's response to the system permissions dialog. Save the return value,
     // an instance of ActivityResultLauncher. You can use either a val, as shown in this snippet,
     // or a lateinit var in your onAttach() or onCreate() method.
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+    private val requestPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
         lifecycleScope.launch {
             if (isGranted) {
                 // Permission is granted. Continue the action or workflow in your app.
@@ -150,31 +146,26 @@ class OOBEActivity : AppCompatActivity() {
             .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch {
                     //Enable Notifications when < Android 13 or permission is granted, else ask for permission
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(
-                            this@OOBEActivity,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) == PackageManager.PERMISSION_GRANTED
+                    if (
+                        SDK_INT < TIRAMISU ||
+                        ContextCompat.checkSelfPermission(this@OOBEActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
                     ) {
                         updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
                         openIntroActivity()
-                    } else requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else requestPermissionLauncher.launch(POST_NOTIFICATIONS)
                 }
             }
             .setCancelable(false)
             .create()
         dialog.show()
-        dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
-            .setTextColor(getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color))
+        dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_functional_red_color))
     }
 
 
     private suspend fun openIntroActivity() {
         sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
         startActivity(Intent(applicationContext, IntroActivity::class.java))
-        if (Build.VERSION.SDK_INT < 34) {
-            @Suppress("DEPRECATION")
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        }
+        @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
         finishAfterTransition()
     }
 }

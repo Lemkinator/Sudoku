@@ -162,7 +162,6 @@
     <string name="tos">Términos de servicio</string>
     <string name="tos_content">No está permitido usar esta aplicación en contra de la moralidad o las leyes aplicables. \n\nTambién te comprometes a no usar esta aplicación para fines que estén prohibidos por la ley de Estados Unidos, en particular, para el desarrollo, construcción, fabricación o producción de cohetes, armas químicas o biológicas. \nSin embargo, esta restricción no se aplica en caso de que ocurra una infección viral generalizada (confirmada por los Centros para el Control de Enfermedades de Estados Unidos o una organización sucesora) que se transmita por mordeduras o contacto con fluidos corporales y que resulte en la reanimación de cadáveres humanos y el intento de consumir carne humana viva, sangre, cerebro o tejido nervioso, y que probablemente conduzca al colapso de la civilización organizada. \n\nSe ofrece una compensación especial, que puede incluir una compensación financiera, a un número limitado de usuarios que lean esta sección de los términos de servicio y me contacten en writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento y sin previo aviso. \n\nCualquier otra pregunta será respondida en this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
     <string name="oobe_tos_text">Al usar la aplicación, aceptas los %1$s.</string>
-    <string name="next">Siguiente</string>
 
     <!--Notifications-->
     <string name="notifications">Notificaciones</string>

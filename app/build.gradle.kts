@@ -100,7 +100,7 @@ dependencies {
     implementation("io.github.tribalfs:oneui-design:0.5.12+oneui6")
     implementation("io.github.oneuiproject:icons:1.1.0")
 
-    implementation("io.github.lemkinator:common-utils:0.8.1")
+    implementation("io.github.lemkinator:common-utils:0.8.2")
 
     implementation("de.sfuhrm:sudoku:5.0.1")
     implementation("io.kjson:kjson:9.7")
