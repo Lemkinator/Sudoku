@@ -13,7 +13,6 @@ import android.os.Environment
 import android.provider.Settings
 import android.text.format.DateFormat
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -398,7 +397,7 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun areNotificationsEnabled(
             channelId: String,
-            notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext())
+            notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext()),
         ): Boolean {
             return when {
                 !notificationManager.areNotificationsEnabled() -> false
