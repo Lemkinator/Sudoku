@@ -3,11 +3,20 @@ package de.lemke.sudoku.ui
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.Intent.ACTION_SEND
+import android.content.Intent.EXTRA_STREAM
+import android.content.Intent.EXTRA_TEXT
+import android.content.Intent.EXTRA_TITLE
+import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -28,8 +37,20 @@ import de.lemke.commonutils.transformTo
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
-import de.lemke.sudoku.domain.*
-import de.lemke.sudoku.domain.model.*
+import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
+import de.lemke.sudoku.domain.GenerateSudokuUseCase
+import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
+import de.lemke.sudoku.domain.GetSudokuUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.model.GameListener
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
@@ -196,7 +217,7 @@ class SudokuActivity : AppCompatActivity() {
             sudokuButtons.add(binding.numberButtonG)
         }
         for (index in sudokuButtons.indices) {
-            sudokuButtons[index].visibility = View.VISIBLE
+            sudokuButtons[index].isVisible = true
             sudokuButtons[index].setOnClickListener { select(sudoku.itemCount + index) }
         }
         binding.deleteButton.setOnClickListener { select(sudoku.itemCount + sudoku.size) }
@@ -481,7 +502,7 @@ class SudokuActivity : AppCompatActivity() {
         animateRow: Boolean = false,
         animateColumn: Boolean = false,
         animateBlock: Boolean = false,
-        animateSudoku: Boolean = false
+        animateSudoku: Boolean = false,
     ): Job? {
         if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
         val delay = 60L / sudoku.blockSize
@@ -587,7 +608,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun refreshHintButton() {
-        binding.hintButton.visibility = if (sudoku.isHintAvailable) View.VISIBLE else View.GONE
+        binding.hintButton.isVisible = sudoku.isHintAvailable
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
@@ -642,21 +663,21 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun shareStats() {
-        val sendIntent = Intent(Intent.ACTION_SEND)
+        val sendIntent = Intent(ACTION_SEND)
         sendIntent.type = "text/plain"
-        sendIntent.putExtra(Intent.EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
-        sendIntent.putExtra(Intent.EXTRA_TITLE, getString(R.string.share_sudoku))
-        sendIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        sendIntent.putExtra(EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
+        sendIntent.putExtra(EXTRA_TITLE, getString(R.string.share_sudoku))
+        sendIntent.flags = FLAG_GRANT_READ_URI_PERMISSION
         startActivity(Intent.createChooser(sendIntent, getString(R.string.share_sudoku)))
     }
 
     private suspend fun shareGame(sudoku: Sudoku) {
         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
         val uri = shareSudoku(sudoku)
-        val shareIntent = Intent(Intent.ACTION_SEND)
+        val shareIntent = Intent(ACTION_SEND)
         shareIntent.type = "application/sudoku" //octet-stream"
-        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+        shareIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+        shareIntent.putExtra(EXTRA_STREAM, uri)
         startActivity(Intent.createChooser(shareIntent, getString(R.string.share_sudoku)))
     }
 

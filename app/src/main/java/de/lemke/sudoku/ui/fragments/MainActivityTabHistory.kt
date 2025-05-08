@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -60,10 +61,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     @Inject
     lateinit var observeUserSettings: ObserveUserSettingsUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentTabHistoryBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        FragmentTabHistoryBinding.inflate(inflater, container, false).also { binding = it }.root
 
     @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -99,7 +98,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 sudokuListAdapter = it
             }
             itemAnimator = null
-            addItemDecoration(SemItemDecoration(
+            addItemDecoration(
+                SemItemDecoration(
                 context,
                 dividerRule = ItemDecorRule.SELECTED {
                     it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
@@ -121,10 +121,10 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
 
     private fun updateRecyclerView() {
         if (sudokuHistory.isEmpty()) {
-            binding.sudokuHistoryList.visibility = View.GONE
+            binding.sudokuHistoryList.isVisible = false
             binding.historyListLottie.cancelAnimation()
             binding.historyListLottie.progress = 0f
-            binding.historyNoEntryScrollView.visibility = View.VISIBLE
+            binding.historyNoEntryScrollView.isVisible = true
             binding.historyListLottie.addValueCallback(
                 KeyPath("**"),
                 LottieProperty.COLOR_FILTER,
@@ -132,8 +132,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             )
             binding.historyListLottie.postDelayed({ binding.historyListLottie.playAnimation() }, 400)
         } else {
-            binding.historyNoEntryScrollView.visibility = View.GONE
-            binding.sudokuHistoryList.visibility = View.VISIBLE
+            binding.historyNoEntryScrollView.isVisible = false
+            binding.sudokuHistoryList.isVisible = true
             sudokuListAdapter.submitList(sudokuHistory)
         }
     }
@@ -172,7 +172,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {
-                            deleteSudoku(sudokuHistory.filterIsInstance<SudokuListItem.SudokuItem>()
+                            deleteSudoku(
+                                sudokuHistory.filterIsInstance<SudokuListItem.SudokuItem>()
                                 .filter { it.stableId in sudokuListAdapter.getSelectedIds() }.map { it.sudoku })
                             drawerLayout.endActionMode()
                             dialog.dismiss()

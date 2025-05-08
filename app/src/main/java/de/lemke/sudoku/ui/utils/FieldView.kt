@@ -10,6 +10,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.asynclayoutinflater.view.AsyncLayoutInflater
+import androidx.core.view.isVisible
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
@@ -72,7 +73,7 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     fun update() {
         fieldViewValue?.text = field.value.toSudokuString()
-        fieldViewValue?.visibility = if (field.value == null) GONE else VISIBLE
+        fieldViewValue?.isVisible = field.value != null
         fieldViewValue?.setTextColor(
             context.getColor(
                 if (field.hint) R.color.field_hint_text_color
@@ -96,7 +97,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     }
 
     private fun updateNotes() {
-        fieldViewNotes?.visibility = if (field.notes.isEmpty()) GONE else VISIBLE
+        fieldViewNotes?.isVisible = field.notes.isNotEmpty()
         fieldViewNotes?.text = field.notes.joinToString("")
         if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1))
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL

@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SeslSeekBar
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
@@ -14,7 +15,12 @@ import de.lemke.commonutils.setStyle
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
-import de.lemke.sudoku.domain.*
+import de.lemke.sudoku.domain.GenerateSudokuUseCase
+import de.lemke.sudoku.domain.GetRecentlyUpdatedNormalSudokuUseCase
+import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
+import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
@@ -23,6 +29,7 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.launch
@@ -50,16 +57,14 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
     @Inject
     lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentTabSudokuBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        FragmentTabSudokuBinding.inflate(inflater, container, false).also { binding = it }.root
 
     @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val loadingDialog = ProgressDialog(requireContext())
-        loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+        loadingDialog.setProgressStyle(STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
 
@@ -115,7 +120,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
         lifecycleScope.launch {
             val sudoku = getRecentSudoku()
             if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(getUserSettings().errorLimit)) {
-                binding.continueGameButton.visibility = View.VISIBLE
+                binding.continueGameButton.isVisible = true
                 binding.continueGameButton.text = getString(
                     R.string.continue_game,
                     sudoku.sizeString,
@@ -126,7 +131,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
                     )
                 }
-            } else binding.continueGameButton.visibility = View.GONE
+            } else binding.continueGameButton.isVisible = false
             binding.dailyButton.setStyle(
                 if (isDailySudokuCompleted()) de.lemke.commonutils.R.style.ButtonStyle_Filled_Themed
                 else de.lemke.commonutils.R.style.ButtonStyle_Colored

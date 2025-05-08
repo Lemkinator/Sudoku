@@ -39,10 +39,8 @@ class MainActivityTabStatistics : Fragment() {
     @Inject
     lateinit var observeStatisticsFilterFlags: ObserveStatisticsFilterFlagsUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = FragmentTabStatisticsBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        FragmentTabStatisticsBinding.inflate(inflater, container, false).also { binding = it }.root
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -3,5 +3,5 @@
     android:id="@+id/sudoku_levels_recycler"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/oui_background_color"
+    android:background="?android:colorBackground"
     android:scrollbars="vertical" />

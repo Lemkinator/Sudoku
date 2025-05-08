@@ -1,32 +1,38 @@
 package de.lemke.sudoku.ui
 
+import android.R.anim.fade_in
+import android.R.anim.fade_out
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.os.Build
+import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
-import de.lemke.sudoku.domain.*
-import de.lemke.sudoku.domain.model.*
+import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.GameListener
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Timer
 import javax.inject.Inject
 
 
@@ -49,8 +55,8 @@ class IntroActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= 34) {
-            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out)
+        if (SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         }
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -89,15 +95,15 @@ class IntroActivity : AppCompatActivity() {
             }
 
             2 -> {
-                binding.introTitle.visibility = View.GONE
+                binding.introTitle.isVisible = false
                 binding.introTextText.text = getString(R.string.intro_text2)
                 startAnimation(2)
             }
 
             3 -> {
                 binding.introTextText.text = getString(R.string.intro_text3)
-                binding.otherButtons.visibility = View.GONE
-                binding.gameButtons.visibility = View.VISIBLE
+                binding.otherButtons.isVisible = false
+                binding.gameButtons.isVisible = true
                 stopAnimation(2)
             }
 
@@ -118,7 +124,7 @@ class IntroActivity : AppCompatActivity() {
 
             7 -> {
                 binding.introTitleText.text = getString(R.string.intro_title7)
-                binding.introTitle.visibility = View.VISIBLE
+                binding.introTitle.isVisible = true
                 binding.introTextText.text = getString(R.string.intro_text7)
                 stopAnimation(6)
             }
@@ -132,15 +138,15 @@ class IntroActivity : AppCompatActivity() {
             9 -> {
                 binding.introTitleText.text = getString(R.string.intro_title9)
                 binding.introTextText.text = getString(R.string.intro_text9)
-                binding.otherButtons.visibility = View.VISIBLE
-                binding.numberButtons.visibility = View.GONE
+                binding.otherButtons.isVisible = true
+                binding.numberButtons.isVisible = false
                 stopAnimation(8)
             }
 
             10 -> {
-                binding.introTitle.visibility = View.GONE
+                binding.introTitle.isVisible = false
                 binding.introTextText.text = getString(R.string.intro_text10)
-                binding.introContinueLayout.visibility = View.VISIBLE
+                binding.introContinueLayout.isVisible = true
             }
         }
     }
@@ -178,7 +184,7 @@ class IntroActivity : AppCompatActivity() {
         sudokuButtons.add(binding.numberButton8)
         sudokuButtons.add(binding.numberButton9)
         for (index in sudokuButtons.indices) {
-            sudokuButtons[index].visibility = View.VISIBLE
+            sudokuButtons[index].isVisible = true
             sudokuButtons[index].setOnClickListener {
                 lifecycleScope.launch { select(sudoku.itemCount + index) }
             }
@@ -225,7 +231,7 @@ class IntroActivity : AppCompatActivity() {
         animateRow: Boolean = false,
         animateColumn: Boolean = false,
         animateBlock: Boolean = false,
-        animateSudoku: Boolean = false
+        animateSudoku: Boolean = false,
     ): Job? {
         if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
         val delay = 60L / sudoku.blockSize
@@ -430,7 +436,7 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun refreshHintButton() {
-        binding.hintButton.visibility = if (sudoku.isHintAvailable) View.VISIBLE else View.GONE
+        binding.hintButton.isVisible = sudoku.isHintAvailable
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
@@ -500,10 +506,8 @@ class IntroActivity : AppCompatActivity() {
         if (!openedFromSettings) {
             updateUserSettings { it.copy(tosAccepted = true) }
             startActivity(Intent(applicationContext, MainActivity::class.java))
-            if (Build.VERSION.SDK_INT < 34) {
-                @Suppress("DEPRECATION")
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            }
+            @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
+
         }
         finishAfterTransition()
     }

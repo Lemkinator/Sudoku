@@ -5,9 +5,9 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -73,7 +73,7 @@ class DailySudokuActivity : AppCompatActivity() {
             observeDailySudokus().flowWithLifecycle(lifecycle).collectLatest {
                 dailySudokus = it
                 sudokuListAdapter.submitList(it)
-                binding.dailySudokuRecycler.visibility = View.VISIBLE
+                binding.dailySudokuRecycler.isVisible = true
                 progressDialog.dismiss()
             }
         }

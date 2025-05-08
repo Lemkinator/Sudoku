@@ -24,6 +24,7 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestPermissi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
@@ -105,8 +106,8 @@ class OOBEActivity : AppCompatActivity() {
         }
         binding.oobeIntroFooterButton.setOnClickListener {
             binding.oobeIntroFooterTosText.isEnabled = false
-            binding.oobeIntroFooterButton.visibility = View.GONE
-            binding.oobeIntroFooterButtonProgress.visibility = View.VISIBLE
+            binding.oobeIntroFooterButton.isVisible = false
+            binding.oobeIntroFooterButtonProgress.isVisible = true
             lifecycleScope.launch {
                 //updateUserSettings { it.copy(tosAccepted = true) }
                 //set in IntroActivity: in case user exits before completing intro, oobe and intro will be shown again

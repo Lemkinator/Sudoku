@@ -268,9 +268,6 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
-            requireView().setBackgroundColor(
-                resources.getColor(dev.oneuiproject.oneui.design.R.color.oui_background_color, settingsActivity.theme)
-            )
             addRelativeLinksCard(
                 RelativeLink(getString(de.lemke.commonutils.R.string.share_app)) {
                     PlayGames.getAchievementsClient(settingsActivity).unlock(getString(R.string.achievement_share_app))
