@@ -2,6 +2,7 @@ package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.ColorFilter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,7 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.LottieProperty.COLOR_FILTER
 import com.airbnb.lottie.SimpleColorFilter
 import com.airbnb.lottie.model.KeyPath
 import com.airbnb.lottie.value.LottieValueCallback
@@ -100,14 +101,14 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             itemAnimator = null
             addItemDecoration(
                 SemItemDecoration(
-                context,
-                dividerRule = ItemDecorRule.SELECTED {
-                    it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
-                },
-                subHeaderRule = ItemDecorRule.SELECTED {
-                    it.itemViewType == SudokuListItem.SeparatorItem.VIEW_TYPE
-                }
-            ).apply { setDividerInsetStart(64.dpToPx(resources)) })
+                    context,
+                    dividerRule = ItemDecorRule.SELECTED {
+                        it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
+                    },
+                    subHeaderRule = ItemDecorRule.SELECTED {
+                        it.itemViewType == SudokuListItem.SeparatorItem.VIEW_TYPE
+                    }
+                ).apply { setDividerInsetStart(64.dpToPx(resources)) })
             enableCoreSeslFeatures()
         }
 
@@ -125,11 +126,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             binding.historyListLottie.cancelAnimation()
             binding.historyListLottie.progress = 0f
             binding.historyNoEntryScrollView.isVisible = true
-            binding.historyListLottie.addValueCallback(
-                KeyPath("**"),
-                LottieProperty.COLOR_FILTER,
-                LottieValueCallback(SimpleColorFilter(requireContext().getColor(R.color.primary_color_themed)))
-            )
+            val callback = LottieValueCallback<ColorFilter>(SimpleColorFilter(requireContext().getColor(R.color.primary_color_themed)))
+            binding.historyListLottie.addValueCallback(KeyPath("**"), COLOR_FILTER, callback)
             binding.historyListLottie.postDelayed({ binding.historyListLottie.playAnimation() }, 400)
         } else {
             binding.historyNoEntryScrollView.isVisible = false
@@ -174,7 +172,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                         lifecycleScope.launch {
                             deleteSudoku(
                                 sudokuHistory.filterIsInstance<SudokuListItem.SudokuItem>()
-                                .filter { it.stableId in sudokuListAdapter.getSelectedIds() }.map { it.sudoku })
+                                    .filter { it.stableId in sudokuListAdapter.getSelectedIds() }.map { it.sudoku })
                             drawerLayout.endActionMode()
                             dialog.dismiss()
                         }

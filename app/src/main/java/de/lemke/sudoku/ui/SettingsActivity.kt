@@ -39,6 +39,7 @@ import de.lemke.commonutils.openApp
 import de.lemke.commonutils.prepareActivityTransformationTo
 import de.lemke.commonutils.setCustomBackPressAnimation
 import de.lemke.commonutils.shareApp
+import de.lemke.commonutils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
@@ -122,11 +123,11 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
             pickExportFolderActivityResultLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
-                if (uri == null) Toast.makeText(settingsActivity, getString(R.string.error_no_folder_selected), Toast.LENGTH_LONG).show()
+                if (uri == null) toast(R.string.error_no_folder_selected)
                 else lifecycleScope.launch { exportData(uri) }
             }
             pickImportJsonActivityResultLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-                if (uri == null) Toast.makeText(settingsActivity, getString(R.string.error_no_file_selected), Toast.LENGTH_LONG).show()
+                if (uri == null) toast(R.string.error_no_file_selected)
                 else lifecycleScope.launch { importData(uri) }
             }
             initPreferences()

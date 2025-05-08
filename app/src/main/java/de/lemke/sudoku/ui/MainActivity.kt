@@ -2,24 +2,26 @@ package de.lemke.sudoku.ui
 
 import android.R.anim.fade_in
 import android.R.anim.fade_out
+import android.R.anim.slide_in_left
+import android.R.anim.slide_out_right
 import android.content.Intent
 import android.graphics.Typeface
+import android.graphics.Typeface.NORMAL
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
 import android.text.SpannableString
-import android.text.Spanned
+import android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
 import android.text.TextPaint
 import android.text.style.ClickableSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import androidx.core.app.ActivityOptionsCompat
+import androidx.core.app.ActivityOptionsCompat.makeCustomAnimation
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.Fragment
@@ -38,6 +40,7 @@ import de.lemke.commonutils.AboutMeActivity
 import de.lemke.commonutils.prepareActivityTransformationFrom
 import de.lemke.commonutils.setup
 import de.lemke.commonutils.setupCommonActivities
+import de.lemke.commonutils.toast
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
@@ -55,6 +58,7 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -142,10 +146,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         //manually waiting for the animation to finish :/
         delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
         startActivity(Intent(applicationContext, OOBEActivity::class.java))
-        if (SDK_INT < 34) {
-            @Suppress("DEPRECATION")
-            overridePendingTransition(fade_in, fade_out)
-        }
+        @Suppress("DEPRECATION")
+        if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
         finishAfterTransition()
     }
 
@@ -173,7 +175,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private suspend fun checkImportedSudokuOrNotificationClicked() {
         if (intent != null && intent.data != null) {
             val dialog = ProgressDialog(this)
-            dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+            dialog.setProgressStyle(STYLE_CIRCLE)
             dialog.setCancelable(false)
             dialog.show()
             val sudoku = importSudoku(intent.data)
@@ -182,7 +184,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                     Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
                 )
             } else {
-                Toast.makeText(this, getString(R.string.error_import_failed), Toast.LENGTH_LONG).show()
+                toast(R.string.error_import_failed)
             }
             dialog.dismiss()
         }
@@ -219,11 +221,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
                 override fun updateDrawState(ds: TextPaint) {
                     super.updateDrawState(ds)
-                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                    ds.typeface = Typeface.create("sans-serif-medium", NORMAL)
                 }
             },
             text.indexOf(bib), text.indexOf(bib) + bib.length,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            SPAN_EXCLUSIVE_EXCLUSIVE
         )
         optionalText.setSpan(
             object : ClickableSpan() {
@@ -233,11 +235,11 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
                 override fun updateDrawState(ds: TextPaint) {
                     super.updateDrawState(ds)
-                    ds.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                    ds.typeface = Typeface.create("sans-serif-medium", NORMAL)
                 }
             },
             text.indexOf(license), text.indexOf(license) + license.length,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            SPAN_EXCLUSIVE_EXCLUSIVE
         )
         lifecycleScope.launch {
             setupCommonActivities(
@@ -288,7 +290,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
         gamesSignInClient.signIn().addOnCompleteListener { signInTask: Task<AuthenticationResult> ->
             if (signInTask.isSuccessful && signInTask.result.isAuthenticated) onSuccess()
-            else Toast.makeText(this@MainActivity, getString(R.string.error_sign_in_failed), Toast.LENGTH_LONG).show()
+            else toast(R.string.error_sign_in_failed)
         }
     }
 
@@ -296,10 +298,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         PlayGames.getLeaderboardsClient(this)
             .allLeaderboardsIntent
             .addOnSuccessListener { intent ->
-                playGamesActivityResultLauncher.launch(
-                    intent,
-                    ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                )
+                playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
             }
     }
 
@@ -307,10 +306,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         PlayGames.getAchievementsClient(this)
             .achievementsIntent
             .addOnSuccessListener { intent ->
-                playGamesActivityResultLauncher.launch(
-                    intent,
-                    ActivityOptionsCompat.makeCustomAnimation(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-                )
+                playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
             }
     }
 
