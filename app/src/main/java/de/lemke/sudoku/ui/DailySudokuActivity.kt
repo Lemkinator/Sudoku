@@ -41,7 +41,6 @@ class DailySudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDailySudokuBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private var dailySudokus: List<SudokuListItem> = emptyList()
-    private var dailyShowUncompleted = true
 
     @Inject
     lateinit var initDailySudokus: InitDailySudokusUseCase
@@ -68,7 +67,6 @@ class DailySudokuActivity : AppCompatActivity() {
         initRecycler()
         lifecycleScope.launch {
             initDailySudokus()
-            dailyShowUncompleted = getUserSettings().dailyShowUncompleted
             invalidateOptionsMenu()
             observeDailySudokus().flowWithLifecycle(lifecycle).collectLatest {
                 dailySudokus = it
@@ -119,8 +117,12 @@ class DailySudokuActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        menu?.setGroupVisible(R.id.group_show_all_sudokus, !dailyShowUncompleted)
-        menu?.setGroupVisible(R.id.group_show_only_completed_sudokus, dailyShowUncompleted)
+        lifecycleScope.launch {
+            getUserSettings().dailyShowUncompleted.let {
+                menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
+                menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
+            }
+        }
         return super.onPrepareOptionsMenu(menu)
     }
 
