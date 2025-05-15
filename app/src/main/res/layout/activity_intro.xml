@@ -12,7 +12,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="10dp">
 
         <dev.oneuiproject.oneui.widget.RoundedLinearLayout
             android:id="@+id/game_layout"
@@ -50,9 +51,9 @@
                 android:id="@+id/intro_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
                 android:layout_marginTop="4dp"
                 android:background="?android:colorBackground"
+                android:gravity="center"
                 android:orientation="horizontal"
                 android:paddingHorizontal="16dp"
                 android:paddingVertical="8dp">
@@ -230,7 +231,7 @@
                 android:id="@+id/intro_continue_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
+                android:layout_marginTop="4dp"
                 android:visibility="gone">
 
                 <androidx.appcompat.widget.AppCompatButton

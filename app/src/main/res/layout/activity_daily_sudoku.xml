@@ -9,12 +9,21 @@
     app:showNavButtonAsBack="true"
     app:title="@string/daily_sudoku">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/daily_sudoku_recycler"
+    <dev.oneuiproject.oneui.widget.RoundedFrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:colorBackground"
-        android:scrollbars="vertical"
-        android:visibility="gone" />
+        app:edgeInsetLeft="10dp"
+        app:edgeInsetRight="10dp"
+        app:roundedCorners="top_left|top_right">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/daily_sudoku_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?android:colorBackground"
+            android:paddingHorizontal="10dp"
+            android:visibility="gone" />
+
+    </dev.oneuiproject.oneui.widget.RoundedFrameLayout>
 
 </dev.oneuiproject.oneui.layout.ToolbarLayout>

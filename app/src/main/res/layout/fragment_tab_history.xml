@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<dev.oneuiproject.oneui.widget.RoundedFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    app:edgeInsetLeft="10dp"
+    app:edgeInsetRight="10dp"
+    app:roundedCorners="top_left|top_right">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/sudokuHistoryList"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="?android:colorBackground"
-        android:scrollbars="vertical"
+        android:paddingHorizontal="10dp"
         android:visibility="gone" />
 
     <androidx.core.widget.NestedScrollView
@@ -61,4 +64,4 @@
 
     </androidx.core.widget.NestedScrollView>
 
-</FrameLayout>
+</dev.oneuiproject.oneui.widget.RoundedFrameLayout>
