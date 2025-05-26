@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:layout_marginHorizontal="10dp"
+        android:layout_margin="10dp"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -53,7 +53,7 @@
             android:id="@+id/size_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="10dp"
             android:max="2"
             android:min="0"
             app:seamless="true"
@@ -95,26 +95,25 @@
             android:id="@+id/difficulty_seekbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="20dp"
+            android:layout_marginBottom="10dp"
             app:seamless="true"
             app:seslSeekBarMode="level_bar" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="10dp"
             android:baselineAligned="false"
             android:orientation="horizontal">
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/newGameButton"
-                style="@style/ButtonStyle.Filled.Themed"
+                style="@style/ButtonStyle.Filled"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="2dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_pen"
-                android:paddingVertical="10dp"
+                android:minHeight="90dp"
                 android:text="@string/new_game" />
 
             <androidx.appcompat.widget.AppCompatButton
@@ -122,11 +121,12 @@
                 style="@style/ButtonStyle.Colored"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="2dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_control_play"
-                android:paddingVertical="10dp"
+                android:minHeight="90dp"
                 android:text="@string/continue_game"
+                android:textColor="@color/commonutils_primary_text_icon_color"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -139,26 +139,39 @@
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/levelsButton"
-                style="@style/ButtonStyle.Filled.Themed"
+                style="@style/ButtonStyle.Filled"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="2dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_list"
-                android:paddingVertical="10dp"
+                android:minHeight="90dp"
                 android:text="@string/level"
                 tools:ignore="RtlHardcoded" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/dailyButton"
-                style="@style/ButtonStyle.Filled.Themed"
+                style="@style/ButtonStyle.Filled"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="2dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_calendar_task"
-                android:paddingVertical="10dp"
+                android:minHeight="90dp"
                 android:text="@string/daily_sudoku"
+                tools:ignore="RtlHardcoded" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/dailyAvailableButton"
+                style="@style/ButtonStyle.Colored"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:drawableTop="@drawable/ic_oui_calendar_task"
+                android:minHeight="90dp"
+                android:text="@string/daily_sudoku"
+                android:textColor="@color/commonutils_primary_text_icon_color"
+                android:visibility="gone"
                 tools:ignore="RtlHardcoded" />
 
         </LinearLayout>

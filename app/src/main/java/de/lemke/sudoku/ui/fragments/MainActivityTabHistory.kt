@@ -26,17 +26,21 @@ import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
+import de.lemke.sudoku.ui.utils.SudokuListAdapter.Payload.SELECTION_MODE
 import de.lemke.sudoku.ui.utils.SudokuListItem
+import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.delegates.AllSelectorState
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.ktx.setTabsEnabled
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.startActionMode
-import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.MarginsTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,7 +75,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
         val activity = requireActivity()
         drawerLayout = activity.findViewById(R.id.drawerLayout)
         mainTabs = activity.findViewById(R.id.mainTabLayout)
-        binding.historyNoEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
+        binding.noEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
         lifecycleScope.launch {
             observeSudokuHistory().flowWithLifecycle(lifecycle).collectLatest {
@@ -102,19 +106,15 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
             addItemDecoration(
                 SemItemDecoration(
                     context,
-                    dividerRule = ItemDecorRule.SELECTED {
-                        it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
-                    },
-                    subHeaderRule = ItemDecorRule.SELECTED {
-                        it.itemViewType == SudokuListItem.SeparatorItem.VIEW_TYPE
-                    }
+                    dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
+                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE }
                 ).apply { setDividerInsetStart(64.dpToPx(resources)) })
             enableCoreSeslFeatures()
         }
 
         sudokuListAdapter.configure(
             binding.sudokuHistoryList,
-            SudokuListAdapter.Payload.SELECTION_MODE,
+            SELECTION_MODE,
             onAllSelectorStateChanged = { allSelectorStateFlow.value = it }
         )
         updateRecyclerView()
@@ -123,14 +123,14 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     private fun updateRecyclerView() {
         if (sudokuHistory.isEmpty()) {
             binding.sudokuHistoryList.isVisible = false
-            binding.historyListLottie.cancelAnimation()
-            binding.historyListLottie.progress = 0f
-            binding.historyNoEntryScrollView.isVisible = true
+            binding.noEntryLottie.cancelAnimation()
+            binding.noEntryLottie.progress = 0f
+            binding.noEntryScrollView.isVisible = true
             val callback = LottieValueCallback<ColorFilter>(SimpleColorFilter(requireContext().getColor(R.color.primary_color_themed)))
-            binding.historyListLottie.addValueCallback(KeyPath("**"), COLOR_FILTER, callback)
-            binding.historyListLottie.postDelayed({ binding.historyListLottie.playAnimation() }, 400)
+            binding.noEntryLottie.addValueCallback(KeyPath("**"), COLOR_FILTER, callback)
+            binding.noEntryLottie.postDelayed({ binding.noEntryLottie.playAnimation() }, 400)
         } else {
-            binding.historyNoEntryScrollView.isVisible = false
+            binding.noEntryScrollView.isVisible = false
             binding.sudokuHistoryList.isVisible = true
             sudokuListAdapter.submitList(sudokuHistory)
         }
@@ -140,7 +140,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (isActionMode) onToggleItem(sudokuListItem.stableId, position)
             else {
-                if (sudokuListItem is SudokuListItem.SudokuItem) {
+                if (sudokuListItem is SudokuItem) {
                     viewHolder.itemView.transformToActivity(
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
                     )
@@ -166,12 +166,12 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 when (it.itemId) {
                     R.id.menuButtonDelete -> {
                         val dialog = ProgressDialog(requireContext())
-                        dialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+                        dialog.setProgressStyle(STYLE_CIRCLE)
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {
                             deleteSudoku(
-                                sudokuHistory.filterIsInstance<SudokuListItem.SudokuItem>()
+                                sudokuHistory.filterIsInstance<SudokuItem>()
                                     .filter { it.stableId in sudokuListAdapter.getSelectedIds() }.map { it.sudoku })
                             drawerLayout.endActionMode()
                             dialog.dismiss()

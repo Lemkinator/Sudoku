@@ -13,7 +13,7 @@ import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
 import android.text.SpannableString
-import android.text.Spanned
+import android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.view.View
@@ -23,7 +23,7 @@ import android.widget.LinearLayout.LayoutParams
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
@@ -93,7 +93,7 @@ class OOBEActivity : AppCompatActivity() {
                 }
             },
             tosText.indexOf(tos), tosText.length - if (Locale.getDefault().language == "de") 4 else 1,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            SPAN_EXCLUSIVE_EXCLUSIVE
         )
         binding.oobeIntroFooterTosText.text = tosLink
         binding.oobeIntroFooterTosText.movementMethod = LinkMovementMethod.getInstance()
@@ -101,9 +101,7 @@ class OOBEActivity : AppCompatActivity() {
     }
 
     private fun initFooterButton() {
-        if (resources.configuration.screenWidthDp < 360) {
-            binding.oobeIntroFooterButton.layoutParams.width = MATCH_PARENT
-        }
+        if (resources.configuration.screenWidthDp < 360) binding.oobeIntroFooterButton.layoutParams.width = MATCH_PARENT
         binding.oobeIntroFooterButton.setOnClickListener {
             binding.oobeIntroFooterTosText.isEnabled = false
             binding.oobeIntroFooterButton.isVisible = false
@@ -147,10 +145,7 @@ class OOBEActivity : AppCompatActivity() {
             .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                 lifecycleScope.launch {
                     //Enable Notifications when < Android 13 or permission is granted, else ask for permission
-                    if (
-                        SDK_INT < TIRAMISU ||
-                        ContextCompat.checkSelfPermission(this@OOBEActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
-                    ) {
+                    if (SDK_INT < TIRAMISU || checkSelfPermission(this@OOBEActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
                         updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
                         openIntroActivity()
                     } else requestPermissionLauncher.launch(POST_NOTIFICATIONS)
@@ -159,7 +154,7 @@ class OOBEActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         dialog.show()
-        dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_functional_red_color))
+        dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_des_functional_red_color))
     }
 
 

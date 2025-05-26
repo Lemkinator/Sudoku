@@ -1,25 +1,36 @@
 package de.lemke.sudoku.ui
 
-import android.Manifest
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
+import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
-import android.os.Build
+import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
+import android.os.Environment.getExternalStorageDirectory
+import android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+import android.provider.Settings.EXTRA_APP_PACKAGE
 import android.text.format.DateFormat
+import android.text.format.DateFormat.is24HourFormat
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.GetContent
+import androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+import androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
+import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.picker.app.SeslTimePickerDialog
@@ -34,9 +45,12 @@ import androidx.preference.SeslSwitchPreferenceScreen
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.deleteAppDataAndExit
 import de.lemke.commonutils.openApp
+import de.lemke.commonutils.openAppLocaleSettings
+import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationTo
-import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.commonutils.shareApp
 import de.lemke.commonutils.toast
 import de.lemke.sudoku.R
@@ -48,9 +62,6 @@ import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import de.lemke.sudoku.domain.deleteAppDataAndExit
-import de.lemke.sudoku.domain.openAppLocaleSettings
-import de.lemke.sudoku.domain.openURL
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference
@@ -61,6 +72,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Calendar
 import javax.inject.Inject
+import dev.oneuiproject.oneui.design.R as designR
 
 
 @AndroidEntryPoint
@@ -71,7 +83,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setCustomBackPressAnimation(binding.root)
+        setCustomBackAnimation(binding.root)
         if (savedInstanceState == null) supportFragmentManager.beginTransaction().replace(R.id.settings, SettingsFragment()).commit()
     }
 
@@ -121,11 +133,11 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
-            pickExportFolderActivityResultLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+            pickExportFolderActivityResultLauncher = registerForActivityResult(OpenDocumentTree()) { uri: Uri? ->
                 if (uri == null) toast(R.string.error_no_folder_selected)
                 else lifecycleScope.launch { exportData(uri) }
             }
-            pickImportJsonActivityResultLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            pickImportJsonActivityResultLauncher = registerForActivityResult(GetContent()) { uri: Uri? ->
                 if (uri == null) toast(R.string.error_no_file_selected)
                 else lifecycleScope.launch { importData(uri) }
             }
@@ -169,7 +181,7 @@ class SettingsActivity : AppCompatActivity() {
                         },
                         userSettings.dailySudokuNotificationHour,
                         userSettings.dailySudokuNotificationMinute,
-                        DateFormat.is24HourFormat(settingsActivity)
+                        is24HourFormat(settingsActivity)
                     )
                     dialog.show()
                 }
@@ -195,7 +207,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (SDK_INT >= TIRAMISU) {
                 findPreference<PreferenceScreen>("language_pref")!!.isVisible = true
                 findPreference<PreferenceScreen>("language_pref")!!.onPreferenceClickListener = OnPreferenceClickListener {
                     openAppLocaleSettings()
@@ -212,7 +224,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setMessage(R.string.export_data_message)
                     .setNegativeButton(R.string.sesl_cancel, null)
                     .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
-                        pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(Environment.getExternalStorageDirectory().absolutePath)))
+                        pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(getExternalStorageDirectory().absolutePath)))
                     }
                     .show()
                 true
@@ -233,11 +245,11 @@ class SettingsActivity : AppCompatActivity() {
                     .setTitle(R.string.delete_invalid_sudokus)
                     .setMessage(R.string.delete_invalid_sudokus_summary)
                     .setNegativeButton(R.string.sesl_cancel, null)
-                    .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
+                    .setPositiveButton(R.string.delete, null)
                     .create()
                 dialog.show()
-                dialog.getButton(DialogInterface.BUTTON_POSITIVE).apply {
-                    setTextColor(requireContext().getColor(dev.oneuiproject.oneui.design.R.color.oui_functional_red_color))
+                dialog.getButton(BUTTON_POSITIVE).apply {
+                    setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
                     setOnClickListenerWithProgress { button, progressBar ->
                         lifecycleScope.launch {
                             deleteInvalidSudokus()
@@ -280,7 +292,7 @@ class SettingsActivity : AppCompatActivity() {
         private fun setDailyNotificationPrefTime(hourOfDay: Int, minute: Int) {
             dailySudokuNotificationPref.summary = getString(
                 R.string.daily_sudoku_notification_channel_description_time,
-                DateFormat.format(if (DateFormat.is24HourFormat(settingsActivity)) "HH:mm" else "h:mm a", Calendar.getInstance().apply {
+                DateFormat.format(if (is24HourFormat(settingsActivity)) "HH:mm" else "h:mm a", Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, hourOfDay)
                     set(Calendar.MINUTE, minute)
                 })
@@ -292,12 +304,8 @@ class SettingsActivity : AppCompatActivity() {
             when (preference.key) {
                 "dark_mode_pref" -> {
                     val darkMode = newValue as String == "1"
-                    AppCompatDelegate.setDefaultNightMode(
-                        if (darkMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
-                    )
-                    lifecycleScope.launch {
-                        updateUserSettings { it.copy(darkMode = darkMode) }
-                    }
+                    setDefaultNightMode(if (darkMode) MODE_NIGHT_YES else MODE_NIGHT_NO)
+                    lifecycleScope.launch { updateUserSettings { it.copy(darkMode = darkMode) } }
                     return true
                 }
 
@@ -305,10 +313,10 @@ class SettingsActivity : AppCompatActivity() {
                     val autoDarkMode = newValue as Boolean
                     darkModePref.isEnabled = !autoDarkMode
                     lifecycleScope.launch {
-                        if (autoDarkMode) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                        if (autoDarkMode) setDefaultNightMode(MODE_NIGHT_FOLLOW_SYSTEM)
                         else {
-                            if (getUserSettings().darkMode) AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                            else AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                            if (getUserSettings().darkMode) setDefaultNightMode(MODE_NIGHT_YES)
+                            else setDefaultNightMode(MODE_NIGHT_NO)
                         }
                         updateUserSettings { it.copy(autoDarkMode = newValue) }
                     }
@@ -338,26 +346,21 @@ class SettingsActivity : AppCompatActivity() {
                 "daily_notification_pref" -> {
                     if (newValue as Boolean) {
                         when {
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(
-                                requireContext(),
-                                Manifest.permission.POST_NOTIFICATIONS
-                            ) != PackageManager.PERMISSION_GRANTED -> {
-                                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            SDK_INT >= TIRAMISU && checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
+                                requestPermissionLauncher.launch(POST_NOTIFICATIONS)
                                 dailySudokuNotificationPref.isChecked = false
                             }
 
                             !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
-                                val settingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    .putExtra(Settings.EXTRA_APP_PACKAGE, settingsActivity.packageName)
+                                val settingsIntent = Intent(ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .addFlags(FLAG_ACTIVITY_NEW_TASK)
+                                    .putExtra(EXTRA_APP_PACKAGE, settingsActivity.packageName)
                                 //.putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
                                 startActivity(settingsIntent)
                                 dailySudokuNotificationPref.isChecked = false
                             }
 
-                            else -> {
-                                setDailySudokuNotification(true)
-                            }
+                            else -> setDailySudokuNotification(true)
                         }
                     } else {
                         setDailySudokuNotification(false)
@@ -376,7 +379,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private val requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
                 if (isGranted) {
                     // Permission is granted. Continue the action or workflow in your app.
                     setDailySudokuNotification(true)
@@ -398,18 +401,11 @@ class SettingsActivity : AppCompatActivity() {
         private fun areNotificationsEnabled(
             channelId: String,
             notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext()),
-        ): Boolean {
-            return when {
-                !notificationManager.areNotificationsEnabled() -> false
-                notificationManager.getNotificationChannel(channelId)?.importance == NotificationManagerCompat.IMPORTANCE_NONE -> false
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                    ContextCompat.checkSelfPermission(
-                        requireContext(),
-                        Manifest.permission.POST_NOTIFICATIONS
-                    ) == PackageManager.PERMISSION_GRANTED
-
-                else -> true
-            }
+        ) = when {
+            !notificationManager.areNotificationsEnabled() -> false
+            notificationManager.getNotificationChannel(channelId)?.importance == IMPORTANCE_NONE -> false
+            SDK_INT >= TIRAMISU -> checkSelfPermission(requireContext(), POST_NOTIFICATIONS) == PERMISSION_GRANTED
+            else -> true
         }
     }
 }

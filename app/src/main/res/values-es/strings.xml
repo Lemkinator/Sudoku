@@ -27,7 +27,7 @@
     <string name="about_app">Acerca de Sudoku</string>
     <string name="app_description">Una aplicación de Sudoku con un hermoso diseño basado en OneUI.</string>
     <string name="open_in_playstore">Ver en la Play Store</string>
-
+    <string name="open_source_licenses">Licencias de código abierto</string>
     <string name="sudoku_lib">Biblioteca de Sudoku</string>
     <string name="sudoku_lib_license_text">Utiliza la %1$s, licenciada bajo %2$s.</string>
 
@@ -45,7 +45,7 @@
     <string name="no_browser_app_installed">Ninguna aplicación de navegador instalada…</string>
     <string name="error_cant_open_url">No se puede abrir el enlace.</string>
     <string name="useful_links">Enlaces útiles</string>
-    <string name="ad">¡PUBLICIDAD!!!&#129313;&#129396;</string>
+    <string name="playstore_ad">¡PUBLICIDAD!!!&#129313;&#129396;</string>
     <string name="playstore_redirect_message">Según Google Play, esto es \"Publicidad engañosa que simula o imita la interfaz de usuario de una función de la aplicación\"… Dado que las actualizaciones de la aplicación son rechazadas por Google Play de otro modo, aquí tienes una nota: Este botón (¿sorprendentemente?&#129313;) a mi página de desarrollador en Google Play, ¿continuar?</string>
 
 

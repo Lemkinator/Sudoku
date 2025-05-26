@@ -4,14 +4,13 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/share_statistics"
+            android:id="@+id/shareStatistics"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp" />
@@ -22,27 +21,27 @@
             android:text="@string/share" />
 
         <RadioGroup
-            android:id="@+id/share_radio_group"
+            android:id="@+id/shareRadioGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="24dp"
             android:layout_marginBottom="16dp">
 
             <RadioButton
-                android:id="@+id/radio_button_text"
+                android:id="@+id/radioButtonText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="@string/statistics" />
 
             <RadioButton
-                android:id="@+id/radio_button_initial"
+                android:id="@+id/radioButtonInitial"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/initial_sudoku" />
 
             <RadioButton
-                android:id="@+id/radio_button_current"
+                android:id="@+id/radioButtonCurrent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/current_sudoku" />

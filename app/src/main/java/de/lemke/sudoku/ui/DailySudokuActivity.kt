@@ -2,7 +2,7 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.Gravity
+import android.view.Gravity.START
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -13,7 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.prepareActivityTransformationBetween
-import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.commonutils.transformToActivity
 import de.lemke.commonutils.widget.InfoBottomSheet.Companion.showInfoBottomSheet
 import de.lemke.sudoku.R
@@ -22,14 +22,18 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
+import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.DAILY
 import de.lemke.sudoku.ui.utils.SudokuListItem
+import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
-import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -59,9 +63,9 @@ class DailySudokuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setCustomBackPressAnimation(binding.root)
+        setCustomBackAnimation(binding.root)
         val progressDialog = ProgressDialog(this)
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+        progressDialog.setProgressStyle(STYLE_CIRCLE)
         progressDialog.setCancelable(false)
         progressDialog.show()
         initRecycler()
@@ -80,7 +84,7 @@ class DailySudokuActivity : AppCompatActivity() {
     private fun initRecycler() {
         binding.dailySudokuRecycler.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = SudokuListAdapter(context, errorLimit = Sudoku.MODE_DAILY_ERROR_LIMIT, mode = SudokuListAdapter.Mode.DAILY).also {
+            adapter = SudokuListAdapter(context, errorLimit = MODE_DAILY_ERROR_LIMIT, mode = DAILY).also {
                 it.setupOnClickListeners()
                 sudokuListAdapter = it
             }
@@ -88,12 +92,8 @@ class DailySudokuActivity : AppCompatActivity() {
             addItemDecoration(
                 SemItemDecoration(
                     context,
-                    dividerRule = ItemDecorRule.SELECTED {
-                        it.itemViewType == SudokuListItem.SudokuItem.VIEW_TYPE
-                    },
-                    subHeaderRule = ItemDecorRule.SELECTED {
-                        it.itemViewType == SudokuListItem.SeparatorItem.VIEW_TYPE
-                    }
+                    dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
+                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE }
                 ).apply { setDividerInsetStart(64.dpToPx(resources)) }
             )
             enableCoreSeslFeatures()
@@ -102,7 +102,7 @@ class DailySudokuActivity : AppCompatActivity() {
 
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
-            if (sudokuListItem is SudokuListItem.SudokuItem) {
+            if (sudokuListItem is SudokuItem) {
                 viewHolder.itemView.transformToActivity(
                     Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
                 )
@@ -128,9 +128,9 @@ class DailySudokuActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.menuitem_daily_sudoku_info -> showInfoBottomSheet(
-            title = getString(R.string.daily_sudoku),
-            message = getString(R.string.daily_sudoku_info_message),
-            textGravity = Gravity.START
+            titleResId = R.string.daily_sudoku,
+            messageResId = R.string.daily_sudoku_info_message,
+            textGravity = START
         ).let { true }
 
         R.id.menuitem_show_all_sudokus -> lifecycleScope.launch {

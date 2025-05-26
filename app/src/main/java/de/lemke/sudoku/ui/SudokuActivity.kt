@@ -1,7 +1,7 @@
 package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
-import android.content.DialogInterface
+import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
 import android.content.Intent.ACTION_SEND
 import android.content.Intent.EXTRA_STREAM
@@ -16,7 +16,7 @@ import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.WindowManager
+import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
 import android.widget.TextView
@@ -28,10 +28,10 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
-import com.google.android.play.core.review.ReviewManagerFactory
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.prepareActivityTransformationTo
-import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.setCustomBackAnimation
+import de.lemke.commonutils.showInAppReviewIfPossible
 import de.lemke.commonutils.toast
 import de.lemke.commonutils.transformTo
 import de.lemke.sudoku.R
@@ -49,17 +49,22 @@ import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import de.lemke.commonutils.R as commonutilsR
+import dev.oneuiproject.oneui.R as oneuiR
 
 
 @AndroidEntryPoint
@@ -113,8 +118,7 @@ class SudokuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setCustomBackPressAnimation(binding.root)
-
+        setCustomBackAnimation(binding.root)
         val id = intent.getStringExtra(KEY_SUDOKU_ID)
         if (id == null) {
             Log.e("SudokuActivity", "Sudoku ID not found")
@@ -123,14 +127,12 @@ class SudokuActivity : AppCompatActivity() {
             return
         }
         loadingDialog = ProgressDialog(this)
-        loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+        loadingDialog.setProgressStyle(STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
-
         val typedValue = TypedValue()
         theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
         colorPrimary = ColorStateList.valueOf(typedValue.data)
-
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
@@ -145,9 +147,7 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        if (this::sudoku.isInitialized) {
-            pauseGame()
-        }
+        if (this::sudoku.isInitialized) pauseGame()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.sudoku_menu, menu).let { true }
@@ -157,8 +157,8 @@ class SudokuActivity : AppCompatActivity() {
         menu?.findItem(R.id.menu_pause_play)?.let {
             it.icon = AppCompatResources.getDrawable(
                 this,
-                if (sudoku.resumed) dev.oneuiproject.oneui.R.drawable.ic_oui_control_pause
-                else dev.oneuiproject.oneui.R.drawable.ic_oui_control_play
+                if (sudoku.resumed) oneuiR.drawable.ic_oui_control_pause
+                else oneuiR.drawable.ic_oui_control_play
             )
             it.title = getString(if (sudoku.resumed) R.string.pause else R.string.resume)
         }
@@ -242,7 +242,7 @@ class SudokuActivity : AppCompatActivity() {
         }
         invalidateOptionsMenu()
         checkErrorLimit()
-        if (userSettings.keepScreenOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (userSettings.keepScreenOn) window.addFlags(FLAG_KEEP_SCREEN_ON)
     }
 
     private fun pauseGame() {
@@ -253,7 +253,7 @@ class SudokuActivity : AppCompatActivity() {
         menuResetVisible = false
         menuPausePlayVisible = true
         invalidateOptionsMenu()
-        if (userSettings.keepScreenOn) window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
         lifecycleScope.launch { saveSudoku(sudoku) }
     }
 
@@ -298,7 +298,7 @@ class SudokuActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this@SudokuActivity)
             .setTitle(R.string.completed_title)
             .setMessage(sudoku.getLocalStatisticsString(resources))
-            .setNeutralButton(de.lemke.commonutils.R.string.ok, null)
+            .setNeutralButton(commonutilsR.string.ok, null)
         lifecycleScope.launch {
             saveSudoku(sudoku)
             if (sudoku.isSudokuLevel && getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
@@ -319,38 +319,14 @@ class SudokuActivity : AppCompatActivity() {
             }
             dialog.show()
             updatePlayGames(this@SudokuActivity, sudoku)
-            try {
-                opportunityToShowInAppReview()
-            } catch (e: Exception) {
-                Log.e("InAppReview", "Error: ${e.message}")
-            }
-        }
-    }
-
-    private suspend fun opportunityToShowInAppReview() {
-        val lastInAppReviewRequest = getUserSettings().lastInAppReviewRequest
-        val daysSinceLastRequest = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastInAppReviewRequest)
-        if (daysSinceLastRequest < 14) return
-        updateUserSettings { it.copy(lastInAppReviewRequest = System.currentTimeMillis()) }
-        val manager = ReviewManagerFactory.create(this)
-        //val manager = FakeReviewManager(context);
-        val request = manager.requestReviewFlow()
-        request.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val reviewInfo = task.result
-                val flow = manager.launchReviewFlow(this, reviewInfo)
-                flow.addOnCompleteListener {}
-            } else {
-                // There was some problem, log or handle the error code.
-                Log.e("InAppReview", "Review task failed: ${task.exception?.message}")
-            }
+            showInAppReviewIfPossible()
         }
     }
 
     private fun checkErrorLimit(): Boolean {
         val errorLimit = when {
-            sudoku.isDailySudoku -> Sudoku.MODE_DAILY_ERROR_LIMIT
-            sudoku.isSudokuLevel -> Sudoku.MODE_LEVEL_ERROR_LIMIT
+            sudoku.isDailySudoku -> MODE_DAILY_ERROR_LIMIT
+            sudoku.isSudokuLevel -> MODE_LEVEL_ERROR_LIMIT
             else -> userSettings.errorLimit
         }
         if (sudoku.errorLimitReached(errorLimit)) {
@@ -363,7 +339,7 @@ class SudokuActivity : AppCompatActivity() {
             AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.gameover)
                 .setMessage(getString(R.string.error_limit_reached, errorLimit))
                 .setPositiveButton(R.string.restart) { _, _ -> restartGame() }
-                .setNeutralButton(de.lemke.commonutils.R.string.ok, null)
+                .setNeutralButton(commonutilsR.string.ok, null)
                 .show()
             return true
         }
@@ -580,10 +556,10 @@ class SudokuActivity : AppCompatActivity() {
         sudoku.getCompletedNumbers().forEach { pair ->
             if (pair.second) {
                 sudokuButtons[pair.first - 1].isEnabled = false
-                sudokuButtons[pair.first - 1].setTextColor(getColor(de.lemke.commonutils.R.color.commonutils_secondary_text_icon_color))
+                sudokuButtons[pair.first - 1].setTextColor(getColor(commonutilsR.color.commonutils_secondary_text_icon_color))
             } else {
                 sudokuButtons[pair.first - 1].isEnabled = true
-                sudokuButtons[pair.first - 1].setTextColor(getColor(de.lemke.commonutils.R.color.commonutils_primary_text_icon_color))
+                sudokuButtons[pair.first - 1].setTextColor(getColor(commonutilsR.color.commonutils_primary_text_icon_color))
             }
         }
     }
@@ -631,8 +607,8 @@ class SudokuActivity : AppCompatActivity() {
             R.string.current_progress,
             sudoku.progress
         ) + " | " + when {
-            sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_DAILY_ERROR_LIMIT)
-            sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, Sudoku.MODE_LEVEL_ERROR_LIMIT)
+            sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, MODE_DAILY_ERROR_LIMIT)
+            sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, MODE_LEVEL_ERROR_LIMIT)
             errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
             else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
         } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""
@@ -649,13 +625,13 @@ class SudokuActivity : AppCompatActivity() {
             .setNegativeButton(R.string.sesl_cancel, null)
             .create()
         dialog.show()
-        dialog.findViewById<TextView>(R.id.share_statistics)?.text = sudoku.getLocalStatisticsString(resources)
-        dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListenerWithProgress { button, progressBar ->
+        dialog.findViewById<TextView>(R.id.shareStatistics)?.text = sudoku.getLocalStatisticsString(resources)
+        dialog.getButton(BUTTON_POSITIVE).setOnClickListenerWithProgress { button, progressBar ->
             lifecycleScope.launch {
-                when (dialog.findViewById<RadioGroup>(R.id.share_radio_group)?.checkedRadioButtonId) {
-                    R.id.radio_button_text -> shareStats()
-                    R.id.radio_button_initial -> shareGame(sudoku.getInitialSudoku())
-                    R.id.radio_button_current -> shareGame(sudoku.copy(modeLevel = Sudoku.MODE_NORMAL))
+                when (dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.checkedRadioButtonId) {
+                    R.id.radioButtonText -> shareStats()
+                    R.id.radioButtonInitial -> shareGame(sudoku.getInitialSudoku())
+                    R.id.radioButtonCurrent -> shareGame(sudoku.copy(modeLevel = MODE_NORMAL))
                 }
                 dialog.dismiss()
             }
@@ -700,7 +676,7 @@ class SudokuActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_F -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 14) }?.let { true } == true
             KeyEvent.KEYCODE_G -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 15) }?.let { true } == true
             KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size).let { true }
-            KeyEvent.KEYCODE_H -> select(sudoku.itemCount + sudoku.size + 1).let { true }
+            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size + 1).let { true } else false
             KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
             KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
             else -> super.onKeyUp(keyCode, event)

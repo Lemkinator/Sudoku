@@ -71,7 +71,7 @@
                     style="@style/ButtonStyle.Colored"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/oui_common_continue" />
+                    android:text="@string/oui_des_common_continue" />
 
 
             </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
@@ -240,7 +240,7 @@
                     android:layout_width="296dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="@string/oui_common_continue" />
+                    android:text="@string/oui_des_common_continue" />
 
             </FrameLayout>
 

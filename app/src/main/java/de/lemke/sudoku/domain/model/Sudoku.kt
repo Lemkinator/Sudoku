@@ -5,9 +5,13 @@ import android.content.res.Resources
 import de.lemke.sudoku.R
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.ZoneId.systemDefault
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatter.ofLocalizedDate
+import java.time.format.DateTimeFormatter.ofLocalizedDateTime
 import java.time.format.FormatStyle
+import java.time.format.FormatStyle.FULL
+import java.time.format.FormatStyle.MEDIUM
 import java.util.*
 import kotlin.concurrent.timer
 import kotlin.math.sqrt
@@ -325,6 +329,7 @@ class Sudoku(
     fun setHint(index: Int) = setHint(Position.create(index, size))
 
     fun setHint(position: Position) {
+        if (timer == null || get(position).given || get(position).hint || !isHintAvailable) return
         hintsUsed++
         get(position).setHint()
         gameListener?.onFieldChanged(position)
@@ -430,8 +435,7 @@ fun Int?.toSudokuChar(): Char? = when (this) {
 }
 
 val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-val LocalDateTime.dateFormatShort: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))
-val LocalDate.formatFull: String get() = format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
-val LocalDateTime.formatFull: String
-    get() = format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.MEDIUM).withZone(ZoneId.systemDefault()))
+val LocalDateTime.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
+val LocalDate.formatFull: String get() = format(ofLocalizedDate(FULL))
+val LocalDateTime.formatFull: String get() = format(ofLocalizedDateTime(FULL, MEDIUM).withZone(systemDefault()))
 

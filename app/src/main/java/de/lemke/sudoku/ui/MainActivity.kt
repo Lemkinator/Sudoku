@@ -37,6 +37,7 @@ import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.AboutActivity
 import de.lemke.commonutils.AboutMeActivity
+import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationFrom
 import de.lemke.commonutils.setup
 import de.lemke.commonutils.setupCommonActivities
@@ -52,7 +53,6 @@ import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
-import de.lemke.sudoku.domain.openURL
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
@@ -326,7 +326,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                         1 -> binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
 
                         2 -> {
-                            val statisticsRecyclerView: RecyclerView = findViewById(R.id.statistics_list_recycler)
+                            val statisticsRecyclerView: RecyclerView = findViewById(R.id.statisticsListRecycler)
                             if (binding.drawerLayout.isExpanded) binding.drawerLayout.setExpanded(false, true)
                             else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
                             else showStatisticsFilterDialog()

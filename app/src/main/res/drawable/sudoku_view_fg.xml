@@ -3,5 +3,5 @@
     <corners android:radius="26dp" />
     <stroke
         android:width="2dp"
-        android:color="@color/oui_list_divider_color" />
+        android:color="@color/oui_des_list_divider_color" />
 </shape>

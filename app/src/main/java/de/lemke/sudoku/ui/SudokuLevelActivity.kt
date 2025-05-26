@@ -9,7 +9,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.prepareActivityTransformationBetween
-import de.lemke.commonutils.setCustomBackPressAnimation
+import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
@@ -33,20 +33,20 @@ class SudokuLevelActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySudokuLevelBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setCustomBackPressAnimation(binding.root)
+        setCustomBackAnimation(binding.root)
         binding.viewPagerLevel.adapter = ViewPager2AdapterTabLevelSubtabs(this)
+        binding.viewPagerLevel.offscreenPageLimit = 2
         TabLayoutMediator(binding.fragmentLevelSubTabs, binding.viewPagerLevel) { tab, position ->
             tab.text = arrayOf(getString(R.string.size4), getString(R.string.size9), getString(R.string.size16))[position]
         }.attach()
         lifecycleScope.launch {
             binding.viewPagerLevel.setCurrentItem(getUserSettings().currentLevelTab, false)
             binding.viewPagerLevel.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageScrollStateChanged(state: Int) {}
                 override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
                 override fun onPageSelected(position: Int) {
                     lifecycleScope.launch { updateUserSettings { it.copy(currentLevelTab = position) } }
                 }
-
-                override fun onPageScrollStateChanged(state: Int) {}
             })
         }
     }

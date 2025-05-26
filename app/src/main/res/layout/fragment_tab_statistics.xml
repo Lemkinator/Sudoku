@@ -1,17 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<dev.oneuiproject.oneui.widget.RoundedFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<androidx.recyclerview.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/statisticsListRecycler"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:edgeInsetLeft="10dp"
-    app:edgeInsetRight="10dp"
-    app:roundedCorners="top_left|top_right">
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/statistics_list_recycler"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="?android:colorBackground"
-        android:paddingHorizontal="10dp" />
-
-</dev.oneuiproject.oneui.widget.RoundedFrameLayout>
+    android:background="?android:colorBackground"
+    android:paddingHorizontal="10dp"
+    android:scrollbarStyle="outsideOverlay" />

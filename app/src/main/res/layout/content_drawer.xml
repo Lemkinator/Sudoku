@@ -36,7 +36,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_oui_game_detail_outline"
+                    android:src="@drawable/ic_oui_crown_outline"
                     app:tint="?android:textColorPrimary" />
 
             </FrameLayout>
@@ -75,7 +75,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_oui_game_outline"
+                    android:src="@drawable/ic_oui_community_outline"
                     app:tint="?android:textColorPrimary" />
 
             </FrameLayout>

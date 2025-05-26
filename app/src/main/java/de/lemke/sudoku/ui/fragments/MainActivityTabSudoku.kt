@@ -11,7 +11,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.setStyle
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
@@ -74,7 +73,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
         binding.newGameButton.onSingleClick {
             loadingDialog.show()
             lifecycleScope.launch {
-                val sudoku = generateSudoku(binding.sizeSeekbar.size, Difficulty.fromInt(binding.difficultySeekbar.progress))
+                val sudoku = generateSudoku(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
                 saveSudoku(sudoku)
                 binding.newGameButton.transformToActivity(
                     Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
@@ -84,6 +83,12 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
         }
         binding.dailyButton.onSingleClick {
             binding.dailyButton.transformToActivity(
+                Intent(requireActivity(), DailySudokuActivity::class.java),
+                "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
+            )
+        }
+        binding.dailyAvailableButton.onSingleClick {
+            binding.dailyAvailableButton.transformToActivity(
                 Intent(requireActivity(), DailySudokuActivity::class.java),
                 "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
             )
@@ -132,18 +137,18 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
                     )
                 }
             } else binding.continueGameButton.isVisible = false
-            binding.dailyButton.setStyle(
-                if (isDailySudokuCompleted()) de.lemke.commonutils.R.style.ButtonStyle_Filled_Themed
-                else de.lemke.commonutils.R.style.ButtonStyle_Colored
-            )
+            isDailySudokuCompleted().let {
+                binding.dailyAvailableButton.isVisible = !it
+                binding.dailyButton.isVisible = it
+            }
         }
     }
-}
 
-private val SeslSeekBar.size: Int
-    get() = when (this.progress) {
-        0 -> 4
-        1 -> 9
-        2 -> 16
-        else -> 9
-    }
+    private val SeslSeekBar.sudokuSize: Int
+        get() = when (this.progress) {
+            0 -> 4
+            1 -> 9
+            2 -> 16
+            else -> 9
+        }
+}

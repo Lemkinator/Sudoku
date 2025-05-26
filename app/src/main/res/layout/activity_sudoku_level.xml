@@ -17,14 +17,13 @@
             android:id="@+id/fragmentLevelSubTabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:tabMode="sesl_weight_auto"
-            app:tabGravity="fill"
-            app:seslDepthStyle="sesl_sub" />
+            app:seslTabStyle="Sub" />
 
         <dev.oneuiproject.oneui.widget.RoundedFrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
+            app:edgeInsetLeft="10dp"
+            app:edgeInsetRight="10dp"
             app:roundedCorners="top_left|top_right">
 
             <androidx.viewpager2.widget.ViewPager2

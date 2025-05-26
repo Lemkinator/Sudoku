@@ -1,12 +1,14 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
-import android.app.ActionBar.LayoutParams
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
-import android.widget.*
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -20,12 +22,12 @@ import de.lemke.sudoku.domain.ObserveStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
-import dev.oneuiproject.oneui.utils.ItemDecorRule
+import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.Separator
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.*
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -50,13 +52,10 @@ class MainActivityTabStatistics : Fragment() {
             adapter = StatisticsListAdapter()
             itemAnimator = null
             addItemDecoration(
-                SemItemDecoration(context,
-                    dividerRule = ItemDecorRule.SELECTED {
-                        it.itemViewType == 0
-                    },
-                    subHeaderRule = ItemDecorRule.SELECTED {
-                        it.itemViewType == 1
-                    })
+                SemItemDecoration(
+                    context,
+                    dividerRule = SELECTED { it.itemViewType == 0 },
+                    subHeaderRule = SELECTED { it.itemViewType == 1 })
             )
             enableCoreSeslFeatures()
         }
@@ -146,19 +145,15 @@ class MainActivityTabStatistics : Fragment() {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = when (viewType) {
             0 -> ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), false)
             else -> ViewHolder(Separator(requireContext()), true).apply {
-                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
             }
         }
 
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            if (holder.isSeparator) {
-                holder.textView.text = statisticsList[position].first
-            } else {
-                holder.textView.text = statisticsList[position].first
-                holder.textViewValue.text = statisticsList[position].second
-            }
+            holder.textView.text = statisticsList[position].first
+            if (!holder.isSeparator) holder.textViewValue.text = statisticsList[position].second
         }
 
         inner class ViewHolder internal constructor(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
