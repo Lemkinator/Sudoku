@@ -19,8 +19,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 36
-        versionCode = 50
-        versionName = "3.4.0"
+        versionCode = 51
+        versionName = "3.4.1"
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
             arg("room.generateKotlin", "true")
@@ -29,6 +29,8 @@ android {
 
     @Suppress("UnstableApiUsage")
     androidResources.localeFilters += listOf("en", "de", "es", "es-rES")
+
+    ndkVersion = "28.1.13356709"
 
     signingConfigs {
         create("release") {
@@ -111,8 +113,7 @@ dependencies {
     implementation("com.google.android.play:review-ktx:2.0.2")
 
     implementation("androidx.core:core-splashscreen:1.2.0-beta02")
-    //noinspection GradleDependency until https://issuetracker.google.com/u/0/issues/342671895 is fixed
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
     val roomVersion = "2.7.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
