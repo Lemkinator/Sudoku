@@ -26,3 +26,6 @@
 -keep class io.kjson.** {*;}
 -keep class io.kjson.stringifyJSON.** {*;}
 -keep class io.kjson.parseJSON.** {*;}
+
+# Missing class java.beans.ConstructorProperties (referenced from: io.kjson.deserialize.Deserializer io.kjson.deserialize.JavaClassDeserializerFunctions.createJavaClassDeserializer(kotlin.reflect.KClass, kotlin.reflect.KType, io.kjson.JSONConfig, java.util.List))
+-dontwarn java.beans.ConstructorProperties
