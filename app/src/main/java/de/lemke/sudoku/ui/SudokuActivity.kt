@@ -11,7 +11,6 @@ import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
-import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -76,7 +75,6 @@ class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     private lateinit var userSettings: UserSettings
-    private lateinit var colorPrimary: ColorStateList
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -84,6 +82,9 @@ class SudokuActivity : AppCompatActivity() {
     private var selected: Int? = null
     private var menuPausePlayVisible = false
     private var menuResetVisible = false
+
+    private val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
+    private val transparent get() = ColorStateList.valueOf(getColor(android.R.color.transparent))
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -130,9 +131,6 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.setProgressStyle(STYLE_CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
-        val typedValue = TypedValue()
-        theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
-        colorPrimary = ColorStateList.valueOf(typedValue.data)
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
@@ -518,7 +516,6 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectButton(i: Int?, highlightSelectedNumber: Boolean) {
-        val transparent = ColorStateList.valueOf(getColor(android.R.color.transparent))
         for (button in sudokuButtons) button.backgroundTintList = transparent
         binding.deleteButton.backgroundTintList = transparent
         binding.hintButton.backgroundTintList = transparent
@@ -578,9 +575,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
         notesEnabled = enabled ?: !notesEnabled
-        binding.noteButton.backgroundTintList =
-            if (notesEnabled) colorPrimary
-            else ColorStateList.valueOf(resources.getColor(android.R.color.transparent, theme))
+        binding.noteButton.backgroundTintList = if (notesEnabled) colorPrimary else transparent
     }
 
     private fun refreshHintButton() {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="ButtonStyle.SudokuButton" parent="Widget.AppCompat.Button">
+    <style name="ButtonStyle.SudokuButton" parent="ButtonStyle.Colored">
         <item name="android:backgroundTint">@android:color/transparent</item>
         <item name="android:textColor">@color/commonutils_primary_text_icon_color</item>
         <item name="android:drawableTint">@color/commonutils_primary_text_icon_color</item>
