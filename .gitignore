@@ -90,11 +90,8 @@ fabric.properties
 .DS_Store
 
 /build
-/release
-app/release
-!app/release/app-release.apk
+*.aab
 
-mobile/google-services.json
 /captures
 .externalNativeBuild
 .cxx
