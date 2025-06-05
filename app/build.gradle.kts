@@ -101,7 +101,7 @@ dependencies {
 
     implementation("io.github.lemkinator:common-utils:0.8.11")
 
-    implementation("de.sfuhrm:sudoku:5.0.1")
+    implementation("de.sfuhrm:sudoku:5.0.3")
     implementation("io.kjson:kjson:9.7")
     implementation("net.pwall.json:json-kotlin-schema:0.56")
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.1.0")
