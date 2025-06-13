@@ -17,8 +17,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 36
-        versionCode = 52
-        versionName = "3.4.1"
+        versionCode = 53
+        versionName = "3.4.2"
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
             arg("room.generateKotlin", "true")
