@@ -10,7 +10,6 @@
     <string name="size9" translatable="false">9×9</string>
     <string name="size16" translatable="false">16×16</string>
 
-    <string name="sesl_cancel">Cancel</string>
     <string name="settings">Settings</string>
     <string name="history">History</string>
     <string name="statistics">Statistics</string>

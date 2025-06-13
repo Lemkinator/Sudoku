@@ -64,6 +64,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.R as oneuiR
+import dev.oneuiproject.oneui.design.R as designR
 
 
 @AndroidEntryPoint
@@ -617,7 +618,7 @@ class SudokuActivity : AppCompatActivity() {
             .setTitle(R.string.share_sudoku)
             .setView(R.layout.dialog_share)
             .setPositiveButton(R.string.share, null)
-            .setNegativeButton(R.string.sesl_cancel, null)
+            .setNegativeButton(designR.string.oui_des_common_cancel, null)
             .create()
         dialog.show()
         dialog.findViewById<TextView>(R.id.shareStatistics)?.text = sudoku.getLocalStatisticsString(resources)

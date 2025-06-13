@@ -222,7 +222,7 @@ class SettingsActivity : AppCompatActivity() {
                 AlertDialog.Builder(settingsActivity)
                     .setTitle(R.string.export_data)
                     .setMessage(R.string.export_data_message)
-                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                         pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(getExternalStorageDirectory().absolutePath)))
                     }
@@ -233,7 +233,7 @@ class SettingsActivity : AppCompatActivity() {
                 AlertDialog.Builder(settingsActivity)
                     .setTitle(R.string.import_data)
                     .setMessage(R.string.import_data_message)
-                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(de.lemke.commonutils.R.string.ok) { _: DialogInterface, _: Int ->
                         pickImportJsonActivityResultLauncher.launch("application/json")
                     }
@@ -244,7 +244,7 @@ class SettingsActivity : AppCompatActivity() {
                 val dialog = AlertDialog.Builder(settingsActivity)
                     .setTitle(R.string.delete_invalid_sudokus)
                     .setMessage(R.string.delete_invalid_sudokus_summary)
-                    .setNegativeButton(R.string.sesl_cancel, null)
+                    .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(R.string.delete, null)
                     .create()
                 dialog.show()

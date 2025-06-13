@@ -1,6 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--General-->
-    <string name="sesl_cancel">Cancelar</string>
     <string name="settings">Ajustes</string>
     <string name="history">Historial</string>
     <string name="statistics">Estadísticas</string>
