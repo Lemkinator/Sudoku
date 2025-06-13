@@ -19,6 +19,7 @@ import android.view.View
 import android.widget.LinearLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityOptionsCompat.makeCustomAnimation
@@ -46,8 +47,23 @@ import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
+import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
 import de.lemke.sudoku.domain.AppStart
 import de.lemke.sudoku.domain.CheckAppStartUseCase
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_ALL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EASY
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EXPERT
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_HARD
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_MEDIUM
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_VERY_EASY
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_16X16
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_9X9
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_ALL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_ALL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_DAILY
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_LEVEL
+import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_NORMAL
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
@@ -63,6 +79,7 @@ import dev.oneuiproject.oneui.ktx.onSingleClick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import dev.oneuiproject.oneui.design.R as designR
 
 
 @AndroidEntryPoint
@@ -338,7 +355,54 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         })
     }
 
-    private fun showStatisticsFilterDialog() = FilterBottomSheet().show(supportFragmentManager, "StatisticsFilterDialog")
+    private fun showStatisticsFilterDialog() {
+        lifecycleScope.launch {
+            val dialogBinding = DialogStatisticsFilterBinding.inflate(layoutInflater).apply {
+                getUserSettings().let {
+                    filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
+                    filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
+                    filterLevel.isChecked = it.filterFlags and TYPE_LEVEL != 0 || it.filterFlags and TYPE_ALL != 0
+                    filterSize4.isChecked = it.filterFlags and SIZE_4X4 != 0 || it.filterFlags and SIZE_ALL != 0
+                    filterSize9.isChecked = it.filterFlags and SIZE_9X9 != 0 || it.filterFlags and SIZE_ALL != 0
+                    filterSize16.isChecked = it.filterFlags and SIZE_16X16 != 0 || it.filterFlags and SIZE_ALL != 0
+                    filterDifficultyVeryEasy.isChecked =
+                        it.filterFlags and DIFFICULTY_VERY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+                    filterDifficultyEasy.isChecked = it.filterFlags and DIFFICULTY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+                    filterDifficultyMedium.isChecked = it.filterFlags and DIFFICULTY_MEDIUM != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+                    filterDifficultyHard.isChecked = it.filterFlags and DIFFICULTY_HARD != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+                    filterDifficultyExpert.isChecked = it.filterFlags and DIFFICULTY_EXPERT != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+                }
+            }
+            AlertDialog.Builder(this@MainActivity).apply {
+                setTitle(getString(R.string.statistics_filter))
+                setView(dialogBinding.root)
+                setNegativeButton(getString(designR.string.oui_des_common_cancel)) { d, w -> d.dismiss() }
+                setPositiveButton(getString(designR.string.oui_des_common_apply)) { d, w ->
+                    var flags = 0
+                    if (dialogBinding.filterNormal.isChecked) flags = flags or TYPE_NORMAL
+                    if (dialogBinding.filterDaily.isChecked) flags = flags or TYPE_DAILY
+                    if (dialogBinding.filterLevel.isChecked) flags = flags or TYPE_LEVEL
+                    if (flags and TYPE_NORMAL != 0 && flags and TYPE_DAILY != 0 && flags and TYPE_LEVEL != 0) flags = flags or TYPE_ALL
+                    if (dialogBinding.filterSize4.isChecked) flags = flags or SIZE_4X4
+                    if (dialogBinding.filterSize9.isChecked) flags = flags or SIZE_9X9
+                    if (dialogBinding.filterSize16.isChecked) flags = flags or SIZE_16X16
+                    if (flags and SIZE_4X4 != 0 && flags and SIZE_9X9 != 0 && flags and SIZE_16X16 != 0) flags = flags or SIZE_ALL
+                    if (dialogBinding.filterDifficultyVeryEasy.isChecked) flags = flags or DIFFICULTY_VERY_EASY
+                    if (dialogBinding.filterDifficultyEasy.isChecked) flags = flags or DIFFICULTY_EASY
+                    if (dialogBinding.filterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
+                    if (dialogBinding.filterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
+                    if (dialogBinding.filterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
+                    if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0
+                        && flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
+                    ) {
+                        flags = flags or DIFFICULTY_ALL
+                    }
+                    lifecycleScope.launch { updateUserSettings { it.copy(filterFlags = flags) } }
+                }
+                show()
+            }
+        }
+    }
 
     private fun initFragments() {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()

@@ -49,7 +49,7 @@ class UserSettingsRepository @Inject constructor(
             it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
             it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
             it[KEY_ERROR_LIMIT] = newSettings.errorLimit
-            it[KEY_STATISTICS_FILTER_FLAGS] = newSettings.statisticsFilterFlags
+            it[KEY_STATISTICS_FILTER_FLAGS] = newSettings.filterFlags
             it[KEY_DAILY_SHOW_UNCOMPLETED] = newSettings.dailyShowUncompleted
             it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
             it[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] = newSettings.dailySudokuNotificationHour
@@ -74,7 +74,7 @@ class UserSettingsRepository @Inject constructor(
         highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] != false,
         highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] != false,
         errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
-        statisticsFilterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
+        filterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
             ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
         dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] != false,
         dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] != false,
@@ -136,7 +136,7 @@ data class UserSettings(
     /** error limit*/
     val errorLimit: Int,
     /** Statistics filter Flags*/
-    val statisticsFilterFlags: Int,
+    val filterFlags: Int,
     /** show uncompleted daily sudokus */
     val dailyShowUncompleted: Boolean,
     /** daily Sudoku Notification enabled */

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingVertical="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/size"
+                android:textColor="?android:textColorSecondaryInverseNoDisable"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="5dp"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="12dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:src="@drawable/drawer_item_separator_bg"
+                tools:ignore="ContentDescription" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterSize4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/size4" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterSize9"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/size9" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterSize16"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/size16" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/difficulty"
+                android:textColor="?android:textColorSecondaryInverseNoDisable"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="5dp"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="12dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:src="@drawable/drawer_item_separator_bg"
+                tools:ignore="ContentDescription" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterDifficultyVeryEasy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/very_easy" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterDifficultyEasy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/easy" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterDifficultyMedium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/medium" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterDifficultyHard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/hard" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterDifficultyExpert"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/expert" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/type"
+                android:textColor="?android:textColorSecondaryInverseNoDisable"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="5dp"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="12dp"
+                android:clickable="false"
+                android:focusable="false"
+                android:src="@drawable/drawer_item_separator_bg"
+                tools:ignore="ContentDescription" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterNormal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/normal_sudokus" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterDaily"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/daily_sudokus" />
+
+        <androidx.appcompat.widget.AppCompatCheckBox
+            android:id="@+id/filterLevel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:text="@string/sudoku_level" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>
