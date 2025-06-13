@@ -34,7 +34,7 @@ import dev.oneuiproject.oneui.delegates.AllSelectorState
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.ktx.setTabsEnabled
@@ -166,7 +166,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 when (it.itemId) {
                     R.id.menuButtonDelete -> {
                         val dialog = ProgressDialog(requireContext())
-                        dialog.setProgressStyle(STYLE_CIRCLE)
+                        dialog.setProgressStyle(CIRCLE)
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {

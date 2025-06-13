@@ -9,17 +9,19 @@ import dagger.hilt.android.qualifiers.ActivityContext
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.sudokuToExport
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import io.kjson.stringifyJSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 
 class ExportDataUseCase @Inject constructor(
     @ActivityContext private val context: Context,
-    private val getAllSudokus: GetAllSudokusUseCase
+    private val getAllSudokus: GetAllSudokusUseCase,
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(destination: Uri): Unit = withContext(Dispatchers.Main) {
@@ -27,7 +29,7 @@ class ExportDataUseCase @Inject constructor(
         progressDialog.setCancelable(false)
         progressDialog.isIndeterminate = true
         progressDialog.max = 1
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+        progressDialog.setProgressStyle(HORIZONTAL)
         progressDialog.setTitle(R.string.export_data)
         progressDialog.setMessage(context.getString(R.string.export_data_ongoing))
         progressDialog.show()

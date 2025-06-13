@@ -29,6 +29,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,7 +66,7 @@ class IntroActivity : AppCompatActivity() {
         openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
 
         loadingDialog = ProgressDialog(this)
-        loadingDialog.setProgressStyle(ProgressDialog.STYLE_CIRCLE)
+        loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
 

@@ -11,6 +11,7 @@ import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuFromExport
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import io.kjson.parseJSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,7 +31,7 @@ class ImportDataUseCase @Inject constructor(
         progressDialog.max = 1
         progressDialog.setTitle(R.string.import_data)
         progressDialog.setMessage(context.getString(R.string.import_data_ongoing))
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL)
+        progressDialog.setProgressStyle(HORIZONTAL)
         progressDialog.show()
         var result: String
         withContext(Dispatchers.IO) {

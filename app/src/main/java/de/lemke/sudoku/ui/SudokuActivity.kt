@@ -55,7 +55,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -128,7 +128,7 @@ class SudokuActivity : AppCompatActivity() {
             return
         }
         loadingDialog = ProgressDialog(this)
-        loadingDialog.setProgressStyle(STYLE_CIRCLE)
+        loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
         loadingDialog.show()
         lifecycleScope.launch {

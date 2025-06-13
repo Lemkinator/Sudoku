@@ -26,7 +26,7 @@ import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.LEVEL
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
@@ -65,7 +65,7 @@ class SudokuLevelTab(private val size: Int) : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         progressDialog = ProgressDialog(requireContext())
-        progressDialog.setProgressStyle(STYLE_CIRCLE)
+        progressDialog.setProgressStyle(CIRCLE)
         progressDialog.setCancelable(false)
         lifecycleScope.launch {
             initRecycler()

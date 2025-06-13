@@ -58,7 +58,7 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private suspend fun checkImportedSudokuOrNotificationClicked() {
         if (intent != null && intent.data != null) {
             val dialog = ProgressDialog(this)
-            dialog.setProgressStyle(STYLE_CIRCLE)
+            dialog.setProgressStyle(CIRCLE)
             dialog.setCancelable(false)
             dialog.show()
             val sudoku = importSudoku(intent.data)

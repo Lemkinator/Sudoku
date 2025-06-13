@@ -28,7 +28,7 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.Companion.STYLE_CIRCLE
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.launch
@@ -63,7 +63,7 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val loadingDialog = ProgressDialog(requireContext())
-        loadingDialog.setProgressStyle(STYLE_CIRCLE)
+        loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
 
