@@ -19,10 +19,6 @@ android {
         targetSdk = 36
         versionCode = 53
         versionName = "3.4.2"
-        ksp {
-            arg("room.schemaLocation", "$projectDir/schemas")
-            arg("room.generateKotlin", "true")
-        }
     }
 
     @Suppress("UnstableApiUsage")
@@ -85,6 +81,11 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.generateKotlin", "true")
 }
 
 dependencies {
