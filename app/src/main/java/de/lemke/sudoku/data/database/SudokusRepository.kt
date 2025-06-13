@@ -27,8 +27,8 @@ class SudokusRepository @Inject constructor(
 
     suspend fun deleteSudoku(sudoku: Sudoku) = sudokuDao.delete(sudokuToDb(sudoku))
 
-    suspend fun saveSudoku(sudoku: Sudoku) {
-        when {
+    suspend fun saveSudoku(sudoku: Sudoku, onlyUpdate: Boolean = false) {
+        if (!onlyUpdate) when {
             sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { if (it.id != sudoku.id) deleteSudoku(it) }
             sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { if (it.id != sudoku.id) deleteSudoku(it) }
         }

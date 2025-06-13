@@ -9,7 +9,7 @@ import javax.inject.Inject
 class SaveSudokuUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    suspend operator fun invoke(sudoku: Sudoku) = withContext(Dispatchers.Default) {
-        sudokusRepository.saveSudoku(sudoku)
+    suspend operator fun invoke(sudoku: Sudoku, onlyUpdate: Boolean = false) = withContext(Dispatchers.Default) {
+        sudokusRepository.saveSudoku(sudoku, onlyUpdate)
     }
 }

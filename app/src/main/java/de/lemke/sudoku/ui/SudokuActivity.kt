@@ -252,7 +252,7 @@ class SudokuActivity : AppCompatActivity() {
         menuPausePlayVisible = true
         invalidateOptionsMenu()
         if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
-        lifecycleScope.launch { saveSudoku(sudoku) }
+        lifecycleScope.launch { saveSudoku(sudoku, onlyUpdate = true) }
     }
 
     private fun animateGameButtonsVisibility(visible: Boolean) {
@@ -270,7 +270,7 @@ class SudokuActivity : AppCompatActivity() {
             gameAdapter.updateFieldView(position.index)
             checkAnyNumberCompleted()
             checkRowColumnBlockCompleted(position)
-            lifecycleScope.launch { saveSudoku(sudoku) }
+            lifecycleScope.launch { saveSudoku(sudoku, onlyUpdate = true) }
         }
 
         override fun onCompleted(position: Position) {
@@ -298,7 +298,7 @@ class SudokuActivity : AppCompatActivity() {
             .setMessage(sudoku.getLocalStatisticsString(resources))
             .setNeutralButton(commonutilsR.string.ok, null)
         lifecycleScope.launch {
-            saveSudoku(sudoku)
+            saveSudoku(sudoku, onlyUpdate = true)
             if (sudoku.isSudokuLevel && getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
                 lifecycleScope.launch {
                     loadingDialog.show()
