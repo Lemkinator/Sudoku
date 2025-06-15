@@ -10,6 +10,13 @@
     app:title="@string/app_name"
     tools:isOpen="true">
 
+    <dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
+        android:id="@+id/navigation_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_location="drawer_panel"
+        app:menu="@menu/menu_navigation" />
+
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
@@ -43,7 +50,5 @@
         android:text="@string/statistics"/>
 
     </dev.oneuiproject.oneui.widget.MarginsTabLayout>
-
-    <include layout="@layout/content_drawer" />
 
 </dev.oneuiproject.oneui.layout.NavDrawerLayout>

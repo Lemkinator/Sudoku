@@ -16,7 +16,6 @@ import android.text.style.ClickableSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.LinearLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -40,8 +39,8 @@ import de.lemke.commonutils.AboutActivity
 import de.lemke.commonutils.AboutMeActivity
 import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationFrom
-import de.lemke.commonutils.setup
 import de.lemke.commonutils.setupCommonActivities
+import de.lemke.commonutils.setupHeaderAndNavRail
 import de.lemke.commonutils.toast
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.BuildConfig
@@ -75,7 +74,6 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
-import dev.oneuiproject.oneui.ktx.onSingleClick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -276,32 +274,28 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun initDrawer() {
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
-        findViewById<LinearLayout>(R.id.drawerItemAchievements).onSingleClick {
-            gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openAchievements()
-                else signInPlayGames(gamesSignInClient) { openAchievements() }
+        binding.navigationView.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.achievements_dest ->
+                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
+                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openAchievements()
+                        else signInPlayGames(gamesSignInClient) { openAchievements() }
+                    }
+
+                R.id.leaderboards_dest ->
+                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
+                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openLeaderboards()
+                        else signInPlayGames(gamesSignInClient) { openLeaderboards() }
+                    }
+
+                R.id.about_app_dest -> findViewById<View>(R.id.about_app_dest).transformToActivity(AboutActivity::class.java)
+                R.id.about_me_dest -> findViewById<View>(R.id.about_me_dest).transformToActivity(AboutMeActivity::class.java)
+                R.id.settings_dest -> findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
+                else -> return@setNavigationItemSelectedListener false
             }
+            true
         }
-        findViewById<LinearLayout>(R.id.drawerItemLeaderboards).onSingleClick {
-            gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openLeaderboards()
-                else signInPlayGames(gamesSignInClient) { openLeaderboards() }
-            }
-        }
-        findViewById<LinearLayout>(R.id.drawerItemAboutApp).apply { onSingleClick { transformToActivity(AboutActivity::class.java) } }
-        findViewById<LinearLayout>(R.id.drawerItemAboutMe).apply { onSingleClick { transformToActivity(AboutMeActivity::class.java) } }
-        findViewById<LinearLayout>(R.id.drawerItemSettings).apply { onSingleClick { transformToActivity(SettingsActivity::class.java) } }
-        binding.drawerLayout.setup(
-            getString(R.string.about_app),
-            mutableListOf(
-                findViewById(R.id.drawerItemAchievementsTitle),
-                findViewById(R.id.drawerItemLeaderboardsTitle),
-                findViewById(R.id.drawerItemAboutAppTitle),
-                findViewById(R.id.drawerItemAboutMeTitle),
-                findViewById(R.id.drawerItemSettingsTitle),
-            ),
-            findViewById(R.id.drawerListView)
-        )
+        binding.drawerLayout.setupHeaderAndNavRail(getString(R.string.about_app))
     }
 
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
