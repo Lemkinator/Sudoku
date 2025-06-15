@@ -37,6 +37,7 @@ import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.AboutActivity
 import de.lemke.commonutils.AboutMeActivity
+import de.lemke.commonutils.onNavigationSingleClick
 import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationFrom
 import de.lemke.commonutils.setupCommonActivities
@@ -274,7 +275,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun initDrawer() {
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
-        binding.navigationView.setNavigationItemSelectedListener { item ->
+        binding.navigationView.onNavigationSingleClick { item ->
             when (item.itemId) {
                 R.id.achievements_dest ->
                     gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
@@ -291,7 +292,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                 R.id.about_app_dest -> findViewById<View>(R.id.about_app_dest).transformToActivity(AboutActivity::class.java)
                 R.id.about_me_dest -> findViewById<View>(R.id.about_me_dest).transformToActivity(AboutMeActivity::class.java)
                 R.id.settings_dest -> findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
-                else -> return@setNavigationItemSelectedListener false
+                else -> return@onNavigationSingleClick false
             }
             true
         }
