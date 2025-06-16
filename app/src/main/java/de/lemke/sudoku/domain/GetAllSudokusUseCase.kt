@@ -1,7 +1,11 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Difficulty.EASY
+import de.lemke.sudoku.domain.model.Difficulty.EXPERT
+import de.lemke.sudoku.domain.model.Difficulty.HARD
+import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
+import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Sudoku
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,16 +47,12 @@ class GetAllSudokusUseCase @Inject constructor(
         val size4x4 = flags and SIZE_4X4 != 0
         val size9x9 = flags and SIZE_9X9 != 0
         val size16x16 = flags and SIZE_16X16 != 0
-
         sudokusRepository.getAllSudokus().filter {
             (typeAll || (typeNormal && it.isNormalSudoku) || (typeDaily && it.isDailySudoku) || (typeLevel && it.isSudokuLevel)) &&
                     (sizeAll || (size4x4 && it.size == 4) || (size9x9 && it.size == 9) || (size16x16 && it.size == 16)) &&
-                    (difficultyAll ||
-                            (difficultyVeryEasy && it.difficulty == Difficulty.VERY_EASY) ||
-                            (difficultyEasy && it.difficulty == Difficulty.EASY) ||
-                            (difficultyMedium && it.difficulty == Difficulty.MEDIUM) ||
-                            (difficultyHard && it.difficulty == Difficulty.HARD) ||
-                            (difficultyExpert && it.difficulty == Difficulty.EXPERT))
+                    (difficultyAll || (difficultyVeryEasy && it.difficulty == VERY_EASY) || (difficultyEasy && it.difficulty == EASY) ||
+                            (difficultyMedium && it.difficulty == MEDIUM) || (difficultyHard && it.difficulty == HARD) ||
+                            (difficultyExpert && it.difficulty == EXPERT))
         }
     }
 }

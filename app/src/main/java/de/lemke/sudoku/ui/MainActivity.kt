@@ -352,51 +352,55 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     private fun showStatisticsFilterDialog() {
         lifecycleScope.launch {
-            val dialogBinding = DialogStatisticsFilterBinding.inflate(layoutInflater).apply {
-                getUserSettings().let {
-                    filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
-                    filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
-                    filterLevel.isChecked = it.filterFlags and TYPE_LEVEL != 0 || it.filterFlags and TYPE_ALL != 0
-                    filterSize4.isChecked = it.filterFlags and SIZE_4X4 != 0 || it.filterFlags and SIZE_ALL != 0
-                    filterSize9.isChecked = it.filterFlags and SIZE_9X9 != 0 || it.filterFlags and SIZE_ALL != 0
-                    filterSize16.isChecked = it.filterFlags and SIZE_16X16 != 0 || it.filterFlags and SIZE_ALL != 0
-                    filterDifficultyVeryEasy.isChecked =
-                        it.filterFlags and DIFFICULTY_VERY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-                    filterDifficultyEasy.isChecked = it.filterFlags and DIFFICULTY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-                    filterDifficultyMedium.isChecked = it.filterFlags and DIFFICULTY_MEDIUM != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-                    filterDifficultyHard.isChecked = it.filterFlags and DIFFICULTY_HARD != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-                    filterDifficultyExpert.isChecked = it.filterFlags and DIFFICULTY_EXPERT != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-                }
-            }
+            val dialogBinding = DialogStatisticsFilterBinding.inflate(layoutInflater).apply { initDialog() }
             AlertDialog.Builder(this@MainActivity).apply {
                 setTitle(getString(R.string.statistics_filter))
                 setView(dialogBinding.root)
                 setNegativeButton(getString(designR.string.oui_des_common_cancel)) { d, w -> d.dismiss() }
-                setPositiveButton(getString(designR.string.oui_des_common_apply)) { d, w ->
-                    var flags = 0
-                    if (dialogBinding.filterNormal.isChecked) flags = flags or TYPE_NORMAL
-                    if (dialogBinding.filterDaily.isChecked) flags = flags or TYPE_DAILY
-                    if (dialogBinding.filterLevel.isChecked) flags = flags or TYPE_LEVEL
-                    if (flags and TYPE_NORMAL != 0 && flags and TYPE_DAILY != 0 && flags and TYPE_LEVEL != 0) flags = flags or TYPE_ALL
-                    if (dialogBinding.filterSize4.isChecked) flags = flags or SIZE_4X4
-                    if (dialogBinding.filterSize9.isChecked) flags = flags or SIZE_9X9
-                    if (dialogBinding.filterSize16.isChecked) flags = flags or SIZE_16X16
-                    if (flags and SIZE_4X4 != 0 && flags and SIZE_9X9 != 0 && flags and SIZE_16X16 != 0) flags = flags or SIZE_ALL
-                    if (dialogBinding.filterDifficultyVeryEasy.isChecked) flags = flags or DIFFICULTY_VERY_EASY
-                    if (dialogBinding.filterDifficultyEasy.isChecked) flags = flags or DIFFICULTY_EASY
-                    if (dialogBinding.filterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
-                    if (dialogBinding.filterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
-                    if (dialogBinding.filterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
-                    if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0
-                        && flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
-                    ) {
-                        flags = flags or DIFFICULTY_ALL
-                    }
-                    lifecycleScope.launch { updateUserSettings { it.copy(filterFlags = flags) } }
-                }
+                setPositiveButton(getString(designR.string.oui_des_common_apply)) { d, w -> updateFilterSettings(dialogBinding) }
                 show()
             }
         }
+    }
+
+    private suspend fun DialogStatisticsFilterBinding.initDialog() {
+        getUserSettings().let {
+            filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
+            filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
+            filterLevel.isChecked = it.filterFlags and TYPE_LEVEL != 0 || it.filterFlags and TYPE_ALL != 0
+            filterSize4.isChecked = it.filterFlags and SIZE_4X4 != 0 || it.filterFlags and SIZE_ALL != 0
+            filterSize9.isChecked = it.filterFlags and SIZE_9X9 != 0 || it.filterFlags and SIZE_ALL != 0
+            filterSize16.isChecked = it.filterFlags and SIZE_16X16 != 0 || it.filterFlags and SIZE_ALL != 0
+            filterDifficultyVeryEasy.isChecked =
+                it.filterFlags and DIFFICULTY_VERY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+            filterDifficultyEasy.isChecked = it.filterFlags and DIFFICULTY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+            filterDifficultyMedium.isChecked = it.filterFlags and DIFFICULTY_MEDIUM != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+            filterDifficultyHard.isChecked = it.filterFlags and DIFFICULTY_HARD != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+            filterDifficultyExpert.isChecked = it.filterFlags and DIFFICULTY_EXPERT != 0 || it.filterFlags and DIFFICULTY_ALL != 0
+        }
+    }
+
+    private fun updateFilterSettings(dialogBinding: DialogStatisticsFilterBinding) {
+        var flags = 0
+        if (dialogBinding.filterNormal.isChecked) flags = flags or TYPE_NORMAL
+        if (dialogBinding.filterDaily.isChecked) flags = flags or TYPE_DAILY
+        if (dialogBinding.filterLevel.isChecked) flags = flags or TYPE_LEVEL
+        if (flags and TYPE_NORMAL != 0 && flags and TYPE_DAILY != 0 && flags and TYPE_LEVEL != 0) flags = flags or TYPE_ALL
+        if (dialogBinding.filterSize4.isChecked) flags = flags or SIZE_4X4
+        if (dialogBinding.filterSize9.isChecked) flags = flags or SIZE_9X9
+        if (dialogBinding.filterSize16.isChecked) flags = flags or SIZE_16X16
+        if (flags and SIZE_4X4 != 0 && flags and SIZE_9X9 != 0 && flags and SIZE_16X16 != 0) flags = flags or SIZE_ALL
+        if (dialogBinding.filterDifficultyVeryEasy.isChecked) flags = flags or DIFFICULTY_VERY_EASY
+        if (dialogBinding.filterDifficultyEasy.isChecked) flags = flags or DIFFICULTY_EASY
+        if (dialogBinding.filterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
+        if (dialogBinding.filterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
+        if (dialogBinding.filterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
+        if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0
+            && flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
+        ) {
+            flags = flags or DIFFICULTY_ALL
+        }
+        lifecycleScope.launch { updateUserSettings { it.copy(filterFlags = flags) } }
     }
 
     private fun initFragments() {
