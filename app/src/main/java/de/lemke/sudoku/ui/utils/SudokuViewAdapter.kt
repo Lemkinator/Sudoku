@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.domain.model.Sudoku
 
 class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
-    val fieldViews: MutableList<FieldView?> = MutableList(itemCount) { FieldView((context)) }
+    val fieldViews: MutableList<FieldView?> = MutableList(itemCount) { FieldView(context) }
     private var selectedField: Int? = null
 
     override fun getItemCount(): Int = sudoku.itemCount

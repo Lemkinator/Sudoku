@@ -182,7 +182,7 @@ class Sudoku(
 
     val resumed: Boolean get() = timer != null
 
-    val itemCount: Int get() = (this.size * this.size)
+    val itemCount: Int get() = this.size * this.size
 
     val blockSize: Int get() = sqrt(this.size.toDouble()).toInt()
 

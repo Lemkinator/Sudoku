@@ -56,9 +56,7 @@ class IntroActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (SDK_INT >= 34) {
-            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
-        }
+        if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
@@ -277,9 +275,9 @@ class IntroActivity : AppCompatActivity() {
                 0 -> {
                     while (introStep == 0) {
                         delay(900)
-                        val block = gameAdapter.fieldViews.filter { (it?.position?.block == 0) }
-                        val row = gameAdapter.fieldViews.filter { (it?.position?.row == 1) }
-                        val column = gameAdapter.fieldViews.filter { (it?.position?.column == 5) }
+                        val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
+                        val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
+                        val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
                         column.forEach {
                             it?.isHighlighted = false
                             it?.setBackground()
@@ -313,7 +311,7 @@ class IntroActivity : AppCompatActivity() {
                 }
 
                 2 -> {
-                    gameAdapter.fieldViews.filter { (it?.position?.row == 0) }.forEach {
+                    gameAdapter.fieldViews.filter { it?.position?.row == 0 }.forEach {
                         it?.isHighlighted = true
                         it?.setBackground()
                     }
@@ -321,7 +319,7 @@ class IntroActivity : AppCompatActivity() {
                 }
 
                 5 -> {
-                    gameAdapter.fieldViews.filter { (it?.position?.row == 3 || it?.position?.row == 4) }.forEach {
+                    gameAdapter.fieldViews.filter { it?.position?.row == 3 || it?.position?.row == 4 }.forEach {
                         it?.isHighlighted = true
                         it?.setBackground()
                     }

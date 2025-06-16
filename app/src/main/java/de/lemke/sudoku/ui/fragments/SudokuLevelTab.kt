@@ -75,7 +75,7 @@ class SudokuLevelTab(private val size: Int) : Fragment() {
                 if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
                     progressDialog.show()
                     nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
-                    sudokuLevel = (listOf(SudokuItem(nextLevelSudoku!!, nextLevelSudoku!!.modeLevel.toString())) + sudokuLevel)
+                    sudokuLevel = listOf(SudokuItem(nextLevelSudoku!!, nextLevelSudoku!!.modeLevel.toString())) + sudokuLevel
                     binding.sudokuLevelsRecycler.smoothScrollToPosition(0)
                 } else nextLevelSudoku = null
                 sudokuListAdapter.submitList(sudokuLevel)
