@@ -71,7 +71,7 @@
     <string name="no_limit">Kein Limit</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Fehlerlimit von %1$d erreicht.</string>
     <string name="dev_options">Developer options</string>
-    <string name="privacy_information">Informationen zum Datenschutz</string>
+    <string name="privacy_policy">Datenschutzrichtlinie</string>
     <string name="more_information">Mehr Informationen</string>
 
     <string name="export_data">Daten exportieren</string>
