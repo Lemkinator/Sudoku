@@ -18,7 +18,7 @@
         <com.google.android.material.textview.MaterialTextView
             style="?android:listSeparatorTextViewStyle"
             android:backgroundTint="@android:color/transparent"
-            android:text="@string/share" />
+            android:text="@string/commonutils_share" />
 
         <RadioGroup
             android:id="@+id/shareRadioGroup"
@@ -32,7 +32,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="@string/statistics" />
+                android:text="@string/commonutils_statistics" />
 
             <RadioButton
                 android:id="@+id/radioButtonInitial"

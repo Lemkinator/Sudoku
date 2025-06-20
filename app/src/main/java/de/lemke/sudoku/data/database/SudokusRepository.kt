@@ -9,6 +9,8 @@ import javax.inject.Inject
 class SudokusRepository @Inject constructor(
     private val sudokuDao: SudokuDao,
 ) {
+    fun observeAllSudokus() = sudokuDao.observeAll().map { it.mapNotNull { sudokuFromDb(it) } }
+
     fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { it.mapNotNull { sudokuFromDb(it) } }
 
     fun observeSudokuLevel(size: Int) = sudokuDao.observeSudokuLevel(size).map { it.mapNotNull { sudokuFromDb(it) } }

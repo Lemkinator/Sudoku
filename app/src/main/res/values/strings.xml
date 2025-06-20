@@ -1,72 +1,80 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
-    <!--General-->
-    <string name="app_name" translatable="false">Sudoku</string>
-    <string name="email" translatable="false">sudoku@leonard-lemke.com</string>
-    <string name="privacy_website" translatable="false">https://www.leonard-lemke.com/apps/sudoku/privacy-policy</string>
+    <string name="app_name" translatable="false">Test Sudoku</string>
     <string name="sudoku_lib_github_link" translatable="false">https://github.com/sfuhrm/sudoku</string>
     <string name="sudoku_lib_license_github_link" translatable="false">https://github.com/sfuhrm/sudoku/blob/master/LICENSE</string>
     <string name="daily_sudoku_notification_channel_id" translatable="false">Daily_Sudoku_Notification_Channel</string>
     <string name="size4" translatable="false">4×4</string>
     <string name="size9" translatable="false">9×9</string>
     <string name="size16" translatable="false">16×16</string>
-
-    <string name="settings">Settings</string>
-    <string name="history">History</string>
-    <string name="statistics">Statistics</string>
-
-    <string name="new_game">New Game</string>
-    <string name="continue_game">Continue (%1$s, %2$s)</string>
-
-    <string name="daily_sudoku">Daily Sudoku</string>
-    <string name="daily_sudoku_info_message" formatted="false">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\%</string>
-    <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
-    <string name="show_all_sudokus">Show all Sudokus</string>
-    <string name="level">Level</string>
-    <string name="next_level">Next level</string>
-
-    <string name="no_game_played">No game played yet</string>
-    <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
-    <string name="error_sudoku_not_found">Sudoku not found…</string>
-
-    <!--Menu-->
-    <string name="pause">Pause</string>
-    <string name="resume">Resume</string>
-
-    <!--About-->
     <string name="about_app">About Sudoku</string>
     <string name="app_description">A Sudoku app with OneUI-Design.</string>
-    <string name="open_in_playstore">Open in Play Store</string>
-    <string name="open_source_licenses">Open source licenses</string>
+
+    <!--Override commonutils strings-->
+    <string name="commonutils_app_name" translatable="false">@string/app_name</string>
+    <string name="commonutils_app_description" translatable="false">@string/app_description</string>
+    <string name="commonutils_email" translatable="false">sudoku@leonard-lemke.com</string>
+    <string name="commonutils_privacy_website" translatable="false">https://www.leonard-lemke.com/apps/sudoku/privacy-policy</string>
+
+    <string name="commonutils_yes">Yes</string>
+    <string name="commonutils_no">No</string>
+    <string name="commonutils_delete">Delete</string>
+    <string name="commonutils_no_entry">No entry</string>
+    <string name="commonutils_pause">Pause</string>
+    <string name="commonutils_resume">Resume</string>
+    <string name="commonutils_history">History</string>
+    <string name="commonutils_statistics">Statistics</string>
+
+    <!--OOBE-->
+    <string name="commonutils_tos">Terms of Service</string>
+    <string name="commonutils_tos_content">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
+    <string name="commonutils_oobe_tos_text">By continuing, you agree to the %1$s.</string>
+
+    <!--About-->
+    <string name="commonutils_open_in_playstore">Open in Play Store</string>
+    <string name="commonutils_open_source_licenses">Open source licenses</string>
+
+    <!--AboutMe-->
+    <string name="commonutils_about_me">About me</string>
+    <string name="commonutils_write_email">Write an e-mail</string>
+    <string name="commonutils_website">Website</string>
+    <string name="commonutils_support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
+    <string name="commonutils_support_me">Support me</string>
+    <string name="commonutils_rate_app">Rate app in Play Store</string>
+    <string name="commonutils_write_review">Write a review</string>
+    <string name="commonutils_share">Share</string>
+    <string name="commonutils_share_app">Share app</string>
+    <string name="commonutils_useful_links">Useful links</string>
+    <string name="commonutils_playstore_ad">ADVERTISEMENT!!!&#129313;&#129396;</string>
+    <string name="commonutils_playstore_redirect_message">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>
+
+    <!--Settings-->
+    <string name="commonutils_settings">Settings</string>
+    <string name="commonutils_design">Design</string>
+    <string name="commonutils_system_default">System default</string>
+    <string name="commonutils_general">General</string>
+    <string name="commonutils_language">Language</string>
+    <string name="commonutils_change_language">Change app language</string>
+    <string name="commonutils_change_language_not_supported_by_device">Change language is not supported by your device.</string>
+    <string name="commonutils_delete_appdata_and_exit">Delete App-Data and exit</string>
+    <string name="commonutils_delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue? </string>
+    <string name="commonutils_dev_options">Developer options</string>
+    <string name="commonutils_more_information">More Information</string>
+    <string name="commonutils_privacy_policy">Privacy Policy</string>
+    <string name="commonutils_report_bug">Report bug or improvement</string>
+
+    <!--Error-->
+    <string name="commonutils_no_email_app_installed">No e-mail app installed…</string>
+    <string name="commonutils_no_browser_app_installed">No browser app installed…</string>
+    <string name="commonutils_error_cant_open_url">Error: URL could not be opened.</string>
+
+    <!--About-->
     <string name="sudoku_lib">Sudoku library</string>
     <string name="sudoku_lib_license" translatable="false">LGPL 3</string>
     <string name="sudoku_lib_license_text">Uses %1$s licensed under %2$s.</string>
 
-    <!--About Me-->
-    <string name="about_me">About me</string>
-    <string name="website">Website</string>
-    <string name="share">Share</string>
-    <string name="share_app">Share this app</string>
-    <string name="write_review">Write a review</string>
-    <string name="rate_app">Rate app in Play Store</string>
-    <string name="write_email">Write an e-mail</string>
-    <string name="support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
-    <string name="support_me">Support me</string>
-    <string name="no_email_app_installed">No e-mail app installed…</string>
-    <string name="no_browser_app_installed">No browser app installed…</string>
-    <string name="error_cant_open_url">Error: Link could not be opened.</string>
-    <string name="useful_links">Useful links</string>
-    <string name="playstore_ad">ADVERTISEMENT!!!&#129313;&#129396;</string>
-    <string name="playstore_redirect_message">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>
-
     <!--Settings-->
-    <string name="design">Design</string>
-    <string name="system_default">System default</string>
-    <string name="general">General</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="keep_screen_on_summary">Keep screen on while playing</string>
-    <string name="language">Language</string>
-    <string name="change_language">Change app language</string>
-    <string name="change_language_not_supported_by_device">Change language is not supported by your device.</string>
     <string name="animations">Animations</string>
     <string name="animations_summary">Animate fields</string>
     <string name="regional_highlight">Regional Highlight</string>
@@ -75,14 +83,9 @@
     <string name="number_highlight_summary">When a number is selected, all other fields with the same number will be highlighted.</string>
     <string name="delete_invalid_sudokus">Delete invalid Sudokus</string>
     <string name="delete_invalid_sudokus_summary">Delete incorrectly generated Sudokus or Sudokus that were corrupted during saving to the database.</string>
-    <string name="delete_appdata_and_exit">Delete App-Data and exit</string>
-    <string name="delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue?</string>
     <string name="error_limit">Error limit</string>
     <string name="no_limit">No limit</string>
     <string name="error_limit_reached" tools:ignore="PluralsCandidate">Error limit of %1$d reached.</string>
-    <string name="dev_options">Developer options</string>
-    <string name="privacy_policy">Privacy Policy</string>
-    <string name="more_information">More Information</string>
 
     <string name="export_data">Export data</string>
     <string name="export_data_summary">Export JSON file</string>
@@ -115,12 +118,9 @@
     <string name="current_hints">Hints: %1$d</string>
     <string name="current_progress">%1$d\%%</string>
     <string name="completed_title">Completed</string>
-    <string name="yes">Yes</string>
-    <string name="no">No</string>
     <string name="sudoku_completed">Look, I have successfully completed a Sudoku:\n</string>
     <string name="sudoku_solving">Look, I am currently solving this Sudoku: \nProgress: %1$d\%% \n</string>
     <string name="sudokuStatisticsString">Type: %1$s \nSize: %2$d×%2$d \nDifficulty: %3$s \nTime: %4$s \nErrors: %5$d \nHints: %6$d \nNotes: %7$d \nRegional highlight used: %8$s \nNumber highlight used: %9$s \nCreated: %10$s \nUpdated: %11$s</string>
-    <string name="delete">Delete</string>
     <string name="note">Note</string>
     <string name="hint">Hint (%1$d)</string>
     <string name="restart">Restart</string>
@@ -168,9 +168,6 @@
     <string name="oobe_onboard_msg1_summary">A Sudoku app with OneUI design.</string>
     <string name="oobe_onboard_msg2_summary">No subscriptions, no in-app purchases, no costs at all.</string>
     <string name="oobe_onboard_msg3_summary">No annoying ads after each Sudoku.</string>
-    <string name="tos">Terms of Service</string>
-    <string name="tos_content">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
-    <string name="oobe_tos_text">By continuing, you agree to the %1$s.</string>
 
     <!--Notifications-->
     <string name="notifications">Notifications</string>
@@ -206,6 +203,18 @@
     <string name="intro_text10">Last but not least there is the note button. It can be turned on or off at any time to switch between note or number.\n\nAnd here we go, there are many Sudoku puzzles waiting to be solved!</string>
 
     <!--Others-->
+    <string name="new_game">New Game</string>
+    <string name="continue_game">Continue (%1$s, %2$s)</string>
 
+    <string name="daily_sudoku">Daily Sudoku</string>
+    <string name="daily_sudoku_info_message" formatted="false">Daily Sudokus are generated for each user with random difficulties according to the following probabilities: \n\nVery Easy: 30\% \nEasy: 40\% \nMedium: 20\% \nHard: 10\% \nExpert: 0\%</string>
+    <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
+    <string name="show_all_sudokus">Show all Sudokus</string>
+    <string name="level">Level</string>
+    <string name="next_level">Next level</string>
+
+    <string name="no_game_played">No game played yet</string>
+    <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
+    <string name="error_sudoku_not_found">Sudoku not found…</string>
 
 </resources>

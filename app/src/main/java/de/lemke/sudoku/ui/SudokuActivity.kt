@@ -123,7 +123,7 @@ class SudokuActivity : AppCompatActivity() {
         setCustomBackAnimation(binding.root)
         val id = intent.getStringExtra(KEY_SUDOKU_ID)
         if (id == null) {
-            Log.e("SudokuActivity", "Sudoku ID not found")
+            Log.e("SudokuActivity", "Sudoku ID not provided")
             toast(R.string.error_sudoku_not_found)
             finishAfterTransition()
             return
@@ -131,7 +131,6 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
-        loadingDialog.show()
         lifecycleScope.launch {
             userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
@@ -159,7 +158,7 @@ class SudokuActivity : AppCompatActivity() {
                 if (sudoku.resumed) oneuiR.drawable.ic_oui_control_pause
                 else oneuiR.drawable.ic_oui_control_play
             )
-            it.title = getString(if (sudoku.resumed) R.string.pause else R.string.resume)
+            it.title = getString(if (sudoku.resumed) R.string.commonutils_pause else R.string.commonutils_resume)
         }
         menu?.findItem(R.id.menu_reset)?.isVisible = menuResetVisible
         menu?.findItem(R.id.menu_pause_play)?.isVisible = menuPausePlayVisible
@@ -297,7 +296,7 @@ class SudokuActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this@SudokuActivity)
             .setTitle(R.string.completed_title)
             .setMessage(sudoku.getLocalStatisticsString(resources))
-            .setNeutralButton(commonutilsR.string.ok, null)
+            .setNeutralButton(commonutilsR.string.commonutils_ok, null)
         lifecycleScope.launch {
             saveSudoku(sudoku, onlyUpdate = true)
             if (sudoku.isSudokuLevel && getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel) dialog.setPositiveButton(R.string.next_level) { _, _ ->
@@ -338,7 +337,7 @@ class SudokuActivity : AppCompatActivity() {
             AlertDialog.Builder(this@SudokuActivity).setTitle(R.string.gameover)
                 .setMessage(getString(R.string.error_limit_reached, errorLimit))
                 .setPositiveButton(R.string.restart) { _, _ -> restartGame() }
-                .setNeutralButton(commonutilsR.string.ok, null)
+                .setNeutralButton(commonutilsR.string.commonutils_ok, null)
                 .show()
             return true
         }
@@ -588,9 +587,9 @@ class SudokuActivity : AppCompatActivity() {
         binding.sudokuToolbarLayout.setTitle(
             getString(R.string.app_name) +
                     when {
-                        sudoku.isNormalSudoku -> " (" + sudoku.difficulty.getLocalString(this.resources) + ")"
-                        sudoku.isDailySudoku -> " (" + sudoku.created.dateFormatShort + ")"
-                        sudoku.isSudokuLevel -> " (Level " + sudoku.modeLevel + ")"
+                        sudoku.isNormalSudoku -> " (${sudoku.difficulty.getLocalString(resources)})"
+                        sudoku.isDailySudoku -> " (${sudoku.created.dateFormatShort})"
+                        sudoku.isSudokuLevel -> " (${getString(R.string.level)} ${sudoku.modeLevel})"
                         else -> ""
                     }
         )
@@ -617,7 +616,7 @@ class SudokuActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.share_sudoku)
             .setView(R.layout.dialog_share)
-            .setPositiveButton(R.string.share, null)
+            .setPositiveButton(R.string.commonutils_share, null)
             .setNegativeButton(designR.string.oui_des_common_cancel, null)
             .create()
         dialog.show()
@@ -627,7 +626,7 @@ class SudokuActivity : AppCompatActivity() {
                 when (dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.checkedRadioButtonId) {
                     R.id.radioButtonText -> shareStats()
                     R.id.radioButtonInitial -> shareGame(sudoku.getInitialSudoku())
-                    R.id.radioButtonCurrent -> shareGame(sudoku.copy(modeLevel = MODE_NORMAL))
+                    R.id.radioButtonCurrent -> shareGame(sudoku.copy(sudokuId = SudokuId.generate(), modeLevel = MODE_NORMAL))
                 }
                 dialog.dismiss()
             }

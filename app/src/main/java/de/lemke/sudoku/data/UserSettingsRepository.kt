@@ -1,7 +1,10 @@
 package de.lemke.sudoku.data
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -36,12 +39,6 @@ class UserSettingsRepository @Inject constructor(
     suspend fun updateSettings(f: (UserSettings) -> UserSettings): UserSettings {
         val prefs = dataStore.edit {
             val newSettings = f(settingsFromPreferences(it))
-            it[KEY_LAST_VERSION_CODE] = newSettings.lastVersionCode
-            it[KEY_LAST_VERSION_NAME] = newSettings.lastVersionName
-            it[KEY_DARK_MODE] = newSettings.darkMode
-            it[KEY_AUTO_DARK_MODE] = newSettings.autoDarkMode
-            it[KEY_TOS_ACCEPTED] = newSettings.tosAccepted
-            it[KEY_DEV_MODE_ENABLED] = newSettings.devModeEnabled
             it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
             it[KEY_SIZE_SLIDER_VALUE] = newSettings.sizeSliderValue
             it[KEY_KEEP_SCREEN_ON] = newSettings.keepScreenOn
@@ -61,12 +58,6 @@ class UserSettingsRepository @Inject constructor(
 
 
     private fun settingsFromPreferences(prefs: Preferences) = UserSettings(
-        lastVersionCode = prefs[KEY_LAST_VERSION_CODE] ?: -1,
-        lastVersionName = prefs[KEY_LAST_VERSION_NAME] ?: "0.0",
-        darkMode = prefs[KEY_DARK_MODE] == true,
-        autoDarkMode = prefs[KEY_AUTO_DARK_MODE] != false,
-        tosAccepted = prefs[KEY_TOS_ACCEPTED] == true,
-        devModeEnabled = prefs[KEY_DEV_MODE_ENABLED] == true,
         difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
         sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
         keepScreenOn = prefs[KEY_KEEP_SCREEN_ON] != false,
@@ -85,12 +76,6 @@ class UserSettingsRepository @Inject constructor(
 
 
     private companion object {
-        private val KEY_LAST_VERSION_CODE = intPreferencesKey("lastVersionCode")
-        private val KEY_LAST_VERSION_NAME = stringPreferencesKey("lastVersionName")
-        private val KEY_DARK_MODE = booleanPreferencesKey("darkMode")
-        private val KEY_AUTO_DARK_MODE = booleanPreferencesKey("autoDarkMode")
-        private val KEY_TOS_ACCEPTED = booleanPreferencesKey("tosAccepted")
-        private val KEY_DEV_MODE_ENABLED = booleanPreferencesKey("devModeEnabled")
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
         private val KEY_SIZE_SLIDER_VALUE = intPreferencesKey("sizeSliderValue")
         private val KEY_KEEP_SCREEN_ON = booleanPreferencesKey("keepScreenOn")
@@ -109,18 +94,6 @@ class UserSettingsRepository @Inject constructor(
 
 /** Settings associated with the current user. */
 data class UserSettings(
-    /** Last App-Version-Code */
-    val lastVersionCode: Int,
-    /** Last App-Version-Name */
-    val lastVersionName: String,
-    /** dark mode enabled */
-    val darkMode: Boolean,
-    /** auto dark mode enabled */
-    val autoDarkMode: Boolean,
-    /** terms of service accepted by user */
-    val tosAccepted: Boolean,
-    /** devMode enabled */
-    val devModeEnabled: Boolean,
     /** value of difficulty slider*/
     val difficultySliderValue: Int,
     /** value of size slider*/
@@ -147,5 +120,4 @@ data class UserSettings(
     val dailySudokuNotificationMinute: Int,
     /** the number of the currently selected Tab in SudokuLevelActivity */
     val currentLevelTab: Int,
-
-    )
+)

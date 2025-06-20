@@ -9,6 +9,7 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -17,9 +18,9 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
-import de.lemke.sudoku.domain.ObserveStatisticsFilterFlagsUseCase
+import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
@@ -36,10 +37,7 @@ class MainActivityTabStatistics : Fragment() {
     private var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
 
     @Inject
-    lateinit var getAllSudokus: GetAllSudokusUseCase
-
-    @Inject
-    lateinit var observeStatisticsFilterFlags: ObserveStatisticsFilterFlagsUseCase
+    lateinit var observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         FragmentTabStatisticsBinding.inflate(inflater, container, false).also { binding = it }.root
@@ -60,16 +58,17 @@ class MainActivityTabStatistics : Fragment() {
             enableCoreSeslFeatures()
         }
         lifecycleScope.launch {
-            observeStatisticsFilterFlags().flowWithLifecycle(lifecycle).collectLatest {
+            observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle).collectLatest {
+                binding.statisticsProgressBar.isVisible = true
                 updateStatistics(it)
                 binding.statisticsListRecycler.adapter?.notifyDataSetChanged()
+                binding.statisticsProgressBar.isVisible = false
             }
         }
     }
 
     @SuppressLint("SetTextI18n")
-    private suspend fun updateStatistics(statisticsFilterFlags: Int) {
-        val sudokus = getAllSudokus(statisticsFilterFlags) //.filter { !it.autoNotesUsed }
+    private fun updateStatistics(sudokus: List<Sudoku>) {
         statisticsList = mutableListOf()
         val gamesStarted = sudokus.size
         val gamesCompleted = sudokus.filter { it.completed }.size
@@ -80,7 +79,6 @@ class MainActivityTabStatistics : Fragment() {
         val winsWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
         val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
         val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
-        //val winsWithoutAutoHints = sudokus.filter { it.completed && !it.autoNotesUsed }.size
         val winsWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
         val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
         val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted
@@ -115,7 +113,6 @@ class MainActivityTabStatistics : Fragment() {
         statisticsList.add(getString(R.string.most_errors) to mostErrors.toString())
         statisticsList.add(getString(R.string.average_errors) to averageErrors.toString())
         statisticsList.add(getString(R.string.hints) to null)
-        //statisticsList.add(getString(R.string.wins_without_auto_hint) to winsWithoutAutoHints.toString())
         statisticsList.add(getString(R.string.wins_without_hint) to winsWithoutHints.toString())
         statisticsList.add(getString(R.string.most_hints) to mostHints.toString())
         statisticsList.add(getString(R.string.average_hints) to averageHints.toString())

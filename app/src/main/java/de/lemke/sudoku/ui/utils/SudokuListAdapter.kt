@@ -161,9 +161,9 @@ class SudokuListAdapter(
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
         fun bindSudoku(sudoku: Sudoku) {
-            textView.text = when(mode) {
+            textView.text = when (mode) {
                 Mode.DAILY -> sudoku.created.toLocalDate().formatFull
-                Mode.LEVEL -> "Level ${sudoku.modeLevel}"
+                Mode.LEVEL -> "${context.getString(R.string.level)} ${sudoku.modeLevel}"
                 else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
             }
             imageView?.setImageDrawable(
@@ -194,14 +194,14 @@ class SudokuListAdapter(
             }
         }
 
-        fun bindActionMode(itemId: Long){
+        fun bindActionMode(itemId: Long) {
             selectableLayout?.apply {
                 isSelectionMode = isActionMode
                 setSelected(isSelected(itemId))
             }
         }
 
-        fun bindActionModeAnimate(itemId: Long){
+        fun bindActionModeAnimate(itemId: Long) {
             selectableLayout?.apply {
                 isSelectionMode = isActionMode
                 setSelectedAnimate(isSelected(itemId))

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -73,13 +74,13 @@ class SudokuLevelTab(private val size: Int) : Fragment() {
             observeAllSudokuLevel(size).flowWithLifecycle(lifecycle).collectLatest {
                 sudokuLevel = it
                 if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
-                    progressDialog.show()
+                    binding.tabLevelProgressBar.isVisible = true
                     nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
                     sudokuLevel = listOf(SudokuItem(nextLevelSudoku!!, nextLevelSudoku!!.modeLevel.toString())) + sudokuLevel
                     binding.sudokuLevelsRecycler.smoothScrollToPosition(0)
                 } else nextLevelSudoku = null
                 sudokuListAdapter.submitList(sudokuLevel)
-                progressDialog.dismiss()
+                binding.tabLevelProgressBar.isVisible = false
             }
         }
     }

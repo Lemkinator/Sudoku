@@ -7,7 +7,7 @@
         <item
             android:id="@+id/menuitem_daily_sudoku_info"
             android:icon="@drawable/ic_oui_help_outline"
-            android:title="@string/more_information"
+            android:title="@string/commonutils_more_information"
             app:iconTint="?actionMenuTextColor"
             app:showAsAction="ifRoom"
             tools:ignore="AppCompatResource" />

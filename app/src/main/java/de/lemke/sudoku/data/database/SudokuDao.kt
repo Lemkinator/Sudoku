@@ -14,6 +14,10 @@ interface SudokuDao {
     suspend fun getAll(): List<SudokuWithFields>
 
     @Transaction
+    @Query("SELECT * FROM sudoku ORDER BY updated DESC")
+    fun observeAll(): Flow<List<SudokuWithFields>>
+
+    @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel = 0 ORDER BY updated DESC")
     fun observeAllNormal(): Flow<List<SudokuWithFields>>
 

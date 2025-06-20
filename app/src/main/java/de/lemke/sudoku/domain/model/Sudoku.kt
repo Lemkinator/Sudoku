@@ -396,8 +396,8 @@ class Sudoku(
         errorsMade,
         hintsUsed,
         notesMade,
-        resources.getString(if (regionalHighlightingUsed) R.string.yes else R.string.no),
-        resources.getString(if (numberHighlightingUsed) R.string.yes else R.string.no),
+        resources.getString(if (regionalHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
+        resources.getString(if (numberHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
         created.formatFull,
         updated.formatFull,
     )

@@ -1,29 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?><!--suppress ALL -->
+<?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="@string/design">
-        <dev.oneuiproject.oneui.preference.HorizontalRadioPreference
-            android:key="dark_mode_pref"
-            app:entries="@array/preferences_darkmode_entries"
-            app:entriesImage="@array/preferences_darkmode_entries_image"
-            app:entryValues="@array/preferences_darkmode_values"
-            app:viewType="image" />
-        <SwitchPreferenceCompat
-            android:key="dark_mode_auto"
-            android:title="@string/system_default" />
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/general">
+    <PreferenceCategory android:title="@string/commonutils_general">
         <SwitchPreferenceCompat
             android:key="keep_screen_on_pref"
             android:summary="@string/keep_screen_on_summary"
             android:title="@string/keep_screen_on" />
 
         <PreferenceScreen
-            android:key="language_pref"
-            android:summary="@string/change_language"
-            android:title="@string/language"
+            android:key="@string/commonutils_preference_key_language"
+            android:summary="@string/commonutils_change_language"
+            android:title="@string/commonutils_language"
             app:isPreferenceVisible="false" />
 
     </PreferenceCategory>
@@ -61,8 +49,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:key="dev_options"
-        android:title="@string/dev_options"
+        android:key="@string/commonutils_preference_key_dev_options"
+        android:title="@string/commonutils_dev_options"
         app:isPreferenceVisible="false">
         <PreferenceScreen
             android:key="export_data_pref"
@@ -77,18 +65,8 @@
             android:summary="@string/delete_invalid_sudokus_summary"
             android:title="@string/delete_invalid_sudokus" />
         <PreferenceScreen
-            android:key="delete_app_data_pref"
-            android:title="@string/delete_appdata_and_exit" />
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/more_information">
-        <PreferenceScreen
-            android:key="tos_pref"
-            android:title="@string/tos" />
-
-        <PreferenceScreen
-            android:key="privacy_pref"
-            android:title="@string/privacy_policy" />
+            android:key="@string/commonutils_preference_key_delete_app_data"
+            android:title="@string/commonutils_delete_appdata_and_exit" />
     </PreferenceCategory>
 
 </PreferenceScreen>

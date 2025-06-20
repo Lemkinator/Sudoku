@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import de.lemke.commonutils.R as commonutilsR
 
 
 class ExportDataUseCase @Inject constructor(
@@ -60,7 +61,7 @@ class ExportDataUseCase @Inject constructor(
         AlertDialog.Builder(context)
             .setTitle(R.string.export_data)
             .setMessage(context.getString(R.string.export_data_success))
-            .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
+            .setPositiveButton(commonutilsR.string.commonutils_ok, null)
             .show()
     }
 }

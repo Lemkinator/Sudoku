@@ -14,18 +14,17 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
--keepattributes SourceFile,LineNumberTable
+#-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
--renamesourcefileattribute SourceFile
+#-renamesourcefileattribute SourceFile
 
--keep class de.lemke.sudoku.** {*;}
+-keep class de.lemke.sudoku.data.database.SudokuExport {*;}
+-keep class de.lemke.sudoku.data.database.FieldExport {*;}
 
 #java.lang.IllegalArgumentException: Annotation class g does not have a String property "name"
 -keep class io.kjson.** {*;}
--keep class io.kjson.stringifyJSON.** {*;}
--keep class io.kjson.parseJSON.** {*;}
 
 # Missing class java.beans.ConstructorProperties (referenced from: io.kjson.deserialize.Deserializer io.kjson.deserialize.JavaClassDeserializerFunctions.createJavaClassDeserializer(kotlin.reflect.KClass, kotlin.reflect.KType, io.kjson.JSONConfig, java.util.List))
 -dontwarn java.beans.ConstructorProperties

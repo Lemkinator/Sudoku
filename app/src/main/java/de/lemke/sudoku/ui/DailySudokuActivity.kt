@@ -15,7 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.prepareActivityTransformationBetween
 import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.commonutils.transformToActivity
-import de.lemke.commonutils.widget.InfoBottomSheet.Companion.showInfoBottomSheet
+import de.lemke.commonutils.ui.widget.InfoBottomSheet.Companion.showInfoBottomSheet
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
 import de.lemke.sudoku.domain.GetUserSettingsUseCase

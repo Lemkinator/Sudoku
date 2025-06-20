@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.INVISIBLE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
@@ -27,8 +29,6 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.launch
@@ -62,23 +62,19 @@ class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTransla
     @SuppressLint("RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val loadingDialog = ProgressDialog(requireContext())
-        loadingDialog.setProgressStyle(CIRCLE)
-        loadingDialog.setCancelable(false)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
-
         binding.sizeSeekbar.setSeamless(true)
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.onSingleClick {
-            loadingDialog.show()
+            binding.newSudokuProgressBar.visibility = VISIBLE
             lifecycleScope.launch {
                 val sudoku = generateSudoku(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
                 saveSudoku(sudoku)
                 binding.newGameButton.transformToActivity(
                     Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
                 )
-                loadingDialog.dismiss()
+                binding.newSudokuProgressBar.visibility = INVISIBLE
             }
         }
         binding.dailyButton.onSingleClick {

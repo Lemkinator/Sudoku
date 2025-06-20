@@ -46,7 +46,7 @@
             android:drawableTop="@drawable/ic_oui_control_play"
             android:onClick="resumeGame"
             android:paddingTop="25dp"
-            android:text="@string/resume"
+            android:text="@string/commonutils_resume"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -187,7 +187,7 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="1dp"
                     android:drawableTop="@drawable/ic_oui_pen_eraser_outline"
-                    android:text="@string/delete" />
+                    android:text="@string/commonutils_delete" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/hint_button"

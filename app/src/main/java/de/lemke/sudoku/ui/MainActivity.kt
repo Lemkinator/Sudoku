@@ -35,21 +35,23 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.AboutActivity
-import de.lemke.commonutils.AboutMeActivity
+import de.lemke.commonutils.AppStart
+import de.lemke.commonutils.checkAppStart
+import de.lemke.commonutils.data.commonUtilsSettings
 import de.lemke.commonutils.onNavigationSingleClick
 import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationFrom
-import de.lemke.commonutils.setupCommonActivities
+import de.lemke.commonutils.setupCommonUtilsAboutActivity
+import de.lemke.commonutils.setupCommonUtilsAboutMeActivity
 import de.lemke.commonutils.setupHeaderAndNavRail
 import de.lemke.commonutils.toast
 import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
+import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
-import de.lemke.sudoku.domain.AppStart
-import de.lemke.sudoku.domain.CheckAppStartUseCase
 import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EASY
 import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EXPERT
@@ -101,9 +103,6 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     lateinit var importSudoku: ImportSudokuUseCase
 
     @Inject
-    lateinit var checkAppStart: CheckAppStartUseCase
-
-    @Inject
     lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
     @Inject
@@ -149,26 +148,25 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             }
         }*/
 
-        lifecycleScope.launch {
-            when (checkAppStart()) {
-                AppStart.FIRST_TIME -> openOOBE()
-                AppStart.NORMAL -> checkTOS()
-                AppStart.FIRST_TIME_VERSION -> checkTOS()
-            }
+        when (checkAppStart(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME)) {
+            AppStart.FIRST_TIME -> openOOBE()
+            else -> checkTOS()
         }
     }
 
-    private suspend fun openOOBE() {
-        //manually waiting for the animation to finish :/
-        delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
-        startActivity(Intent(applicationContext, OOBEActivity::class.java))
-        @Suppress("DEPRECATION")
-        if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
-        finishAfterTransition()
+    private fun openOOBE() {
+        lifecycleScope.launch {
+            //manually waiting for the animation to finish :/
+            delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
+            startActivity(Intent(applicationContext, OOBEActivity::class.java))
+            @Suppress("DEPRECATION")
+            if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
+            finishAfterTransition()
+        }
     }
 
-    private suspend fun checkTOS() {
-        if (!getUserSettings().tosAccepted) openOOBE()
+    private fun checkTOS() {
+        if (!commonUtilsSettings.tosAccepted) openOOBE()
         else openMain()
     }
 
@@ -257,20 +255,10 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             text.indexOf(license), text.indexOf(license) + license.length,
             SPAN_EXCLUSIVE_EXCLUSIVE
         )
-        lifecycleScope.launch {
-            setupCommonActivities(
-                appName = getString(R.string.app_name),
-                appVersion = BuildConfig.VERSION_NAME,
-                optionalText = optionalText,
-                email = getString(R.string.email),
-                devModeEnabled = getUserSettings().devModeEnabled,
-                onDevModeChanged = { newDevModeEnabled: Boolean -> updateUserSettings { it.copy(devModeEnabled = newDevModeEnabled) } },
-                onShareApp = { activity -> PlayGames.getAchievementsClient(activity).unlock(getString(R.string.achievement_share_app)) },
-                cantOpenURLMessage = getString(R.string.error_cant_open_url),
-                noBrowserInstalledMessage = getString(R.string.no_browser_app_installed),
-                noEmailAppInstalledText = getString(R.string.no_email_app_installed),
-            )
-        }
+        setupCommonUtilsAboutActivity(appVersion = BuildConfig.VERSION_NAME, optionalText = optionalText)
+        setupCommonUtilsAboutMeActivity(
+            onShareApp = { activity -> PlayGames.getAchievementsClient(activity).unlock(getString(R.string.achievement_share_app)) },
+        )
     }
 
     private fun initDrawer() {
@@ -289,8 +277,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
                         else signInPlayGames(gamesSignInClient) { openLeaderboards() }
                     }
 
-                R.id.about_app_dest -> findViewById<View>(R.id.about_app_dest).transformToActivity(AboutActivity::class.java)
-                R.id.about_me_dest -> findViewById<View>(R.id.about_me_dest).transformToActivity(AboutMeActivity::class.java)
+                R.id.about_app_dest -> findViewById<View>(R.id.about_app_dest).transformToActivity(CommonUtilsAboutActivity::class.java)
+                R.id.about_me_dest -> findViewById<View>(R.id.about_me_dest).transformToActivity(CommonUtilsAboutMeActivity::class.java)
                 R.id.settings_dest -> findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
                 else -> return@onNavigationSingleClick false
             }
@@ -306,20 +294,12 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         }
     }
 
-    private fun openLeaderboards() {
-        PlayGames.getLeaderboardsClient(this)
-            .allLeaderboardsIntent
-            .addOnSuccessListener { intent ->
-                playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
-            }
+    private fun openLeaderboards() = PlayGames.getLeaderboardsClient(this).allLeaderboardsIntent.addOnSuccessListener { intent ->
+        playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
     }
 
-    private fun openAchievements() {
-        PlayGames.getAchievementsClient(this)
-            .achievementsIntent
-            .addOnSuccessListener { intent ->
-                playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
-            }
+    private fun openAchievements() = PlayGames.getAchievementsClient(this).achievementsIntent.addOnSuccessListener { intent ->
+        playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
     }
 
     private fun initTabs() {

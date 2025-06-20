@@ -7,7 +7,7 @@
     android:background="?roundedCornerColor"
     app:expanded="false"
     app:showNavButtonAsBack="true"
-    app:title="@string/settings">
+    app:title="@string/commonutils_settings">
 
     <FrameLayout
         android:id="@+id/settings"

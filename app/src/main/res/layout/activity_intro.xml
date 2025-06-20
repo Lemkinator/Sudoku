@@ -202,7 +202,7 @@
                         android:layout_height="wrap_content"
                         android:layout_margin="1dp"
                         android:drawableTop="@drawable/ic_oui_pen_eraser_outline"
-                        android:text="@string/delete" />
+                        android:text="@string/commonutils_delete" />
 
                     <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/hint_button"

@@ -19,6 +19,7 @@ import net.pwall.json.schema.JSONSchema
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import javax.inject.Inject
+import de.lemke.commonutils.R as commonutilsR
 
 class ImportDataUseCase @Inject constructor(
     @ActivityContext private val context: Context,
@@ -44,7 +45,7 @@ class ImportDataUseCase @Inject constructor(
         progressDialog.dismiss()
         AlertDialog.Builder(context)
             .setTitle(R.string.import_data)
-            .setPositiveButton(de.lemke.commonutils.R.string.ok, null)
+            .setPositiveButton(commonutilsR.string.commonutils_ok, null)
             .setMessage(result)
             .show()
     }

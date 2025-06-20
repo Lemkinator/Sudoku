@@ -1,25 +1,35 @@
 package de.lemke.sudoku.ui
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.R.anim.fade_in
 import android.R.anim.fade_out
 import android.annotation.SuppressLint
+import android.content.DialogInterface
+import android.content.DialogInterface.BUTTON_NEGATIVE
 import android.content.Intent
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.ColorStateList
 import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.data.commonUtilsSettings
 import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -35,6 +45,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Timer
 import javax.inject.Inject
+import de.lemke.commonutils.R as commonutilsR
+import dev.oneuiproject.oneui.design.R as designR
 
 
 @AndroidEntryPoint
@@ -52,6 +64,9 @@ class IntroActivity : AppCompatActivity() {
 
     @Inject
     lateinit var updateUserSettings: UpdateUserSettingsUseCase
+
+    @Inject
+    lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,9 +88,10 @@ class IntroActivity : AppCompatActivity() {
         colorPrimary = typedValue.data
 
         initSudoku()
-        binding.introContinueButton.setOnClickListener { lifecycleScope.launch { openMainActivity() } }
+        binding.introContinueButton.setOnClickListener { showNotificationsDialogOrFinish() }
         binding.introNextButton.setOnClickListener { nextIntroStep() }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
+        loadingDialog.dismiss()
         nextIntroStep()
     }
 
@@ -153,7 +169,7 @@ class IntroActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.intro_menu, menu).let { true }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
-        R.id.menu_skip -> lifecycleScope.launch { openMainActivity() }.let { true }
+        R.id.menu_skip -> showNotificationsDialogOrFinish().let { true }
         else -> super.onOptionsItemSelected(item)
     }
 
@@ -169,7 +185,6 @@ class IntroActivity : AppCompatActivity() {
         sudoku.gameListener = SudokuGameListener()
         sudoku.timer = Timer()
         initSudokuButtons()
-        loadingDialog.dismiss()
     }
 
     private fun initSudokuButtons() {
@@ -184,20 +199,17 @@ class IntroActivity : AppCompatActivity() {
         sudokuButtons.add(binding.numberButton9)
         for (index in sudokuButtons.indices) {
             sudokuButtons[index].isVisible = true
-            sudokuButtons[index].setOnClickListener {
-                lifecycleScope.launch { select(sudoku.itemCount + index) }
-            }
+            sudokuButtons[index].setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + index) } }
         }
-        binding.deleteButton.setOnClickListener {
-            lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) }
-        }
-        binding.hintButton.setOnClickListener {
-            lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) }
-        }
+        binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) } }
+        binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
     }
 
 
     inner class SudokuGameListener : GameListener {
+        override fun onTimeChanged() {}
+        override fun onError() {}
+        override fun onCompleted(position: Position) {}
         override fun onFieldClicked(position: Position) {
             lifecycleScope.launch { select(position.index) }
         }
@@ -208,12 +220,6 @@ class IntroActivity : AppCompatActivity() {
                 checkRowColumnBlockCompleted(position)
             }
         }
-
-        override fun onCompleted(position: Position) {}
-
-        override fun onError() {}
-
-        override fun onTimeChanged() {}
     }
 
     private fun checkRowColumnBlockCompleted(position: Position) {
@@ -253,19 +259,9 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private suspend fun animateField(fieldTextView: TextView?, duration: Long = 250L, delay: Long = 120L) {
-        fieldTextView?.animate()
-            ?.alpha(0.4f)
-            ?.scaleX(1.6f)
-            ?.scaleY(1.6f)
-            ?.rotation(100f)
-            ?.setDuration(duration)?.withEndAction {
-                fieldTextView.animate()
-                    ?.alpha(1f)
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.rotation(0f)
-                    ?.setDuration(duration)?.start()
-            }?.start()
+        fieldTextView?.animate()?.alpha(0.4f)?.scaleX(1.6f)?.scaleY(1.6f)?.rotation(100f)?.setDuration(duration)?.withEndAction {
+            fieldTextView.animate()?.alpha(1f)?.scaleX(1f)?.scaleY(1f)?.rotation(0f)?.setDuration(duration)?.start()
+        }?.start()
         delay(delay / sudoku.blockSize)
     }
 
@@ -278,43 +274,22 @@ class IntroActivity : AppCompatActivity() {
                         val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
                         val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
                         val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
-                        column.forEach {
-                            it?.isHighlighted = false
-                            it?.setBackground()
-                        }
-                        block.forEach {
-                            it?.isHighlighted = true
-                            it?.setBackground()
-                        }
+                        column.forEach { it?.isHighlighted = false;it?.setBackground() }
+                        block.forEach { it?.isHighlighted = true; it?.setBackground() }
                         block.forEach { animateIntroFieldText(it?.fieldViewValue) }
                         delay(900)
-                        block.forEach {
-                            it?.isHighlighted = false
-                            it?.setBackground()
-                        }
-                        row.forEach {
-                            it?.isHighlighted = true
-                            it?.setBackground()
-                        }
+                        block.forEach { it?.isHighlighted = false; it?.setBackground() }
+                        row.forEach { it?.isHighlighted = true; it?.setBackground() }
                         row.forEach { animateIntroFieldText(it?.fieldViewValue) }
                         delay(900)
-                        row.forEach {
-                            it?.isHighlighted = false
-                            it?.setBackground()
-                        }
-                        column.forEach {
-                            it?.isHighlighted = true
-                            it?.setBackground()
-                        }
+                        row.forEach { it?.isHighlighted = false; it?.setBackground() }
+                        column.forEach { it?.isHighlighted = true; it?.setBackground() }
                         column.forEach { animateIntroFieldText(it?.fieldViewValue) }
                     }
                 }
 
                 2 -> {
-                    gameAdapter.fieldViews.filter { it?.position?.row == 0 }.forEach {
-                        it?.isHighlighted = true
-                        it?.setBackground()
-                    }
+                    gameAdapter.fieldViews.filter { it?.position?.row == 0 }.forEach { it?.isHighlighted = true; it?.setBackground() }
                     while (introStep == 2) animateIntroFieldView(gameAdapter.fieldViews[4])
                 }
 
@@ -327,10 +302,7 @@ class IntroActivity : AppCompatActivity() {
                 }
 
                 6 -> {
-                    gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach {
-                        it?.isHighlighted = true
-                        it?.setBackground()
-                    }
+                    gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach { it?.isHighlighted = true; it?.setBackground() }
                     while (introStep == 6) animateIntroFieldView(gameAdapter.fieldViews[24])
                 }
 
@@ -361,13 +333,7 @@ class IntroActivity : AppCompatActivity() {
     private fun stopAnimation(currentIntroStep: Int) {
         animation?.cancel()
         when (currentIntroStep) {
-            0, 5, 6 -> {
-                gameAdapter.fieldViews.forEach {
-                    it?.isHighlighted = false
-                    it?.setBackground()
-                }
-            }
-
+            0, 5, 6 -> gameAdapter.fieldViews.forEach { it?.isHighlighted = false; it?.setBackground() }
             8 -> {
                 selectButton(null)
                 gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
@@ -378,28 +344,16 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private suspend fun animateIntroFieldText(fieldTextView: TextView?, duration: Long = 450, delay: Long = 180L) {
-        fieldTextView?.animate()
-            ?.scaleX(2f)
-            ?.scaleY(2f)
-            ?.setDuration(duration)?.withEndAction {
-                fieldTextView.animate()
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.setDuration(duration)?.start()
-            }?.start()
+        fieldTextView?.animate()?.scaleX(2f)?.scaleY(2f)?.setDuration(duration)?.withEndAction {
+            fieldTextView.animate()?.scaleX(1f)?.scaleY(1f)?.setDuration(duration)?.start()
+        }?.start()
         delay(delay)
     }
 
     private suspend fun animateIntroFieldView(fieldView: FieldView?, duration: Long = 600, delay: Long = 2000) {
-        fieldView?.animate()
-            ?.scaleX(1.5f)
-            ?.scaleY(1.5f)
-            ?.setDuration(duration)?.withEndAction {
-                fieldView.animate()
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.setDuration(duration)?.start()
-            }?.start()
+        fieldView?.animate()?.scaleX(1.5f)?.scaleY(1.5f)?.setDuration(duration)?.withEndAction {
+            fieldView.animate()?.scaleX(1f)?.scaleY(1f)?.setDuration(duration)?.start()
+        }?.start()
         delay(delay)
     }
 
@@ -419,8 +373,7 @@ class IntroActivity : AppCompatActivity() {
         if (i != null) {
             when (i) {
                 sudoku.size -> binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
-                sudoku.size + 1 -> binding.hintButton.backgroundTintList =
-                    ColorStateList.valueOf(colorPrimary)
+                sudoku.size + 1 -> binding.hintButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
 
                 else -> {
                     sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(colorPrimary)
@@ -501,14 +454,51 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun openMainActivity() {
-        if (!openedFromSettings) {
-            updateUserSettings { it.copy(tosAccepted = true) }
-            startActivity(Intent(applicationContext, MainActivity::class.java))
-            @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
+    private fun showNotificationsDialogOrFinish() {
+        if (!openedFromSettings) notificationsDialog() else finishAfterTransition()
+    }
 
+    private fun openMainActivity() {
+        commonUtilsSettings.tosAccepted = true
+        startActivity(Intent(applicationContext, MainActivity::class.java))
+        @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
+    }
+
+    private fun notificationsDialog() {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.notifications_title))
+            .setMessage(getString(R.string.daily_sudoku_notification_channel_description))
+            .setNegativeButton(R.string.decline_notifications) { _: DialogInterface, _: Int ->
+                lifecycleScope.launch {
+                    updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
+                    sendDailyNotification.setDailySudokuNotification(enable = false)
+                    openMainActivity()
+                }
+            }
+            .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
+                lifecycleScope.launch {
+                    //Enable Notifications when < Android 13 or permission is granted, else ask for permission
+                    if (SDK_INT < TIRAMISU ||
+                        ContextCompat.checkSelfPermission(this@IntroActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
+                    ) {
+                        updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
+                        sendDailyNotification.setDailySudokuNotification(enable = true)
+                        openMainActivity()
+                    } else requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                }
+            }
+            .setCancelable(false)
+            .create()
+        dialog.show()
+        dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_des_functional_red_color))
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+        lifecycleScope.launch {
+            updateUserSettings { it.copy(dailySudokuNotificationEnabled = isGranted) }
+            sendDailyNotification.setDailySudokuNotification(enable = isGranted)
+            openMainActivity()
         }
-        finishAfterTransition()
     }
 
     var sudoku: Sudoku = Sudoku.create(
