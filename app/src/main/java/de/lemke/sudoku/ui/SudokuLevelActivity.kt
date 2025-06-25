@@ -7,6 +7,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
+import com.skydoves.bundler.intentOf
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.prepareActivityTransformationBetween
 import de.lemke.commonutils.setCustomBackAnimation
@@ -55,9 +56,9 @@ class SudokuLevelActivity : AppCompatActivity() {
 class ViewPager2AdapterTabLevelSubtabs(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
     override fun getItemCount(): Int = 3
     override fun createFragment(position: Int): Fragment = when (position) {
-        0 -> SudokuLevelTab(4)
-        1 -> SudokuLevelTab(9)
-        2 -> SudokuLevelTab(16)
-        else -> SudokuLevelTab(9)
+        0 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 4) }.extras }
+        1 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 9) }.extras }
+        2 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 16) }.extras }
+        else -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 9) }.extras }
     }
 }

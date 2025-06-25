@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.skydoves.bundler.bundle
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.databinding.FragmentTabLevelBinding
@@ -38,12 +39,13 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SudokuLevelTab(private val size: Int) : Fragment() {
+class SudokuLevelTab() : Fragment() {
     private lateinit var binding: FragmentTabLevelBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var progressDialog: ProgressDialog
     private var sudokuLevel: List<SudokuListItem> = emptyList()
     private var nextLevelSudoku: Sudoku? = null
+    private val size: Int by bundle("size", 4)
 
     @Inject
     lateinit var initSudokuLevel: InitSudokuLevelUseCase
