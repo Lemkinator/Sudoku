@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -34,6 +35,7 @@ import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
 import dev.oneuiproject.oneui.utils.ItemDecorRule.NONE
 import dev.oneuiproject.oneui.utils.SemItemDecoration
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -73,13 +75,13 @@ class SudokuLevelTab() : Fragment() {
         lifecycleScope.launch {
             initRecycler()
             initSudokuLevel(size)
-            observeAllSudokuLevel(size).flowWithLifecycle(lifecycle).collectLatest {
+            observeAllSudokuLevel(size).flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 sudokuLevel = it
                 if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
                     binding.tabLevelProgressBar.isVisible = true
                     nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
                     sudokuLevel = listOf(SudokuItem(nextLevelSudoku!!, nextLevelSudoku!!.modeLevel.toString())) + sudokuLevel
-                    binding.sudokuLevelsRecycler.smoothScrollToPosition(0)
+                    lifecycleScope.launch { delay(200); binding.sudokuLevelsRecycler.smoothScrollToPosition(0) }
                 } else nextLevelSudoku = null
                 sudokuListAdapter.submitList(sudokuLevel)
                 binding.tabLevelProgressBar.isVisible = false

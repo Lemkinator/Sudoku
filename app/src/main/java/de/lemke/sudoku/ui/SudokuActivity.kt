@@ -44,7 +44,6 @@ import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
@@ -83,15 +82,13 @@ class SudokuActivity : AppCompatActivity() {
     private var selected: Int? = null
     private var menuPausePlayVisible = false
     private var menuResetVisible = false
+    private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
     private val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
     private val transparent get() = ColorStateList.valueOf(getColor(android.R.color.transparent))
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
 
     @Inject
     lateinit var getSudoku: GetSudokuUseCase
@@ -181,12 +178,7 @@ class SudokuActivity : AppCompatActivity() {
         binding.gameRecycler.adapter = gameAdapter
         sudoku.gameListener = SudokuGameListener()
         initSudokuButtons()
-        if (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now()) {
-            menuResetVisible = false
-            menuPausePlayVisible = false
-            invalidateOptionsMenu()
-            animateGameButtonsVisibility(false)
-        } else resumeGame()
+        resumeGame()
         loadingDialog.dismiss()
     }
 
@@ -228,7 +220,7 @@ class SudokuActivity : AppCompatActivity() {
     @Suppress("unused")
     fun resumeGame(view: View? = null) {
         binding.resumeButton.transformTo(binding.gameLayout)
-        if (sudoku.completed) {
+        if (sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now())) {
             menuPausePlayVisible = false
             menuResetVisible = true
             animateGameButtonsVisibility(false)
@@ -257,7 +249,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun animateGameButtonsVisibility(visible: Boolean) {
         val value = if (visible) 1f else 0f
-        binding.gameButtons.animate().setInterpolator(AccelerateDecelerateInterpolator())
+        binding.gameButtons.animate().setInterpolator(accelerateDecelerateInterpolator)
             .alpha(value).scaleX(value).scaleY(value).setDuration(300L).start()
     }
 
@@ -355,7 +347,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun select(newSelected: Int?) {
         if (checkErrorLimit()) return
-        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(false, true)
+        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
             null -> {//nothing is selected
                 when (newSelected) {

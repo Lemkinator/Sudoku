@@ -8,6 +8,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,8 +30,6 @@ import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.DAILY
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
@@ -64,19 +63,14 @@ class DailySudokuActivity : AppCompatActivity() {
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
-        val progressDialog = ProgressDialog(this)
-        progressDialog.setProgressStyle(CIRCLE)
-        progressDialog.setCancelable(false)
-        progressDialog.show()
         initRecycler()
         lifecycleScope.launch {
             initDailySudokus()
             invalidateOptionsMenu()
-            observeDailySudokus().flowWithLifecycle(lifecycle).collectLatest {
+            observeDailySudokus().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 dailySudokus = it
                 sudokuListAdapter.submitList(it)
                 binding.dailySudokuRecycler.isVisible = true
-                progressDialog.dismiss()
             }
         }
     }

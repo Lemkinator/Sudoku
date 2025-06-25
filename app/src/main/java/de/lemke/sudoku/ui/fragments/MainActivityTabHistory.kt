@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -78,7 +79,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
         binding.noEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
         lifecycleScope.launch {
-            observeSudokuHistory().flowWithLifecycle(lifecycle).collectLatest {
+            observeSudokuHistory().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 val previousSize = sudokuHistory.size
                 sudokuHistory = it
                 updateRecyclerView()
@@ -162,8 +163,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
                 sudokuListAdapter.onToggleActionMode(false)
                 mainTabs.setTabsEnabled(true)
             },
-            onSelectMenuItem = {
-                when (it.itemId) {
+            onSelectMenuItem = { menuItem ->
+                when (menuItem.itemId) {
                     R.id.menuButtonDelete -> {
                         val dialog = ProgressDialog(requireContext())
                         dialog.setProgressStyle(CIRCLE)

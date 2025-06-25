@@ -11,6 +11,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -58,7 +59,7 @@ class MainActivityTabStatistics : Fragment() {
             enableCoreSeslFeatures()
         }
         lifecycleScope.launch {
-            observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle).collectLatest {
+            observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 binding.statisticsProgressBar.isVisible = true
                 updateStatistics(it)
                 binding.statisticsListRecycler.adapter?.notifyDataSetChanged()
