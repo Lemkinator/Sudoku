@@ -9,13 +9,13 @@ import javax.inject.Inject
 class SudokusRepository @Inject constructor(
     private val sudokuDao: SudokuDao,
 ) {
-    fun observeAllSudokus() = sudokuDao.observeAll().map { it.mapNotNull { sudokuFromDb(it) } }
+    fun observeAllSudokus() = sudokuDao.observeAll().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
-    fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { it.mapNotNull { sudokuFromDb(it) } }
+    fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
-    fun observeSudokuLevel(size: Int) = sudokuDao.observeSudokuLevel(size).map { it.mapNotNull { sudokuFromDb(it) } }
+    fun observeSudokuLevel(size: Int) = sudokuDao.observeSudokuLevel(size).map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
-    fun observeDailySudokus() = sudokuDao.observeDailySudokus().map { it.mapNotNull { sudokuFromDb(it) } }
+    fun observeDailySudokus() = sudokuDao.observeDailySudokus().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
     suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
 
