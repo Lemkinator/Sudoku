@@ -30,6 +30,8 @@ import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.DAILY
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
+import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
@@ -63,6 +65,10 @@ class DailySudokuActivity : AppCompatActivity() {
         binding = ActivityDailySudokuBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
+        val progressDialog = ProgressDialog(this)
+        progressDialog.setProgressStyle(CIRCLE)
+        progressDialog.setCancelable(false)
+        progressDialog.show()
         initRecycler()
         lifecycleScope.launch {
             initDailySudokus()
@@ -71,6 +77,7 @@ class DailySudokuActivity : AppCompatActivity() {
                 dailySudokus = it
                 sudokuListAdapter.submitList(it)
                 binding.dailySudokuRecycler.isVisible = true
+                progressDialog.dismiss()
             }
         }
     }
