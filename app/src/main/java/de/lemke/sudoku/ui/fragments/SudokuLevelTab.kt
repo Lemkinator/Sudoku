@@ -28,8 +28,6 @@ import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.LEVEL
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
@@ -44,7 +42,6 @@ import javax.inject.Inject
 class SudokuLevelTab() : Fragment() {
     private lateinit var binding: FragmentTabLevelBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
-    private lateinit var progressDialog: ProgressDialog
     private var sudokuLevel: List<SudokuListItem> = emptyList()
     private var nextLevelSudoku: Sudoku? = null
     private val size: Int by bundle("size", 4)
@@ -69,9 +66,6 @@ class SudokuLevelTab() : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        progressDialog = ProgressDialog(requireContext())
-        progressDialog.setProgressStyle(CIRCLE)
-        progressDialog.setCancelable(false)
         lifecycleScope.launch {
             initRecycler()
             initSudokuLevel(size)
@@ -84,6 +78,7 @@ class SudokuLevelTab() : Fragment() {
                     lifecycleScope.launch { delay(200); binding.sudokuLevelsRecycler.smoothScrollToPosition(0) }
                 } else nextLevelSudoku = null
                 sudokuListAdapter.submitList(sudokuLevel)
+                binding.sudokuLevelsRecycler.isVisible = true
                 binding.tabLevelProgressBar.isVisible = false
             }
         }
@@ -109,9 +104,9 @@ class SudokuLevelTab() : Fragment() {
             if (sudokuListItem is SudokuItem) {
                 lifecycleScope.launch {
                     if (position == 0 && nextLevelSudoku != null) {
-                        progressDialog.show()
+                        binding.tabLevelProgressBar.isVisible = true
                         saveSudoku(sudokuListItem.sudoku)
-                        progressDialog.dismiss()
+                        binding.tabLevelProgressBar.isVisible = false
                     }
                     viewHolder.itemView.transformToActivity(
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)

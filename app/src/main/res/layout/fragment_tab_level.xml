@@ -14,8 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="16dp"
         android:layout_gravity="bottom"
-        android:indeterminate="true"
-        android:visibility="gone" />
+        android:indeterminate="true" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/sudokuLevelsRecycler"
@@ -23,6 +22,7 @@
         android:layout_height="match_parent"
         android:background="?android:colorBackground"
         android:paddingHorizontal="10dp"
-        android:scrollbarStyle="outsideOverlay" />
+        android:scrollbarStyle="outsideOverlay"
+        android:visibility="gone" />
 
 </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
