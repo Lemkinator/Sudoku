@@ -194,9 +194,9 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             dialog.show()
             val sudoku = importSudoku(intent.data)
             if (sudoku != null) {
-                findViewById<AppCompatButton>(R.id.newGameButton).transformToActivity(
+                findViewById<AppCompatButton?>(R.id.newGameButton)?.transformToActivity(
                     Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
-                )
+                ) ?: startActivity(Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value))
             } else {
                 toast(R.string.error_import_failed)
             }
