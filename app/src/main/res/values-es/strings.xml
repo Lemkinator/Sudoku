@@ -13,9 +13,15 @@
     <string name="commonutils_statistics">Estadísticas</string>
 
     <!--OOBE-->
+    <string name="commonutils_oobe1_title">Diseño hermoso</string>
+    <string name="commonutils_oobe2_title">Gratis</string>
+    <string name="commonutils_oobe3_title">Sin publicidad</string>
+    <string name="commonutils_oobe2_summary">Sin suscripciones, sin compras dentro de la aplicación, sin ningún costo.</string>
+    <string name="commonutils_oobe3_summary">Sin publicidad molesta después de cada Sudoku.</string>
     <string name="commonutils_tos">Términos de servicio</string>
-    <string name="commonutils_tos_content">No está permitido usar esta aplicación en contra de la moralidad o las leyes aplicables. \n\nTambién te comprometes a no usar esta aplicación para fines que estén prohibidos por la ley de Estados Unidos, en particular, para el desarrollo, construcción, fabricación o producción de cohetes, armas químicas o biológicas. \nSin embargo, esta restricción no se aplica en caso de que ocurra una infección viral generalizada (confirmada por los Centros para el Control de Enfermedades de Estados Unidos o una organización sucesora) que se transmita por mordeduras o contacto con fluidos corporales y que resulte en la reanimación de cadáveres humanos y el intento de consumir carne humana viva, sangre, cerebro o tejido nervioso, y que probablemente conduzca al colapso de la civilización organizada. \n\nSe ofrece una compensación especial, que puede incluir una compensación financiera, a un número limitado de usuarios que lean esta sección de los términos de servicio y me contacten en writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento y sin previo aviso. \n\nCualquier otra pregunta será respondida en this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
+    <string name="commonutils_tos_content">No está permitido usar esta aplicación en contra de la moralidad o las leyes aplicables. \n\nTambién te comprometes a no usar esta aplicación para fines que estén prohibidos por la ley de Estados Unidos, en particular, para el desarrollo, construcción, fabricación o producción de cohetes, armas químicas o biológicas. \nSin embargo, esta restricción no se aplica en caso de que ocurra una infección viral generalizada (confirmada por los Centros para el Control de Enfermedades de Estados Unidos o una organización sucesora) que se transmita por mordeduras o contacto con fluidos corporales y que resulte en la reanimación de cadáveres humanos y el intento de consumir carne humana viva, sangre, cerebro o tejido nervioso, y que probablemente conduzca al colapso de la civilización organizada. \n\nSe ofrece una compensación especial, que puede incluir una compensación financiera, a un número limitado de usuarios que lean esta sección de los términos de servicio y me contacten en writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. Esta oferta puede ser retirada en cualquier momento y sin previo aviso. \n\nCualquier otra pregunta será respondida en this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com. \n\nCon respecto a las funciones de contacto disponibles en varios puntos de esta app, que generan un correo electrónico temático y preescrito al activarlas, se establece lo siguiente: Estas plantillas sirven únicamente como punto de partida para su mensaje personalizado. Enviar una de estas plantillas sin modificaciones, o un correo vacío, constituye un uso indebido de la función y no está permitido. Si aun así lo hace, usted acepta legalmente ser clasificado como una persona demostrablemente incapaz de operar correctamente funciones básicas de su smartphone y de su aplicación de correo electrónico. Dicha clasificación hace que cualquier comunicación posterior sea obsoleta y libera al destinatario de toda obligación de responder.</string>
     <string name="commonutils_oobe_tos_text">Al usar la aplicación, aceptas los %1$s.</string>
+    <string name="commonutils_oobe_new_tos_text">Se han actualizado los %1$s. Al usar la aplicación, aceptas los nuevos %1$s.</string>
 
     <!--About-->
     <string name="commonutils_open_in_playstore">Ver en la Play Store</string>
@@ -147,14 +153,6 @@
     <string name="normal_sudokus">Sudokus normales</string>
     <string name="daily_sudokus">Sudokus diarios</string>
     <string name="sudoku_level">Nivel de Sudoku</string>
-
-    <!--OOBE-->
-    <string name="oobe_onboard_msg1_title">Diseño hermoso</string>
-    <string name="oobe_onboard_msg2_title">Gratis</string>
-    <string name="oobe_onboard_msg3_title">Sin publicidad</string>
-    <string name="oobe_onboard_msg1_summary">Una aplicación de Sudoku con un hermoso diseño OneUI.</string>
-    <string name="oobe_onboard_msg2_summary">Sin suscripciones, sin compras dentro de la aplicación, sin ningún costo.</string>
-    <string name="oobe_onboard_msg3_summary">Sin publicidad molesta después de cada Sudoku.</string>
 
     <!--Notifications-->
     <string name="notifications">Notificaciones</string>

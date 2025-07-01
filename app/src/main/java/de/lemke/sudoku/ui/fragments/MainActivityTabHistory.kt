@@ -2,21 +2,15 @@ package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.graphics.ColorFilter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.airbnb.lottie.LottieProperty.COLOR_FILTER
-import com.airbnb.lottie.SimpleColorFilter
-import com.airbnb.lottie.model.KeyPath
-import com.airbnb.lottie.value.LottieValueCallback
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
@@ -122,19 +116,8 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     }
 
     private fun updateRecyclerView() {
-        if (sudokuHistory.isEmpty()) {
-            binding.sudokuHistoryList.isVisible = false
-            binding.noEntryLottie.cancelAnimation()
-            binding.noEntryLottie.progress = 0f
-            binding.noEntryScrollView.isVisible = true
-            val callback = LottieValueCallback<ColorFilter>(SimpleColorFilter(requireContext().getColor(R.color.primary_color_themed)))
-            binding.noEntryLottie.addValueCallback(KeyPath("**"), COLOR_FILTER, callback)
-            binding.noEntryLottie.postDelayed({ binding.noEntryLottie.playAnimation() }, 400)
-        } else {
-            binding.noEntryScrollView.isVisible = false
-            binding.sudokuHistoryList.isVisible = true
-            sudokuListAdapter.submitList(sudokuHistory)
-        }
+        if (sudokuHistory.isNotEmpty()) sudokuListAdapter.submitList(sudokuHistory)
+        binding.noEntryView.updateVisibilityWith(sudokuHistory, binding.sudokuHistoryList)
     }
 
     private fun SudokuListAdapter.setupOnClickListeners() {

@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="about_app">Über Sudoku</string>
     <string name="app_description">Eine Sudoku App im schönen OneUI-Design.</string>
+    <string name="about_app">Über Sudoku</string>
 
     <!--Override commonutils strings-->
     <string name="commonutils_yes">Ja</string>
@@ -13,9 +13,15 @@
     <string name="commonutils_statistics">Statistik</string>
 
     <!--OOBE-->
+    <string name="commonutils_oobe1_title">Schönes Design</string>
+    <string name="commonutils_oobe2_title">Kostenlos</string>
+    <string name="commonutils_oobe3_title">Keine Werbung</string>
+    <string name="commonutils_oobe2_summary">Keine Abos, keine In-App-Käufe, keinerlei Kosten.</string>
+    <string name="commonutils_oobe3_summary">Keine nervige Werbung nach jedem Sudoku.</string>
     <string name="commonutils_tos">Nutzungsbedingungen</string>
-    <string name="commonutils_tos_content">Es ist nicht gestattet, diese App entgegen den guten Sitten oder den geltenden Gesetzen zu verwenden. \n\nSie verpflichten sich außerdem, diese App nicht für Zwecke zu verwenden, die nach dem Recht der Vereinigten Staaten verboten sind, insbesondere nicht für die Entwicklung, Konstruktion, Herstellung oder Produktion von Raketen, chemischen oder biologischen Waffen. \nDiese Einschränkung gilt jedoch nicht für den Fall, dass eine weit verbreitete Virusinfektion auftritt (die von den United States Centers for Disease Control oder einer Nachfolgeorganisation bestätigt wurde), die durch Bisse oder Kontakt mit Körperflüssigkeiten übertragen wird und dazu führt, dass menschliche Leichen wiederbelebt werden und versuchen, lebendes menschliches Fleisch, Blut, Gehirn oder Nervengewebe zu verzehren, und die wahrscheinlich zum Untergang der organisierten Zivilisation führen wird. \n\nEine besondere Gegenleistung, die eine finanzielle Entschädigung beinhalten kann, wird einer begrenzten Anzahl von Nutzern angeboten, die diesen Abschnitt der Nutzungsbedingungen lesen und mich unter eine-email-an-diese-adresse-zu-schreiben-wird-sie-10-euro-kosten@leonard-lemke.com kontaktieren. Dieses Angebot kann jederzeit und ohne Vorankündigung zurückgezogen werden. \n\nWeitere Fragen werden unter diese-email-ist-viel-zu-lang-und-hoffentlich-koennen-sie-nicht-kopieren-und-einfuegen@leonard-lemke.com beantwortet.</string>
+    <string name="commonutils_tos_content">Es ist nicht gestattet, diese App entgegen den guten Sitten oder den geltenden Gesetzen zu verwenden. \n\nSie verpflichten sich außerdem, diese App nicht für Zwecke zu verwenden, die nach dem Recht der Vereinigten Staaten verboten sind, insbesondere nicht für die Entwicklung, Konstruktion, Herstellung oder Produktion von Raketen, chemischen oder biologischen Waffen. \nDiese Einschränkung gilt jedoch nicht für den Fall, dass eine weit verbreitete Virusinfektion auftritt (die von den United States Centers for Disease Control oder einer Nachfolgeorganisation bestätigt wurde), die durch Bisse oder Kontakt mit Körperflüssigkeiten übertragen wird und dazu führt, dass menschliche Leichen wiederbelebt werden und versuchen, lebendes menschliches Fleisch, Blut, Gehirn oder Nervengewebe zu verzehren, und die wahrscheinlich zum Untergang der organisierten Zivilisation führen wird. \n\nEine besondere Gegenleistung, die eine finanzielle Entschädigung beinhalten kann, wird einer begrenzten Anzahl von Nutzern angeboten, die diesen Abschnitt der Nutzungsbedingungen lesen und mich unter eine-email-an-diese-adresse-zu-schreiben-wird-sie-10-euro-kosten@leonard-lemke.com kontaktieren. Dieses Angebot kann jederzeit und ohne Vorankündigung zurückgezogen werden. \n\nWeitere Fragen werden unter diese-email-ist-viel-zu-lang-und-hoffentlich-koennen-sie-nicht-kopieren-und-einfuegen@leonard-lemke.com beantwortet. \n\nHinsichtlich der in dieser App an mehreren Stellen zur Verfügung gestellten Kontaktfunktionen, welche bei Betätigung eine E-Mail mit einem themenspezifischen, vorformulierten Text generieren, wird Folgendes festgelegt: Diese Textvorlagen dienen ausschließlich als Ausgangspunkt für Ihre individuelle Anfrage. Das Absenden einer dieser unveränderten Vorlagen oder einer inhaltsleeren E-Mail stellt eine missbräuchliche Nutzung der Funktion dar und ist nicht gestattet. Sollten Sie entgegen dieser Bestimmung eine solche Nachricht versenden, erklären Sie sich damit rechtsverbindlich einverstanden, als eine Person eingestuft zu werden, die nachweislich nicht in der Lage ist, grundlegende Funktionen ihres Smartphones und dessen E-Mail-Applikationen sachgemäß zu verwenden. Eine solche Einstufung macht eine weiterführende Kommunikation naturgemäß obsolet und entbindet den Empfänger von jeglicher Antwortpflicht.</string>
     <string name="commonutils_oobe_tos_text">Durch die Nutzung der App stimmen Sie den %1$s zu.</string>
+    <string name="commonutils_oobe_new_tos_text">Die %1$s wurden aktualisiert. Durch die Nutzung der App stimmen Sie den neuen %1$s zu.</string>
 
     <!--About-->
     <string name="commonutils_open_in_playstore">In Play Store öffnen</string>
@@ -147,14 +153,6 @@
     <string name="normal_sudokus">Normale Sudokus</string>
     <string name="daily_sudokus">Tägliche Sudokus</string>
     <string name="sudoku_level">Sudoku-Level</string>
-
-    <!--OOBE-->
-    <string name="oobe_onboard_msg1_title">Schönes Design</string>
-    <string name="oobe_onboard_msg2_title">Kostenlos</string>
-    <string name="oobe_onboard_msg3_title">Keine Werbung</string>
-    <string name="oobe_onboard_msg1_summary">Eine Sudoku-App im schönen OneUI Design.</string>
-    <string name="oobe_onboard_msg2_summary">Keine Abos, keine In-App-Käufe, keinerlei Kosten.</string>
-    <string name="oobe_onboard_msg3_summary">Keine nervige Werbung nach jedem Sudoku.</string>
 
     <!--Notifications-->
     <string name="notifications">Benachrichtigungen</string>

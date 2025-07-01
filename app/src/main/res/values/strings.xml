@@ -1,13 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
-    <string name="app_name" translatable="false">Test Sudoku</string>
+    <string name="app_name" translatable="false">Sudoku</string>
+    <string name="app_description">A Sudoku app with OneUI-Design.</string>
+    <string name="about_app">About Sudoku</string>
     <string name="sudoku_lib_github_link" translatable="false">https://github.com/sfuhrm/sudoku</string>
     <string name="sudoku_lib_license_github_link" translatable="false">https://github.com/sfuhrm/sudoku/blob/master/LICENSE</string>
     <string name="daily_sudoku_notification_channel_id" translatable="false">Daily_Sudoku_Notification_Channel</string>
     <string name="size4" translatable="false">4×4</string>
     <string name="size9" translatable="false">9×9</string>
     <string name="size16" translatable="false">16×16</string>
-    <string name="about_app">About Sudoku</string>
-    <string name="app_description">A Sudoku app with OneUI-Design.</string>
 
     <!--Override commonutils strings-->
     <string name="commonutils_app_name" translatable="false">@string/app_name</string>
@@ -25,9 +25,15 @@
     <string name="commonutils_statistics">Statistics</string>
 
     <!--OOBE-->
+    <string name="commonutils_oobe1_title">Beautiful design</string>.
+    <string name="commonutils_oobe2_title">Free</string>
+    <string name="commonutils_oobe3_title">No ads</string>
+    <string name="commonutils_oobe2_summary">No subscriptions, no in-app purchases, no costs at all.</string>
+    <string name="commonutils_oobe3_summary">No annoying ads after each Sudoku.</string>
     <string name="commonutils_tos">Terms of Service</string>
-    <string name="commonutils_tos_content">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com.</string>
+    <string name="commonutils_tos_content">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com. \n\nRegarding the contact features provided in various places within this app, which generate a topic-specific, prewritten email when activated, the following applies: These templates are intended solely as a starting point for your personalized message. Sending one of these templates unchanged, or a blank email, constitutes misuse of the feature and is not permitted. By doing so anyway, you legally agree to be classified as a person demonstrably incapable of properly operating basic functions of their smartphone and its email application functions. Such a classification renders further communication obsolete and releases the recipient from any obligation to respond.</string>
     <string name="commonutils_oobe_tos_text">By continuing, you agree to the %1$s.</string>
+    <string name="commonutils_oobe_new_tos_text">The %1$s have been updated. By continuing, you agree to the new %1$s.</string>
 
     <!--About-->
     <string name="commonutils_open_in_playstore">Open in Play Store</string>
@@ -160,14 +166,6 @@
     <string name="normal_sudokus">Normal Sudokus</string>
     <string name="daily_sudokus">Daily Sudokus</string>
     <string name="sudoku_level">Sudoku level</string>
-
-    <!--OOBE-->
-    <string name="oobe_onboard_msg1_title">Beautiful design</string>.
-    <string name="oobe_onboard_msg2_title">Free</string>
-    <string name="oobe_onboard_msg3_title">No ads</string>
-    <string name="oobe_onboard_msg1_summary">A Sudoku app with OneUI design.</string>
-    <string name="oobe_onboard_msg2_summary">No subscriptions, no in-app purchases, no costs at all.</string>
-    <string name="oobe_onboard_msg3_summary">No annoying ads after each Sudoku.</string>
 
     <!--Notifications-->
     <string name="notifications">Notifications</string>

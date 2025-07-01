@@ -9,15 +9,15 @@
     <application
         android:name=".App"
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:dataExtractionRules="@xml/commonutils_data_extraction_rules"
         android:enableOnBackInvokedCallback="true"
-        android:fullBackupContent="@xml/backup_rules"
+        android:fullBackupContent="@xml/commonutils_backup_rules"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:localeConfig="@xml/locale_config"
         android:resizeableActivity="true"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme"
+        android:theme="@style/CommonUtils.AppTheme"
         tools:targetApi="34">
 
         <meta-data
@@ -28,18 +28,6 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- SamsungBasicInteraction -->
-        <meta-data
-            android:name="SamsungBasicInteraction"
-            android:value="SEP10" />
-        <!-- Samsung Icon flags -->
-        <meta-data
-            android:name="com.samsung.android.icon_container.has_icon_container"
-            android:value="true" />
-        <meta-data
-            android:name="com.samsung.android.icon_container.feature_appicon"
-            android:value="ADAPTIVEICON_SHADOW" />
-
         <meta-data
             android:name="theming-meta"
             android:value="meta_sudoku" />
@@ -47,7 +35,6 @@
             android:name="theming-meta-xml"
             android:value="@xml/meta_sudoku" />
 
-        <activity android:name=".ui.OOBEActivity" />
         <activity
             android:name=".ui.DailySudokuActivity"
             android:configChanges="orientation|screenLayout|screenSize"
@@ -80,7 +67,7 @@
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="true"
-            android:theme="@style/AppTheme.Starting">
+            android:theme="@style/CommonUtils.AppTheme.Starting">
             <!--Launcher-->
             <meta-data
                 android:name="com.sec.android.app.launcher.icon_theme"

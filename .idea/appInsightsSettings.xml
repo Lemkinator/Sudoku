@@ -9,11 +9,11 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="de.lemke.sudoku" />
+                  <option name="appId" value="de.lemke.geticon" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
-              <option name="timeIntervalDays" value="TWENTY_EIGHT_DAYS" />
+              <option name="timeIntervalDays" value="SEVEN_DAYS" />
               <option name="visibilityType" value="ALL" />
             </InsightsFilterSettings>
           </value>

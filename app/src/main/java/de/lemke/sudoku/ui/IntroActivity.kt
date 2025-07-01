@@ -393,7 +393,7 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun select(newSelected: Int?) {
-        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(false, true)
+        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
             null -> {//nothing is selected
                 when (newSelected) {
@@ -459,7 +459,7 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun openMainActivity() {
-        commonUtilsSettings.tosAccepted = true
+        commonUtilsSettings.acceptedTosVersion = resources.getInteger(R.integer.commonutils_tos_version)
         startActivity(Intent(applicationContext, MainActivity::class.java))
         @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
     }

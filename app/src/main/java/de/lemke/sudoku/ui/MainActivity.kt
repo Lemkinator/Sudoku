@@ -17,7 +17,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
@@ -35,14 +35,14 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.AppStart
-import de.lemke.commonutils.checkAppStart
-import de.lemke.commonutils.data.commonUtilsSettings
+import de.lemke.commonutils.checkAppStartAndHandleOOBE
+import de.lemke.commonutils.configureCommonUtilsSplashScreen
 import de.lemke.commonutils.onNavigationSingleClick
 import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationFrom
 import de.lemke.commonutils.setupCommonUtilsAboutActivity
 import de.lemke.commonutils.setupCommonUtilsAboutMeActivity
+import de.lemke.commonutils.setupCommonUtilsOOBEActivity
 import de.lemke.commonutils.setupHeaderAndNavRail
 import de.lemke.commonutils.toast
 import de.lemke.commonutils.transformToActivity
@@ -77,7 +77,6 @@ import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
 import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import dev.oneuiproject.oneui.design.R as designR
@@ -88,10 +87,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private lateinit var binding: ActivityMainBinding
     private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
     private var selectedPosition = 0
-    private var time: Long = 0
     private var isUIReady = false
-    private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
+    private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(StartActivityForResult()) {}
 
     @Inject
     lateinit var getUserSettings: GetUserSettingsUseCase
@@ -110,64 +107,14 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        time = System.currentTimeMillis()
         prepareActivityTransformationFrom()
         super.onCreate(savedInstanceState)
         if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        splashScreen.setKeepOnScreenCondition { !isUIReady }
-        /*
-        there is a bug in the new splash screen api, when using the onExitAnimationListener -> splash icon flickers
-        therefore setting a manual delay in openMain()
-        splashScreen.setOnExitAnimationListener { splash ->
-            val splashAnimator: ObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(
-                splash.view,
-                PropertyValuesHolder.ofFloat(View.ALPHA, 0f),
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 1.2f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.2f)
-            )
-            splashAnimator.interpolator = AccelerateDecelerateInterpolator()
-            splashAnimator.duration = 400L
-            splashAnimator.doOnEnd { splash.remove() }
-            val contentAnimator: ObjectAnimator = ObjectAnimator.ofPropertyValuesHolder(
-                binding.root,
-                PropertyValuesHolder.ofFloat(View.ALPHA, 0f, 1f),
-                PropertyValuesHolder.ofFloat(View.SCALE_X, 1.2f, 1f),
-                PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.2f, 1f)
-            )
-            contentAnimator.interpolator = AccelerateDecelerateInterpolator()
-            contentAnimator.duration = 400L
-
-            val remainingDuration = splash.iconAnimationDurationMillis - (System.currentTimeMillis() - splash.iconAnimationStartMillis)
-                .coerceAtLeast(0L)
-            lifecycleScope.launch {
-                delay(remainingDuration)
-                splashAnimator.start()
-                contentAnimator.start()
-            }
-        }*/
-
-        when (checkAppStart(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME)) {
-            AppStart.FIRST_TIME -> openOOBE()
-            else -> checkTOS()
-        }
-    }
-
-    private fun openOOBE() {
-        lifecycleScope.launch {
-            //manually waiting for the animation to finish :/
-            delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
-            startActivity(Intent(applicationContext, OOBEActivity::class.java))
-            @Suppress("DEPRECATION")
-            if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
-            finishAfterTransition()
-        }
-    }
-
-    private fun checkTOS() {
-        if (!commonUtilsSettings.tosAccepted) openOOBE()
-        else openMain()
+        configureCommonUtilsSplashScreen(splashScreen, binding.root) { !isUIReady }
+        setupCommonUtilsOOBEActivity(setAcceptedTosVersion = false, nextActivity = IntroActivity::class.java)
+        if (!checkAppStartAndHandleOOBE(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME)) openMain()
     }
 
     private fun openMain() {
@@ -175,10 +122,8 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         initDrawer()
         initTabs()
         initFragments()
-        NotificationManagerCompat.from(this).cancelAll() // cancel all notifications
+        NotificationManagerCompat.from(this).cancelAll()
         lifecycleScope.launch {
-            //manually waiting for the animation to finish :/
-            delay(800 - (System.currentTimeMillis() - time).coerceAtLeast(0L))
             isUIReady = true
             checkImportedSudokuOrNotificationClicked()
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
@@ -319,7 +264,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
                         2 -> {
                             val statisticsRecyclerView: RecyclerView = findViewById(R.id.statisticsListRecycler)
-                            if (binding.drawerLayout.isExpanded) binding.drawerLayout.setExpanded(false, true)
+                            if (binding.drawerLayout.isExpanded) binding.drawerLayout.setExpanded(expanded = false, animate = true)
                             else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
                             else showStatisticsFilterDialog()
                         }
