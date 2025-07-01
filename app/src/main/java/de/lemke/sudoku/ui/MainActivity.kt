@@ -203,10 +203,10 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
             dialog.dismiss()
         }
         if (intent.getBooleanExtra("openDailySudoku", false)) {
-            findViewById<AppCompatButton>(R.id.dailyButton).transformToActivity(
+            (findViewById(R.id.dailyButton) ?: findViewById<AppCompatButton?>(R.id.dailyAvailableButton))?.transformToActivity(
                 Intent(this, DailySudokuActivity::class.java).putExtra("openDailySudoku", true),
                 "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
-            )
+            ) ?: startActivity(Intent(this, DailySudokuActivity::class.java).putExtra("openDailySudoku", true))
         }
     }
 
