@@ -462,6 +462,7 @@ class IntroActivity : AppCompatActivity() {
         commonUtilsSettings.acceptedTosVersion = resources.getInteger(R.integer.commonutils_tos_version)
         startActivity(Intent(applicationContext, MainActivity::class.java))
         @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
+        finishAfterTransition()
     }
 
     private fun notificationsDialog() {
