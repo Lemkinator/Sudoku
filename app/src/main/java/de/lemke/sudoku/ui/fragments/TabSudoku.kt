@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivityTabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
+class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
 
     @Inject

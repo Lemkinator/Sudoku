@@ -37,18 +37,18 @@ import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.startActionMode
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
-import dev.oneuiproject.oneui.widget.MarginsTabLayout
+import dev.oneuiproject.oneui.widget.BottomTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
+class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabHistoryBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var drawerLayout: DrawerLayout
-    private lateinit var mainTabs: MarginsTabLayout
+    private lateinit var bottomTab: BottomTabLayout
     private var sudokuHistory: List<SudokuListItem> = emptyList()
     private val allSelectorStateFlow: MutableStateFlow<AllSelectorState> = MutableStateFlow(AllSelectorState())
 
@@ -69,7 +69,7 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         drawerLayout = activity.findViewById(R.id.drawerLayout)
-        mainTabs = activity.findViewById(R.id.mainTabLayout)
+        bottomTab = activity.findViewById(R.id.bottomTab)
         binding.noEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
         lifecycleScope.launch {
@@ -138,13 +138,13 @@ class MainActivityTabHistory : Fragment(), ViewYTranslator by AppBarAwareYTransl
     }
 
     private fun launchActionMode(initialSelected: Array<Long>? = null) {
-        mainTabs.setTabsEnabled(false)
+        bottomTab.setTabsEnabled(false)
         sudokuListAdapter.onToggleActionMode(true, initialSelected)
         drawerLayout.startActionMode(
             onInflateMenu = { menu, menuInflater -> menuInflater.inflate(R.menu.delete_menu, menu) },
             onEnd = {
                 sudokuListAdapter.onToggleActionMode(false)
-                mainTabs.setTabsEnabled(true)
+                bottomTab.setTabsEnabled(true)
             },
             onSelectMenuItem = { menuItem ->
                 when (menuItem.itemId) {

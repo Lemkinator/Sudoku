@@ -23,32 +23,20 @@
         android:layout_height="match_parent"
         app:layout_location="main_content" />
 
-    <dev.oneuiproject.oneui.widget.MarginsTabLayout
-        android:id="@+id/mainTabLayout"
+    <!--androidx.fragment.app.FragmentContainerView
+        android:id="@+id/navigationHost"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:defaultNavHost="true"
+        app:layout_location="main_content"
+        app:navGraph="@navigation/main_navigation"/-->
+
+    <dev.oneuiproject.oneui.widget.BottomTabLayout
+        android:id="@+id/bottomTab"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabMode="sesl_weight_auto"
-        app:tabGravity="fill"
-        app:layout_location="footer" >
-
-    <com.google.android.material.tabs.TabItem
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:icon="@drawable/ic_history_tab"
-        android:text="@string/commonutils_history"/>
-
-    <com.google.android.material.tabs.TabItem
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:icon="@drawable/ic_sudoku_tab"
-        android:text="@string/app_name"/>
-
-    <com.google.android.material.tabs.TabItem
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:icon="@drawable/ic_statistics_tab"
-        android:text="@string/commonutils_statistics"/>
-
-    </dev.oneuiproject.oneui.widget.MarginsTabLayout>
+        app:layout_location="footer"
+        app:menu="@menu/bottom_tabs" />
 
 </dev.oneuiproject.oneui.layout.NavDrawerLayout>

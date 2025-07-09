@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/history_dest"
+        android:icon="@drawable/ic_history_tab"
+        android:title="@string/commonutils_history" />
+
+    <item
+        android:id="@+id/sudoku_dest"
+        android:icon="@drawable/ic_sudoku_tab"
+        android:title="@string/app_name" />
+
+    <item
+        android:id="@+id/statistics_dest"
+        android:icon="@drawable/ic_statistics_tab"
+        android:title="@string/commonutils_statistics" />
+
+</menu>

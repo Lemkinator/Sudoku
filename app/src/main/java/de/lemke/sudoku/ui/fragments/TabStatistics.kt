@@ -22,7 +22,7 @@ import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics.StatisticsListAdapter.ViewHolder
+import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
@@ -33,7 +33,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivityTabStatistics : Fragment() {
+class TabStatistics : Fragment() {
     private lateinit var binding: FragmentTabStatisticsBinding
     private var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
 
@@ -58,6 +58,7 @@ class MainActivityTabStatistics : Fragment() {
             )
             enableCoreSeslFeatures()
         }
+        //setupMenuProvider()
         lifecycleScope.launch {
             observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 binding.statisticsProgressBar.isVisible = true
@@ -67,6 +68,16 @@ class MainActivityTabStatistics : Fragment() {
             }
         }
     }
+
+    /*
+    private fun setupMenuProvider() = requireActivity().addMenuProvider(object : MenuProvider {
+        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = menuInflater.inflate(R.menu.menu_filter, menu)
+        override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
+            R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
+            else -> false
+        }
+    }, viewLifecycleOwner, RESUMED)
+     */
 
     @SuppressLint("SetTextI18n")
     private fun updateStatistics(sudokus: List<Sudoku>) {

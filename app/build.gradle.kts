@@ -113,6 +113,9 @@ dependencies {
 
     implementation("androidx.core:core-splashscreen:1.2.0-rc01")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
+    //val navVersion = "2.9.1"
+    //implementation("androidx.navigation:navigation-fragment-ktx:$navVersion")
+    //implementation("androidx.navigation:navigation-ui-ktx:$navVersion")
     val roomVersion = "2.7.2"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")

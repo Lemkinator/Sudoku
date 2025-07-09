@@ -72,9 +72,9 @@ import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
-import de.lemke.sudoku.ui.fragments.MainActivityTabHistory
-import de.lemke.sudoku.ui.fragments.MainActivityTabStatistics
-import de.lemke.sudoku.ui.fragments.MainActivityTabSudoku
+import de.lemke.sudoku.ui.fragments.TabHistory
+import de.lemke.sudoku.ui.fragments.TabStatistics
+import de.lemke.sudoku.ui.fragments.TabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import kotlinx.coroutines.launch
@@ -85,7 +85,7 @@ import dev.oneuiproject.oneui.design.R as designR
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private val fragmentsInstance: List<Fragment> = listOf(MainActivityTabHistory(), MainActivityTabSudoku(), MainActivityTabStatistics())
+    private val fragmentsInstance: List<Fragment> = listOf(TabHistory(), TabSudoku(), TabStatistics())
     private var selectedPosition = 0
     private var isUIReady = false
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(StartActivityForResult()) {}
@@ -229,7 +229,10 @@ class MainActivity : AppCompatActivity() {
             }
             true
         }
-        binding.drawerLayout.setupHeaderAndNavRail(getString(R.string.about_app))
+        binding.drawerLayout.apply {
+            setupHeaderAndNavRail(getString(R.string.about_app))
+            //setupNavigation(binding.bottomTab, binding.navigationHost.getFragment())
+        }
     }
 
     private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
@@ -248,7 +251,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initTabs() {
-        binding.mainTabLayout.addOnTabSelectedListener(object : OnTabSelectedListener {
+        binding.bottomTab.addOnTabSelectedListener(object : OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) = onTabItemSelected(tab.position, tab)
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {
@@ -342,7 +345,7 @@ class MainActivity : AppCompatActivity() {
             val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
             for (fragment in supportFragmentManager.fragments) transaction.hide(fragment)
             transaction.show(newFragment).commitNowAllowingStateLoss()
-            val newTab = tab ?: binding.mainTabLayout.getTabAt(position)
+            val newTab = tab ?: binding.bottomTab.getTabAt(position)
             if (newTab?.isSelected == false) newTab.select()
         }
         newFragment.onResume()
