@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:drawerBackAnimation="true"
-    app:expanded="true"
+    app:expanded="false"
     app:title="@string/app_name"
     tools:isOpen="true">
 
