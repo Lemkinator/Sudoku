@@ -19,7 +19,7 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 36
-        versionCode = 56
+        versionCode = 57
         versionName = "3.5.1"
     }
 
