@@ -30,7 +30,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
 import androidx.preference.DropDownPreference
-import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import androidx.preference.SeslSwitchPreferenceScreen
@@ -53,6 +52,8 @@ import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
+import dev.oneuiproject.oneui.ktx.onClick
+import dev.oneuiproject.oneui.ktx.onNewValue
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.widget.RelativeLink
 import kotlinx.coroutines.delay
@@ -158,9 +159,9 @@ class SettingsActivity : AppCompatActivity() {
                     isChecked = userSettings.dailySudokuNotificationEnabled &&
                             areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
                     setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
-                    onPrefChange { newValue: Boolean ->
+                    onNewValue {
                         when {
-                            !newValue -> setDailySudokuNotification(false)
+                            !it -> setDailySudokuNotification(false)
                             SDK_INT >= TIRAMISU &&
                                     checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
                                 requestPermissionLauncher.launch(POST_NOTIFICATIONS)
@@ -179,7 +180,7 @@ class SettingsActivity : AppCompatActivity() {
                             else -> setDailySudokuNotification(true)
                         }
                     }
-                    onPreferenceClickListener = OnPreferenceClickListener {
+                    onClick {
                         lifecycleScope.launch {
                             isChecked = true
                             onPreferenceChangeListener?.onPreferenceChange(this@apply, true)
@@ -201,16 +202,14 @@ class SettingsActivity : AppCompatActivity() {
                             )
                             dialog.show()
                         }
-                        true
                     }
                 } ?: Log.e(TAG, "daily notification Preference not found")
 
-                findPreference<PreferenceScreen>("intro_pref")?.setOnPreferenceClickListener {
+                findPreference<PreferenceScreen>("intro_pref")?.onClick {
                     startActivity(Intent(requireContext(), IntroActivity::class.java).putExtra("openedFromSettings", true))
-                    true
                 }
 
-                findPreference<PreferenceScreen>("export_data_pref")?.setOnPreferenceClickListener {
+                findPreference<PreferenceScreen>("export_data_pref")?.onClick {
                     AlertDialog.Builder(requireContext())
                         .setTitle(R.string.export_data)
                         .setMessage(R.string.export_data_message)
@@ -222,7 +221,7 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
 
-                findPreference<PreferenceScreen>("import_data_pref")?.setOnPreferenceClickListener {
+                findPreference<PreferenceScreen>("import_data_pref")?.onClick {
                     AlertDialog.Builder(requireContext())
                         .setTitle(R.string.import_data)
                         .setMessage(R.string.import_data_message)
@@ -234,7 +233,7 @@ class SettingsActivity : AppCompatActivity() {
                     true
                 }
 
-                findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.setOnPreferenceClickListener {
+                findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
                     val dialog = AlertDialog.Builder(requireContext())
                         .setTitle(R.string.delete_invalid_sudokus)
                         .setMessage(R.string.delete_invalid_sudokus_summary)
