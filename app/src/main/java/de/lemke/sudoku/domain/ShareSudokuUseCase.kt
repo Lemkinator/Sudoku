@@ -16,7 +16,7 @@ import java.io.File
 import javax.inject.Inject
 
 class ShareSudokuUseCase @Inject constructor(
-    @ActivityContext private val context: Context,
+    @param:ActivityContext private val context: Context,
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(sudoku: Sudoku): Uri = withContext(Dispatchers.IO) {

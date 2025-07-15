@@ -21,7 +21,7 @@ import de.lemke.commonutils.R as commonutilsR
 
 
 class ExportDataUseCase @Inject constructor(
-    @ActivityContext private val context: Context,
+    @param:ActivityContext private val context: Context,
     private val getAllSudokus: GetAllSudokusUseCase,
 ) {
     @SuppressLint("Recycle")

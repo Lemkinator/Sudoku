@@ -22,7 +22,7 @@ import javax.inject.Inject
 import de.lemke.commonutils.R as commonutilsR
 
 class ImportDataUseCase @Inject constructor(
-    @ActivityContext private val context: Context,
+    @param:ActivityContext private val context: Context,
     private val sudokusRepository: SudokusRepository,
 ) {
     suspend operator fun invoke(origin: Uri): Unit = withContext(Dispatchers.Main) {

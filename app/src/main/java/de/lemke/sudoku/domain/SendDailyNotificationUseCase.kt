@@ -20,7 +20,7 @@ import java.util.*
 import javax.inject.Inject
 
 class SendDailyNotificationUseCase @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val getUserSettings: GetUserSettingsUseCase
 ) {
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)

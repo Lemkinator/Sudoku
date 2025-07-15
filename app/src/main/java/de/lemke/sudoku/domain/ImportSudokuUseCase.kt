@@ -15,7 +15,7 @@ import java.io.InputStreamReader
 import javax.inject.Inject
 
 class ImportSudokuUseCase @Inject constructor(
-    @ActivityContext private val context: Context,
+    @param:ActivityContext private val context: Context,
     private val saveSudoku: SaveSudokuUseCase,
 ) {
     suspend operator fun invoke(uri: Uri?): Sudoku? = withContext(Dispatchers.IO) {
