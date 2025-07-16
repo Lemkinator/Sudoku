@@ -37,7 +37,6 @@ import androidx.preference.SwitchPreferenceCompat
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.initCommonUtilsPreferences
-import de.lemke.commonutils.onPrefChange
 import de.lemke.commonutils.openApp
 import de.lemke.commonutils.prepareActivityTransformationTo
 import de.lemke.commonutils.setCustomBackAnimation
@@ -129,7 +128,7 @@ class SettingsActivity : AppCompatActivity() {
 
                 findPreference<DropDownPreference>("error_limit_pref")?.apply {
                     summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
-                    onPrefChange { newValue: String ->
+                    onNewValue { newValue: String ->
                         lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = newValue.toIntOrNull() ?: 0) } }
                         summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
                     }
@@ -137,22 +136,22 @@ class SettingsActivity : AppCompatActivity() {
 
                 findPreference<SwitchPreferenceCompat>("keep_screen_on_pref")?.apply {
                     isChecked = userSettings.keepScreenOn
-                    onPrefChange { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(keepScreenOn = v) } } }
+                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(keepScreenOn = v) } } }
                 } ?: Log.e(TAG, "keep screen on Preference not found")
 
                 findPreference<SwitchPreferenceCompat>("highlight_regional_pref")?.apply {
                     isChecked = userSettings.highlightRegional
-                    onPrefChange { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(highlightRegional = v) } } }
+                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(highlightRegional = v) } } }
                 } ?: Log.e(TAG, "regional highlight Preference not found")
 
                 findPreference<SwitchPreferenceCompat>("highlight_number_pref")?.apply {
                     isChecked = userSettings.highlightNumber
-                    onPrefChange { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = v) } } }
+                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = v) } } }
                 } ?: Log.e(TAG, "number highlight Preference not found")
 
                 findPreference<SwitchPreferenceCompat>("animations_pref")?.apply {
                     isChecked = userSettings.animationsEnabled
-                    onPrefChange { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = v) } } }
+                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = v) } } }
                 } ?: Log.e(TAG, "animations Preference not found")
 
                 findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
