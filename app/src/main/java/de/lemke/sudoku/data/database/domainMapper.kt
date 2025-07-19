@@ -68,7 +68,7 @@ fun fieldToDb(field: Field, sudokuId: SudokuId): FieldDb =
         value = field.value,
         given = field.given,
         hint = field.hint,
-        notes = field.notes.joinToString(separator = ""),
+        notes = field.notes.toMutableList().joinToString(separator = ""),
     )
 
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
@@ -136,5 +136,5 @@ fun fieldToExport(field: Field): FieldExport =
         solution = field.solution,
         given = field.given.takeIf { it },
         hint = field.hint.takeIf { it },
-        notes = field.notes.joinToString(separator = "").ifBlank { null },
+        notes = field.notes.toMutableList().joinToString(separator = "").ifBlank { null },
     )
