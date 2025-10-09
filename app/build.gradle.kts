@@ -97,7 +97,7 @@ dependencies {
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.1.0")
     implementation("com.google.android.gms:play-services-games-v2:21.0.0")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
-    val roomVersion = "2.8.1"
+    val roomVersion = "2.8.2"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
