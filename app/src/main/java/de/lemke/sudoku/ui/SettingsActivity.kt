@@ -4,13 +4,15 @@ import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.DialogInterface
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
+import android.content.Intent.ACTION_CREATE_DOCUMENT
+import android.content.Intent.CATEGORY_OPENABLE
+import android.content.Intent.EXTRA_TITLE
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
-import android.os.Environment.getExternalStorageDirectory
 import android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
 import android.provider.Settings.EXTRA_APP_PACKAGE
 import android.text.format.DateFormat
@@ -19,8 +21,8 @@ import android.util.Log
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
-import androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
@@ -41,6 +43,7 @@ import de.lemke.commonutils.openApp
 import de.lemke.commonutils.prepareActivityTransformationTo
 import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.commonutils.shareApp
+import de.lemke.commonutils.toSafeFileName
 import de.lemke.commonutils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
@@ -57,7 +60,6 @@ import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.widget.RelativeLink
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.File
 import java.util.Calendar
 import java.util.Calendar.HOUR_OF_DAY
 import java.util.Calendar.MINUTE
@@ -81,8 +83,8 @@ class SettingsActivity : AppCompatActivity() {
 
     @AndroidEntryPoint
     class SettingsFragment : PreferenceFragmentCompat() {
-        private lateinit var pickExportFolderActivityResultLauncher: ActivityResultLauncher<Uri?>
-        private lateinit var pickImportJsonActivityResultLauncher: ActivityResultLauncher<String>
+        private lateinit var exportActivityResultLauncher: ActivityResultLauncher<Intent>
+        private lateinit var importActivityResultLauncher: ActivityResultLauncher<String>
 
         @Inject
         lateinit var getUserSettings: GetUserSettingsUseCase
@@ -110,11 +112,10 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
-            pickExportFolderActivityResultLauncher = registerForActivityResult(OpenDocumentTree()) { uri: Uri? ->
-                if (uri == null) toast(R.string.error_no_folder_selected)
-                else lifecycleScope.launch { exportData(uri) }
+            exportActivityResultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK && result.data?.data != null) lifecycleScope.launch { exportData(result.data!!.data!!) }
             }
-            pickImportJsonActivityResultLauncher = registerForActivityResult(GetContent()) { uri: Uri? ->
+            importActivityResultLauncher = registerForActivityResult(GetContent()) { uri: Uri? ->
                 if (uri == null) toast(R.string.error_no_file_selected)
                 else lifecycleScope.launch { importData(uri) }
             }
@@ -209,15 +210,11 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 findPreference<PreferenceScreen>("export_data_pref")?.onClick {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.export_data)
-                        .setMessage(R.string.export_data_message)
-                        .setNegativeButton(designR.string.oui_des_common_cancel, null)
-                        .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                            pickExportFolderActivityResultLauncher.launch(Uri.fromFile(File(getExternalStorageDirectory().absolutePath)))
-                        }
-                        .show()
-                    true
+                    exportActivityResultLauncher.launch(Intent(ACTION_CREATE_DOCUMENT).apply {
+                        addCategory(CATEGORY_OPENABLE)
+                        type = "application/json"
+                        putExtra(EXTRA_TITLE, "sudoku_export".toSafeFileName(".json"))
+                    })
                 }
 
                 findPreference<PreferenceScreen>("import_data_pref")?.onClick {
@@ -226,10 +223,9 @@ class SettingsActivity : AppCompatActivity() {
                         .setMessage(R.string.import_data_message)
                         .setNegativeButton(designR.string.oui_des_common_cancel, null)
                         .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                            pickImportJsonActivityResultLauncher.launch("application/json")
+                            importActivityResultLauncher.launch("application/json")
                         }
                         .show()
-                    true
                 }
 
                 findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
@@ -242,7 +238,7 @@ class SettingsActivity : AppCompatActivity() {
                     dialog.show()
                     dialog.getButton(BUTTON_POSITIVE).apply {
                         setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
-                        setOnClickListenerWithProgress { button, progressBar ->
+                        setOnClickListenerWithProgress { _, _ ->
                             lifecycleScope.launch {
                                 deleteInvalidSudokus()
                                 delay(500)
@@ -250,7 +246,6 @@ class SettingsActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    true
                 }
             }
         }

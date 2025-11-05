@@ -106,7 +106,6 @@
     <string name="import_data_error_no_valid_json">Error: No valid JSON file.</string>
     <string name="import_data_error_no_valid_file">Error: No valid file.</string>
     <string name="import_data_message">Caution: Importing may take some time. Already existing data may be overwritten. In the following screen, please select the JSON file created during export (e.g.: \"sudoku_export_[date].json\").</string>
-    <string name="export_data_message">Caution: Exporting may take some time. In the following screen, please select a folder for the export. There a JSON file will be created with all existing data, which can be imported again using the import function.</string>
     <string name="error_no_folder_selected">Error: No folder selected.</string>
     <string name="error_no_file_selected">Error: No file selected.</string>
 

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.appcompat.app.AlertDialog
-import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ActivityContext
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -13,9 +12,6 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import io.kjson.stringifyJSON
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 import de.lemke.commonutils.R as commonutilsR
 
@@ -26,38 +22,35 @@ class ExportDataUseCase @Inject constructor(
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(destination: Uri): Unit = withContext(Dispatchers.Main) {
-        val progressDialog = ProgressDialog(context)
-        progressDialog.setCancelable(false)
-        progressDialog.isIndeterminate = true
-        progressDialog.max = 1
-        progressDialog.setProgressStyle(HORIZONTAL)
-        progressDialog.setTitle(R.string.export_data)
-        progressDialog.setMessage(context.getString(R.string.export_data_ongoing))
-        progressDialog.show()
+        val dialog = ProgressDialog(context)
+        dialog.setCancelable(false)
+        dialog.isIndeterminate = true
+        dialog.max = 1
+        dialog.setProgressStyle(HORIZONTAL)
+        dialog.setTitle(R.string.export_data)
+        dialog.setMessage(context.getString(R.string.export_data_ongoing))
+        dialog.show()
         withContext(Dispatchers.IO) {
-            val timestamp = SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.GERMANY).format(Date())
-            val jsonFile = DocumentFile.fromTreeUri(context, destination)!!
-                .createFile("application/json", "sudoku_export_$timestamp")
             val sudokus = getAllSudokus()
             withContext(Dispatchers.Main) {
-                progressDialog.isIndeterminate = false
-                progressDialog.max = sudokus.size
-                progressDialog.progress = 0
+                dialog.isIndeterminate = false
+                dialog.max = sudokus.size
+                dialog.progress = 0
             }
             val exportSudokus = sudokus.map { sudoku ->
-                withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
+                withContext(Dispatchers.Main) { dialog.incrementProgressBy(1) }
                 sudokuToExport(sudoku)
             }
             withContext(Dispatchers.Main) {
-                progressDialog.isIndeterminate = true
-                progressDialog.max = 1
-                progressDialog.setMessage(context.getString(R.string.export_data_ongoing_writing_file))
+                dialog.isIndeterminate = true
+                dialog.max = 1
+                dialog.setMessage(context.getString(R.string.export_data_ongoing_writing_file))
             }
             val exportString = exportSudokus.stringifyJSON()
-            context.contentResolver.openOutputStream(jsonFile!!.uri)!!.bufferedWriter()
+            context.contentResolver.openOutputStream(destination)!!.bufferedWriter()
                 .use { bufferedWriter -> bufferedWriter.write(exportString) }
         }
-        progressDialog.dismiss()
+        dialog.dismiss()
         AlertDialog.Builder(context)
             .setTitle(R.string.export_data)
             .setMessage(context.getString(R.string.export_data_success))

@@ -93,7 +93,6 @@
     <string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
     <string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>
     <string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, \"sudoku_export_[Fecha].json\").</string>
-    <string name="export_data_message">¡Atención! La exportación puede llevar algún tiempo. En la siguiente pantalla, elige una carpeta para la exportación. Se creará un archivo JSON con todos los datos existentes, que luego se puede importar mediante la función de importación.</string>
     <string name="error_no_folder_selected">Error: No se seleccionó ninguna carpeta</string>
     <string name="error_no_file_selected">Error: No se seleccionó ningún archivo</string>
 
