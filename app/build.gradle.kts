@@ -89,7 +89,7 @@ ksp {
 }
 
 dependencies {
-    implementation("io.github.lemkinator:common-utils:0.9.1")
+    implementation("io.github.lemkinator:common-utils:0.9.3")
     implementation("com.github.skydoves:bundler:1.0.4")
     implementation("de.sfuhrm:sudoku:5.0.3")
     implementation("io.kjson:kjson:9.9")
@@ -97,6 +97,7 @@ dependencies {
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.1.0")
     implementation("com.google.android.gms:play-services-games-v2:21.0.0")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.documentfile:documentfile:1.1.0")
     val roomVersion = "2.8.3"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
