@@ -284,8 +284,8 @@ class MainActivity : AppCompatActivity() {
             AlertDialog.Builder(this@MainActivity).apply {
                 setTitle(getString(R.string.statistics_filter))
                 setView(dialogBinding.root)
-                setNegativeButton(getString(designR.string.oui_des_common_cancel)) { d, w -> d.dismiss() }
-                setPositiveButton(getString(designR.string.oui_des_common_apply)) { d, w -> updateFilterSettings(dialogBinding) }
+                setNegativeButton(getString(designR.string.oui_des_common_cancel)) { d, _ -> d.dismiss() }
+                setPositiveButton(getString(designR.string.oui_des_common_apply)) { _, _ -> updateFilterSettings(dialogBinding) }
                 show()
             }
         }
