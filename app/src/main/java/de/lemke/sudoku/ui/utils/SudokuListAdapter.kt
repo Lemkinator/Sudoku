@@ -43,24 +43,24 @@ class SudokuListAdapter(
     }
 
     private val asyncListDiffer = AsyncListDiffer(this, object : DiffUtil.ItemCallback<SudokuListItem>() {
-        override fun areItemsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when {
-            oldItem is SudokuItem && newItem is SudokuItem -> {
+        override fun areItemsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
+            is SudokuItem if newItem is SudokuItem -> {
                 oldItem.sudoku.id == newItem.sudoku.id
             }
 
-            oldItem is SeparatorItem && newItem is SeparatorItem -> {
+            is SeparatorItem if newItem is SeparatorItem -> {
                 oldItem.stableId == newItem.stableId
             }
 
             else -> false
         }
 
-        override fun areContentsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when {
-            oldItem is SudokuItem && newItem is SudokuItem -> {
+        override fun areContentsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
+            is SudokuItem if newItem is SudokuItem -> {
                 oldItem.sudoku.contentEquals(newItem.sudoku)
             }
 
-            oldItem is SeparatorItem && newItem is SeparatorItem -> {
+            is SeparatorItem if newItem is SeparatorItem -> {
                 oldItem == newItem
             }
 

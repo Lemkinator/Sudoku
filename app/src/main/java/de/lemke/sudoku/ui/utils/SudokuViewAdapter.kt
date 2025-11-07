@@ -58,5 +58,5 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         (holder.itemView as FieldView).init(sudoku, index, this)
     }
 
-    inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView)
+    class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView)
 }

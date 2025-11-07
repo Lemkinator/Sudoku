@@ -96,7 +96,7 @@ class DailySudokuActivity : AppCompatActivity() {
     }
 
     private fun SudokuListAdapter.setupOnClickListeners() {
-        onClickItem = { position, sudokuListItem, viewHolder ->
+        onClickItem = { _, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuItem) {
                 viewHolder.itemView.transformToActivity(
                     Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)

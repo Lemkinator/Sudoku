@@ -613,7 +613,7 @@ class SudokuActivity : AppCompatActivity() {
             .create()
         dialog.show()
         dialog.findViewById<TextView>(R.id.shareStatistics)?.text = sudoku.getLocalStatisticsString(resources)
-        dialog.getButton(BUTTON_POSITIVE).setOnClickListenerWithProgress { button, progressBar ->
+        dialog.getButton(BUTTON_POSITIVE).setOnClickListenerWithProgress { _, _ ->
             lifecycleScope.launch {
                 when (dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.checkedRadioButtonId) {
                     R.id.radioButtonText -> shareStats()
