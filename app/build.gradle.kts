@@ -92,7 +92,7 @@ dependencies {
     implementation("io.github.lemkinator:common-utils:0.9.6")
     implementation("com.github.skydoves:bundler:1.0.4")
     implementation("de.sfuhrm:sudoku:5.0.3")
-    implementation("io.kjson:kjson:9.9")
+    implementation("io.kjson:kjson:9.10")
     implementation("net.pwall.json:json-kotlin-schema:0.57")
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.1.0")
     implementation("com.google.android.gms:play-services-games-v2:21.0.0")
