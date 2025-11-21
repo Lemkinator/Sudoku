@@ -96,7 +96,7 @@ dependencies {
     implementation("net.pwall.json:json-kotlin-schema:0.57")
     implementation("androidx.asynclayoutinflater:asynclayoutinflater:1.1.0")
     implementation("com.google.android.gms:play-services-games-v2:21.0.0")
-    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
     implementation("androidx.documentfile:documentfile:1.1.0")
     val roomVersion = "2.8.4"
     implementation("androidx.room:room-runtime:$roomVersion")
