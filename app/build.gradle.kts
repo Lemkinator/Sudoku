@@ -19,8 +19,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 36
-        versionCode = 60
-        versionName = "3.5.4"
+        versionCode = 61
+        versionName = "3.5.5"
     }
 
     @Suppress("UnstableApiUsage")
