@@ -89,7 +89,7 @@ ksp {
 }
 
 dependencies {
-    implementation("io.github.lemkinator:common-utils:0.9.8")
+    implementation("io.github.lemkinator:common-utils:0.9.9")
     implementation("com.github.skydoves:bundler:1.0.4")
     implementation("de.sfuhrm:sudoku:5.0.3")
     implementation("io.kjson:kjson:9.10")
