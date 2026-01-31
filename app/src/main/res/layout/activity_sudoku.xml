@@ -45,7 +45,6 @@
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:drawableTop="@drawable/ic_oui_control_play"
-            android:onClick="resumeGame"
             android:paddingTop="25dp"
             android:text="@string/commonutils_resume"
             app:layout_constraintBottom_toBottomOf="parent"

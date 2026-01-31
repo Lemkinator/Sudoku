@@ -14,7 +14,6 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
@@ -212,13 +211,13 @@ class SudokuActivity : AppCompatActivity() {
         }
         binding.deleteButton.setOnClickListener { select(sudoku.itemCount + sudoku.size) }
         binding.hintButton.setOnClickListener { select(sudoku.itemCount + sudoku.size + 1) }
+        binding.resumeButton.setOnClickListener { resumeGame() }
         selectButton(null, false)
         checkAnyNumberCompleted()
         refreshHintButton()
     }
 
-    @Suppress("unused")
-    fun resumeGame(view: View? = null) {
+    fun resumeGame() {
         binding.resumeButton.transformTo(binding.gameLayout)
         if (sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now())) {
             menuPausePlayVisible = false
