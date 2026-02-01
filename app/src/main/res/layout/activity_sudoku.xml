@@ -8,7 +8,7 @@
     android:background="?roundedCornerColor"
     app:expandable="false"
     app:showNavButtonAsBack="true"
-    app:title="@string/app_name"
+    app:title="@string/sudoku"
     tools:context=".ui.SudokuActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout

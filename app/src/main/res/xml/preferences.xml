@@ -16,7 +16,7 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/app_name">
+    <PreferenceCategory android:title="@string/sudoku">
         <PreferenceScreen
             android:key="intro_pref"
             android:summary="@string/intro_title"

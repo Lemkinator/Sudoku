@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="?roundedCornerColor"
     app:expanded="false"
-    app:title="@string/app_name"
+    app:title="@string/sudoku"
     tools:context=".ui.SudokuActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout

@@ -1,0 +1,43 @@
+[versions]
+aboutlibraries = "14.0.0-b02"
+async-layout-inflater = "1.1.0"
+bundler = "1.0.4"
+common-utils = "0.9.19"
+datastore-preferences = "1.2.0"
+documentfile = "1.1.0"
+gradle = "9.0.0"
+hilt = "2.59"
+json-kotlin-schema = "0.57"
+kjson = "9.10"
+kotlin = "2.3.0"
+ksp = "2.3.5"
+play-services-games = "21.0.0"
+room = "2.8.4"
+sudoku = "5.0.3"
+
+[libraries]
+async-layout-inflater = { module = "androidx.asynclayoutinflater:asynclayoutinflater", version.ref = "async-layout-inflater" }
+bundler = { module = "com.github.skydoves:bundler", version.ref = "bundler" }
+common-utils = { module = "io.github.lemkinator:common-utils", version.ref = "common-utils" }
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore-preferences" }
+documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+json-kotlin-schema = { module = "net.pwall.json:json-kotlin-schema", version.ref = "json-kotlin-schema" }
+kjson = { module = "io.kjson:kjson", version.ref = "kjson" }
+play-services-games = { module = "com.google.android.gms:play-services-games-v2", version.ref = "play-services-games" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+sudoku = { module = "de.sfuhrm:sudoku", version.ref = "sudoku" }
+
+[plugins]
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
+android-application = { id = "com.android.application", version.ref = "gradle" }
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+
+[bundles]
+json = ["kjson", "json-kotlin-schema"]
+room = ["room-ktx", "room-runtime"]

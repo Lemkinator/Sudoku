@@ -230,6 +230,7 @@ class MainActivity : AppCompatActivity() {
             true
         }
         binding.drawerLayout.apply {
+            setTitle(BuildConfig.APP_NAME)
             setupHeaderAndNavRail(getString(R.string.about_app))
             //setupNavigation(binding.bottomTab, binding.navigationHost.getFragment())
         }

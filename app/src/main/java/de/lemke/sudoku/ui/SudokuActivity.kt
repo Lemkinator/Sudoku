@@ -576,7 +576,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun setTitle() {
         binding.sudokuToolbarLayout.setTitle(
-            getString(R.string.app_name) +
+            getString(R.string.sudoku) +
                     when {
                         sudoku.isNormalSudoku -> " (${sudoku.difficulty.getLocalString(resources)})"
                         sudoku.isDailySudoku -> " (${sudoku.created.dateFormatShort})"
