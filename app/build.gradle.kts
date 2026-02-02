@@ -19,8 +19,8 @@ android {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
         targetSdk = 36
-        versionCode = 61
-        versionName = "3.5.5"
+        versionCode = 62
+        versionName = "3.5.6"
     }
     @Suppress("UnstableApiUsage")
     androidResources.localeFilters += listOf("en", "de", "es", "es-rES")
