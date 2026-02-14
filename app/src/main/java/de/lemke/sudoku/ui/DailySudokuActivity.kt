@@ -31,7 +31,7 @@ import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.ktx.dpToPx
-import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import kotlinx.coroutines.flow.collectLatest

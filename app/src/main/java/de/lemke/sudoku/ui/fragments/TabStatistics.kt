@@ -23,7 +23,7 @@ import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.ViewHolder
-import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.Separator

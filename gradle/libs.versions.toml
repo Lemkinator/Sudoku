@@ -2,7 +2,7 @@
 aboutlibraries = "14.0.0-b02"
 async-layout-inflater = "1.1.0"
 bundler = "1.0.4"
-common-utils = "0.9.19"
+common-utils = "0.9.20"
 datastore-preferences = "1.2.0"
 documentfile = "1.1.0"
 gradle = "9.0.1"

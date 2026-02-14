@@ -29,7 +29,7 @@ import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.LEVEL
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.ktx.dpToPx
-import dev.oneuiproject.oneui.ktx.enableCoreSeslFeatures
+import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
 import dev.oneuiproject.oneui.utils.ItemDecorRule.NONE
 import dev.oneuiproject.oneui.utils.SemItemDecoration
@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class SudokuLevelTab() : Fragment() {
+class SudokuLevelTab : Fragment() {
     private lateinit var binding: FragmentTabLevelBinding
     private lateinit var sudokuListAdapter: SudokuListAdapter
     private var sudokuLevel: List<SudokuListItem> = emptyList()
