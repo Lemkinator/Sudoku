@@ -13,7 +13,7 @@ kotlin = "2.3.10"
 ksp = "2.3.6"
 play-services-games = "21.0.0"
 room = "2.8.4"
-sudoku = "5.0.3"
+sudoku = "5.1.0"
 
 [libraries]
 async-layout-inflater = { module = "androidx.asynclayoutinflater:asynclayoutinflater", version.ref = "async-layout-inflater" }
