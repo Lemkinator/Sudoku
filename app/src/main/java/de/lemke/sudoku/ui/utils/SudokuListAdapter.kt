@@ -1,17 +1,16 @@
 package de.lemke.sudoku.ui.utils
 
 import android.annotation.SuppressLint
-import android.app.ActionBar.LayoutParams
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.R
@@ -19,66 +18,35 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.formatFull
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
-import dev.oneuiproject.oneui.delegates.MultiSelector
-import dev.oneuiproject.oneui.delegates.MultiSelectorDelegate
-import dev.oneuiproject.oneui.delegates.SectionIndexerDelegate
-import dev.oneuiproject.oneui.delegates.SemSectionIndexer
+import dev.oneuiproject.oneui.layout.ToolbarLayout.AllSelectorState
+import dev.oneuiproject.oneui.recyclerview.adapter.IndexedSelectableListAdapter
+import dev.oneuiproject.oneui.recyclerview.model.AdapterItem
 import dev.oneuiproject.oneui.widget.SelectableLinearLayout
 import dev.oneuiproject.oneui.widget.Separator
-import kotlin.apply
-import kotlin.collections.map
-import kotlin.collections.toSet
-import kotlin.let
 
 class SudokuListAdapter(
     private val context: Context,
     var errorLimit: Int = 0,
     val mode: Mode = Mode.NORMAL,
-) : RecyclerView.Adapter<SudokuListAdapter.ViewHolder>(),
-    MultiSelector<Long> by MultiSelectorDelegate(isSelectable = { it != SeparatorItem.VIEW_TYPE }),
-    SemSectionIndexer<SudokuListItem> by SectionIndexerDelegate(context, labelExtractor = { it.label }) {
-
+    onAllSelectorStateChanged: ((AllSelectorState) -> Unit) = {},
+    onBlockActionMode: (() -> Unit)? = null,
+) : IndexedSelectableListAdapter<SudokuListItem, SudokuListAdapter.ViewHolder, Long>(
+    indexLabelExtractor = { it.label },
+    onAllSelectorStateChanged = onAllSelectorStateChanged,
+    onBlockActionMode = onBlockActionMode,
+    selectableIdsProvider = selectableIdsProvider,
+    isSelectable = isSelectable,
+    selectionChangePayload = Payload.SELECTION_MODE,
+    useAlphabeticIndex = false,
+    diffCallback = diffCallback
+) {
     init {
         setHasStableIds(true)
     }
 
-    private val asyncListDiffer = AsyncListDiffer(this, object : DiffUtil.ItemCallback<SudokuListItem>() {
-        override fun areItemsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
-            is SudokuItem if newItem is SudokuItem -> {
-                oldItem.sudoku.id == newItem.sudoku.id
-            }
-
-            is SeparatorItem if newItem is SeparatorItem -> {
-                oldItem.stableId == newItem.stableId
-            }
-
-            else -> false
-        }
-
-        override fun areContentsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
-            is SudokuItem if newItem is SudokuItem -> {
-                oldItem.sudoku.contentEquals(newItem.sudoku)
-            }
-
-            is SeparatorItem if newItem is SeparatorItem -> {
-                oldItem == newItem
-            }
-
-            else -> false
-        }
-    })
-
     var onClickItem: ((Int, SudokuListItem, ViewHolder) -> Unit)? = null
 
     var onLongClickItem: (() -> Unit)? = null
-
-    fun submitList(listItems: List<SudokuListItem>) {
-        updateSections(listItems, false)
-        asyncListDiffer.submitList(listItems)
-        updateSelectableIds(listItems.filter { it !is SeparatorItem }.map { it.stableId })
-    }
-
-    private val currentList: List<SudokuListItem> get() = asyncListDiffer.currentList
 
     override fun getItemId(position: Int) = currentList[position].stableId
 
@@ -99,18 +67,14 @@ class SudokuListAdapter(
                 }
 
                 if (mode == Mode.NORMAL) {
-                    itemView.setOnLongClickListener {
-                        onLongClickItem?.invoke()
-                        true
-                    }
+                    itemView.setOnLongClickListener { onLongClickItem?.invoke(); true }
                 }
             }
         }
 
-
         SeparatorItem.VIEW_TYPE -> {
             ViewHolder(Separator(parent.context), true).apply {
-                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
             }
         }
 
@@ -218,5 +182,27 @@ class SudokuListAdapter(
         NORMAL,
         LEVEL,
         DAILY
+    }
+
+    companion object {
+        private val isSelectable: ((rv: RecyclerView, item: AdapterItem) -> Boolean) =
+            { rv, item -> (rv.adapter as SudokuListAdapter).getItem(item.position) !is SeparatorItem }
+
+        private val selectableIdsProvider: (currentList: List<SudokuListItem>) -> List<Long> =
+            { listItems -> listItems.filter { it !is SeparatorItem }.map { it.stableId } }
+
+        private val diffCallback = object : DiffUtil.ItemCallback<SudokuListItem>() {
+            override fun areItemsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
+                is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.id == newItem.sudoku.id
+                is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
+                else -> false
+            }
+
+            override fun areContentsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
+                is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.contentEquals(newItem.sudoku)
+                is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
+                else -> false
+            }
+        }
     }
 }

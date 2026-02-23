@@ -42,8 +42,8 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class DailySudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDailySudokuBinding
-    private lateinit var sudokuListAdapter: SudokuListAdapter
     private var dailySudokus: List<SudokuListItem> = emptyList()
+    private val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(this, MODE_DAILY_ERROR_LIMIT, DAILY) }
 
     @Inject
     lateinit var initDailySudokus: InitDailySudokusUseCase
@@ -79,10 +79,7 @@ class DailySudokuActivity : AppCompatActivity() {
     private fun initRecycler() {
         binding.dailySudokuRecycler.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = SudokuListAdapter(context, errorLimit = MODE_DAILY_ERROR_LIMIT, mode = DAILY).also {
-                it.setupOnClickListeners()
-                sudokuListAdapter = it
-            }
+            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
             itemAnimator = null
             addItemDecoration(
                 SemItemDecoration(

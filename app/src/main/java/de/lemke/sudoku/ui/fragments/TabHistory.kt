@@ -12,6 +12,8 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.restoreSearchAndActionMode
+import de.lemke.commonutils.saveSearchAndActionMode
 import de.lemke.commonutils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
@@ -21,7 +23,6 @@ import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
-import de.lemke.sudoku.ui.utils.SudokuListAdapter.Payload.SELECTION_MODE
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
@@ -46,11 +47,17 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabHistoryBinding
-    private lateinit var sudokuListAdapter: SudokuListAdapter
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var bottomTab: BottomTabLayout
     private var sudokuHistory: List<SudokuListItem> = emptyList()
     private val allSelectorStateFlow: MutableStateFlow<AllSelectorState> = MutableStateFlow(AllSelectorState())
+    private val sudokuListAdapter: SudokuListAdapter by lazy {
+        SudokuListAdapter(
+            requireContext(),
+            onAllSelectorStateChanged = { allSelectorStateFlow.value = it },
+            onBlockActionMode = ::launchActionMode
+        )
+    }
 
     @Inject
     lateinit var observeSudokuHistory: ObserveSudokuHistoryUseCase
@@ -72,6 +79,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         bottomTab = activity.findViewById(R.id.bottomTab)
         binding.noEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
+        savedInstanceState?.restoreSearchAndActionMode(onActionMode = { launchActionMode(it) })
         lifecycleScope.launch {
             observeSudokuHistory().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 val previousSize = sudokuHistory.size
@@ -90,13 +98,19 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (!this::binding.isInitialized || !this::drawerLayout.isInitialized) return
+        outState.saveSearchAndActionMode(
+            isActionMode = drawerLayout.isActionMode,
+            selectedIds = sudokuListAdapter.getSelectedIds()
+        )
+    }
+
     private fun initRecycler() {
         binding.sudokuHistoryList.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = SudokuListAdapter(context).also {
-                it.setupOnClickListeners()
-                sudokuListAdapter = it
-            }
+            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
             itemAnimator = null
             addItemDecoration(
                 SemItemDecoration(
@@ -105,13 +119,8 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                     subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE }
                 ).apply { setDividerInsetStart(64.dpToPx(resources)) })
             enableCoreSeslFeatures()
+            sudokuListAdapter.configureWith(this)
         }
-
-        sudokuListAdapter.configure(
-            binding.sudokuHistoryList,
-            SELECTION_MODE,
-            onAllSelectorStateChanged = { allSelectorStateFlow.value = it }
-        )
         updateRecyclerView()
     }
 
@@ -122,7 +131,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
-            if (isActionMode) onToggleItem(sudokuListItem.stableId, position)
+            if (isActionMode) toggleItem(sudokuListItem.stableId, position)
             else {
                 if (sudokuListItem is SudokuItem) {
                     viewHolder.itemView.transformToActivity(
@@ -137,13 +146,13 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         }
     }
 
-    private fun launchActionMode(initialSelected: Array<Long>? = null) {
+    private fun launchActionMode(initialSelected: Set<Long>? = null) {
         bottomTab.setTabsEnabled(false)
-        sudokuListAdapter.onToggleActionMode(true, initialSelected)
+        sudokuListAdapter.toggleActionMode(true, initialSelected)
         drawerLayout.startActionMode(
             onInflateMenu = { menu, menuInflater -> menuInflater.inflate(R.menu.delete_menu, menu) },
             onEnd = {
-                sudokuListAdapter.onToggleActionMode(false)
+                sudokuListAdapter.toggleActionMode(false)
                 bottomTab.setTabsEnabled(true)
             },
             onSelectMenuItem = { menuItem ->

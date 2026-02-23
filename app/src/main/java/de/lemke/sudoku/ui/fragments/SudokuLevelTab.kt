@@ -41,10 +41,10 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SudokuLevelTab : Fragment() {
     private lateinit var binding: FragmentTabLevelBinding
-    private lateinit var sudokuListAdapter: SudokuListAdapter
     private var sudokuLevel: List<SudokuListItem> = emptyList()
     private var nextLevelSudoku: Sudoku? = null
     private val size: Int by bundle("size", 4)
+    private val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(requireContext(), MODE_LEVEL_ERROR_LIMIT, LEVEL) }
 
     @Inject
     lateinit var initSudokuLevel: InitSudokuLevelUseCase
@@ -87,14 +87,9 @@ class SudokuLevelTab : Fragment() {
     private fun initRecycler() {
         binding.sudokuLevelsRecycler.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = SudokuListAdapter(context, errorLimit = MODE_LEVEL_ERROR_LIMIT, mode = LEVEL).also {
-                it.setupOnClickListeners()
-                sudokuListAdapter = it
-            }
+            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
             itemAnimator = null
-            addItemDecoration(
-                SemItemDecoration(context, dividerRule = ALL, subHeaderRule = NONE).apply { setDividerInsetStart(64.dpToPx(resources)) }
-            )
+            addItemDecoration(SemItemDecoration(context, ALL, NONE).apply { setDividerInsetStart(64.dpToPx(resources)) })
             enableCoreSeslFeatures()
         }
     }
