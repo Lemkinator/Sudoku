@@ -19,6 +19,7 @@ class GenerateSudokuLevelUseCase @Inject constructor(
                 in 201..500 -> Difficulty.HARD
                 else -> Difficulty.EXPERT
             }
+
             9 -> when (level) {
                 in 1..30 -> Difficulty.VERY_EASY
                 in 31..100 -> Difficulty.EASY
@@ -26,6 +27,7 @@ class GenerateSudokuLevelUseCase @Inject constructor(
                 in 201..500 -> Difficulty.HARD
                 else -> Difficulty.EXPERT
             }
+
             16 -> when (level) {
                 in 1..30 -> Difficulty.VERY_EASY
                 in 31..100 -> Difficulty.EASY
@@ -33,6 +35,7 @@ class GenerateSudokuLevelUseCase @Inject constructor(
                 in 201..500 -> Difficulty.HARD
                 else -> Difficulty.EXPERT
             }
+
             else -> Difficulty.EXPERT
         }
         return@withContext Sudoku.create(

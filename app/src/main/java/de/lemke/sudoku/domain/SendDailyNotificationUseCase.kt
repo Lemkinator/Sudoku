@@ -80,7 +80,7 @@ class SendDailyNotificationUseCase @Inject constructor(
             set(Calendar.MINUTE, userSettings.dailySudokuNotificationMinute)
         }
         // If the trigger time you specify is in the past, the alarm triggers immediately. if soo just add one day to required calendar
-        // Note: also adding 1 min cuz if user clicks on notification as soon as received it it will reschedule the alarm to
+        // Note: also adding 1 min cuz if user clicks on notification as soon as received it will reschedule the alarm to
         // fire another notification immediately
         if (Calendar.getInstance().apply { add(Calendar.MINUTE, 1) }.timeInMillis - calendar.timeInMillis > 0) {
             calendar.add(Calendar.DATE, 1)

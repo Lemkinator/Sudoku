@@ -20,6 +20,7 @@ enum class Difficulty(val value: Int) {
             HARD -> 6
             EXPERT -> 4
         }
+
         9 -> when (this) {
             /*
             total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
@@ -31,6 +32,7 @@ enum class Difficulty(val value: Int) {
             HARD -> 30          //28-31
             EXPERT -> 23        //22-27
         }
+
         16 -> when (this) {
             VERY_EASY -> 196    //empty: 60
             EASY -> 176         //empty: 80
@@ -38,6 +40,7 @@ enum class Difficulty(val value: Int) {
             HARD -> 136         //empty: 120
             EXPERT -> 116       //empty: 140
         }
+
         else -> givenNumbers(9)
     }
 

@@ -274,7 +274,7 @@ class IntroActivity : AppCompatActivity() {
                         val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
                         val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
                         val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
-                        column.forEach { it?.isHighlighted = false;it?.setBackground() }
+                        column.forEach { it?.isHighlighted = false; it?.setBackground() }
                         block.forEach { it?.isHighlighted = true; it?.setBackground() }
                         block.forEach { animateIntroFieldText(it?.fieldViewValue) }
                         delay(900)

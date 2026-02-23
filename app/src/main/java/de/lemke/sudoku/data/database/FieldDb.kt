@@ -2,7 +2,8 @@ package de.lemke.sudoku.data.database
 
 import androidx.room.*
 
-@Entity(tableName = "field",
+@Entity(
+    tableName = "field",
     primaryKeys = ["sudokuId", "index"],
     foreignKeys = [
         ForeignKey(
