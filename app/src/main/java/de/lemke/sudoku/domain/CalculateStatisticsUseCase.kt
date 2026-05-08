@@ -3,6 +3,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuStatistics
 import javax.inject.Inject
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -43,7 +44,7 @@ class CalculateStatisticsUseCase @Inject constructor() {
         }
 
     private fun winRate(n: Int, c: Int): Int =
-        if (n == 0) 0 else (c.toFloat() / n * 100).toInt()
+        if (n == 0) 0 else (c.toFloat() / n * 100).roundToInt()
 
     private fun average(completed: List<Sudoku>, c: Int, selector: (Sudoku) -> Long): Int =
         if (c == 0) 0 else (completed.sumOf(selector) / c).toInt()
