@@ -148,8 +148,8 @@
     <string name="most_notes">Más notas</string>
     <string name="average_notes">Notas promedio</string>
     <string name="streaks">Rachas</string>
-    <string name="current_game_streak">Racha de juegos actual</string>
-    <string name="best_game_streak">Mejor racha de juegos</string>
+    <string name="current_win_streak">Racha de victorias actual</string>
+    <string name="best_win_streak">Mejor racha de victorias</string>
     <string name="total_time_played">Tiempo total jugado</string>
     <string name="feature_usage">Uso de funciones</string>
     <string name="hint_usage_rate">Tasa de uso de pistas</string>

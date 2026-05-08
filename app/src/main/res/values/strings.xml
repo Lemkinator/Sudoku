@@ -160,8 +160,8 @@
     <string name="most_notes">Most notes</string>
     <string name="average_notes">Average notes</string>
     <string name="streaks">Streaks</string>
-    <string name="current_game_streak">Current game streak</string>
-    <string name="best_game_streak">Best game streak</string>
+    <string name="current_win_streak">Current win streak</string>
+    <string name="best_win_streak">Best win streak</string>
     <string name="total_time_played">Total time played</string>
     <string name="feature_usage">Feature usage</string>
     <string name="hint_usage_rate">Hint usage rate</string>
