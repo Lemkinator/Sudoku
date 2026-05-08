@@ -218,6 +218,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     fun resumeGame() {
+        if (!this::sudoku.isInitialized) return
         binding.resumeButton.transformTo(binding.gameLayout)
         if (sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now())) {
             menuPausePlayVisible = false
