@@ -19,7 +19,7 @@ class CalculateStatisticsUseCase @Inject constructor() {
                 gamesCompleted = c,
                 winRate = winRate(n, c),
                 bestTimeSudoku = completed.minByOrNull { it.seconds },
-                averageTime = average(completed, c) { it.seconds.toLong() },
+                averageTime = if (c == 0) -1 else average(completed, c) { it.seconds.toLong() },
                 winsWithoutErrors = completed.count { it.errorsMade == 0 },
                 mostErrors = sudokus.maxOfOrNull { it.errorsMade } ?: 0,
                 averageErrors = average(completed, c) { it.errorsMade.toLong() },
