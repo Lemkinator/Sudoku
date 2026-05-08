@@ -17,18 +17,18 @@ class CalculateStatisticsUseCase @Inject constructor() {
             SudokuStatistics(
                 gamesStarted = n,
                 gamesCompleted = c,
-                winRate = if (n == 0) 0 else (c.toFloat() / n * 100).toInt(),
+                winRate = winRate(n, c),
                 bestTimeSudoku = completed.minByOrNull { it.seconds },
-                averageTime = if (c == 0) 0 else completed.sumOf { it.seconds } / c,
+                averageTime = average(completed, c) { it.seconds.toLong() },
                 winsWithoutErrors = completed.count { it.errorsMade == 0 },
                 mostErrors = sudokus.maxOfOrNull { it.errorsMade } ?: 0,
-                averageErrors = if (c == 0) 0 else completed.sumOf { it.errorsMade } / c,
+                averageErrors = average(completed, c) { it.errorsMade.toLong() },
                 winsWithoutHints = completed.count { it.hintsUsed == 0 },
                 mostHints = sudokus.maxOfOrNull { it.hintsUsed } ?: 0,
-                averageHints = if (c == 0) 0 else completed.sumOf { it.hintsUsed } / c,
+                averageHints = average(completed, c) { it.hintsUsed.toLong() },
                 winsWithoutNotes = completed.count { it.notesMade == 0 },
                 mostNotes = sudokus.maxOfOrNull { it.notesMade } ?: 0,
-                averageNotes = if (c == 0) 0 else completed.sumOf { it.notesMade } / c,
+                averageNotes = average(completed, c) { it.notesMade.toLong() },
                 mostGamesStartedDifficulty = sudokus.groupingBy { it.difficulty }.eachCount().maxByOrNull { it.value }?.key,
                 mostGamesWonDifficulty = completed.groupingBy { it.difficulty }.eachCount().maxByOrNull { it.value }?.key,
                 mostGamesStartedSize = sudokus.groupingBy { it.size }.eachCount().maxByOrNull { it.value }?.key,
@@ -39,12 +39,21 @@ class CalculateStatisticsUseCase @Inject constructor() {
                 currentDailySudokuStreak = dailySudokuStreak(completed, today, current = true),
                 bestDailySudokuStreak = dailySudokuStreak(completed, today, current = false),
                 totalSecondsPlayed = sudokus.sumOf { it.seconds.toLong() },
-                hintUsageRate = if (n == 0) 0f else sudokus.count { it.hintsUsed > 0 }.toFloat() / n,
-                notesUsageRate = if (n == 0) 0f else sudokus.count { it.notesMade > 0 }.toFloat() / n,
-                eraserUsageRate = if (n == 0) 0f else sudokus.count { it.eraserUsed }.toFloat() / n,
+                hintUsageRate = usageRate(sudokus, n) { it.hintsUsed > 0 },
+                notesUsageRate = usageRate(sudokus, n) { it.notesMade > 0 },
+                eraserUsageRate = usageRate(sudokus, n) { it.eraserUsed },
                 perfectGames = completed.count { it.errorsMade == 0 && it.hintsUsed == 0 },
             )
         }
+
+    private fun winRate(n: Int, c: Int): Int =
+        if (n == 0) 0 else (c.toFloat() / n * 100).toInt()
+
+    private fun average(completed: List<Sudoku>, c: Int, selector: (Sudoku) -> Long): Int =
+        if (c == 0) 0 else (completed.sumOf(selector) / c).toInt()
+
+    private fun usageRate(sudokus: List<Sudoku>, n: Int, predicate: (Sudoku) -> Boolean): Float =
+        if (n == 0) 0f else sudokus.count(predicate).toFloat() / n
 
     private fun currentGameStreak(sortedAsc: List<Sudoku>): Int {
         var streak = 0
