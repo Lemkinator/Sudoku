@@ -47,7 +47,7 @@ class CalculateStatisticsUseCase @Inject constructor() {
         if (n == 0) 0 else (c.toFloat() / n * 100).roundToInt()
 
     private fun average(completed: List<Sudoku>, c: Int, selector: (Sudoku) -> Long): Int =
-        if (c == 0) 0 else (completed.sumOf(selector) / c).toInt()
+        if (c == 0) 0 else (completed.sumOf(selector).toFloat() / c).roundToInt()
 
     private fun usageRate(sudokus: List<Sudoku>, n: Int, predicate: (Sudoku) -> Boolean): Float =
         if (n == 0) 0f else sudokus.count(predicate).toFloat() / n
