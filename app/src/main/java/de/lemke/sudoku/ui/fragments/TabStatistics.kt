@@ -126,7 +126,7 @@ class TabStatistics : Fragment() {
     }
 
     private fun totalSecondsToString(seconds: Long): String {
-        if (seconds == 0L) return "-"
+        if (seconds < 60L) return "-"
         val days = seconds / 86400
         val hours = seconds % 86400 / 3600
         val minutes = seconds % 3600 / 60
