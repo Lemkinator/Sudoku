@@ -14,6 +14,11 @@ class CalculateStatisticsUseCase @Inject constructor() {
             val completed = sortedAsc.filter { it.completed }
             val n = sudokus.size
             val c = completed.size
+            val dailySudokuDates = completed
+                .filter { it.isDailySudoku }
+                .map { it.updated.toLocalDate() }
+                .distinct()
+                .sorted()
             SudokuStatistics(
                 gamesStarted = n,
                 gamesCompleted = c,
@@ -36,8 +41,8 @@ class CalculateStatisticsUseCase @Inject constructor() {
                 currentGameStreak = currentGameStreak(sortedAsc),
                 bestGameStreak = bestGameStreak(sortedAsc),
                 completedDailySudokus = completed.count { it.isDailySudoku },
-                currentDailySudokuStreak = dailySudokuStreak(completed, today, current = true),
-                bestDailySudokuStreak = dailySudokuStreak(completed, today, current = false),
+                currentDailySudokuStreak = if (dailySudokuDates.isEmpty()) 0 else currentDailyStreak(dailySudokuDates, today),
+                bestDailySudokuStreak = if (dailySudokuDates.isEmpty()) 0 else bestDailyStreak(dailySudokuDates),
                 totalSecondsPlayed = sudokus.sumOf { it.seconds.toLong() },
                 hintUsageRate = usageRate(sudokus, n) { it.hintsUsed > 0 },
                 notesUsageRate = usageRate(sudokus, n) { it.notesMade > 0 },
@@ -75,16 +80,6 @@ class CalculateStatisticsUseCase @Inject constructor() {
             }
         }
         return best
-    }
-
-    private fun dailySudokuStreak(completed: List<Sudoku>, today: LocalDate, current: Boolean): Int {
-        val dates = completed
-            .filter { it.isDailySudoku }
-            .map { it.updated.toLocalDate() }
-            .distinct()
-            .sorted()
-        if (dates.isEmpty()) return 0
-        return if (current) currentDailyStreak(dates, today) else bestDailyStreak(dates)
     }
 
     private fun currentDailyStreak(sortedDates: List<LocalDate>, today: LocalDate): Int {
