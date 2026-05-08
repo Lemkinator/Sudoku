@@ -162,9 +162,6 @@
     <string name="streaks">Streaks</string>
     <string name="current_game_streak">Current game streak</string>
     <string name="best_game_streak">Best game streak</string>
-    <string name="completed_daily_sudokus">Completed daily sudokus</string>
-    <string name="current_daily_sudoku_streak">Current daily sudoku streak</string>
-    <string name="best_daily_sudoku_streak">Best daily sudoku streak</string>
     <string name="total_time_played">Total time played</string>
     <string name="feature_usage">Feature usage</string>
     <string name="hint_usage_rate">Hint usage rate</string>

@@ -150,9 +150,6 @@
     <string name="streaks">Serien</string>
     <string name="current_game_streak">Aktuelle Spielserie</string>
     <string name="best_game_streak">Beste Spielserie</string>
-    <string name="completed_daily_sudokus">Abgeschlossene Tages-Sudokus</string>
-    <string name="current_daily_sudoku_streak">Aktuelle Tages-Sudoku-Serie</string>
-    <string name="best_daily_sudoku_streak">Beste Tages-Sudoku-Serie</string>
     <string name="total_time_played">Gesamte Spielzeit</string>
     <string name="feature_usage">Funktionsnutzung</string>
     <string name="hint_usage_rate">Hinweis-Nutzungsrate</string>

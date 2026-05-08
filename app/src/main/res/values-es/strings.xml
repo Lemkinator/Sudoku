@@ -150,9 +150,6 @@
     <string name="streaks">Rachas</string>
     <string name="current_game_streak">Racha de juegos actual</string>
     <string name="best_game_streak">Mejor racha de juegos</string>
-    <string name="completed_daily_sudokus">Sudokus diarios completados</string>
-    <string name="current_daily_sudoku_streak">Racha diaria actual</string>
-    <string name="best_daily_sudoku_streak">Mejor racha diaria</string>
     <string name="total_time_played">Tiempo total jugado</string>
     <string name="feature_usage">Uso de funciones</string>
     <string name="hint_usage_rate">Tasa de uso de pistas</string>

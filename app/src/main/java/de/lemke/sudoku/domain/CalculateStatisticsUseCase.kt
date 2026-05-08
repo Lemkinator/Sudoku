@@ -2,23 +2,17 @@ package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuStatistics
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class CalculateStatisticsUseCase @Inject constructor() {
-    suspend operator fun invoke(sudokus: List<Sudoku>, today: LocalDate = LocalDate.now()): SudokuStatistics =
+    suspend operator fun invoke(sudokus: List<Sudoku>): SudokuStatistics =
         withContext(Dispatchers.Default) {
             val sortedAsc = sudokus.sortedBy { it.updated }
             val completed = sortedAsc.filter { it.completed }
             val n = sudokus.size
             val c = completed.size
-            val dailySudokuDates = completed
-                .filter { it.isDailySudoku }
-                .map { it.updated.toLocalDate() }
-                .distinct()
-                .sorted()
             SudokuStatistics(
                 gamesStarted = n,
                 gamesCompleted = c,
@@ -40,9 +34,6 @@ class CalculateStatisticsUseCase @Inject constructor() {
                 mostGamesWonSize = completed.groupingBy { it.size }.eachCount().maxByOrNull { it.value }?.key,
                 currentGameStreak = currentGameStreak(sortedAsc),
                 bestGameStreak = bestGameStreak(sortedAsc),
-                completedDailySudokus = completed.count { it.isDailySudoku },
-                currentDailySudokuStreak = if (dailySudokuDates.isEmpty()) 0 else currentDailyStreak(dailySudokuDates, today),
-                bestDailySudokuStreak = if (dailySudokuDates.isEmpty()) 0 else bestDailyStreak(dailySudokuDates),
                 totalSecondsPlayed = sudokus.sumOf { it.seconds.toLong() },
                 hintUsageRate = usageRate(sudokus, n) { it.hintsUsed > 0 },
                 notesUsageRate = usageRate(sudokus, n) { it.notesMade > 0 },
@@ -82,28 +73,5 @@ class CalculateStatisticsUseCase @Inject constructor() {
         return best
     }
 
-    private fun currentDailyStreak(sortedDates: List<LocalDate>, today: LocalDate): Int {
-        var expected = today
-        if (expected !in sortedDates) expected = expected.minusDays(1)
-        var streak = 0
-        for (date in sortedDates.reversed()) {
-            if (date == expected) {
-                streak++
-                expected = expected.minusDays(1)
-            } else {
-                break
-            }
-        }
-        return streak
-    }
 
-    private fun bestDailyStreak(sortedDates: List<LocalDate>): Int {
-        var best = 1
-        var current = 1
-        for (i in 1 until sortedDates.size) {
-            current = if (sortedDates[i] == sortedDates[i - 1].plusDays(1)) current + 1 else 1
-            if (current > best) best = current
-        }
-        return best
-    }
 }

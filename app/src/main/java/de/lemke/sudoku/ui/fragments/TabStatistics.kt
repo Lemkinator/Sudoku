@@ -118,10 +118,6 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.streaks) to null)
         statisticsList.add(getString(R.string.current_game_streak) to stats.currentGameStreak.toString())
         statisticsList.add(getString(R.string.best_game_streak) to stats.bestGameStreak.toString())
-        statisticsList.add(getString(R.string.daily_sudokus) to null)
-        statisticsList.add(getString(R.string.completed_daily_sudokus) to stats.completedDailySudokus.toString())
-        statisticsList.add(getString(R.string.current_daily_sudoku_streak) to stats.currentDailySudokuStreak.toString())
-        statisticsList.add(getString(R.string.best_daily_sudoku_streak) to stats.bestDailySudokuStreak.toString())
         statisticsList.add(getString(R.string.feature_usage) to null)
         statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * 100).roundToInt()}%")
         statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * 100).roundToInt()}%")
@@ -130,6 +126,7 @@ class TabStatistics : Fragment() {
     }
 
     private fun totalSecondsToString(seconds: Long): String {
+        if (seconds == 0L) return "-"
         val days = seconds / 86400
         val hours = seconds % 86400 / 3600
         val minutes = seconds % 3600 / 60
