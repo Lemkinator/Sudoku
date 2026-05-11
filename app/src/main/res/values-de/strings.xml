@@ -147,6 +147,15 @@
     <string name="wins_without_notes">Siege ohne Notizen</string>
     <string name="most_notes">Meiste Notizen</string>
     <string name="average_notes">Durchschnittliche Notizen</string>
+    <string name="streaks">Serien</string>
+    <string name="current_win_streak">Aktuelle Siegesserie</string>
+    <string name="best_win_streak">Beste Siegesserie</string>
+    <string name="total_time_played">Gesamte Spielzeit</string>
+    <string name="feature_usage">Funktionsnutzung</string>
+    <string name="hint_usage_rate">Hinweis-Nutzungsrate</string>
+    <string name="notes_usage_rate">Notizen-Nutzungsrate</string>
+    <string name="eraser_usage_rate">Radiergummi-Nutzungsrate</string>
+    <string name="perfect_games">Perfekte Spiele</string>
     <string name="filter">Filter</string>
     <string name="statistics_filter">Statistik-Filter</string>
     <string name="normal_sudokus">Normale Sudokus</string>

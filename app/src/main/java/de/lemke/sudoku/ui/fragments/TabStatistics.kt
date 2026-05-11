@@ -19,9 +19,10 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
+import de.lemke.sudoku.domain.CalculateStatisticsUseCase
 import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuStatistics
+import kotlin.math.roundToInt
 import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
@@ -39,6 +40,9 @@ class TabStatistics : Fragment() {
 
     @Inject
     lateinit var observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase
+
+    @Inject
+    lateinit var calculateStatistics: CalculateStatisticsUseCase
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         FragmentTabStatisticsBinding.inflate(inflater, container, false).also { binding = it }.root
@@ -62,7 +66,7 @@ class TabStatistics : Fragment() {
         lifecycleScope.launch {
             observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 binding.statisticsProgressBar.isVisible = true
-                updateStatistics(it)
+                updateStatistics(calculateStatistics(it))
                 binding.statisticsListRecycler.adapter?.notifyDataSetChanged()
                 binding.statisticsProgressBar.isVisible = false
             }
@@ -80,64 +84,59 @@ class TabStatistics : Fragment() {
      */
 
     @SuppressLint("SetTextI18n")
-    private fun updateStatistics(sudokus: List<Sudoku>) {
+    private fun updateStatistics(stats: SudokuStatistics) {
         statisticsList = mutableListOf()
-        val gamesStarted = sudokus.size
-        val gamesCompleted = sudokus.filter { it.completed }.size
-        val winRate = if (gamesStarted == 0) 0 else (gamesCompleted.toFloat() / gamesStarted.toFloat() * 100).toInt()
-        val bestTimeSudoku = sudokus.filter { it.completed }.minByOrNull { it.seconds }
-        val bestTime = bestTimeSudoku?.seconds ?: -1
-        val averageTime = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.seconds } / gamesCompleted
-        val winsWithoutErrors = sudokus.filter { it.completed && it.errorsMade == 0 }.size
-        val mostErrors = sudokus.maxByOrNull { it.errorsMade }?.errorsMade ?: 0
-        val averageErrors = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.errorsMade } / gamesCompleted
-        val winsWithoutHints = sudokus.filter { it.completed && it.hintsUsed == 0 }.size
-        val mostHints = sudokus.maxByOrNull { it.hintsUsed }?.hintsUsed ?: 0
-        val averageHints = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.hintsUsed } / gamesCompleted
-        val winsWithoutNotes = sudokus.filter { it.completed && it.notesMade == 0 }.size
-        val mostNotes = sudokus.maxByOrNull { it.notesMade }?.notesMade ?: 0
-        val averageNotes = if (gamesCompleted == 0) 0 else sudokus.filter { it.completed }.sumOf { it.notesMade } / gamesCompleted
-        val mostGamesStartedDifficultyInt = sudokus.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
-        val mostGamesStartedDifficulty =
-            if (mostGamesStartedDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesStartedDifficultyInt, resources)
-        val mostGamesWonDifficultyInt =
-            sudokus.filter { it.completed }.groupingBy { it.difficulty.value }.eachCount().maxByOrNull { it.value }?.key
-        val mostGamesWonDifficulty =
-            if (mostGamesWonDifficultyInt == null) "-" else Difficulty.getLocalString(mostGamesWonDifficultyInt, resources)
-        val mostGamesStartedSizeInt = sudokus.groupingBy { it.size }.eachCount().maxByOrNull { it.value }?.key
-        val mostGamesStartedSize = if (mostGamesStartedSizeInt == null) "-" else "$mostGamesStartedSizeInt×$mostGamesStartedSizeInt"
-        val mostGamesWonSizeInt = sudokus.filter { it.completed }.groupingBy { it.size }.eachCount().maxByOrNull { it.value }?.key
-        val mostGamesWonSize = if (mostGamesWonSizeInt == null) "-" else "$mostGamesWonSizeInt×$mostGamesWonSizeInt"
         statisticsList.add(getString(R.string.games) to null)
-        statisticsList.add(getString(R.string.games_started) to gamesStarted.toString())
-        statisticsList.add(getString(R.string.games_completed) to gamesCompleted.toString())
-        statisticsList.add(getString(R.string.win_rate) to "$winRate%")
+        statisticsList.add(getString(R.string.games_started) to stats.gamesStarted.toString())
+        statisticsList.add(getString(R.string.games_completed) to stats.gamesCompleted.toString())
+        statisticsList.add(getString(R.string.win_rate) to "${stats.winRate}%")
         statisticsList.add(getString(R.string.time) to null)
         statisticsList.add(
-            getString(R.string.best_time) to
-                    secondsToTimeString(bestTime) + if (bestTimeSudoku != null) " (${bestTimeSudoku.sizeString}, ${
-                bestTimeSudoku.difficulty.getLocalString(resources)
-            })" else ""
+            getString(R.string.best_time) to secondsToTimeString(stats.bestTimeSudoku?.seconds ?: -1) +
+                    if (stats.bestTimeSudoku != null) " (${stats.bestTimeSudoku.sizeString}, ${stats.bestTimeSudoku.difficulty.getLocalString(resources)})" else ""
         )
-        statisticsList.add(getString(R.string.average_time) to secondsToTimeString(averageTime))
+        statisticsList.add(getString(R.string.average_time) to secondsToTimeString(stats.averageTime))
+        statisticsList.add(getString(R.string.total_time_played) to totalSecondsToString(stats.totalSecondsPlayed))
+        statisticsList.add(getString(R.string.streaks) to null)
+        statisticsList.add(getString(R.string.current_win_streak) to stats.currentGameStreak.toString())
+        statisticsList.add(getString(R.string.best_win_streak) to stats.bestGameStreak.toString())
         statisticsList.add(getString(R.string.errors) to null)
-        statisticsList.add(getString(R.string.wins_without_error) to winsWithoutErrors.toString())
-        statisticsList.add(getString(R.string.most_errors) to mostErrors.toString())
-        statisticsList.add(getString(R.string.average_errors) to averageErrors.toString())
+        statisticsList.add(getString(R.string.wins_without_error) to stats.winsWithoutErrors.toString())
+        statisticsList.add(getString(R.string.most_errors) to stats.mostErrors.toString())
+        statisticsList.add(getString(R.string.average_errors) to stats.averageErrors.toString())
         statisticsList.add(getString(R.string.hints) to null)
-        statisticsList.add(getString(R.string.wins_without_hint) to winsWithoutHints.toString())
-        statisticsList.add(getString(R.string.most_hints) to mostHints.toString())
-        statisticsList.add(getString(R.string.average_hints) to averageHints.toString())
+        statisticsList.add(getString(R.string.wins_without_hint) to stats.winsWithoutHints.toString())
+        statisticsList.add(getString(R.string.most_hints) to stats.mostHints.toString())
+        statisticsList.add(getString(R.string.average_hints) to stats.averageHints.toString())
         statisticsList.add(getString(R.string.notes) to null)
-        statisticsList.add(getString(R.string.wins_without_notes) to winsWithoutNotes.toString())
-        statisticsList.add(getString(R.string.most_notes) to mostNotes.toString())
-        statisticsList.add(getString(R.string.average_notes) to averageNotes.toString())
+        statisticsList.add(getString(R.string.wins_without_notes) to stats.winsWithoutNotes.toString())
+        statisticsList.add(getString(R.string.most_notes) to stats.mostNotes.toString())
+        statisticsList.add(getString(R.string.average_notes) to stats.averageNotes.toString())
         statisticsList.add(getString(R.string.difficulty) to null)
-        statisticsList.add(getString(R.string.most_games_started) to mostGamesStartedDifficulty)
-        statisticsList.add(getString(R.string.most_games_won) to mostGamesWonDifficulty)
+        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedDifficulty?.getLocalString(resources) ?: "-"))
+        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonDifficulty?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.size) to null)
-        statisticsList.add(getString(R.string.most_games_started) to mostGamesStartedSize)
-        statisticsList.add(getString(R.string.most_games_won) to mostGamesWonSize)
+        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.let { "$it×$it" } ?: "-"))
+        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.let { "$it×$it" } ?: "-"))
+        statisticsList.add(getString(R.string.feature_usage) to null)
+        statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * 100).roundToInt()}%")
+        statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * 100).roundToInt()}%")
+        statisticsList.add(getString(R.string.eraser_usage_rate) to "${(stats.eraserUsageRate * 100).roundToInt()}%")
+        statisticsList.add(getString(R.string.perfect_games) to stats.perfectGames.toString())
+    }
+
+    private fun totalSecondsToString(seconds: Long): String {
+        if (seconds == 0L) return "-"
+        val days = seconds / 86400
+        val hours = seconds % 86400 / 3600
+        val minutes = seconds % 3600 / 60
+        val secs = seconds % 60
+        return when {
+            days > 0 -> "${days}d ${hours}h ${minutes}m"
+            hours > 0 -> "${hours}h ${minutes}m"
+            minutes > 0 -> "${minutes}m ${secs}s"
+            else -> "${secs}s"
+        }
     }
 
     private fun secondsToTimeString(seconds: Int): String =

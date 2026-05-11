@@ -147,6 +147,15 @@
     <string name="wins_without_notes">Victorias sin notas</string>
     <string name="most_notes">Más notas</string>
     <string name="average_notes">Notas promedio</string>
+    <string name="streaks">Rachas</string>
+    <string name="current_win_streak">Racha de victorias actual</string>
+    <string name="best_win_streak">Mejor racha de victorias</string>
+    <string name="total_time_played">Tiempo total jugado</string>
+    <string name="feature_usage">Uso de funciones</string>
+    <string name="hint_usage_rate">Tasa de uso de pistas</string>
+    <string name="notes_usage_rate">Tasa de uso de notas</string>
+    <string name="eraser_usage_rate">Tasa de uso del borrador</string>
+    <string name="perfect_games">Partidas perfectas</string>
     <string name="filter">Filtro</string>
     <string name="statistics_filter">Filtro de estadísticas</string>
     <string name="normal_sudokus">Sudokus normales</string>
