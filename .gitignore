@@ -87,6 +87,7 @@ fabric.properties
 /.idea/assetWizardSettings.xml
 /.idea/deploymentTargetDropDown.xml
 .idea/**/deploymentTargetSelector.xml
+.idea/**/appInsightsSettings.xml
 .DS_Store
 
 /build
