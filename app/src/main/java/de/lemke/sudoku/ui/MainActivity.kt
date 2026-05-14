@@ -125,13 +125,13 @@ class MainActivity : AppCompatActivity() {
         NotificationManagerCompat.from(this).cancelAll()
         lifecycleScope.launch {
             isUIReady = true
-            checkImportedSudokuOrNotificationClicked()
+            checkImportedSudoku()
             sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
             updatePlayGames(this@MainActivity)
         }
     }
 
-    private suspend fun checkImportedSudokuOrNotificationClicked() {
+    private suspend fun checkImportedSudoku() {
         if (intent != null && intent.data != null) {
             val dialog = ProgressDialog(this)
             dialog.setProgressStyle(CIRCLE)
@@ -146,12 +146,6 @@ class MainActivity : AppCompatActivity() {
                 toast(R.string.error_import_failed)
             }
             dialog.dismiss()
-        }
-        if (intent.getBooleanExtra("openDailySudoku", false)) {
-            (findViewById(R.id.dailyButton) ?: findViewById<AppCompatButton?>(R.id.dailyAvailableButton))?.transformToActivity(
-                Intent(this, DailySudokuActivity::class.java).putExtra("openDailySudoku", true),
-                "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
-            ) ?: startActivity(Intent(this, DailySudokuActivity::class.java).putExtra("openDailySudoku", true))
         }
     }
 
