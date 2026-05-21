@@ -81,7 +81,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import dev.oneuiproject.oneui.design.R as designR
 
-
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -140,7 +139,7 @@ class MainActivity : AppCompatActivity() {
             val sudoku = importSudoku(intent.data)
             if (sudoku != null) {
                 findViewById<AppCompatButton?>(R.id.newGameButton)?.transformToActivity(
-                    Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+                    Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
                 ) ?: startActivity(Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value))
             } else {
                 toast(R.string.error_import_failed)
@@ -156,10 +155,11 @@ class MainActivity : AppCompatActivity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
-        else -> super.onOptionsItemSelected(item)
-    }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
+            else -> super.onOptionsItemSelected(item)
+        }
 
     private fun setupCommonUtilsActivities() {
         val bib = getString(R.string.sudoku_lib)
@@ -177,8 +177,9 @@ class MainActivity : AppCompatActivity() {
                     ds.typeface = Typeface.create("sans-serif-medium", NORMAL)
                 }
             },
-            text.indexOf(bib), text.indexOf(bib) + bib.length,
-            SPAN_EXCLUSIVE_EXCLUSIVE
+            text.indexOf(bib),
+            text.indexOf(bib) + bib.length,
+            SPAN_EXCLUSIVE_EXCLUSIVE,
         )
         optionalText.setSpan(
             object : ClickableSpan() {
@@ -191,8 +192,9 @@ class MainActivity : AppCompatActivity() {
                     ds.typeface = Typeface.create("sans-serif-medium", NORMAL)
                 }
             },
-            text.indexOf(license), text.indexOf(license) + license.length,
-            SPAN_EXCLUSIVE_EXCLUSIVE
+            text.indexOf(license),
+            text.indexOf(license) + license.length,
+            SPAN_EXCLUSIVE_EXCLUSIVE,
         )
         setupCommonUtilsAboutActivity(appVersion = BuildConfig.VERSION_NAME, optionalText = optionalText)
         setupCommonUtilsAboutMeActivity(
@@ -204,73 +206,114 @@ class MainActivity : AppCompatActivity() {
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
         binding.navigationView.onNavigationSingleClick { item ->
             when (item.itemId) {
-                R.id.achievements_dest ->
+                R.id.achievements_dest -> {
                     gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openAchievements()
-                        else signInPlayGames(gamesSignInClient) { openAchievements() }
+                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) {
+                            openAchievements()
+                        } else {
+                            signInPlayGames(gamesSignInClient) { openAchievements() }
+                        }
                     }
+                }
 
-                R.id.leaderboards_dest ->
+                R.id.leaderboards_dest -> {
                     gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) openLeaderboards()
-                        else signInPlayGames(gamesSignInClient) { openLeaderboards() }
+                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) {
+                            openLeaderboards()
+                        } else {
+                            signInPlayGames(gamesSignInClient) { openLeaderboards() }
+                        }
                     }
+                }
 
-                R.id.about_app_dest -> findViewById<View>(R.id.about_app_dest).transformToActivity(CommonUtilsAboutActivity::class.java)
-                R.id.about_me_dest -> findViewById<View>(R.id.about_me_dest).transformToActivity(CommonUtilsAboutMeActivity::class.java)
-                R.id.settings_dest -> findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
-                else -> return@onNavigationSingleClick false
+                R.id.about_app_dest -> {
+                    findViewById<View>(R.id.about_app_dest).transformToActivity(CommonUtilsAboutActivity::class.java)
+                }
+
+                R.id.about_me_dest -> {
+                    findViewById<View>(R.id.about_me_dest).transformToActivity(CommonUtilsAboutMeActivity::class.java)
+                }
+
+                R.id.settings_dest -> {
+                    findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
+                }
+
+                else -> {
+                    return@onNavigationSingleClick false
+                }
             }
             true
         }
         binding.drawerLayout.apply {
             setTitle(BuildConfig.APP_NAME)
             setupHeaderAndNavRail(getString(R.string.about_app))
-            //setupNavigation(binding.bottomTab, binding.navigationHost.getFragment())
+            // setupNavigation(binding.bottomTab, binding.navigationHost.getFragment())
         }
     }
 
-    private fun signInPlayGames(gamesSignInClient: GamesSignInClient, onSuccess: () -> Unit = {}) {
+    private fun signInPlayGames(
+        gamesSignInClient: GamesSignInClient,
+        onSuccess: () -> Unit = {},
+    ) {
         gamesSignInClient.signIn().addOnCompleteListener { signInTask: Task<AuthenticationResult> ->
-            if (signInTask.isSuccessful && signInTask.result.isAuthenticated) onSuccess()
-            else toast(R.string.error_sign_in_failed)
+            if (signInTask.isSuccessful && signInTask.result.isAuthenticated) {
+                onSuccess()
+            } else {
+                toast(R.string.error_sign_in_failed)
+            }
         }
     }
 
-    private fun openLeaderboards() = PlayGames.getLeaderboardsClient(this).allLeaderboardsIntent.addOnSuccessListener { intent ->
-        playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
-    }
+    private fun openLeaderboards() =
+        PlayGames.getLeaderboardsClient(this).allLeaderboardsIntent.addOnSuccessListener { intent ->
+            playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
+        }
 
-    private fun openAchievements() = PlayGames.getAchievementsClient(this).achievementsIntent.addOnSuccessListener { intent ->
-        playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
-    }
+    private fun openAchievements() =
+        PlayGames.getAchievementsClient(this).achievementsIntent.addOnSuccessListener { intent ->
+            playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
+        }
 
     private fun initTabs() {
-        binding.bottomTab.addOnTabSelectedListener(object : OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) = onTabItemSelected(tab.position, tab)
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {
-                try {
-                    when (tab.position) {
-                        0 -> {
-                            val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuHistoryList)
-                            if (historyRecyclerView.canScrollVertically(-1)) historyRecyclerView.smoothScrollToPosition(0)
-                            else binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
-                        }
+        binding.bottomTab.addOnTabSelectedListener(
+            object : OnTabSelectedListener {
+                override fun onTabSelected(tab: TabLayout.Tab) = onTabItemSelected(tab.position, tab)
 
-                        1 -> binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
+                override fun onTabUnselected(tab: TabLayout.Tab) {}
 
-                        2 -> {
-                            val statisticsRecyclerView: RecyclerView = findViewById(R.id.statisticsListRecycler)
-                            if (binding.drawerLayout.isExpanded) binding.drawerLayout.setExpanded(expanded = false, animate = true)
-                            else if (statisticsRecyclerView.canScrollVertically(-1)) statisticsRecyclerView.smoothScrollToPosition(0)
-                            else showStatisticsFilterDialog()
+                override fun onTabReselected(tab: TabLayout.Tab) {
+                    try {
+                        when (tab.position) {
+                            0 -> {
+                                val historyRecyclerView: RecyclerView = findViewById(R.id.sudokuHistoryList)
+                                if (historyRecyclerView.canScrollVertically(-1)) {
+                                    historyRecyclerView.smoothScrollToPosition(0)
+                                } else {
+                                    binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
+                                }
+                            }
+
+                            1 -> {
+                                binding.drawerLayout.setExpanded(!binding.drawerLayout.isExpanded, true)
+                            }
+
+                            2 -> {
+                                val statisticsRecyclerView: RecyclerView = findViewById(R.id.statisticsListRecycler)
+                                if (binding.drawerLayout.isExpanded) {
+                                    binding.drawerLayout.setExpanded(expanded = false, animate = true)
+                                } else if (statisticsRecyclerView.canScrollVertically(-1)) {
+                                    statisticsRecyclerView.smoothScrollToPosition(0)
+                                } else {
+                                    showStatisticsFilterDialog()
+                                }
+                            }
                         }
+                    } catch (_: Exception) {
+                        // no required functionality -> ignore errors
                     }
-                } catch (_: Exception) { //no required functionality -> ignore errors
                 }
-            }
-        })
+            },
+        )
     }
 
     private fun showStatisticsFilterDialog() {
@@ -318,8 +361,8 @@ class MainActivity : AppCompatActivity() {
         if (dialogBinding.filterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
         if (dialogBinding.filterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
         if (dialogBinding.filterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
-        if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0
-            && flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
+        if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0 &&
+            flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
         ) {
             flags = flags or DIFFICULTY_ALL
         }
@@ -333,7 +376,10 @@ class MainActivity : AppCompatActivity() {
         onTabItemSelected(1)
     }
 
-    fun onTabItemSelected(position: Int, tab: TabLayout.Tab? = null) {
+    fun onTabItemSelected(
+        position: Int,
+        tab: TabLayout.Tab? = null,
+    ) {
         val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
