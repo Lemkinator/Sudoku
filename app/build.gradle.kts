@@ -14,11 +14,11 @@ fun com.android.build.api.dsl.ApplicationBuildType.addConstant(name: String, val
 
 android {
     namespace = "de.lemke.sudoku"
-    compileSdk = 36
+    compileSdk = 37
     defaultConfig {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 62
         versionName = "3.5.6"
     }
@@ -66,6 +66,8 @@ android {
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 dependencies {
+    implementation(libs.oneui.design)
+    implementation(libs.oneui.icons)
     implementation(libs.common.utils)
     implementation(libs.datastore.preferences)
     implementation(libs.async.layout.inflater)
