@@ -67,7 +67,7 @@ subprojects {
             }
             // Apply AndroidX exclusions ONLY to production configurations.
             // androidTest* and test* configs need genuine AOSP AndroidX modules.
-            configurations.matching { !it.name.startsWith("test", ignoreCase = true) }.configureEach {
+            configurations.matching { !it.name.contains("test", ignoreCase = true) }.configureEach {
                 exclude(group = "androidx.core", module = "core")
                 exclude(group = "androidx.core", module = "core-ktx")
                 exclude(group = "androidx.customview", module = "customview")
