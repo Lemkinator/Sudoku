@@ -3,6 +3,8 @@ package de.lemke.sudoku
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 import de.lemke.commonutils.data.initCommonUtilsSettingsAndSetDarkMode
+import de.lemke.commonutils.setupOnboarding
+import de.lemke.sudoku.ui.IntroActivity
 
 /**
  * Main entry point into the application process.
@@ -13,6 +15,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         initCommonUtilsSettingsAndSetDarkMode()
+        setupOnboarding(listOf(IntroActivity::class.java))
     }
 }
 

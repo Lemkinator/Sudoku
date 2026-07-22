@@ -35,14 +35,13 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.checkAppStartAndHandleOOBE
 import de.lemke.commonutils.configureCommonUtilsSplashScreen
 import de.lemke.commonutils.onNavigationSingleClick
+import de.lemke.commonutils.onboardIfNeeded
 import de.lemke.commonutils.openURL
 import de.lemke.commonutils.prepareActivityTransformationFrom
 import de.lemke.commonutils.setupCommonUtilsAboutActivity
 import de.lemke.commonutils.setupCommonUtilsAboutMeActivity
-import de.lemke.commonutils.setupCommonUtilsOOBEActivity
 import de.lemke.commonutils.setupHeaderAndNavRail
 import de.lemke.commonutils.toast
 import de.lemke.commonutils.transformToActivity
@@ -106,14 +105,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        prepareActivityTransformationFrom()
         super.onCreate(savedInstanceState)
+        onboardIfNeeded(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME, allowSkip = BuildConfig.FIRST_RUN_SKIPPABLE) ?: return
+        prepareActivityTransformationFrom()
         if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         configureCommonUtilsSplashScreen(splashScreen, binding.root) { !isUIReady }
-        setupCommonUtilsOOBEActivity(setAcceptedTosVersion = false, nextActivity = IntroActivity::class.java)
-        if (!checkAppStartAndHandleOOBE(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME)) openMain()
+        openMain()
     }
 
     private fun openMain() {

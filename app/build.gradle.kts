@@ -26,6 +26,7 @@ android {
         targetSdk = 37
         versionCode = 62
         versionName = "3.5.6"
+        buildConfigField("boolean", "FIRST_RUN_SKIPPABLE", "false")
     }
     @Suppress("UnstableApiUsage")
     androidResources.localeFilters += listOf("en", "de", "es", "es-rES")
