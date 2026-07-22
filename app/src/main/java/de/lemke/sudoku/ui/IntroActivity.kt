@@ -6,7 +6,6 @@ import android.R.anim.fade_out
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.DialogInterface.BUTTON_NEGATIVE
-import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.ColorStateList
 import android.os.Build.VERSION.SDK_INT
@@ -25,7 +24,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.data.commonUtilsSettings
+import de.lemke.commonutils.advanceOnboarding
 import de.lemke.commonutils.setCustomBackAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
@@ -458,12 +457,7 @@ class IntroActivity : AppCompatActivity() {
         if (!openedFromSettings) notificationsDialog() else finishAfterTransition()
     }
 
-    private fun openMainActivity() {
-        commonUtilsSettings.acceptedTosVersion = resources.getInteger(R.integer.commonutils_tos_version)
-        startActivity(Intent(applicationContext, MainActivity::class.java))
-        @Suppress("DEPRECATION") if (SDK_INT < 34) overridePendingTransition(fade_in, fade_out)
-        finishAfterTransition()
-    }
+    private fun openMainActivity() = advanceOnboarding()
 
     private fun notificationsDialog() {
         val dialog = AlertDialog.Builder(this)
