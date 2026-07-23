@@ -1,7 +1,28 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.data.database
 
-import de.lemke.sudoku.domain.model.*
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 
+@Suppress("ReturnCount")
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
     val fields = sudokuWithFields?.fields?.mapNotNull { fieldFromDb(it) }?.toMutableList() ?: return null
     if (fields.size != sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size) return null
@@ -24,7 +45,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
         errorsMade = sudokuWithFields.sudoku.errorsMade,
         timer = null,
         gameListener = null,
-        fields = fields
+        fields = fields,
     )
 }
 
@@ -49,17 +70,23 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
     )
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? =
-    if (fieldDb?.solution == null) null
-    else Field(
-        position = Position.create(fieldDb.index, fieldDb.gameSize),
-        solution = fieldDb.solution,
-        value = fieldDb.value,
-        given = fieldDb.given,
-        hint = fieldDb.hint,
-        notes = fieldDb.notes.toMutableList(),
-    )
+    if (fieldDb?.solution == null) {
+        null
+    } else {
+        Field(
+            position = Position.create(fieldDb.index, fieldDb.gameSize),
+            solution = fieldDb.solution,
+            value = fieldDb.value,
+            given = fieldDb.given,
+            hint = fieldDb.hint,
+            notes = fieldDb.notes.toMutableList(),
+        )
+    }
 
-fun fieldToDb(field: Field, sudokuId: SudokuId): FieldDb =
+fun fieldToDb(
+    field: Field,
+    sudokuId: SudokuId,
+): FieldDb =
     FieldDb(
         sudokuId = sudokuId.value,
         index = field.position.index,
@@ -118,16 +145,22 @@ fun sudokuToExport(sudoku: Sudoku): SudokuExport =
         fields = sudoku.fields.map { fieldToExport(it) },
     )
 
-fun fieldFromExport(fieldExport: FieldExport, size: Int): Field? =
-    if (fieldExport.solution == null) null
-    else Field(
-        position = Position.create(fieldExport.index, size),
-        value = fieldExport.value,
-        solution = fieldExport.solution,
-        given = fieldExport.given == true,
-        hint = fieldExport.hint == true,
-        notes = fieldExport.notes?.toMutableList() ?: mutableListOf(),
-    )
+fun fieldFromExport(
+    fieldExport: FieldExport,
+    size: Int,
+): Field? =
+    if (fieldExport.solution == null) {
+        null
+    } else {
+        Field(
+            position = Position.create(fieldExport.index, size),
+            value = fieldExport.value,
+            solution = fieldExport.solution,
+            given = fieldExport.given == true,
+            hint = fieldExport.hint == true,
+            notes = fieldExport.notes?.toMutableList() ?: mutableListOf(),
+        )
+    }
 
 fun fieldToExport(field: Field): FieldExport =
     FieldExport(
@@ -136,5 +169,9 @@ fun fieldToExport(field: Field): FieldExport =
         solution = field.solution,
         given = field.given.takeIf { it },
         hint = field.hint.takeIf { it },
-        notes = field.notes.toMutableList().joinToString(separator = "").ifBlank { null },
+        notes =
+            field.notes
+                .toMutableList()
+                .joinToString(separator = "")
+                .ifBlank { null },
     )

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
@@ -22,16 +38,16 @@ import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.CalculateStatisticsUseCase
 import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.SudokuStatistics
-import kotlin.math.roundToInt
 import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.Separator
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabStatistics : Fragment() {
@@ -44,11 +60,17 @@ class TabStatistics : Fragment() {
     @Inject
     lateinit var calculateStatistics: CalculateStatisticsUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        FragmentTabStatisticsBinding.inflate(inflater, container, false).also { binding = it }.root
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = FragmentTabStatisticsBinding.inflate(inflater, container, false).also { binding = it }.root
 
     @SuppressLint("NotifyDataSetChanged")
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         binding.statisticsListRecycler.apply {
             layoutManager = LinearLayoutManager(context)
@@ -58,11 +80,12 @@ class TabStatistics : Fragment() {
                 SemItemDecoration(
                     context,
                     dividerRule = SELECTED { it.itemViewType == 0 },
-                    subHeaderRule = SELECTED { it.itemViewType == 1 })
+                    subHeaderRule = SELECTED { it.itemViewType == 1 },
+                ),
             )
             enableCoreSeslFeatures()
         }
-        //setupMenuProvider()
+        // setupMenuProvider()
         lifecycleScope.launch {
             observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
                 binding.statisticsProgressBar.isVisible = true
@@ -93,7 +116,13 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.time) to null)
         statisticsList.add(
             getString(R.string.best_time) to secondsToTimeString(stats.bestTimeSudoku?.seconds ?: -1) +
-                    if (stats.bestTimeSudoku != null) " (${stats.bestTimeSudoku.sizeString}, ${stats.bestTimeSudoku.difficulty.getLocalString(resources)})" else ""
+                if (stats.bestTimeSudoku !=
+                    null
+                ) {
+                    " (${stats.bestTimeSudoku.sizeString}, ${stats.bestTimeSudoku.difficulty.getLocalString(resources)})"
+                } else {
+                    ""
+                },
         )
         statisticsList.add(getString(R.string.average_time) to secondsToTimeString(stats.averageTime))
         statisticsList.add(getString(R.string.total_time_played) to totalSecondsToString(stats.totalSecondsPlayed))
@@ -148,18 +177,32 @@ class TabStatistics : Fragment() {
 
     inner class StatisticsListAdapter : RecyclerView.Adapter<ViewHolder>() {
         override fun getItemCount(): Int = statisticsList.size
-        override fun getItemId(position: Int): Long = position.toLong()
-        override fun getItemViewType(position: Int): Int = if (statisticsList[position].second == null) 1 else 0
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = when (viewType) {
-            0 -> ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), false)
-            else -> ViewHolder(Separator(requireContext()), true).apply {
-                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
-            }
-        }
 
+        override fun getItemId(position: Int): Long = position.toLong()
+
+        override fun getItemViewType(position: Int): Int = if (statisticsList[position].second == null) 1 else 0
+
+        override fun onCreateViewHolder(
+            parent: ViewGroup,
+            viewType: Int,
+        ): ViewHolder =
+            when (viewType) {
+                0 -> {
+                    ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), false)
+                }
+
+                else -> {
+                    ViewHolder(Separator(requireContext()), true).apply {
+                        itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
+                    }
+                }
+            }
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        override fun onBindViewHolder(
+            holder: ViewHolder,
+            position: Int,
+        ) {
             holder.textView.text = statisticsList[position].first
             if (!holder.isSeparator) holder.textViewValue.text = statisticsList[position].second
         }
@@ -169,8 +212,9 @@ class TabStatistics : Fragment() {
             lateinit var textViewValue: TextView
 
             init {
-                if (isSeparator) textView = itemView as TextView
-                else {
+                if (isSeparator) {
+                    textView = itemView as TextView
+                } else {
                     textView = itemView.findViewById(R.id.item_text)
                     textViewValue = itemView.findViewById(R.id.item_text_value)
                 }

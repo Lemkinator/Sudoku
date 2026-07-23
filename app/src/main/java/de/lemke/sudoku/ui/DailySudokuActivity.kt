@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui
 
 import android.content.Intent
@@ -34,10 +50,9 @@ import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
+import javax.inject.Inject
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-
 
 @AndroidEntryPoint
 class DailySudokuActivity : AppCompatActivity() {
@@ -76,32 +91,6 @@ class DailySudokuActivity : AppCompatActivity() {
         }
     }
 
-    private fun initRecycler() {
-        binding.dailySudokuRecycler.apply {
-            layoutManager = LinearLayoutManager(context)
-            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
-            itemAnimator = null
-            addItemDecoration(
-                SemItemDecoration(
-                    context,
-                    dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
-                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE }
-                ).apply { setDividerInsetStart(64.dpToPx(resources)) }
-            )
-            enableCoreSeslFeatures()
-        }
-    }
-
-    private fun SudokuListAdapter.setupOnClickListeners() {
-        onClickItem = { _, sudokuListItem, viewHolder ->
-            if (sudokuListItem is SudokuItem) {
-                viewHolder.itemView.transformToActivity(
-                    Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
-                )
-            }
-        }
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.daily_sudoku_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
@@ -118,23 +107,60 @@ class DailySudokuActivity : AppCompatActivity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
-        R.id.menuitem_daily_sudoku_info -> showInfoBottomSheet(
-            titleResId = R.string.daily_sudoku,
-            messageResId = R.string.daily_sudoku_info_message,
-            textGravity = START
-        ).let { true }
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.menuitem_daily_sudoku_info -> {
+                showInfoBottomSheet(
+                    titleResId = R.string.daily_sudoku,
+                    messageResId = R.string.daily_sudoku_info_message,
+                    textGravity = START,
+                ).let { true }
+            }
 
-        R.id.menuitem_show_all_sudokus -> lifecycleScope.launch {
-            updateUserSettings { it.copy(dailyShowUncompleted = true) }
-            invalidateOptionsMenu()
-        }.let { true }
+            R.id.menuitem_show_all_sudokus -> {
+                lifecycleScope
+                    .launch {
+                        updateUserSettings { it.copy(dailyShowUncompleted = true) }
+                        invalidateOptionsMenu()
+                    }.let { true }
+            }
 
-        R.id.menuitem_show_only_completed_sudokus -> lifecycleScope.launch {
-            updateUserSettings { it.copy(dailyShowUncompleted = false) }
-            invalidateOptionsMenu()
-        }.let { true }
+            R.id.menuitem_show_only_completed_sudokus -> {
+                lifecycleScope
+                    .launch {
+                        updateUserSettings { it.copy(dailyShowUncompleted = false) }
+                        invalidateOptionsMenu()
+                    }.let { true }
+            }
 
-        else -> super.onOptionsItemSelected(item)
+            else -> {
+                super.onOptionsItemSelected(item)
+            }
+        }
+
+    private fun initRecycler() {
+        binding.dailySudokuRecycler.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
+            itemAnimator = null
+            addItemDecoration(
+                SemItemDecoration(
+                    context,
+                    dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
+                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE },
+                ).apply { setDividerInsetStart(64.dpToPx(resources)) },
+            )
+            enableCoreSeslFeatures()
+        }
+    }
+
+    private fun SudokuListAdapter.setupOnClickListeners() {
+        onClickItem = { _, sudokuListItem, viewHolder ->
+            if (sudokuListItem is SudokuItem) {
+                viewHolder.itemView.transformToActivity(
+                    Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
+                )
+            }
+        }
     }
 }

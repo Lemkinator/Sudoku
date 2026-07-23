@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.utils
 
 import android.content.Context
@@ -12,9 +28,26 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
 
     override fun getItemCount(): Int = sudoku.itemCount
 
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder = ViewHolder(FieldView(context))
+
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        index: Int,
+    ) {
+        fieldViews[index] = holder.itemView as FieldView
+        (holder.itemView as FieldView).init(sudoku, index, this)
+    }
+
     fun updateFieldView(position: Int) = fieldViews[position]?.update()
 
-    fun selectFieldView(position: Int?, highlightNeighbors: Boolean, highlightNumber: Boolean) {
+    fun selectFieldView(
+        position: Int?,
+        highlightNeighbors: Boolean,
+        highlightNumber: Boolean,
+    ) {
         if (position != selectedField && highlightNeighbors) {
             sudoku.regionalHighlightingUsed = true
             selectedField = position
@@ -31,7 +64,9 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         if (position != null) {
             fieldViews[position]?.isSelected = true
             if (highlightNumber) highlightNumber(fieldViews[position]?.field?.value)
-        } else if (highlightNumber) highlightNumber(null)
+        } else if (highlightNumber) {
+            highlightNumber(null)
+        }
         fieldViews.forEach { it?.setBackground() }
     }
 
@@ -42,20 +77,12 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
                 it?.setBackground()
             }
         } else {
-
             sudoku.numberHighlightingUsed = true
             fieldViews.forEach {
                 it?.isHighlightedNumber = it.field.value == number
                 it?.setBackground()
             }
         }
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(FieldView(context))
-
-    override fun onBindViewHolder(holder: ViewHolder, index: Int) {
-        fieldViews[index] = holder.itemView as FieldView
-        (holder.itemView as FieldView).init(sudoku, index, this)
     }
 
     class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView)

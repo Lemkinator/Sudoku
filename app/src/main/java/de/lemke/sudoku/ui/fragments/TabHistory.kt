@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
@@ -39,10 +55,10 @@ import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.BottomTabLayout
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -55,7 +71,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         SudokuListAdapter(
             requireContext(),
             onAllSelectorStateChanged = { allSelectorStateFlow.value = it },
-            onBlockActionMode = ::launchActionMode
+            onBlockActionMode = ::launchActionMode,
         )
     }
 
@@ -68,11 +84,17 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     @Inject
     lateinit var observeUserSettings: ObserveUserSettingsUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        FragmentTabHistoryBinding.inflate(inflater, container, false).also { binding = it }.root
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = FragmentTabHistoryBinding.inflate(inflater, container, false).also { binding = it }.root
 
     @SuppressLint("RestrictedApi")
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         drawerLayout = activity.findViewById(R.id.drawerLayout)
@@ -103,7 +125,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         if (!this::binding.isInitialized || !this::drawerLayout.isInitialized) return
         outState.saveSearchAndActionMode(
             isActionMode = drawerLayout.isActionMode,
-            selectedIds = sudokuListAdapter.getSelectedIds()
+            selectedIds = sudokuListAdapter.getSelectedIds(),
         )
     }
 
@@ -116,8 +138,9 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 SemItemDecoration(
                     context,
                     dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
-                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE }
-                ).apply { setDividerInsetStart(64.dpToPx(resources)) })
+                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE },
+                ).apply { setDividerInsetStart(64.dpToPx(resources)) },
+            )
             enableCoreSeslFeatures()
             sudokuListAdapter.configureWith(this)
         }
@@ -131,11 +154,12 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
-            if (isActionMode) toggleItem(sudokuListItem.stableId, position)
-            else {
+            if (isActionMode) {
+                toggleItem(sudokuListItem.stableId, position)
+            } else {
                 if (sudokuListItem is SudokuItem) {
                     viewHolder.itemView.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
                     )
                 }
             }
@@ -164,19 +188,24 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                         dialog.show()
                         lifecycleScope.launch {
                             deleteSudoku(
-                                sudokuHistory.filterIsInstance<SudokuItem>()
-                                    .filter { it.stableId in sudokuListAdapter.getSelectedIds() }.map { it.sudoku })
+                                sudokuHistory
+                                    .filterIsInstance<SudokuItem>()
+                                    .filter { it.stableId in sudokuListAdapter.getSelectedIds() }
+                                    .map { it.sudoku },
+                            )
                             drawerLayout.endActionMode()
                             dialog.dismiss()
                         }
                         true
                     }
 
-                    else -> false
+                    else -> {
+                        false
+                    }
                 }
             },
             onSelectAll = { isChecked: Boolean -> sudokuListAdapter.onToggleSelectAll(isChecked) },
-            allSelectorStateFlow = allSelectorStateFlow
+            allSelectorStateFlow = allSelectorStateFlow,
         )
     }
 }

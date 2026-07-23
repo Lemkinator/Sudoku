@@ -1,37 +1,54 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.UserSettingsRepository
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_ALL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EASY
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EXPERT
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_HARD
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_MEDIUM
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_VERY_EASY
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_16X16
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_9X9
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_ALL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_ALL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_DAILY
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_LEVEL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_NORMAL
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EASY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_HARD
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_MEDIUM
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_VERY_EASY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_16X16
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_4X4
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_9X9
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
-import javax.inject.Inject
 
 class ObserveSudokusAndStatisticsFilterFlagsUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     private val userSettingsRepository: UserSettingsRepository,
 ) {
+    @Suppress("CyclomaticComplexMethod")
     operator fun invoke(): Flow<List<Sudoku>> =
         combine(userSettingsRepository.observeStatisticsFilterFlags(), sudokusRepository.observeAllSudokus()) { flags, sudokus ->
             val typeAll = flags and TYPE_ALL != 0
@@ -50,10 +67,12 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCase @Inject constructor(
             val size16x16 = flags and SIZE_16X16 != 0
             sudokus.filter {
                 (typeAll || (typeNormal && it.isNormalSudoku) || (typeDaily && it.isDailySudoku) || (typeLevel && it.isSudokuLevel)) &&
-                        (sizeAll || (size4x4 && it.size == 4) || (size9x9 && it.size == 9) || (size16x16 && it.size == 16)) &&
-                        (difficultyAll || (difficultyVeryEasy && it.difficulty == VERY_EASY) || (difficultyEasy && it.difficulty == EASY) ||
-                                (difficultyMedium && it.difficulty == MEDIUM) || (difficultyHard && it.difficulty == HARD) ||
-                                (difficultyExpert && it.difficulty == EXPERT))
+                    (sizeAll || (size4x4 && it.size == 4) || (size9x9 && it.size == 9) || (size16x16 && it.size == 16)) &&
+                    (
+                        difficultyAll || (difficultyVeryEasy && it.difficulty == VERY_EASY) || (difficultyEasy && it.difficulty == EASY) ||
+                            (difficultyMedium && it.difficulty == MEDIUM) || (difficultyHard && it.difficulty == HARD) ||
+                            (difficultyExpert && it.difficulty == EXPERT)
+                    )
             }
         }.flowOn(Dispatchers.Default)
 }

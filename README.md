@@ -37,6 +37,19 @@ More Information: <a target="_blank" href='https://www.leonard-lemke.com/apps/su
 
 <br>
 
+## Development
+
+One-time per clone:
+
+```bash
+git config core.autocrlf input    # Windows only
+git config core.hooksPath .githooks
+```
+
+The pre-commit hook runs Spotless + Detekt before allowing a commit.
+
+<br>
+
 <picture>
     <!--suppress HtmlUnknownTarget -->
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Lemkinator/Sudoku&type=Date&theme=dark" />

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.domain.model
 
 class Field(
@@ -13,15 +29,17 @@ class Field(
     val correct: Boolean
         get() = value != null && value == solution
 
-    fun getInitialField() = Field(
-        position = position,
-        solution = solution,
-        value = if (given) value else null,
-        notes = mutableListOf(),
-        given = given,
-        hint = false,
-    )
+    fun getInitialField() =
+        Field(
+            position = position,
+            solution = solution,
+            value = if (given) value else null,
+            notes = mutableListOf(),
+            given = given,
+            hint = false,
+        )
 
+    @Suppress("ReturnCount")
     fun toggleNote(note: Int?): Boolean {
         val noteChar = note.toSudokuChar() ?: return false
         if (!notes.remove(noteChar)) {
@@ -46,14 +64,15 @@ class Field(
         notes: MutableList<Char> = this.notes.toMutableList(),
         given: Boolean = this.given,
         hint: Boolean = this.hint,
-    ): Field = Field(
-        position = position,
-        solution = solution,
-        value = value,
-        given = given,
-        hint = hint,
-        notes = notes
-    )
+    ): Field =
+        Field(
+            position = position,
+            solution = solution,
+            value = value,
+            given = given,
+            hint = hint,
+            notes = notes,
+        )
 
     fun reset() {
         if (!given) value = null

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.utils
 
 import android.annotation.SuppressLint
@@ -31,15 +47,15 @@ class SudokuListAdapter(
     onAllSelectorStateChanged: ((AllSelectorState) -> Unit) = {},
     onBlockActionMode: (() -> Unit)? = null,
 ) : IndexedSelectableListAdapter<SudokuListItem, SudokuListAdapter.ViewHolder, Long>(
-    indexLabelExtractor = { it.label },
-    onAllSelectorStateChanged = onAllSelectorStateChanged,
-    onBlockActionMode = onBlockActionMode,
-    selectableIdsProvider = selectableIdsProvider,
-    isSelectable = isSelectable,
-    selectionChangePayload = Payload.SELECTION_MODE,
-    useAlphabeticIndex = false,
-    diffCallback = diffCallback
-) {
+        indexLabelExtractor = { it.label },
+        onAllSelectorStateChanged = onAllSelectorStateChanged,
+        onBlockActionMode = onBlockActionMode,
+        selectableIdsProvider = selectableIdsProvider,
+        isSelectable = isSelectable,
+        selectionChangePayload = Payload.SELECTION_MODE,
+        useAlphabeticIndex = false,
+        diffCallback = diffCallback,
+    ) {
     init {
         setHasStableIds(true)
     }
@@ -52,58 +68,115 @@ class SudokuListAdapter(
 
     override fun getItemCount(): Int = currentList.size
 
-    override fun getItemViewType(position: Int): Int = when (currentList[position]) {
-        is SudokuItem -> SudokuItem.VIEW_TYPE
-        is SeparatorItem -> SeparatorItem.VIEW_TYPE
-    }
+    override fun getItemViewType(position: Int): Int =
+        when (currentList[position]) {
+            is SudokuItem -> SudokuItem.VIEW_TYPE
+            is SeparatorItem -> SeparatorItem.VIEW_TYPE
+        }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = when (viewType) {
-        SudokuItem.VIEW_TYPE -> {
-            ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.sudoku_list_item, parent, false), false).apply {
-                itemView.setOnClickListener {
-                    bindingAdapterPosition.let {
-                        onClickItem?.invoke(it, currentList[it], this@apply)
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder =
+        when (viewType) {
+            SudokuItem.VIEW_TYPE -> {
+                ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.sudoku_list_item, parent, false), false).apply {
+                    itemView.setOnClickListener {
+                        bindingAdapterPosition.let {
+                            onClickItem?.invoke(it, currentList[it], this@apply)
+                        }
+                    }
+
+                    if (mode == Mode.NORMAL) {
+                        itemView.setOnLongClickListener {
+                            onLongClickItem?.invoke()
+                            true
+                        }
                     }
                 }
+            }
 
-                if (mode == Mode.NORMAL) {
-                    itemView.setOnLongClickListener { onLongClickItem?.invoke(); true }
+            SeparatorItem.VIEW_TYPE -> {
+                ViewHolder(Separator(parent.context), true).apply {
+                    itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
                 }
             }
-        }
 
-        SeparatorItem.VIEW_TYPE -> {
-            ViewHolder(Separator(parent.context), true).apply {
-                itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
+            else -> {
+                throw IllegalArgumentException("Invalid view type")
             }
         }
 
-        else -> throw IllegalArgumentException("Invalid view type")
-    }
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {
-        if (payloads.isEmpty()) onBindViewHolder(holder, position)
-        else {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>,
+    ) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
             for (payload in payloads.toSet()) {
                 when (payload) {
-                    Payload.SELECTION_MODE -> holder.bindActionModeAnimate(getItemId(position))
-                    Payload.HIGHLIGHT -> when (val item = currentList[position]) {
-                        is SudokuItem -> holder.bindSudoku(item.sudoku)
-                        is SeparatorItem -> Unit
+                    Payload.SELECTION_MODE -> {
+                        holder.bindActionModeAnimate(getItemId(position))
+                    }
+
+                    Payload.HIGHLIGHT -> {
+                        when (val item = currentList[position]) {
+                            is SudokuItem -> holder.bindSudoku(item.sudoku)
+                            is SeparatorItem -> Unit
+                        }
                     }
                 }
             }
         }
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        position: Int,
+    ) {
         when (val item = currentList[position]) {
-            is SeparatorItem -> holder.textView.text = item.indexText
+            is SeparatorItem -> {
+                holder.textView.text = item.indexText
+            }
+
             is SudokuItem -> {
                 holder.bindSudoku(item.sudoku)
                 holder.bindActionMode(getItemId(position))
             }
         }
+    }
+
+    companion object {
+        private val isSelectable: ((rv: RecyclerView, item: AdapterItem) -> Boolean) =
+            { rv, item -> (rv.adapter as SudokuListAdapter).getItem(item.position) !is SeparatorItem }
+
+        private val selectableIdsProvider: (currentList: List<SudokuListItem>) -> List<Long> =
+            { listItems -> listItems.filter { it !is SeparatorItem }.map { it.stableId } }
+
+        private val diffCallback =
+            object : DiffUtil.ItemCallback<SudokuListItem>() {
+                override fun areItemsTheSame(
+                    oldItem: SudokuListItem,
+                    newItem: SudokuListItem,
+                ): Boolean =
+                    when (oldItem) {
+                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.id == newItem.sudoku.id
+                        is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
+                        else -> false
+                    }
+
+                override fun areContentsTheSame(
+                    oldItem: SudokuListItem,
+                    newItem: SudokuListItem,
+                ): Boolean =
+                    when (oldItem) {
+                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.contentEquals(newItem.sudoku)
+                        is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
+                        else -> false
+                    }
+            }
     }
 
     inner class ViewHolder(itemView: View, val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
@@ -125,37 +198,44 @@ class SudokuListAdapter(
 
         @SuppressLint("SetTextI18n", "StringFormatInvalid")
         fun bindSudoku(sudoku: Sudoku) {
-            textView.text = when (mode) {
-                Mode.DAILY -> sudoku.created.toLocalDate().formatFull
-                Mode.LEVEL -> "${context.getString(R.string.level)} ${sudoku.modeLevel}"
-                else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
-            }
+            textView.text =
+                when (mode) {
+                    Mode.DAILY -> sudoku.created.toLocalDate().formatFull
+                    Mode.LEVEL -> "${context.getString(R.string.level)} ${sudoku.modeLevel}"
+                    else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
+                }
             imageView?.setImageDrawable(
                 ContextCompat.getDrawable(
                     context,
-                    if (sudoku.completed) dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
-                    else dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline
-                )
-            )
-            if (sudoku.errorLimitReached(errorLimit)) imageView?.setImageDrawable(
-                ContextCompat.getDrawable(context, dev.oneuiproject.oneui.R.drawable.ic_oui_error)
-            )
-            textViewSmall?.text = buildString {
-                append(context.getString(R.string.current_time, sudoku.timeString))
-                if (!sudoku.completed) {
-                    append(" | ").append(context.getString(R.string.current_progress, sudoku.progress))
-                }
-                append(" | ").append(
-                    if (errorLimit == 0) {
-                        context.getString(R.string.current_errors, sudoku.errorsMade)
+                    if (sudoku.completed) {
+                        dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
                     } else {
-                        context.getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
-                    }
+                        dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline
+                    },
+                ),
+            )
+            if (sudoku.errorLimitReached(errorLimit)) {
+                imageView?.setImageDrawable(
+                    ContextCompat.getDrawable(context, dev.oneuiproject.oneui.R.drawable.ic_oui_error),
                 )
-                if (mode == Mode.NORMAL) {
-                    append(" | ").append(context.getString(R.string.current_hints, sudoku.hintsUsed))
-                }
             }
+            textViewSmall?.text =
+                buildString {
+                    append(context.getString(R.string.current_time, sudoku.timeString))
+                    if (!sudoku.completed) {
+                        append(" | ").append(context.getString(R.string.current_progress, sudoku.progress))
+                    }
+                    append(" | ").append(
+                        if (errorLimit == 0) {
+                            context.getString(R.string.current_errors, sudoku.errorsMade)
+                        } else {
+                            context.getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+                        },
+                    )
+                    if (mode == Mode.NORMAL) {
+                        append(" | ").append(context.getString(R.string.current_hints, sudoku.hintsUsed))
+                    }
+                }
         }
 
         fun bindActionMode(itemId: Long) {
@@ -175,34 +255,12 @@ class SudokuListAdapter(
 
     enum class Payload {
         SELECTION_MODE,
-        HIGHLIGHT
+        HIGHLIGHT,
     }
 
     enum class Mode {
         NORMAL,
         LEVEL,
-        DAILY
-    }
-
-    companion object {
-        private val isSelectable: ((rv: RecyclerView, item: AdapterItem) -> Boolean) =
-            { rv, item -> (rv.adapter as SudokuListAdapter).getItem(item.position) !is SeparatorItem }
-
-        private val selectableIdsProvider: (currentList: List<SudokuListItem>) -> List<Long> =
-            { listItems -> listItems.filter { it !is SeparatorItem }.map { it.stableId } }
-
-        private val diffCallback = object : DiffUtil.ItemCallback<SudokuListItem>() {
-            override fun areItemsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
-                is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.id == newItem.sudoku.id
-                is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
-                else -> false
-            }
-
-            override fun areContentsTheSame(oldItem: SudokuListItem, newItem: SudokuListItem): Boolean = when (oldItem) {
-                is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.contentEquals(newItem.sudoku)
-                is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
-                else -> false
-            }
-        }
+        DAILY,
     }
 }

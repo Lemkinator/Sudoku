@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui
 
 import android.R.anim.fade_in
@@ -51,33 +67,33 @@ import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_ALL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EASY
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_EXPERT
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_HARD
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_MEDIUM
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.DIFFICULTY_VERY_EASY
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_16X16
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_9X9
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.SIZE_ALL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_ALL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_DAILY
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_LEVEL
-import de.lemke.sudoku.domain.GetAllSudokusUseCase.Companion.TYPE_NORMAL
 import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EASY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_HARD
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_MEDIUM
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_VERY_EASY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_16X16
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_4X4
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_9X9
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import dev.oneuiproject.oneui.design.R as designR
 
 @AndroidEntryPoint
@@ -115,6 +131,19 @@ class MainActivity : AppCompatActivity() {
         openMain()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.menu_filter, menu).let { true }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.setGroupVisible(R.id.menu_group_filter, selectedPosition == 2)
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId) {
+            R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
+            else -> super.onOptionsItemSelected(item)
+        }
+
     private fun openMain() {
         setupCommonUtilsActivities()
         initDrawer()
@@ -146,19 +175,6 @@ class MainActivity : AppCompatActivity() {
             dialog.dismiss()
         }
     }
-
-    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.menu_filter, menu).let { true }
-
-    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        menu?.setGroupVisible(R.id.menu_group_filter, selectedPosition == 2)
-        return super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        when (item.itemId) {
-            R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
-            else -> super.onOptionsItemSelected(item)
-        }
 
     private fun setupCommonUtilsActivities() {
         val bib = getString(R.string.sudoku_lib)
@@ -345,6 +361,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("CyclomaticComplexMethod", "ComplexCondition")
     private fun updateFilterSettings(dialogBinding: DialogStatisticsFilterBinding) {
         var flags = 0
         if (dialogBinding.filterNormal.isChecked) flags = flags or TYPE_NORMAL
