@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.utils
 
 import android.animation.LayoutTransition
@@ -16,7 +32,6 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.toSudokuString
-
 
 class FieldView(context: Context) : LinearLayout(context) {
     var fieldViewValue: TextView? = null
@@ -43,8 +58,12 @@ class FieldView(context: Context) : LinearLayout(context) {
         }
     }
 
-    fun init(sudoku: Sudoku, index: Int, adapter: SudokuViewAdapter) {
-        //init vars
+    fun init(
+        sudoku: Sudoku,
+        index: Int,
+        adapter: SudokuViewAdapter,
+    ) {
+        // init vars
         this.adapter = adapter
         this.sudoku = sudoku
         position = Position.create(index, sudoku.size)
@@ -52,18 +71,21 @@ class FieldView(context: Context) : LinearLayout(context) {
         if (fieldViewContainer == null) return
 
         when {
-            position.row % sudoku.blockSize == sudoku.blockSize - 1 && position.row != sudoku.size - 1 -> foreground =
-                AppCompatResources.getDrawable(
-                    context,
-                    if (position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1) {
-                        R.drawable.sudoku_view_item_fg_border_bottom_right
-                    } else {
-                        R.drawable.sudoku_view_item_fg_border_bottom
-                    }
-                )
+            position.row % sudoku.blockSize == sudoku.blockSize - 1 && position.row != sudoku.size - 1 -> {
+                foreground =
+                    AppCompatResources.getDrawable(
+                        context,
+                        if (position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1) {
+                            R.drawable.sudoku_view_item_fg_border_bottom_right
+                        } else {
+                            R.drawable.sudoku_view_item_fg_border_bottom
+                        },
+                    )
+            }
 
-            position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1 ->
+            position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1 -> {
                 foreground = AppCompatResources.getDrawable(context, R.drawable.sudoku_view_item_fg_border_right)
+            }
         }
         val rm = position.row % (sudoku.blockSize * 2)
         val cm = position.column % (sudoku.blockSize * 2)
@@ -76,10 +98,14 @@ class FieldView(context: Context) : LinearLayout(context) {
         fieldViewValue?.isVisible = field.value != null
         fieldViewValue?.setTextColor(
             context.getColor(
-                if (field.hint) R.color.field_hint_text_color
-                else if (field.given) R.color.field_given_text_color
-                else R.color.field_userinput_text_color
-            )
+                if (field.hint) {
+                    R.color.field_hint_text_color
+                } else if (field.given) {
+                    R.color.field_given_text_color
+                } else {
+                    R.color.field_userinput_text_color
+                },
+            ),
         )
         updateNotes()
         setBackground()
@@ -91,7 +117,9 @@ class FieldView(context: Context) : LinearLayout(context) {
                     isHighlightedNumber = false
                     setBackground()
                     return@setOnLongClickListener true
-                } else return@setOnLongClickListener false
+                } else {
+                    return@setOnLongClickListener false
+                }
             }
         }
     }
@@ -99,21 +127,33 @@ class FieldView(context: Context) : LinearLayout(context) {
     private fun updateNotes() {
         fieldViewNotes?.isVisible = field.notes.isNotEmpty()
         fieldViewNotes?.text = field.notes.joinToString("")
-        if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1))
+        if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1)) {
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+        }
     }
 
     fun setBackground() = setBackgroundColor(getCurrentBackgroundColor())
 
     @SuppressLint("PrivateResource")
-    private fun getCurrentBackgroundColor(): Int = if (field.error) context.getColor(androidx.appcompat.R.color.sesl_error_color)
-    else if (isSelected) context.getColor(R.color.control_color_selected)
-    else if (isHighlightedNumber) context.getColor(R.color.control_color_highlighted_number)
-    else if (isHighlighted) context.getColor(R.color.control_color_highlighted)
-    else if (isColored) context.getColor(R.color.control_color_normal)
-    else Color.TRANSPARENT
+    private fun getCurrentBackgroundColor(): Int =
+        if (field.error) {
+            context.getColor(androidx.appcompat.R.color.sesl_error_color)
+        } else if (isSelected) {
+            context.getColor(R.color.control_color_selected)
+        } else if (isHighlightedNumber) {
+            context.getColor(R.color.control_color_highlighted_number)
+        } else if (isHighlighted) {
+            context.getColor(R.color.control_color_highlighted)
+        } else if (isColored) {
+            context.getColor(R.color.control_color_normal)
+        } else {
+            Color.TRANSPARENT
+        }
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+    override fun onMeasure(
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int,
+    ) {
         super.onMeasure(widthMeasureSpec, widthMeasureSpec)
     }
 }

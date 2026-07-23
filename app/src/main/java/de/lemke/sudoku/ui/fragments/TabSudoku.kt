@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
@@ -31,8 +47,8 @@ import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -56,11 +72,17 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     @Inject
     lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        FragmentTabSudokuBinding.inflate(inflater, container, false).also { binding = it }.root
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = FragmentTabSudokuBinding.inflate(inflater, container, false).also { binding = it }.root
 
     @SuppressLint("RestrictedApi")
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
         binding.sizeSeekbar.setSeamless(true)
@@ -72,7 +94,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 val sudoku = generateSudoku(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
                 saveSudoku(sudoku)
                 binding.newGameButton.transformToActivity(
-                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
                 )
                 binding.newSudokuProgressBar.visibility = INVISIBLE
             }
@@ -80,39 +102,55 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.dailyButton.onSingleClick {
             binding.dailyButton.transformToActivity(
                 Intent(requireActivity(), DailySudokuActivity::class.java),
-                "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
+                "DailySudokuActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
         binding.dailyAvailableButton.onSingleClick {
             binding.dailyAvailableButton.transformToActivity(
                 Intent(requireActivity(), DailySudokuActivity::class.java),
-                "DailySudokuActivityTransition" // transitionNames should be unique within the view hierarchy
+                "DailySudokuActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
         binding.levelsButton.onSingleClick {
             binding.levelsButton.transformToActivity(
                 Intent(requireActivity(), SudokuLevelActivity::class.java),
-                "SudokuLevelActivityTransition" // transitionNames should be unique within the view hierarchy
+                "SudokuLevelActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
         lifecycleScope.launch {
             val userSettings = getUserSettings()
             binding.difficultySeekbar.progress = userSettings.difficultySliderValue
-            binding.difficultySeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
-                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
-                override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                    lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
-                }
-            })
+            binding.difficultySeekbar.setOnSeekBarChangeListener(
+                object : SeslSeekBar.OnSeekBarChangeListener {
+                    override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+
+                    override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+
+                    override fun onProgressChanged(
+                        seekBar: SeslSeekBar?,
+                        progress: Int,
+                        fromUser: Boolean,
+                    ) {
+                        lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
+                    }
+                },
+            )
             binding.sizeSeekbar.progress = userSettings.sizeSliderValue
-            binding.sizeSeekbar.setOnSeekBarChangeListener(object : SeslSeekBar.OnSeekBarChangeListener {
-                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
-                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
-                override fun onProgressChanged(seekBar: SeslSeekBar?, progress: Int, fromUser: Boolean) {
-                    lifecycleScope.launch { updateUserSettings { it.copy(sizeSliderValue = progress) } }
-                }
-            })
+            binding.sizeSeekbar.setOnSeekBarChangeListener(
+                object : SeslSeekBar.OnSeekBarChangeListener {
+                    override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+
+                    override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+
+                    override fun onProgressChanged(
+                        seekBar: SeslSeekBar?,
+                        progress: Int,
+                        fromUser: Boolean,
+                    ) {
+                        lifecycleScope.launch { updateUserSettings { it.copy(sizeSliderValue = progress) } }
+                    }
+                },
+            )
         }
     }
 
@@ -122,17 +160,20 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             val sudoku = getRecentSudoku()
             if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(getUserSettings().errorLimit)) {
                 binding.continueGameButton.isVisible = true
-                binding.continueGameButton.text = getString(
-                    R.string.continue_game,
-                    sudoku.sizeString,
-                    sudoku.difficulty.getLocalString(resources)
-                )
+                binding.continueGameButton.text =
+                    getString(
+                        R.string.continue_game,
+                        sudoku.sizeString,
+                        sudoku.difficulty.getLocalString(resources),
+                    )
                 binding.continueGameButton.onSingleClick {
                     binding.continueGameButton.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
                     )
                 }
-            } else binding.continueGameButton.isVisible = false
+            } else {
+                binding.continueGameButton.isVisible = false
+            }
             isDailySudokuCompleted().let {
                 binding.dailyAvailableButton.isVisible = !it
                 binding.dailyButton.isVisible = it
@@ -141,10 +182,11 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     }
 
     private val SeslSeekBar.sudokuSize: Int
-        get() = when (this.progress) {
-            0 -> 4
-            1 -> 9
-            2 -> 16
-            else -> 9
-        }
+        get() =
+            when (this.progress) {
+                0 -> 4
+                1 -> 9
+                2 -> 16
+                else -> 9
+            }
 }
