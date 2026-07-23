@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.domain.model
 
 import android.annotation.SuppressLint
@@ -12,7 +28,9 @@ import java.time.format.DateTimeFormatter.ofLocalizedDateTime
 import java.time.format.FormatStyle
 import java.time.format.FormatStyle.FULL
 import java.time.format.FormatStyle.MEDIUM
-import java.util.*
+import java.util.Locale
+import java.util.Timer
+import java.util.UUID
 import kotlin.concurrent.timer
 import kotlin.math.sqrt
 
@@ -70,27 +88,28 @@ class Sudoku(
             timer: Timer? = null,
             gameListener: GameListener? = null,
             fields: MutableList<Field>,
-        ): Sudoku = Sudoku(
-            id = sudokuId,
-            size = size,
-            difficulty = difficulty,
-            modeLevel = modeLevel,
-            regionalHighlightingUsed = regionalHighlightingUsed,
-            numberHighlightingUsed = numberHighlightingUsed,
-            eraserUsed = eraserUsed,
-            isChecklist = isChecklist,
-            isReverseChecklist = isReverseChecklist,
-            checklistNumber = checklistNumber,
-            hintsUsed = hintsUsed,
-            notesMade = notesMade,
-            errorsMade = errorsMade,
-            created = created,
-            updated = updated,
-            seconds = seconds,
-            timer = timer,
-            gameListener = gameListener,
-            fields = fields,
-        )
+        ): Sudoku =
+            Sudoku(
+                id = sudokuId,
+                size = size,
+                difficulty = difficulty,
+                modeLevel = modeLevel,
+                regionalHighlightingUsed = regionalHighlightingUsed,
+                numberHighlightingUsed = numberHighlightingUsed,
+                eraserUsed = eraserUsed,
+                isChecklist = isChecklist,
+                isReverseChecklist = isReverseChecklist,
+                checklistNumber = checklistNumber,
+                hintsUsed = hintsUsed,
+                notesMade = notesMade,
+                errorsMade = errorsMade,
+                created = created,
+                updated = updated,
+                seconds = seconds,
+                timer = timer,
+                gameListener = gameListener,
+                fields = fields,
+            )
     }
 
     override fun equals(other: Any?): Boolean {
@@ -102,7 +121,8 @@ class Sudoku(
 
     override fun hashCode(): Int = id.hashCode()
 
-    fun contentEquals(other: Sudoku): Boolean = id == other.id &&
+    fun contentEquals(other: Sudoku): Boolean =
+        id == other.id &&
             regionalHighlightingUsed == other.regionalHighlightingUsed &&
             numberHighlightingUsed == other.numberHighlightingUsed &&
             eraserUsed == other.eraserUsed &&
@@ -137,35 +157,37 @@ class Sudoku(
         timer: Timer? = this.timer,
         gameListener: GameListener? = this.gameListener,
         fields: MutableList<Field> = MutableList(itemCount) { this.fields[it].copy() },
-    ): Sudoku = Sudoku(
-        id = sudokuId,
-        size = size,
-        difficulty = difficulty,
-        modeLevel = modeLevel,
-        regionalHighlightingUsed = regionalHighlightingUsed,
-        numberHighlightingUsed = numberHighlightingUsed,
-        eraserUsed = eraserUsed,
-        isChecklist = isChecklist,
-        isReverseChecklist = isReverseChecklist,
-        checklistNumber = checklistNumber,
-        hintsUsed = hintsUsed,
-        notesMade = notesMade,
-        errorsMade = errorsMade,
-        created = created,
-        updated = updated,
-        seconds = seconds,
-        timer = timer,
-        gameListener = gameListener,
-        fields = fields,
-    )
+    ): Sudoku =
+        Sudoku(
+            id = sudokuId,
+            size = size,
+            difficulty = difficulty,
+            modeLevel = modeLevel,
+            regionalHighlightingUsed = regionalHighlightingUsed,
+            numberHighlightingUsed = numberHighlightingUsed,
+            eraserUsed = eraserUsed,
+            isChecklist = isChecklist,
+            isReverseChecklist = isReverseChecklist,
+            checklistNumber = checklistNumber,
+            hintsUsed = hintsUsed,
+            notesMade = notesMade,
+            errorsMade = errorsMade,
+            created = created,
+            updated = updated,
+            seconds = seconds,
+            timer = timer,
+            gameListener = gameListener,
+            fields = fields,
+        )
 
     private val hintLimit: Int
-        get() = when (size) {
-            4 -> 1
-            9 -> 3
-            16 -> 8
-            else -> 3
-        }
+        get() =
+            when (size) {
+                4 -> 1
+                9 -> 3
+                16 -> 8
+                else -> 3
+            }
 
     val availableHints: Int
         get() = hintLimit - hintsUsed
@@ -195,32 +217,37 @@ class Sudoku(
         }
 
     val timeString: String
-        get() = if (seconds >= 3600) String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-        else String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+        get() =
+            if (seconds >= 3600) {
+                String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+            } else {
+                String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+            }
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
-    fun getInitialSudoku() = Sudoku(
-        id = SudokuId.generate(),
-        size = size,
-        difficulty = difficulty,
-        modeLevel = MODE_NORMAL,
-        regionalHighlightingUsed = false,
-        numberHighlightingUsed = false,
-        eraserUsed = false,
-        isChecklist = false,
-        isReverseChecklist = false,
-        checklistNumber = 0,
-        hintsUsed = 0,
-        notesMade = 0,
-        errorsMade = 0,
-        created = created,
-        updated = created,
-        seconds = 0,
-        timer = null,
-        gameListener = null,
-        fields = MutableList(itemCount) { fields[it].getInitialField() },
-    )
+    fun getInitialSudoku() =
+        Sudoku(
+            id = SudokuId.generate(),
+            size = size,
+            difficulty = difficulty,
+            modeLevel = MODE_NORMAL,
+            regionalHighlightingUsed = false,
+            numberHighlightingUsed = false,
+            eraserUsed = false,
+            isChecklist = false,
+            isReverseChecklist = false,
+            checklistNumber = 0,
+            hintsUsed = 0,
+            notesMade = 0,
+            errorsMade = 0,
+            created = created,
+            updated = created,
+            seconds = 0,
+            timer = null,
+            gameListener = null,
+            fields = MutableList(itemCount) { fields[it].getInitialField() },
+        )
 
     fun reset() {
         fields.forEach { it.reset() }
@@ -242,11 +269,12 @@ class Sudoku(
     fun startTimer(delay: Long = 1000L) {
         if (completed) return
         timer?.cancel()
-        timer = timer(initialDelay = delay, period = 1000L) {
-            seconds++
-            updated = LocalDateTime.now()
-            gameListener?.onTimeChanged()
-        }
+        timer =
+            timer(initialDelay = delay, period = 1000L) {
+                seconds++
+                updated = LocalDateTime.now()
+                gameListener?.onTimeChanged()
+            }
     }
 
     fun stopTimer() {
@@ -254,17 +282,31 @@ class Sudoku(
         timer = null
     }
 
-    fun move(index: Int, value: Int?, isNote: Boolean = false) = move(Position.create(index, size), value, isNote)
+    fun move(
+        index: Int,
+        value: Int?,
+        isNote: Boolean = false,
+    ) = move(Position.create(index, size), value, isNote)
 
-    fun move(position: Position, value: Int?, isNote: Boolean = false): Boolean {
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
+    fun move(
+        position: Position,
+        value: Int?,
+        isNote: Boolean = false,
+    ): Boolean {
         val field = get(position)
         return when {
-            timer == null || field.given || field.hint -> false
+            timer == null || field.given || field.hint -> {
+                false
+            }
+
             isNote -> {
                 if (field.value != null) return false
                 if (value != null) {
                     if (field.toggleNote(value)) notesMade++
-                } else field.notes.clear()
+                } else {
+                    field.notes.clear()
+                }
                 gameListener?.onFieldChanged(position)
                 true
             }
@@ -278,7 +320,10 @@ class Sudoku(
                 true
             }
 
-            field.correct || field.value == value -> false
+            field.correct || field.value == value -> {
+                false
+            }
+
             else -> {
                 field.value = value
                 gameListener?.onFieldChanged(position)
@@ -286,7 +331,9 @@ class Sudoku(
                 if (field.error) {
                     errorsMade++
                     gameListener?.onError()
-                } else removeNumberNotesFromNeighbors(position, value)
+                } else {
+                    removeNumberNotesFromNeighbors(position, value)
+                }
                 if (completed) {
                     stopTimer()
                     gameListener?.onCompleted(position)
@@ -298,27 +345,36 @@ class Sudoku(
 
     private fun checkChecklist(value: Int) {
         when {
-            isChecklist -> when {
-                value == checklistNumber -> return
-                value > checklistNumber -> checklistNumber = value
-                else -> isChecklist = false
+            isChecklist -> {
+                when {
+                    value == checklistNumber -> return
+                    value > checklistNumber -> checklistNumber = value
+                    else -> isChecklist = false
+                }
             }
 
-            isReverseChecklist -> when {
-                value == checklistNumber -> return
-                value < checklistNumber -> checklistNumber = value
-                else -> isReverseChecklist = false
+            isReverseChecklist -> {
+                when {
+                    value == checklistNumber -> return
+                    value < checklistNumber -> checklistNumber = value
+                    else -> isReverseChecklist = false
+                }
             }
 
-            checklistNumber == 0 -> when (value) {
-                1 -> isChecklist = true
-                size -> isReverseChecklist = true
+            checklistNumber == 0 -> {
+                when (value) {
+                    1 -> isChecklist = true
+                    size -> isReverseChecklist = true
+                }
             }
         }
         checklistNumber = value
     }
 
-    private fun removeNumberNotesFromNeighbors(position: Position, value: Int?) {
+    private fun removeNumberNotesFromNeighbors(
+        position: Position,
+        value: Int?,
+    ) {
         get(position).notes.clear()
         gameListener?.onFieldChanged(position)
         getNeighbors(position).forEach {
@@ -341,29 +397,51 @@ class Sudoku(
     }
 
     operator fun get(position: Position): Field = fields[position.index]
-    operator fun set(position: Position, field: Field) {
+
+    operator fun set(
+        position: Position,
+        field: Field,
+    ) {
         fields[position.index] = field.copy(position = position)
     }
 
     operator fun get(index: Int): Field = fields[index]
-    operator fun set(index: Int, field: Field) {
+
+    operator fun set(
+        index: Int,
+        field: Field,
+    ) {
         fields[index] = field.copy(position = Position.create(index, size))
     }
 
-    operator fun get(row: Int, column: Int) = fields[Position.create(size = size, row = row, column = column).index]
-    operator fun set(row: Int, column: Int, field: Field) {
+    operator fun get(
+        row: Int,
+        column: Int,
+    ) = fields[Position.create(size = size, row = row, column = column).index]
+
+    operator fun set(
+        row: Int,
+        column: Int,
+        field: Field,
+    ) {
         fields[Position.create(size = size, row = row, column = column).index] =
             field.copy(position = Position.create(size = size, row = row, column = column))
     }
 
     private fun getRow(row: Int): List<Field> = fields.filter { it.position.row == row }
+
     private fun getColumn(column: Int): List<Field> = fields.filter { it.position.column == column }
+
     private fun getBlock(block: Int): List<Field> = fields.filter { it.position.block == block }
+
     private fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
+
     fun getNeighbors(index: Int): List<Field> = getNeighbors(Position.create(index, size))
 
     fun isRowCompleted(row: Int): Boolean = getRow(row).all { it.correct }
+
     fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.correct }
+
     fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
 
     @Suppress("unused")
@@ -383,24 +461,25 @@ class Sudoku(
         return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size) }
     }
 
-    fun getLocalStatisticsString(resources: Resources): String = resources.getString(
-        R.string.sudokuStatisticsString,
-        when (modeLevel) {
-            MODE_NORMAL -> resources.getString(R.string.normal_sudoku)
-            MODE_DAILY -> resources.getString(R.string.daily_sudoku)
-            else -> resources.getString(R.string.level) + " $modeLevel"
-        },
-        size,
-        difficulty.getLocalString(resources),
-        timeString,
-        errorsMade,
-        hintsUsed,
-        notesMade,
-        resources.getString(if (regionalHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
-        resources.getString(if (numberHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
-        created.formatFull,
-        updated.formatFull,
-    )
+    fun getLocalStatisticsString(resources: Resources): String =
+        resources.getString(
+            R.string.sudokuStatisticsString,
+            when (modeLevel) {
+                MODE_NORMAL -> resources.getString(R.string.normal_sudoku)
+                MODE_DAILY -> resources.getString(R.string.daily_sudoku)
+                else -> resources.getString(R.string.level) + " $modeLevel"
+            },
+            size,
+            difficulty.getLocalString(resources),
+            timeString,
+            errorsMade,
+            hintsUsed,
+            notesMade,
+            resources.getString(if (regionalHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
+            resources.getString(if (numberHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
+            created.formatFull,
+            updated.formatFull,
+        )
 
     @SuppressLint("StringFormatInvalid")
     fun getLocalStatisticsStringShare(resources: Resources): String =
@@ -409,33 +488,37 @@ class Sudoku(
         } else {
             resources.getString(R.string.sudoku_solving, progress)
         } + getLocalStatisticsString(resources)
-
 }
 
 interface GameListener {
     fun onFieldClicked(position: Position)
+
     fun onFieldChanged(position: Position)
+
     fun onCompleted(position: Position)
+
     fun onError()
+
     fun onTimeChanged()
 }
 
-fun Int?.toSudokuString(): CharSequence? = when (this) {
-    null -> null
-    in 1..9 -> this.toString()
-    in 10..16 -> ('A' + (this - 10)).toString()
-    else -> null
-}
+fun Int?.toSudokuString(): CharSequence? =
+    when (this) {
+        null -> null
+        in 1..9 -> this.toString()
+        in 10..16 -> ('A' + (this - 10)).toString()
+        else -> null
+    }
 
-fun Int?.toSudokuChar(): Char? = when (this) {
-    null -> null
-    in 1..9 -> '0' + this
-    in 10..16 -> 'A' + (this - 10)
-    else -> null
-}
+fun Int?.toSudokuChar(): Char? =
+    when (this) {
+        null -> null
+        in 1..9 -> '0' + this
+        in 10..16 -> 'A' + (this - 10)
+        else -> null
+    }
 
 val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 val LocalDateTime.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
 val LocalDate.formatFull: String get() = format(ofLocalizedDate(FULL))
 val LocalDateTime.formatFull: String get() = format(ofLocalizedDateTime(FULL, MEDIUM).withZone(systemDefault()))
-

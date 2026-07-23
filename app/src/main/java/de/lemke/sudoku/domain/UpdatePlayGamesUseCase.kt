@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.domain
 
 import android.app.Activity
@@ -9,15 +25,18 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Sudoku
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class UpdatePlayGamesUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
 ) {
-
-    suspend operator fun invoke(activity: Activity, sudoku: Sudoku? = null) = withContext(Dispatchers.Default) {
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
+    suspend operator fun invoke(
+        activity: Activity,
+        sudoku: Sudoku? = null,
+    ) = withContext(Dispatchers.Default) {
         val achievements = PlayGames.getAchievementsClient(activity)
         val leaderboards = PlayGames.getLeaderboardsClient(activity)
         val sudokus = getAllSudokus().filter { it.completed }
@@ -25,15 +44,15 @@ class UpdatePlayGamesUseCase @Inject constructor(
         leaderboards.submitScore(activity.getString(R.string.leaderboard_daily_sudokus), sudokus.count { it.isDailySudoku }.toLong())
         leaderboards.submitScore(
             activity.getString(R.string.leaderboard_level_44),
-            sudokus.count { it.size == 4 && it.isSudokuLevel }.toLong()
+            sudokus.count { it.size == 4 && it.isSudokuLevel }.toLong(),
         )
         leaderboards.submitScore(
             activity.getString(R.string.leaderboard_level_99),
-            sudokus.count { it.size == 9 && it.isSudokuLevel }.toLong()
+            sudokus.count { it.size == 9 && it.isSudokuLevel }.toLong(),
         )
         leaderboards.submitScore(
             activity.getString(R.string.leaderboard_level_1616),
-            sudokus.count { it.size == 16 && it.isSudokuLevel }.toLong()
+            sudokus.count { it.size == 16 && it.isSudokuLevel }.toLong(),
         )
         if (sudoku == null) return@withContext
         achievements.unlock(activity.getString(R.string.achievement_first_win))
@@ -75,7 +94,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_44_very_easy), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_44_very_easy),
-                            sudokus.count { it.size == 4 && it.difficulty == VERY_EASY }.toLong()
+                            sudokus.count { it.size == 4 && it.difficulty == VERY_EASY }.toLong(),
                         )
                     }
 
@@ -83,7 +102,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_99_very_easy), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_99_very_easy),
-                            sudokus.count { it.size == 9 && it.difficulty == VERY_EASY }.toLong()
+                            sudokus.count { it.size == 9 && it.difficulty == VERY_EASY }.toLong(),
                         )
                     }
 
@@ -91,7 +110,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_1616_very_easy), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_1616_very_easy),
-                            sudokus.count { it.size == 16 && it.difficulty == VERY_EASY }.toLong()
+                            sudokus.count { it.size == 16 && it.difficulty == VERY_EASY }.toLong(),
                         )
                     }
                 }
@@ -105,7 +124,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_44_easy), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_44_easy),
-                            sudokus.count { it.size == 4 && it.difficulty == EASY }.toLong()
+                            sudokus.count { it.size == 4 && it.difficulty == EASY }.toLong(),
                         )
                     }
 
@@ -113,7 +132,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_99_easy), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_99_easy),
-                            sudokus.count { it.size == 9 && it.difficulty == EASY }.toLong()
+                            sudokus.count { it.size == 9 && it.difficulty == EASY }.toLong(),
                         )
                     }
 
@@ -121,7 +140,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_1616_easy), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_1616_easy),
-                            sudokus.count { it.size == 16 && it.difficulty == EASY }.toLong()
+                            sudokus.count { it.size == 16 && it.difficulty == EASY }.toLong(),
                         )
                     }
                 }
@@ -135,7 +154,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_44_medium), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_44_medium),
-                            sudokus.count { it.size == 4 && it.difficulty == MEDIUM }.toLong()
+                            sudokus.count { it.size == 4 && it.difficulty == MEDIUM }.toLong(),
                         )
                     }
 
@@ -143,7 +162,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_99_medium), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_99_medium),
-                            sudokus.count { it.size == 9 && it.difficulty == MEDIUM }.toLong()
+                            sudokus.count { it.size == 9 && it.difficulty == MEDIUM }.toLong(),
                         )
                     }
 
@@ -151,7 +170,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_1616_medium), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_1616_medium),
-                            sudokus.count { it.size == 16 && it.difficulty == MEDIUM }.toLong()
+                            sudokus.count { it.size == 16 && it.difficulty == MEDIUM }.toLong(),
                         )
                     }
                 }
@@ -165,7 +184,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_44_hard), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_44_hard),
-                            sudokus.count { it.size == 4 && it.difficulty == HARD }.toLong()
+                            sudokus.count { it.size == 4 && it.difficulty == HARD }.toLong(),
                         )
                     }
 
@@ -173,7 +192,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_99_hard), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_99_hard),
-                            sudokus.count { it.size == 9 && it.difficulty == HARD }.toLong()
+                            sudokus.count { it.size == 9 && it.difficulty == HARD }.toLong(),
                         )
                     }
 
@@ -181,7 +200,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_1616_hard), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_1616_hard),
-                            sudokus.count { it.size == 16 && it.difficulty == HARD }.toLong()
+                            sudokus.count { it.size == 16 && it.difficulty == HARD }.toLong(),
                         )
                     }
                 }
@@ -195,7 +214,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_44_expert), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_44_expert),
-                            sudokus.count { it.size == 4 && it.difficulty == EXPERT }.toLong()
+                            sudokus.count { it.size == 4 && it.difficulty == EXPERT }.toLong(),
                         )
                     }
 
@@ -203,7 +222,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_99_expert), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_99_expert),
-                            sudokus.count { it.size == 9 && it.difficulty == EXPERT }.toLong()
+                            sudokus.count { it.size == 9 && it.difficulty == EXPERT }.toLong(),
                         )
                     }
 
@@ -211,7 +230,7 @@ class UpdatePlayGamesUseCase @Inject constructor(
                         leaderboards.submitScore(activity.getString(R.string.leaderboard_time_1616_expert), sudoku.seconds * 1000L)
                         leaderboards.submitScore(
                             activity.getString(R.string.leaderboard_wins_1616_expert),
-                            sudokus.count { it.size == 16 && it.difficulty == EXPERT }.toLong()
+                            sudokus.count { it.size == 16 && it.difficulty == EXPERT }.toLong(),
                         )
                     }
                 }

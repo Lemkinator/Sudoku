@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui
 
 import android.Manifest.permission.POST_NOTIFICATIONS
@@ -58,12 +74,12 @@ import dev.oneuiproject.oneui.ktx.onClick
 import dev.oneuiproject.oneui.ktx.onNewValue
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.widget.RelativeLink
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Calendar.HOUR_OF_DAY
 import java.util.Calendar.MINUTE
 import javax.inject.Inject
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.design.R as designR
 
@@ -72,6 +88,7 @@ private const val TAG = "SettingsActivity"
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareActivityTransformationTo()
         super.onCreate(savedInstanceState)
@@ -104,7 +121,10 @@ class SettingsActivity : AppCompatActivity() {
         @Inject
         lateinit var deleteInvalidSudokus: DeleteInvalidSudokusUseCase
 
-        override fun onCreatePreferences(bundle: Bundle?, str: String?) {
+        override fun onCreatePreferences(
+            bundle: Bundle?,
+            str: String?,
+        ) {
             addPreferencesFromResource(commonutilsR.xml.preferences_design)
             addPreferencesFromResource(R.xml.preferences)
             addPreferencesFromResource(commonutilsR.xml.preferences_more_info)
@@ -112,17 +132,25 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
-            exportActivityResultLauncher = registerForActivityResult(StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK && result.data?.data != null) lifecycleScope.launch { exportData(result.data!!.data!!) }
-            }
-            importActivityResultLauncher = registerForActivityResult(GetContent()) { uri: Uri? ->
-                if (uri == null) toast(R.string.error_no_file_selected)
-                else lifecycleScope.launch { importData(uri) }
-            }
+            exportActivityResultLauncher =
+                registerForActivityResult(StartActivityForResult()) { result ->
+                    if (result.resultCode == RESULT_OK && result.data?.data != null) {
+                        lifecycleScope.launch { exportData(result.data!!.data!!) }
+                    }
+                }
+            importActivityResultLauncher =
+                registerForActivityResult(GetContent()) { uri: Uri? ->
+                    if (uri == null) {
+                        toast(R.string.error_no_file_selected)
+                    } else {
+                        lifecycleScope.launch { importData(uri) }
+                    }
+                }
             initCommonUtilsPreferences()
             initPreferences()
         }
 
+        @Suppress("CyclomaticComplexMethod", "LongMethod")
         private fun initPreferences() {
             lifecycleScope.launch {
                 val userSettings = getUserSettings()
@@ -157,27 +185,33 @@ class SettingsActivity : AppCompatActivity() {
 
                 findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
                     isChecked = userSettings.dailySudokuNotificationEnabled &&
-                            areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
+                        areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
                     setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
                     onNewValue {
                         when {
-                            !it -> setDailySudokuNotification(false)
+                            !it -> {
+                                setDailySudokuNotification(false)
+                            }
+
                             SDK_INT >= TIRAMISU &&
-                                    checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
+                                checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
                                 requestPermissionLauncher.launch(POST_NOTIFICATIONS)
                                 isChecked = false
                             }
 
                             !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
-                                val settingsIntent = Intent(ACTION_APP_NOTIFICATION_SETTINGS)
-                                    .addFlags(FLAG_ACTIVITY_NEW_TASK)
-                                    .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
-                                //.putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
+                                val settingsIntent =
+                                    Intent(ACTION_APP_NOTIFICATION_SETTINGS)
+                                        .addFlags(FLAG_ACTIVITY_NEW_TASK)
+                                        .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
+                                // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
                                 startActivity(settingsIntent)
                                 isChecked = false
                             }
 
-                            else -> setDailySudokuNotification(true)
+                            else -> {
+                                setDailySudokuNotification(true)
+                            }
                         }
                     }
                     onClick {
@@ -185,21 +219,22 @@ class SettingsActivity : AppCompatActivity() {
                             isChecked = true
                             onPreferenceChangeListener?.onPreferenceChange(this@apply, true)
                             val userSettings = getUserSettings()
-                            val dialog = SeslTimePickerDialog(
-                                requireContext(),
-                                { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
-                                    lifecycleScope.launch {
-                                        updateUserSettings {
-                                            it.copy(dailySudokuNotificationHour = hourOfDay, dailySudokuNotificationMinute = minute)
+                            val dialog =
+                                SeslTimePickerDialog(
+                                    requireContext(),
+                                    { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
+                                        lifecycleScope.launch {
+                                            updateUserSettings {
+                                                it.copy(dailySudokuNotificationHour = hourOfDay, dailySudokuNotificationMinute = minute)
+                                            }
+                                            setDailyNotificationPrefTime(hourOfDay, minute)
+                                            setDailySudokuNotification(true)
                                         }
-                                        setDailyNotificationPrefTime(hourOfDay, minute)
-                                        setDailySudokuNotification(true)
-                                    }
-                                },
-                                userSettings.dailySudokuNotificationHour,
-                                userSettings.dailySudokuNotificationMinute,
-                                is24HourFormat(requireContext())
-                            )
+                                    },
+                                    userSettings.dailySudokuNotificationHour,
+                                    userSettings.dailySudokuNotificationMinute,
+                                    is24HourFormat(requireContext()),
+                                )
                             dialog.show()
                         }
                     }
@@ -210,31 +245,35 @@ class SettingsActivity : AppCompatActivity() {
                 }
 
                 findPreference<PreferenceScreen>("export_data_pref")?.onClick {
-                    exportActivityResultLauncher.launch(Intent(ACTION_CREATE_DOCUMENT).apply {
-                        addCategory(CATEGORY_OPENABLE)
-                        type = "application/json"
-                        putExtra(EXTRA_TITLE, "sudoku_export".toSafeFileName(".json"))
-                    })
+                    exportActivityResultLauncher.launch(
+                        Intent(ACTION_CREATE_DOCUMENT).apply {
+                            addCategory(CATEGORY_OPENABLE)
+                            type = "application/json"
+                            putExtra(EXTRA_TITLE, "sudoku_export".toSafeFileName(".json"))
+                        },
+                    )
                 }
 
                 findPreference<PreferenceScreen>("import_data_pref")?.onClick {
-                    AlertDialog.Builder(requireContext())
+                    AlertDialog
+                        .Builder(requireContext())
                         .setTitle(R.string.import_data)
                         .setMessage(R.string.import_data_message)
                         .setNegativeButton(designR.string.oui_des_common_cancel, null)
                         .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
                             importActivityResultLauncher.launch("application/json")
-                        }
-                        .show()
+                        }.show()
                 }
 
                 findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
-                    val dialog = AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.delete_invalid_sudokus)
-                        .setMessage(R.string.delete_invalid_sudokus_summary)
-                        .setNegativeButton(designR.string.oui_des_common_cancel, null)
-                        .setPositiveButton(R.string.commonutils_delete, null)
-                        .create()
+                    val dialog =
+                        AlertDialog
+                            .Builder(requireContext())
+                            .setTitle(R.string.delete_invalid_sudokus)
+                            .setMessage(R.string.delete_invalid_sudokus_summary)
+                            .setNegativeButton(designR.string.oui_des_common_cancel, null)
+                            .setPositiveButton(R.string.commonutils_delete, null)
+                            .create()
                     dialog.show()
                     dialog.getButton(BUTTON_POSITIVE).apply {
                         setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
@@ -250,25 +289,35 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        override fun onViewCreated(
+            view: View,
+            savedInstanceState: Bundle?,
+        ) {
             super.onViewCreated(view, savedInstanceState)
             addRelativeLinksCard(
                 RelativeLink(getString(R.string.commonutils_share_app)) {
                     PlayGames.getAchievementsClient(requireActivity()).unlock(getString(R.string.achievement_share_app))
                     shareApp()
                 },
-                RelativeLink(getString(R.string.commonutils_rate_app)) { openApp(requireContext().packageName, false) }
+                RelativeLink(getString(R.string.commonutils_rate_app)) { openApp(requireContext().packageName, false) },
             )
         }
 
-        private fun SeslSwitchPreferenceScreen.setDailyNotificationPrefTime(hourOfDay: Int, minute: Int) {
-            summary = getString(
-                R.string.daily_sudoku_notification_channel_description_time,
-                DateFormat.format(if (is24HourFormat(requireContext())) "HH:mm" else "h:mm a", Calendar.getInstance().apply {
-                    set(HOUR_OF_DAY, hourOfDay)
-                    set(MINUTE, minute)
-                })
-            )
+        private fun SeslSwitchPreferenceScreen.setDailyNotificationPrefTime(
+            hourOfDay: Int,
+            minute: Int,
+        ) {
+            summary =
+                getString(
+                    R.string.daily_sudoku_notification_channel_description_time,
+                    DateFormat.format(
+                        if (is24HourFormat(requireContext())) "HH:mm" else "h:mm a",
+                        Calendar.getInstance().apply {
+                            set(HOUR_OF_DAY, hourOfDay)
+                            set(MINUTE, minute)
+                        },
+                    ),
+                )
         }
 
         private val requestPermissionLauncher =
@@ -277,9 +326,9 @@ class SettingsActivity : AppCompatActivity() {
                     // Permission is granted. Continue the action or workflow in your app.
                     setDailySudokuNotification(true)
                 } else {
-                    // Explain to the user that the feature is unavailable because the features requires a permission that the user has denied.
-                    // At the same time, respect the user's decision. Don't link to system settings in an effort to convince the user
-                    // to change their decision.
+                    // Explain to the user that the feature is unavailable because the features requires a permission that the
+                    // user has denied. At the same time, respect the user's decision. Don't link to system settings in an effort
+                    // to convince the user to change their decision.
                     setDailySudokuNotification(false)
                 }
             }
@@ -302,4 +351,3 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 }
-

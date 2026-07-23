@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui
 
 import android.Manifest.permission.POST_NOTIFICATIONS
@@ -231,6 +247,7 @@ class IntroActivity : AppCompatActivity() {
         )
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun animate(
         position: Position,
         animateRow: Boolean = false,
@@ -286,6 +303,7 @@ class IntroActivity : AppCompatActivity() {
         delay(delay / sudoku.blockSize)
     }
 
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun startAnimation(currentIntroStep: Int) {
         animation =
             lifecycleScope.launch {
@@ -478,6 +496,7 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
@@ -538,7 +557,7 @@ class IntroActivity : AppCompatActivity() {
                     // selected field
                     in 0 until sudoku.itemCount -> {
                         val number = selected!! - sudoku.itemCount + 1
-                        if (introStep == 5 && newSelected == 49 || introStep == 6 && newSelected == 24) {
+                        if ((introStep == 5 && newSelected == 49) || (introStep == 6 && newSelected == 24)) {
                             sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, false)
                             gameAdapter.highlightNumber(number)
                             nextIntroStep()

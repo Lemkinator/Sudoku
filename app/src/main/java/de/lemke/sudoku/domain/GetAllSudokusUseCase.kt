@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.SudokusRepository
@@ -7,9 +23,9 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Sudoku
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 class GetAllSudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
@@ -29,30 +45,33 @@ class GetAllSudokusUseCase @Inject constructor(
         const val SIZE_4X4 = 1 shl 21
         const val SIZE_9X9 = 1 shl 22
         const val SIZE_16X16 = 1 shl 23
-
     }
 
-    suspend operator fun invoke(flags: Int = TYPE_ALL or DIFFICULTY_ALL or SIZE_ALL): List<Sudoku> = withContext(Dispatchers.Default) {
-        val typeAll = flags and TYPE_ALL != 0
-        val typeNormal = flags and TYPE_NORMAL != 0
-        val typeDaily = flags and TYPE_DAILY != 0
-        val typeLevel = flags and TYPE_LEVEL != 0
-        val difficultyAll = flags and DIFFICULTY_ALL != 0
-        val difficultyVeryEasy = flags and DIFFICULTY_VERY_EASY != 0
-        val difficultyEasy = flags and DIFFICULTY_EASY != 0
-        val difficultyMedium = flags and DIFFICULTY_MEDIUM != 0
-        val difficultyHard = flags and DIFFICULTY_HARD != 0
-        val difficultyExpert = flags and DIFFICULTY_EXPERT != 0
-        val sizeAll = flags and SIZE_ALL != 0
-        val size4x4 = flags and SIZE_4X4 != 0
-        val size9x9 = flags and SIZE_9X9 != 0
-        val size16x16 = flags and SIZE_16X16 != 0
-        sudokusRepository.getAllSudokus().filter {
-            (typeAll || (typeNormal && it.isNormalSudoku) || (typeDaily && it.isDailySudoku) || (typeLevel && it.isSudokuLevel)) &&
+    @Suppress("CyclomaticComplexMethod")
+    suspend operator fun invoke(flags: Int = TYPE_ALL or DIFFICULTY_ALL or SIZE_ALL): List<Sudoku> =
+        withContext(Dispatchers.Default) {
+            val typeAll = flags and TYPE_ALL != 0
+            val typeNormal = flags and TYPE_NORMAL != 0
+            val typeDaily = flags and TYPE_DAILY != 0
+            val typeLevel = flags and TYPE_LEVEL != 0
+            val difficultyAll = flags and DIFFICULTY_ALL != 0
+            val difficultyVeryEasy = flags and DIFFICULTY_VERY_EASY != 0
+            val difficultyEasy = flags and DIFFICULTY_EASY != 0
+            val difficultyMedium = flags and DIFFICULTY_MEDIUM != 0
+            val difficultyHard = flags and DIFFICULTY_HARD != 0
+            val difficultyExpert = flags and DIFFICULTY_EXPERT != 0
+            val sizeAll = flags and SIZE_ALL != 0
+            val size4x4 = flags and SIZE_4X4 != 0
+            val size9x9 = flags and SIZE_9X9 != 0
+            val size16x16 = flags and SIZE_16X16 != 0
+            sudokusRepository.getAllSudokus().filter {
+                (typeAll || (typeNormal && it.isNormalSudoku) || (typeDaily && it.isDailySudoku) || (typeLevel && it.isSudokuLevel)) &&
                     (sizeAll || (size4x4 && it.size == 4) || (size9x9 && it.size == 9) || (size16x16 && it.size == 16)) &&
-                    (difficultyAll || (difficultyVeryEasy && it.difficulty == VERY_EASY) || (difficultyEasy && it.difficulty == EASY) ||
+                    (
+                        difficultyAll || (difficultyVeryEasy && it.difficulty == VERY_EASY) || (difficultyEasy && it.difficulty == EASY) ||
                             (difficultyMedium && it.difficulty == MEDIUM) || (difficultyHard && it.difficulty == HARD) ||
-                            (difficultyExpert && it.difficulty == EXPERT))
+                            (difficultyExpert && it.difficulty == EXPERT)
+                    )
+            }
         }
-    }
 }
