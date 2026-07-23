@@ -4,6 +4,7 @@ async-layout-inflater = "1.1.0"
 bundler = "1.0.4"
 common-utils = "1.1.4"
 datastore-preferences = "1.2.1"
+dependency-analysis = "3.17.0"
 detekt = "2.0.0-alpha.5"
 documentfile = "1.1.0"
 gradle = "9.3.1"
@@ -12,6 +13,8 @@ json-kotlin-schema = "0.58"
 #noinspection UnusedVersionCatalogEntry
 jvmTarget = "21"
 kjson = "9.10"
+konsist = "0.17.3"
+kotest = "6.2.3"
 kotlin = "2.4.10"
 ksp = "2.3.10"
 # Used via spotless { kotlin { ktlint(libs.versions.ktlint.get()) } } — version-only ref, no library/plugin alias
@@ -34,6 +37,8 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 json-kotlin-schema = { module = "net.pwall.json:json-kotlin-schema", version.ref = "json-kotlin-schema" }
 kjson = { module = "io.kjson:kjson", version.ref = "kjson" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 oneui-design = { module = "io.github.tribalfs:oneui-design", version.ref = "oneui-design" }
 oneui-icons = { module = "io.github.oneuiproject:icons", version.ref = "oneui-icons" }
 play-services-games = { module = "com.google.android.gms:play-services-games-v2", version.ref = "play-services-games" }
@@ -45,6 +50,7 @@ sudoku = { module = "de.sfuhrm:sudoku", version.ref = "sudoku" }
 [plugins]
 aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
 android-application = { id = "com.android.application", version.ref = "gradle" }
+dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

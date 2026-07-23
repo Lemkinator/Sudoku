@@ -107,6 +107,11 @@ android {
         sarifReport = true
         htmlReport = true
     }
+    testOptions {
+        unitTests {
+            all { test -> test.useJUnitPlatform() }
+        }
+    }
 }
 dependencies {
     implementation(libs.oneui.design)
@@ -123,6 +128,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
+
+    testImplementation(libs.konsist)
+    testImplementation(libs.kotest.runner.junit5)
 }
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
