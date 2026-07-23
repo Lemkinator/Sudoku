@@ -10,9 +10,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew lint                   # Run Android Lint
 ./gradlew test                   # Run unit tests
 ./gradlew connectedAndroidTest   # Run instrumented tests (device required)
+./gradlew spotlessCheck detekt   # Static analysis (formatting + code smells)
 ```
 
 Debug builds append `.debug` to the app ID — can be installed alongside release.
+
+One-time per clone, opt into the pre-commit hook (runs Spotless + Detekt before each commit):
+
+```bash
+git config core.autocrlf input    # Windows only
+git config core.hooksPath .githooks
+```
+
+Missing this opt-in is a top build-failure cause for new contributors — CI enforces the same checks the hook runs locally.
 
 ## Architecture
 
