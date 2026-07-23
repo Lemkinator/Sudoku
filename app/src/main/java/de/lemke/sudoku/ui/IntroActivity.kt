@@ -82,6 +82,109 @@ class IntroActivity : AppCompatActivity() {
     @Inject
     lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+            lifecycleScope.launch {
+                updateUserSettings { it.copy(dailySudokuNotificationEnabled = isGranted) }
+                sendDailyNotification.setDailySudokuNotification(enable = isGranted)
+                advanceOnboarding()
+            }
+        }
+
+    var sudoku: Sudoku =
+        Sudoku.create(
+            size = 9,
+            difficulty = Difficulty.VERY_EASY,
+            modeLevel = Sudoku.MODE_NORMAL,
+            fields =
+                MutableList(81) {
+                    when (it) {
+                        0 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        1 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        2 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        3 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
+                        4 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
+                        5 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        6 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
+                        7 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
+                        8 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
+                        9 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
+                        10 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
+                        11 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                        12 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        13 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
+                        14 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
+                        15 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        16 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        17 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        18 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
+                        19 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        20 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
+                        21 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
+                        22 -> Field(position = Position.create(it, 9), value = null, solution = 1, given = false)
+                        23 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        24 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
+                        25 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                        26 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        27 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        28 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
+                        29 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
+                        30 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        31 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
+                        32 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        33 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        34 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
+                        35 -> Field(position = Position.create(it, 9), value = null, solution = 6, given = false)
+                        36 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        37 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
+                        38 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        39 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                        40 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
+                        41 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        42 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
+                        43 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        44 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
+                        45 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        46 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
+                        47 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
+                        48 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        49 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
+                        50 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
+                        51 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                        52 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        53 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        54 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
+                        55 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
+                        56 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
+                        57 -> Field(position = Position.create(it, 9), value = null, solution = 6, given = false)
+                        58 -> Field(position = Position.create(it, 9), value = null, solution = 3, given = false)
+                        59 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                        60 -> Field(position = Position.create(it, 9), value = null, solution = 4, given = false)
+                        61 -> Field(position = Position.create(it, 9), value = null, solution = 1, given = false)
+                        62 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        63 -> Field(position = Position.create(it, 9), value = null, solution = 6, given = false)
+                        64 -> Field(position = Position.create(it, 9), value = null, solution = 4, given = false)
+                        65 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        66 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
+                        67 -> Field(position = Position.create(it, 9), value = null, solution = 9, given = false)
+                        68 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
+                        69 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
+                        70 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
+                        71 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
+                        72 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
+                        73 -> Field(position = Position.create(it, 9), value = null, solution = 3, given = false)
+                        74 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
+                        75 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
+                        76 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
+                        77 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
+                        78 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
+                        79 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
+                        80 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
+                        else -> throw IllegalArgumentException("Invalid index: $it")
+                    }
+                },
+        )
+
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,6 +211,14 @@ class IntroActivity : AppCompatActivity() {
         loadingDialog.dismiss()
         nextIntroStep()
     }
+
+    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.intro_menu, menu).let { true }
+
+    override fun onOptionsItemSelected(item: MenuItem) =
+        when (item.itemId) {
+            R.id.menu_skip -> showNotificationsDialogOrFinish().let { true }
+            else -> super.onOptionsItemSelected(item)
+        }
 
     private fun nextIntroStep() {
         introStep += 1
@@ -180,14 +291,6 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.intro_menu, menu).let { true }
-
-    override fun onOptionsItemSelected(item: MenuItem) =
-        when (item.itemId) {
-            R.id.menu_skip -> showNotificationsDialogOrFinish().let { true }
-            else -> super.onOptionsItemSelected(item)
-        }
-
     private fun initSudoku() {
         binding.sudokuToolbarLayout.setTitle(getString(R.string.intro))
         refreshHintButton()
@@ -217,25 +320,6 @@ class IntroActivity : AppCompatActivity() {
         }
         binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) } }
         binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
-    }
-
-    inner class SudokuGameListener : GameListener {
-        override fun onTimeChanged() {}
-
-        override fun onError() {}
-
-        override fun onCompleted(position: Position) {}
-
-        override fun onFieldClicked(position: Position) {
-            lifecycleScope.launch { select(position.index) }
-        }
-
-        override fun onFieldChanged(position: Position) {
-            gameAdapter.updateFieldView(position.index)
-            lifecycleScope.launch {
-                checkRowColumnBlockCompleted(position)
-            }
-        }
     }
 
     private fun checkRowColumnBlockCompleted(position: Position) {
@@ -603,106 +687,22 @@ class IntroActivity : AppCompatActivity() {
         dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_des_functional_red_color))
     }
 
-    private val requestPermissionLauncher =
-        registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(dailySudokuNotificationEnabled = isGranted) }
-                sendDailyNotification.setDailySudokuNotification(enable = isGranted)
-                advanceOnboarding()
-            }
+    inner class SudokuGameListener : GameListener {
+        override fun onTimeChanged() {}
+
+        override fun onError() {}
+
+        override fun onCompleted(position: Position) {}
+
+        override fun onFieldClicked(position: Position) {
+            lifecycleScope.launch { select(position.index) }
         }
 
-    var sudoku: Sudoku =
-        Sudoku.create(
-            size = 9,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = Sudoku.MODE_NORMAL,
-            fields =
-                MutableList(81) {
-                    when (it) {
-                        0 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        1 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        2 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        3 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
-                        4 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
-                        5 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        6 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
-                        7 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
-                        8 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
-                        9 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
-                        10 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
-                        11 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
-                        12 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        13 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
-                        14 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
-                        15 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        16 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        17 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        18 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
-                        19 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        20 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
-                        21 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
-                        22 -> Field(position = Position.create(it, 9), value = null, solution = 1, given = false)
-                        23 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        24 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
-                        25 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
-                        26 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        27 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        28 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
-                        29 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
-                        30 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        31 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
-                        32 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        33 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        34 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
-                        35 -> Field(position = Position.create(it, 9), value = null, solution = 6, given = false)
-                        36 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        37 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
-                        38 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        39 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
-                        40 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
-                        41 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        42 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
-                        43 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        44 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
-                        45 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        46 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
-                        47 -> Field(position = Position.create(it, 9), value = null, solution = 8, given = false)
-                        48 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        49 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
-                        50 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
-                        51 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
-                        52 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        53 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        54 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
-                        55 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
-                        56 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
-                        57 -> Field(position = Position.create(it, 9), value = null, solution = 6, given = false)
-                        58 -> Field(position = Position.create(it, 9), value = null, solution = 3, given = false)
-                        59 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
-                        60 -> Field(position = Position.create(it, 9), value = null, solution = 4, given = false)
-                        61 -> Field(position = Position.create(it, 9), value = null, solution = 1, given = false)
-                        62 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        63 -> Field(position = Position.create(it, 9), value = null, solution = 6, given = false)
-                        64 -> Field(position = Position.create(it, 9), value = null, solution = 4, given = false)
-                        65 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        66 -> Field(position = Position.create(it, 9), value = null, solution = 7, given = false)
-                        67 -> Field(position = Position.create(it, 9), value = null, solution = 9, given = false)
-                        68 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
-                        69 -> Field(position = Position.create(it, 9), value = 3, solution = 3, given = true)
-                        70 -> Field(position = Position.create(it, 9), value = null, solution = 2, given = false)
-                        71 -> Field(position = Position.create(it, 9), value = 5, solution = 5, given = true)
-                        72 -> Field(position = Position.create(it, 9), value = null, solution = 5, given = false)
-                        73 -> Field(position = Position.create(it, 9), value = null, solution = 3, given = false)
-                        74 -> Field(position = Position.create(it, 9), value = 9, solution = 9, given = true)
-                        75 -> Field(position = Position.create(it, 9), value = 1, solution = 1, given = true)
-                        76 -> Field(position = Position.create(it, 9), value = 4, solution = 4, given = true)
-                        77 -> Field(position = Position.create(it, 9), value = 2, solution = 2, given = true)
-                        78 -> Field(position = Position.create(it, 9), value = 7, solution = 7, given = true)
-                        79 -> Field(position = Position.create(it, 9), value = 6, solution = 6, given = true)
-                        80 -> Field(position = Position.create(it, 9), value = 8, solution = 8, given = true)
-                        else -> throw IllegalArgumentException("Invalid index: $it")
-                    }
-                },
-        )
+        override fun onFieldChanged(position: Position) {
+            gameAdapter.updateFieldView(position.index)
+            lifecycleScope.launch {
+                checkRowColumnBlockCompleted(position)
+            }
+        }
+    }
 }

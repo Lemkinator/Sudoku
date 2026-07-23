@@ -148,6 +148,37 @@ class SudokuListAdapter(
         }
     }
 
+    companion object {
+        private val isSelectable: ((rv: RecyclerView, item: AdapterItem) -> Boolean) =
+            { rv, item -> (rv.adapter as SudokuListAdapter).getItem(item.position) !is SeparatorItem }
+
+        private val selectableIdsProvider: (currentList: List<SudokuListItem>) -> List<Long> =
+            { listItems -> listItems.filter { it !is SeparatorItem }.map { it.stableId } }
+
+        private val diffCallback =
+            object : DiffUtil.ItemCallback<SudokuListItem>() {
+                override fun areItemsTheSame(
+                    oldItem: SudokuListItem,
+                    newItem: SudokuListItem,
+                ): Boolean =
+                    when (oldItem) {
+                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.id == newItem.sudoku.id
+                        is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
+                        else -> false
+                    }
+
+                override fun areContentsTheSame(
+                    oldItem: SudokuListItem,
+                    newItem: SudokuListItem,
+                ): Boolean =
+                    when (oldItem) {
+                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.contentEquals(newItem.sudoku)
+                        is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
+                        else -> false
+                    }
+            }
+    }
+
     inner class ViewHolder(itemView: View, val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
         var textView: TextView
         var selectableLayout: SelectableLinearLayout? = null
@@ -231,36 +262,5 @@ class SudokuListAdapter(
         NORMAL,
         LEVEL,
         DAILY,
-    }
-
-    companion object {
-        private val isSelectable: ((rv: RecyclerView, item: AdapterItem) -> Boolean) =
-            { rv, item -> (rv.adapter as SudokuListAdapter).getItem(item.position) !is SeparatorItem }
-
-        private val selectableIdsProvider: (currentList: List<SudokuListItem>) -> List<Long> =
-            { listItems -> listItems.filter { it !is SeparatorItem }.map { it.stableId } }
-
-        private val diffCallback =
-            object : DiffUtil.ItemCallback<SudokuListItem>() {
-                override fun areItemsTheSame(
-                    oldItem: SudokuListItem,
-                    newItem: SudokuListItem,
-                ): Boolean =
-                    when (oldItem) {
-                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.id == newItem.sudoku.id
-                        is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
-                        else -> false
-                    }
-
-                override fun areContentsTheSame(
-                    oldItem: SudokuListItem,
-                    newItem: SudokuListItem,
-                ): Boolean =
-                    when (oldItem) {
-                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.contentEquals(newItem.sudoku)
-                        is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
-                        else -> false
-                    }
-            }
     }
 }

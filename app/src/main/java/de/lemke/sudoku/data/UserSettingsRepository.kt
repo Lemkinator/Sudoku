@@ -21,7 +21,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -46,7 +46,7 @@ class UserSettingsRepository @Inject constructor(
         dataStore.data
             .map {
                 it[KEY_STATISTICS_FILTER_FLAGS]
-                    ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL)
+                    ?: (SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_ALL or SudokuFilterFlags.DIFFICULTY_ALL)
             }.distinctUntilChanged()
 
     /**
@@ -85,7 +85,7 @@ class UserSettingsRepository @Inject constructor(
             errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
             filterFlags =
                 prefs[KEY_STATISTICS_FILTER_FLAGS]
-                    ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
+                    ?: (SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_ALL or SudokuFilterFlags.DIFFICULTY_ALL),
             dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] != false,
             dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] != false,
             dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,

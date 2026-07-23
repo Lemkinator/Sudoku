@@ -91,32 +91,6 @@ class DailySudokuActivity : AppCompatActivity() {
         }
     }
 
-    private fun initRecycler() {
-        binding.dailySudokuRecycler.apply {
-            layoutManager = LinearLayoutManager(context)
-            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
-            itemAnimator = null
-            addItemDecoration(
-                SemItemDecoration(
-                    context,
-                    dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
-                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE },
-                ).apply { setDividerInsetStart(64.dpToPx(resources)) },
-            )
-            enableCoreSeslFeatures()
-        }
-    }
-
-    private fun SudokuListAdapter.setupOnClickListeners() {
-        onClickItem = { _, sudokuListItem, viewHolder ->
-            if (sudokuListItem is SudokuItem) {
-                viewHolder.itemView.transformToActivity(
-                    Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
-                )
-            }
-        }
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.daily_sudoku_menu, menu)
         MenuCompat.setGroupDividerEnabled(menu, true)
@@ -163,4 +137,30 @@ class DailySudokuActivity : AppCompatActivity() {
                 super.onOptionsItemSelected(item)
             }
         }
+
+    private fun initRecycler() {
+        binding.dailySudokuRecycler.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = sudokuListAdapter.also { it.setupOnClickListeners() }
+            itemAnimator = null
+            addItemDecoration(
+                SemItemDecoration(
+                    context,
+                    dividerRule = SELECTED { it.itemViewType == SudokuItem.VIEW_TYPE },
+                    subHeaderRule = SELECTED { it.itemViewType == SeparatorItem.VIEW_TYPE },
+                ).apply { setDividerInsetStart(64.dpToPx(resources)) },
+            )
+            enableCoreSeslFeatures()
+        }
+    }
+
+    private fun SudokuListAdapter.setupOnClickListeners() {
+        onClickItem = { _, sudokuListItem, viewHolder ->
+            if (sudokuListItem is SudokuItem) {
+                viewHolder.itemView.transformToActivity(
+                    Intent(this@DailySudokuActivity, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
+                )
+            }
+        }
+    }
 }

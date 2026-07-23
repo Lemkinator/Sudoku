@@ -28,6 +28,19 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
 
     override fun getItemCount(): Int = sudoku.itemCount
 
+    override fun onCreateViewHolder(
+        parent: ViewGroup,
+        viewType: Int,
+    ): ViewHolder = ViewHolder(FieldView(context))
+
+    override fun onBindViewHolder(
+        holder: ViewHolder,
+        index: Int,
+    ) {
+        fieldViews[index] = holder.itemView as FieldView
+        (holder.itemView as FieldView).init(sudoku, index, this)
+    }
+
     fun updateFieldView(position: Int) = fieldViews[position]?.update()
 
     fun selectFieldView(
@@ -70,19 +83,6 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
                 it?.setBackground()
             }
         }
-    }
-
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int,
-    ): ViewHolder = ViewHolder(FieldView(context))
-
-    override fun onBindViewHolder(
-        holder: ViewHolder,
-        index: Int,
-    ) {
-        fieldViews[index] = holder.itemView as FieldView
-        (holder.itemView as FieldView).init(sudoku, index, this)
     }
 
     class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView)

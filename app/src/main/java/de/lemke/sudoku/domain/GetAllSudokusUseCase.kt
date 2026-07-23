@@ -23,6 +23,20 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EASY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_HARD
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_MEDIUM
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_VERY_EASY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_16X16
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_4X4
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_9X9
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
+import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,23 +44,6 @@ import kotlinx.coroutines.withContext
 class GetAllSudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
 ) {
-    companion object {
-        const val TYPE_ALL = 1 shl 1
-        const val TYPE_NORMAL = 1 shl 2
-        const val TYPE_DAILY = 1 shl 3
-        const val TYPE_LEVEL = 1 shl 4
-        const val DIFFICULTY_ALL = 1 shl 10
-        const val DIFFICULTY_VERY_EASY = 1 shl 11
-        const val DIFFICULTY_EASY = 1 shl 12
-        const val DIFFICULTY_MEDIUM = 1 shl 13
-        const val DIFFICULTY_HARD = 1 shl 14
-        const val DIFFICULTY_EXPERT = 1 shl 15
-        const val SIZE_ALL = 1 shl 20
-        const val SIZE_4X4 = 1 shl 21
-        const val SIZE_9X9 = 1 shl 22
-        const val SIZE_16X16 = 1 shl 23
-    }
-
     @Suppress("CyclomaticComplexMethod")
     suspend operator fun invoke(flags: Int = TYPE_ALL or DIFFICULTY_ALL or SIZE_ALL): List<Sudoku> =
         withContext(Dispatchers.Default) {

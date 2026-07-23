@@ -58,6 +58,13 @@ class FieldView(context: Context) : LinearLayout(context) {
         }
     }
 
+    override fun onMeasure(
+        widthMeasureSpec: Int,
+        heightMeasureSpec: Int,
+    ) {
+        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+    }
+
     fun init(
         sudoku: Sudoku,
         index: Int,
@@ -149,11 +156,4 @@ class FieldView(context: Context) : LinearLayout(context) {
         } else {
             Color.TRANSPARENT
         }
-
-    override fun onMeasure(
-        widthMeasureSpec: Int,
-        heightMeasureSpec: Int,
-    ) {
-        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
-    }
 }

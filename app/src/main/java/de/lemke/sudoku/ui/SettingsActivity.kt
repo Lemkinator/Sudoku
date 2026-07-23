@@ -121,6 +121,19 @@ class SettingsActivity : AppCompatActivity() {
         @Inject
         lateinit var deleteInvalidSudokus: DeleteInvalidSudokusUseCase
 
+        private val requestPermissionLauncher =
+            registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+                if (isGranted) {
+                    // Permission is granted. Continue the action or workflow in your app.
+                    setDailySudokuNotification(true)
+                } else {
+                    // Explain to the user that the feature is unavailable because the features requires a permission that the
+                    // user has denied. At the same time, respect the user's decision. Don't link to system settings in an effort
+                    // to convince the user to change their decision.
+                    setDailySudokuNotification(false)
+                }
+            }
+
         override fun onCreatePreferences(
             bundle: Bundle?,
             str: String?,
@@ -148,6 +161,20 @@ class SettingsActivity : AppCompatActivity() {
                 }
             initCommonUtilsPreferences()
             initPreferences()
+        }
+
+        override fun onViewCreated(
+            view: View,
+            savedInstanceState: Bundle?,
+        ) {
+            super.onViewCreated(view, savedInstanceState)
+            addRelativeLinksCard(
+                RelativeLink(getString(R.string.commonutils_share_app)) {
+                    PlayGames.getAchievementsClient(requireActivity()).unlock(getString(R.string.achievement_share_app))
+                    shareApp()
+                },
+                RelativeLink(getString(R.string.commonutils_rate_app)) { openApp(requireContext().packageName, false) },
+            )
         }
 
         @Suppress("CyclomaticComplexMethod", "LongMethod")
@@ -289,20 +316,6 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        override fun onViewCreated(
-            view: View,
-            savedInstanceState: Bundle?,
-        ) {
-            super.onViewCreated(view, savedInstanceState)
-            addRelativeLinksCard(
-                RelativeLink(getString(R.string.commonutils_share_app)) {
-                    PlayGames.getAchievementsClient(requireActivity()).unlock(getString(R.string.achievement_share_app))
-                    shareApp()
-                },
-                RelativeLink(getString(R.string.commonutils_rate_app)) { openApp(requireContext().packageName, false) },
-            )
-        }
-
         private fun SeslSwitchPreferenceScreen.setDailyNotificationPrefTime(
             hourOfDay: Int,
             minute: Int,
@@ -319,19 +332,6 @@ class SettingsActivity : AppCompatActivity() {
                     ),
                 )
         }
-
-        private val requestPermissionLauncher =
-            registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-                if (isGranted) {
-                    // Permission is granted. Continue the action or workflow in your app.
-                    setDailySudokuNotification(true)
-                } else {
-                    // Explain to the user that the feature is unavailable because the features requires a permission that the
-                    // user has denied. At the same time, respect the user's decision. Don't link to system settings in an effort
-                    // to convince the user to change their decision.
-                    setDailySudokuNotification(false)
-                }
-            }
 
         private fun setDailySudokuNotification(enabled: Boolean) {
             lifecycleScope.launch {

@@ -62,55 +62,49 @@ class Sudoku(
     var gameListener: GameListener?,
     val fields: MutableList<Field>,
 ) {
-    companion object {
-        const val MODE_NORMAL = 0
-        const val MODE_DAILY = -1
-        const val MODE_LEVEL_ERROR_LIMIT = 3
-        const val MODE_DAILY_ERROR_LIMIT = 3
+    private val hintLimit: Int
+        get() =
+            when (size) {
+                4 -> 1
+                9 -> 3
+                16 -> 8
+                else -> 3
+            }
 
-        fun create(
-            sudokuId: SudokuId = SudokuId.generate(),
-            size: Int,
-            difficulty: Difficulty,
-            modeLevel: Int,
-            regionalHighlightingUsed: Boolean = false,
-            numberHighlightingUsed: Boolean = false,
-            eraserUsed: Boolean = false,
-            isChecklist: Boolean = false,
-            isReverseChecklist: Boolean = false,
-            checklistNumber: Int = 0,
-            hintsUsed: Int = 0,
-            notesMade: Int = 0,
-            errorsMade: Int = 0,
-            created: LocalDateTime = LocalDateTime.now(),
-            updated: LocalDateTime = LocalDateTime.now(),
-            seconds: Int = 0,
-            timer: Timer? = null,
-            gameListener: GameListener? = null,
-            fields: MutableList<Field>,
-        ): Sudoku =
-            Sudoku(
-                id = sudokuId,
-                size = size,
-                difficulty = difficulty,
-                modeLevel = modeLevel,
-                regionalHighlightingUsed = regionalHighlightingUsed,
-                numberHighlightingUsed = numberHighlightingUsed,
-                eraserUsed = eraserUsed,
-                isChecklist = isChecklist,
-                isReverseChecklist = isReverseChecklist,
-                checklistNumber = checklistNumber,
-                hintsUsed = hintsUsed,
-                notesMade = notesMade,
-                errorsMade = errorsMade,
-                created = created,
-                updated = updated,
-                seconds = seconds,
-                timer = timer,
-                gameListener = gameListener,
-                fields = fields,
-            )
-    }
+    val availableHints: Int
+        get() = hintLimit - hintsUsed
+
+    val isHintAvailable: Boolean get() = if (isNormalSudoku) hintsUsed < hintLimit else false
+
+    val isSudokuLevel: Boolean get() = modeLevel > 0
+
+    val isDailySudoku: Boolean get() = modeLevel == MODE_DAILY
+
+    val isNormalSudoku: Boolean get() = modeLevel == MODE_NORMAL
+
+    val completed: Boolean get() = fields.all { !it.error && it.value != null }
+
+    val resumed: Boolean get() = timer != null
+
+    val itemCount: Int get() = this.size * this.size
+
+    val blockSize: Int get() = sqrt(this.size.toDouble()).toInt()
+
+    val sizeString: String get() = "$size×$size"
+
+    val progress: Int
+        get() {
+            val total = fields.count { !it.given }
+            return fields.count { !it.given && it.correct } * 100 / total
+        }
+
+    val timeString: String
+        get() =
+            if (seconds >= 3600) {
+                String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+            } else {
+                String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+            }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -179,50 +173,6 @@ class Sudoku(
             gameListener = gameListener,
             fields = fields,
         )
-
-    private val hintLimit: Int
-        get() =
-            when (size) {
-                4 -> 1
-                9 -> 3
-                16 -> 8
-                else -> 3
-            }
-
-    val availableHints: Int
-        get() = hintLimit - hintsUsed
-
-    val isHintAvailable: Boolean get() = if (isNormalSudoku) hintsUsed < hintLimit else false
-
-    val isSudokuLevel: Boolean get() = modeLevel > 0
-
-    val isDailySudoku: Boolean get() = modeLevel == MODE_DAILY
-
-    val isNormalSudoku: Boolean get() = modeLevel == MODE_NORMAL
-
-    val completed: Boolean get() = fields.all { !it.error && it.value != null }
-
-    val resumed: Boolean get() = timer != null
-
-    val itemCount: Int get() = this.size * this.size
-
-    val blockSize: Int get() = sqrt(this.size.toDouble()).toInt()
-
-    val sizeString: String get() = "$size×$size"
-
-    val progress: Int
-        get() {
-            val total = fields.count { !it.given }
-            return fields.count { !it.given && it.correct } * 100 / total
-        }
-
-    val timeString: String
-        get() =
-            if (seconds >= 3600) {
-                String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-            } else {
-                String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
-            }
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 
@@ -488,6 +438,56 @@ class Sudoku(
         } else {
             resources.getString(R.string.sudoku_solving, progress)
         } + getLocalStatisticsString(resources)
+
+    companion object {
+        const val MODE_NORMAL = 0
+        const val MODE_DAILY = -1
+        const val MODE_LEVEL_ERROR_LIMIT = 3
+        const val MODE_DAILY_ERROR_LIMIT = 3
+
+        fun create(
+            sudokuId: SudokuId = SudokuId.generate(),
+            size: Int,
+            difficulty: Difficulty,
+            modeLevel: Int,
+            regionalHighlightingUsed: Boolean = false,
+            numberHighlightingUsed: Boolean = false,
+            eraserUsed: Boolean = false,
+            isChecklist: Boolean = false,
+            isReverseChecklist: Boolean = false,
+            checklistNumber: Int = 0,
+            hintsUsed: Int = 0,
+            notesMade: Int = 0,
+            errorsMade: Int = 0,
+            created: LocalDateTime = LocalDateTime.now(),
+            updated: LocalDateTime = LocalDateTime.now(),
+            seconds: Int = 0,
+            timer: Timer? = null,
+            gameListener: GameListener? = null,
+            fields: MutableList<Field>,
+        ): Sudoku =
+            Sudoku(
+                id = sudokuId,
+                size = size,
+                difficulty = difficulty,
+                modeLevel = modeLevel,
+                regionalHighlightingUsed = regionalHighlightingUsed,
+                numberHighlightingUsed = numberHighlightingUsed,
+                eraserUsed = eraserUsed,
+                isChecklist = isChecklist,
+                isReverseChecklist = isReverseChecklist,
+                checklistNumber = checklistNumber,
+                hintsUsed = hintsUsed,
+                notesMade = notesMade,
+                errorsMade = errorsMade,
+                created = created,
+                updated = updated,
+                seconds = seconds,
+                timer = timer,
+                gameListener = gameListener,
+                fields = fields,
+            )
+    }
 }
 
 interface GameListener {

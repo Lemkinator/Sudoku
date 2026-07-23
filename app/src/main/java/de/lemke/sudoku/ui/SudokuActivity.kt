@@ -82,10 +82,6 @@ import dev.oneuiproject.oneui.design.R as designR
 
 @AndroidEntryPoint
 class SudokuActivity : AppCompatActivity() {
-    companion object {
-        const val KEY_SUDOKU_ID = "key_sudoku_id"
-    }
-
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     private lateinit var userSettings: UserSettings
@@ -190,6 +186,35 @@ class SudokuActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
 
+    @Suppress("CyclomaticComplexMethod")
+    override fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean =
+        when (keyCode) {
+            KeyEvent.KEYCODE_1 -> select(sudoku.itemCount).let { true }
+            KeyEvent.KEYCODE_2 -> select(sudoku.itemCount + 1).let { true }
+            KeyEvent.KEYCODE_3 -> select(sudoku.itemCount + 2).let { true }
+            KeyEvent.KEYCODE_4 -> select(sudoku.itemCount + 3).let { true }
+            KeyEvent.KEYCODE_5 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 4) }?.let { true } == true
+            KeyEvent.KEYCODE_6 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 5) }?.let { true } == true
+            KeyEvent.KEYCODE_7 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 6) }?.let { true } == true
+            KeyEvent.KEYCODE_8 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 7) }?.let { true } == true
+            KeyEvent.KEYCODE_9 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 8) }?.let { true } == true
+            KeyEvent.KEYCODE_A -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 9) }?.let { true } == true
+            KeyEvent.KEYCODE_B -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 10) }?.let { true } == true
+            KeyEvent.KEYCODE_C -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 11) }?.let { true } == true
+            KeyEvent.KEYCODE_D -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 12) }?.let { true } == true
+            KeyEvent.KEYCODE_E -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 13) }?.let { true } == true
+            KeyEvent.KEYCODE_F -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 14) }?.let { true } == true
+            KeyEvent.KEYCODE_G -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 15) }?.let { true } == true
+            KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size).let { true }
+            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size + 1).let { true } else false
+            KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
+            KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
+            else -> super.onKeyUp(keyCode, event)
+        }
+
     private fun initSudoku(sudoku: Sudoku) {
         this.sudoku = sudoku
         setTitle()
@@ -279,35 +304,6 @@ class SudokuActivity : AppCompatActivity() {
             .scaleY(value)
             .setDuration(300L)
             .start()
-    }
-
-    inner class SudokuGameListener : GameListener {
-        override fun onFieldClicked(position: Position) {
-            select(position.index)
-        }
-
-        override fun onFieldChanged(position: Position) {
-            gameAdapter.updateFieldView(position.index)
-            checkAnyNumberCompleted()
-            checkRowColumnBlockCompleted(position)
-            lifecycleScope.launch { saveSudoku(sudoku, onlyUpdate = true) }
-        }
-
-        override fun onCompleted(position: Position) {
-            if (userSettings.animationsEnabled) {
-                animate(position, animateSudoku = true)?.invokeOnCompletion { onSudokuCompleted() }
-            } else {
-                onSudokuCompleted()
-            }
-        }
-
-        override fun onError() {
-            checkErrorLimit()
-        }
-
-        override fun onTimeChanged() {
-            lifecycleScope.launch { setSubtitle() }
-        }
     }
 
     private fun onSudokuCompleted() {
@@ -764,32 +760,36 @@ class SudokuActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(shareIntent, getString(R.string.share_sudoku)))
     }
 
-    @Suppress("CyclomaticComplexMethod")
-    override fun onKeyUp(
-        keyCode: Int,
-        event: KeyEvent,
-    ): Boolean =
-        when (keyCode) {
-            KeyEvent.KEYCODE_1 -> select(sudoku.itemCount).let { true }
-            KeyEvent.KEYCODE_2 -> select(sudoku.itemCount + 1).let { true }
-            KeyEvent.KEYCODE_3 -> select(sudoku.itemCount + 2).let { true }
-            KeyEvent.KEYCODE_4 -> select(sudoku.itemCount + 3).let { true }
-            KeyEvent.KEYCODE_5 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 4) }?.let { true } == true
-            KeyEvent.KEYCODE_6 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 5) }?.let { true } == true
-            KeyEvent.KEYCODE_7 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 6) }?.let { true } == true
-            KeyEvent.KEYCODE_8 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 7) }?.let { true } == true
-            KeyEvent.KEYCODE_9 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 8) }?.let { true } == true
-            KeyEvent.KEYCODE_A -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 9) }?.let { true } == true
-            KeyEvent.KEYCODE_B -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 10) }?.let { true } == true
-            KeyEvent.KEYCODE_C -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 11) }?.let { true } == true
-            KeyEvent.KEYCODE_D -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 12) }?.let { true } == true
-            KeyEvent.KEYCODE_E -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 13) }?.let { true } == true
-            KeyEvent.KEYCODE_F -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 14) }?.let { true } == true
-            KeyEvent.KEYCODE_G -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 15) }?.let { true } == true
-            KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size).let { true }
-            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size + 1).let { true } else false
-            KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
-            KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
-            else -> super.onKeyUp(keyCode, event)
+    companion object {
+        const val KEY_SUDOKU_ID = "key_sudoku_id"
+    }
+
+    inner class SudokuGameListener : GameListener {
+        override fun onFieldClicked(position: Position) {
+            select(position.index)
         }
+
+        override fun onFieldChanged(position: Position) {
+            gameAdapter.updateFieldView(position.index)
+            checkAnyNumberCompleted()
+            checkRowColumnBlockCompleted(position)
+            lifecycleScope.launch { saveSudoku(sudoku, onlyUpdate = true) }
+        }
+
+        override fun onCompleted(position: Position) {
+            if (userSettings.animationsEnabled) {
+                animate(position, animateSudoku = true)?.invokeOnCompletion { onSudokuCompleted() }
+            } else {
+                onSudokuCompleted()
+            }
+        }
+
+        override fun onError() {
+            checkErrorLimit()
+        }
+
+        override fun onTimeChanged() {
+            lifecycleScope.launch { setSubtitle() }
+        }
+    }
 }

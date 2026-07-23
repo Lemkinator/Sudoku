@@ -72,6 +72,15 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     @Inject
     lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
 
+    private val SeslSeekBar.sudokuSize: Int
+        get() =
+            when (this.progress) {
+                0 -> 4
+                1 -> 9
+                2 -> 16
+                else -> 9
+            }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -180,13 +189,4 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             }
         }
     }
-
-    private val SeslSeekBar.sudokuSize: Int
-        get() =
-            when (this.progress) {
-                0 -> 4
-                1 -> 9
-                2 -> 16
-                else -> 9
-            }
 }
