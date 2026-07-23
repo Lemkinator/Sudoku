@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.aboutlibraries)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.spotless)
 }
 
 fun String.toEnvVarStyle(): String = replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
@@ -78,6 +80,17 @@ android {
             excludes += "META-INF/licenses/**"
         }
     }
+    lint {
+        warningsAsErrors = true
+        // checkDependencies = false: private AAR deps (oneui-design, common-utils) surface
+        // hundreds of unactionable warnings; flip to true once in-project surface is clean
+        checkDependencies = false
+        checkReleaseBuilds = true
+        abortOnError = true
+        baseline = file("lint-baseline.xml")
+        sarifReport = true
+        htmlReport = true
+    }
 }
 dependencies {
     implementation(libs.oneui.design)
@@ -98,4 +111,43 @@ dependencies {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.generateKotlin", "true")
+}
+
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        targetExclude("**/build/**", "**/generated/**")
+        licenseHeaderFile(rootProject.file("config/spotless/apache-2.0.kt"))
+        ktlint(libs.versions.ktlint.get())
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("*.gradle.kts")
+        licenseHeaderFile(rootProject.file("config/spotless/apache-2.0.kt"), "(^(?![\\/ ]\\*).*$)")
+        ktlint(libs.versions.ktlint.get())
+    }
+    format("xml") {
+        target("src/**/*.xml")
+        targetExclude("**/build/**")
+        licenseHeaderFile(rootProject.file("config/spotless/apache-2.0.xml"), "(<[^!?])")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+detekt {
+    toolVersion = libs.versions.detekt.get()
+    config.setFrom(rootProject.file("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    parallel = true
+    autoCorrect = false
+}
+
+tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
+    jvmTarget = libs.versions.jvmTarget.get()
+    reports {
+        html.required.set(true)
+        sarif.required.set(true)
+    }
 }
