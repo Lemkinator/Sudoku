@@ -51,27 +51,26 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.configureCommonUtilsSplashScreen
-import de.lemke.commonutils.onNavigationSingleClick
-import de.lemke.commonutils.onboardIfNeeded
-import de.lemke.commonutils.openURL
-import de.lemke.commonutils.prepareActivityTransformationFrom
-import de.lemke.commonutils.setupCommonUtilsAboutActivity
-import de.lemke.commonutils.setupCommonUtilsAboutMeActivity
-import de.lemke.commonutils.setupHeaderAndNavRail
-import de.lemke.commonutils.toast
-import de.lemke.commonutils.transformToActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
+import de.lemke.commonutils.ui.utils.configureCommonUtilsSplashScreen
+import de.lemke.commonutils.ui.utils.onNavigationSingleClick
+import de.lemke.commonutils.ui.utils.onboardIfNeeded
+import de.lemke.commonutils.ui.utils.openURL
+import de.lemke.commonutils.ui.utils.prepareActivityTransformationFrom
+import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutActivity
+import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutMeActivity
+import de.lemke.commonutils.ui.utils.setupHeaderAndNavRail
+import de.lemke.commonutils.ui.utils.toast
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EASY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
@@ -105,10 +104,7 @@ class MainActivity : AppCompatActivity() {
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(StartActivityForResult()) {}
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     @Inject
     lateinit var importSudoku: ImportSudokuUseCase
@@ -122,7 +118,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        onboardIfNeeded(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME, allowSkip = BuildConfig.FIRST_RUN_SKIPPABLE) ?: return
+        onboardIfNeeded(
+            BuildConfig.VERSION_CODE,
+            BuildConfig.VERSION_NAME,
+            userSettings,
+            allowSkip = BuildConfig.FIRST_RUN_SKIPPABLE,
+        ) ?: return
         prepareActivityTransformationFrom()
         if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -153,7 +154,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             isUIReady = true
             checkImportedSudoku()
-            sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
+            sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
             updatePlayGames(this@MainActivity)
         }
     }
@@ -345,7 +346,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun DialogStatisticsFilterBinding.initDialog() {
-        getUserSettings().let {
+        userSettings.let {
             filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
             filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
             filterLevel.isChecked = it.filterFlags and TYPE_LEVEL != 0 || it.filterFlags and TYPE_ALL != 0
@@ -382,7 +383,7 @@ class MainActivity : AppCompatActivity() {
         ) {
             flags = flags or DIFFICULTY_ALL
         }
-        lifecycleScope.launch { updateUserSettings { it.copy(filterFlags = flags) } }
+        userSettings.filterFlags = flags
     }
 
     private fun initFragments() {

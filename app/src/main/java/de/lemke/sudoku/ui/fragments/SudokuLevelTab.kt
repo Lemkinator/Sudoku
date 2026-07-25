@@ -29,7 +29,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.skydoves.bundler.bundle
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.databinding.FragmentTabLevelBinding
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase

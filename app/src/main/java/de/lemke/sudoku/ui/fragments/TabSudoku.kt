@@ -29,15 +29,14 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetRecentlyUpdatedNormalSudokuUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
@@ -55,10 +54,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     @Inject
     lateinit var generateSudoku: GenerateSudokuUseCase
@@ -126,48 +122,45 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 "SudokuLevelActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
-        lifecycleScope.launch {
-            val userSettings = getUserSettings()
-            binding.difficultySeekbar.progress = userSettings.difficultySliderValue
-            binding.difficultySeekbar.setOnSeekBarChangeListener(
-                object : SeslSeekBar.OnSeekBarChangeListener {
-                    override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+        binding.difficultySeekbar.progress = userSettings.difficultySliderValue
+        binding.difficultySeekbar.setOnSeekBarChangeListener(
+            object : SeslSeekBar.OnSeekBarChangeListener {
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
 
-                    override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
 
-                    override fun onProgressChanged(
-                        seekBar: SeslSeekBar?,
-                        progress: Int,
-                        fromUser: Boolean,
-                    ) {
-                        lifecycleScope.launch { updateUserSettings { it.copy(difficultySliderValue = progress) } }
-                    }
-                },
-            )
-            binding.sizeSeekbar.progress = userSettings.sizeSliderValue
-            binding.sizeSeekbar.setOnSeekBarChangeListener(
-                object : SeslSeekBar.OnSeekBarChangeListener {
-                    override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onProgressChanged(
+                    seekBar: SeslSeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    userSettings.difficultySliderValue = progress
+                }
+            },
+        )
+        binding.sizeSeekbar.progress = userSettings.sizeSliderValue
+        binding.sizeSeekbar.setOnSeekBarChangeListener(
+            object : SeslSeekBar.OnSeekBarChangeListener {
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
 
-                    override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
 
-                    override fun onProgressChanged(
-                        seekBar: SeslSeekBar?,
-                        progress: Int,
-                        fromUser: Boolean,
-                    ) {
-                        lifecycleScope.launch { updateUserSettings { it.copy(sizeSliderValue = progress) } }
-                    }
-                },
-            )
-        }
+                override fun onProgressChanged(
+                    seekBar: SeslSeekBar?,
+                    progress: Int,
+                    fromUser: Boolean,
+                ) {
+                    userSettings.sizeSliderValue = progress
+                }
+            },
+        )
     }
 
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch {
             val sudoku = getRecentSudoku()
-            if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(getUserSettings().errorLimit)) {
+            if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(userSettings.errorLimit)) {
                 binding.continueGameButton.isVisible = true
                 binding.continueGameButton.text =
                     getString(

@@ -20,7 +20,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import javax.inject.Inject
@@ -37,7 +37,7 @@ class AlarmReceiver : BroadcastReceiver() {
     lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     /**
      * sends notification when receives alarm
@@ -50,7 +50,7 @@ class AlarmReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         GlobalScope.launch {
-            val notificationEnabled = getUserSettings().dailySudokuNotificationEnabled
+            val notificationEnabled = userSettings.dailySudokuNotificationEnabled
             if (
                 !intent.action.equals(Intent.ACTION_BOOT_COMPLETED) &&
                 !intent.action.equals(Intent.ACTION_MY_PACKAGE_REPLACED) &&

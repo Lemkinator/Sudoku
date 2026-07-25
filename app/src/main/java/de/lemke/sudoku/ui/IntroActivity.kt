@@ -40,12 +40,12 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.advanceOnboarding
-import de.lemke.commonutils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.advanceOnboarding
+import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityIntroBinding
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.GameListener
@@ -77,15 +77,15 @@ class IntroActivity : AppCompatActivity() {
     private var openedFromSettings = false
 
     @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     @Inject
     lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
     private val requestPermissionLauncher =
         registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+            userSettings.dailySudokuNotificationEnabled = isGranted
             lifecycleScope.launch {
-                updateUserSettings { it.copy(dailySudokuNotificationEnabled = isGranted) }
                 sendDailyNotification.setDailySudokuNotification(enable = isGranted)
                 advanceOnboarding()
             }
@@ -663,23 +663,23 @@ class IntroActivity : AppCompatActivity() {
                 .setTitle(getString(R.string.notifications_title))
                 .setMessage(getString(R.string.daily_sudoku_notification_channel_description))
                 .setNegativeButton(R.string.decline_notifications) { _: DialogInterface, _: Int ->
+                    userSettings.dailySudokuNotificationEnabled = false
                     lifecycleScope.launch {
-                        updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
                         sendDailyNotification.setDailySudokuNotification(enable = false)
                         advanceOnboarding()
                     }
                 }.setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                    lifecycleScope.launch {
-                        // Enable Notifications when < Android 13 or permission is granted, else ask for permission
-                        if (SDK_INT < TIRAMISU ||
-                            ContextCompat.checkSelfPermission(this@IntroActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
-                        ) {
-                            updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
+                    // Enable Notifications when < Android 13 or permission is granted, else ask for permission
+                    if (SDK_INT < TIRAMISU ||
+                        ContextCompat.checkSelfPermission(this@IntroActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
+                    ) {
+                        userSettings.dailySudokuNotificationEnabled = true
+                        lifecycleScope.launch {
                             sendDailyNotification.setDailySudokuNotification(enable = true)
                             advanceOnboarding()
-                        } else {
-                            requestPermissionLauncher.launch(POST_NOTIFICATIONS)
                         }
+                    } else {
+                        requestPermissionLauncher.launch(POST_NOTIFICATIONS)
                     }
                 }.setCancelable(false)
                 .create()

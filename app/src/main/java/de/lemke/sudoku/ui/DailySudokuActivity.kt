@@ -29,16 +29,15 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.prepareActivityTransformationBetween
-import de.lemke.commonutils.setCustomBackAnimation
-import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
+import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.commonutils.ui.widget.InfoBottomSheet.Companion.showInfoBottomSheet
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
@@ -67,10 +66,7 @@ class DailySudokuActivity : AppCompatActivity() {
     lateinit var observeDailySudokus: ObserveDailySudokusUseCase
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareActivityTransformationBetween()
@@ -98,11 +94,9 @@ class DailySudokuActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        lifecycleScope.launch {
-            getUserSettings().dailyShowUncompleted.let {
-                menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
-                menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
-            }
+        userSettings.dailyShowUncompleted.let {
+            menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
+            menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
         }
         return super.onPrepareOptionsMenu(menu)
     }
@@ -118,19 +112,15 @@ class DailySudokuActivity : AppCompatActivity() {
             }
 
             R.id.menuitem_show_all_sudokus -> {
-                lifecycleScope
-                    .launch {
-                        updateUserSettings { it.copy(dailyShowUncompleted = true) }
-                        invalidateOptionsMenu()
-                    }.let { true }
+                userSettings.dailyShowUncompleted = true
+                invalidateOptionsMenu()
+                true
             }
 
             R.id.menuitem_show_only_completed_sudokus -> {
-                lifecycleScope
-                    .launch {
-                        updateUserSettings { it.copy(dailyShowUncompleted = false) }
-                        invalidateOptionsMenu()
-                    }.let { true }
+                userSettings.dailyShowUncompleted = false
+                invalidateOptionsMenu()
+                true
             }
 
             else -> {

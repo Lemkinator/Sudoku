@@ -54,21 +54,20 @@ import androidx.preference.SeslSwitchPreferenceScreen
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.initCommonUtilsPreferences
-import de.lemke.commonutils.openApp
-import de.lemke.commonutils.prepareActivityTransformationTo
-import de.lemke.commonutils.setCustomBackAnimation
-import de.lemke.commonutils.shareApp
-import de.lemke.commonutils.toSafeFileName
-import de.lemke.commonutils.toast
+import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
+import de.lemke.commonutils.ui.utils.openApp
+import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
+import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.shareApp
+import de.lemke.commonutils.ui.utils.toSafeFileName
+import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
 import de.lemke.sudoku.domain.ExportDataUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
 import dev.oneuiproject.oneui.ktx.onClick
 import dev.oneuiproject.oneui.ktx.onNewValue
@@ -104,10 +103,7 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var importActivityResultLauncher: ActivityResultLauncher<String>
 
         @Inject
-        lateinit var getUserSettings: GetUserSettingsUseCase
-
-        @Inject
-        lateinit var updateUserSettings: UpdateUserSettingsUseCase
+        lateinit var userSettings: UserSettings
 
         @Inject
         lateinit var sendDailyNotification: SendDailyNotificationUseCase
@@ -159,7 +155,7 @@ class SettingsActivity : AppCompatActivity() {
                         lifecycleScope.launch { importData(uri) }
                     }
                 }
-            initCommonUtilsPreferences()
+            initCommonUtilsPreferences(userSettings)
             initPreferences()
         }
 
@@ -179,137 +175,127 @@ class SettingsActivity : AppCompatActivity() {
 
         @Suppress("CyclomaticComplexMethod", "LongMethod")
         private fun initPreferences() {
-            lifecycleScope.launch {
-                val userSettings = getUserSettings()
+            findPreference<DropDownPreference>("error_limit_pref")?.apply {
+                summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
+                onNewValue { newValue: String ->
+                    userSettings.errorLimit = newValue.toIntOrNull() ?: 0
+                    summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
+                }
+            } ?: Log.e(TAG, "error limit Preference not found")
 
-                findPreference<DropDownPreference>("error_limit_pref")?.apply {
-                    summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
-                    onNewValue { newValue: String ->
-                        lifecycleScope.launch { updateUserSettings { it.copy(errorLimit = newValue.toIntOrNull() ?: 0) } }
-                        summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
+            findPreference<SwitchPreferenceCompat>("keep_screen_on_pref")?.apply {
+                isChecked = userSettings.keepScreenOn
+                onNewValue { v: Boolean -> userSettings.keepScreenOn = v }
+            } ?: Log.e(TAG, "keep screen on Preference not found")
+
+            findPreference<SwitchPreferenceCompat>("highlight_regional_pref")?.apply {
+                isChecked = userSettings.highlightRegional
+                onNewValue { v: Boolean -> userSettings.highlightRegional = v }
+            } ?: Log.e(TAG, "regional highlight Preference not found")
+
+            findPreference<SwitchPreferenceCompat>("highlight_number_pref")?.apply {
+                isChecked = userSettings.highlightNumber
+                onNewValue { v: Boolean -> userSettings.highlightNumber = v }
+            } ?: Log.e(TAG, "number highlight Preference not found")
+
+            findPreference<SwitchPreferenceCompat>("animations_pref")?.apply {
+                isChecked = userSettings.animationsEnabled
+                onNewValue { v: Boolean -> userSettings.animationsEnabled = v }
+            } ?: Log.e(TAG, "animations Preference not found")
+
+            findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
+                isChecked = userSettings.dailySudokuNotificationEnabled &&
+                    areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
+                setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
+                onNewValue {
+                    when {
+                        !it -> {
+                            setDailySudokuNotification(false)
+                        }
+
+                        SDK_INT >= TIRAMISU &&
+                            checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
+                            requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                            isChecked = false
+                        }
+
+                        !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
+                            val settingsIntent =
+                                Intent(ACTION_APP_NOTIFICATION_SETTINGS)
+                                    .addFlags(FLAG_ACTIVITY_NEW_TASK)
+                                    .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
+                            // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
+                            startActivity(settingsIntent)
+                            isChecked = false
+                        }
+
+                        else -> {
+                            setDailySudokuNotification(true)
+                        }
                     }
-                } ?: Log.e(TAG, "error limit Preference not found")
-
-                findPreference<SwitchPreferenceCompat>("keep_screen_on_pref")?.apply {
-                    isChecked = userSettings.keepScreenOn
-                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(keepScreenOn = v) } } }
-                } ?: Log.e(TAG, "keep screen on Preference not found")
-
-                findPreference<SwitchPreferenceCompat>("highlight_regional_pref")?.apply {
-                    isChecked = userSettings.highlightRegional
-                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(highlightRegional = v) } } }
-                } ?: Log.e(TAG, "regional highlight Preference not found")
-
-                findPreference<SwitchPreferenceCompat>("highlight_number_pref")?.apply {
-                    isChecked = userSettings.highlightNumber
-                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(highlightNumber = v) } } }
-                } ?: Log.e(TAG, "number highlight Preference not found")
-
-                findPreference<SwitchPreferenceCompat>("animations_pref")?.apply {
-                    isChecked = userSettings.animationsEnabled
-                    onNewValue { v: Boolean -> lifecycleScope.launch { updateUserSettings { it.copy(animationsEnabled = v) } } }
-                } ?: Log.e(TAG, "animations Preference not found")
-
-                findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
-                    isChecked = userSettings.dailySudokuNotificationEnabled &&
-                        areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
-                    setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
-                    onNewValue {
-                        when {
-                            !it -> {
-                                setDailySudokuNotification(false)
-                            }
-
-                            SDK_INT >= TIRAMISU &&
-                                checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
-                                requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-                                isChecked = false
-                            }
-
-                            !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
-                                val settingsIntent =
-                                    Intent(ACTION_APP_NOTIFICATION_SETTINGS)
-                                        .addFlags(FLAG_ACTIVITY_NEW_TASK)
-                                        .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
-                                // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
-                                startActivity(settingsIntent)
-                                isChecked = false
-                            }
-
-                            else -> {
+                }
+                onClick {
+                    isChecked = true
+                    onPreferenceChangeListener?.onPreferenceChange(this@apply, true)
+                    val dialog =
+                        SeslTimePickerDialog(
+                            requireContext(),
+                            { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
+                                userSettings.dailySudokuNotificationHour = hourOfDay
+                                userSettings.dailySudokuNotificationMinute = minute
+                                setDailyNotificationPrefTime(hourOfDay, minute)
                                 setDailySudokuNotification(true)
-                            }
-                        }
-                    }
-                    onClick {
-                        lifecycleScope.launch {
-                            isChecked = true
-                            onPreferenceChangeListener?.onPreferenceChange(this@apply, true)
-                            val userSettings = getUserSettings()
-                            val dialog =
-                                SeslTimePickerDialog(
-                                    requireContext(),
-                                    { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
-                                        lifecycleScope.launch {
-                                            updateUserSettings {
-                                                it.copy(dailySudokuNotificationHour = hourOfDay, dailySudokuNotificationMinute = minute)
-                                            }
-                                            setDailyNotificationPrefTime(hourOfDay, minute)
-                                            setDailySudokuNotification(true)
-                                        }
-                                    },
-                                    userSettings.dailySudokuNotificationHour,
-                                    userSettings.dailySudokuNotificationMinute,
-                                    is24HourFormat(requireContext()),
-                                )
-                            dialog.show()
-                        }
-                    }
-                } ?: Log.e(TAG, "daily notification Preference not found")
-
-                findPreference<PreferenceScreen>("intro_pref")?.onClick {
-                    startActivity(Intent(requireContext(), IntroActivity::class.java).putExtra("openedFromSettings", true))
+                            },
+                            userSettings.dailySudokuNotificationHour,
+                            userSettings.dailySudokuNotificationMinute,
+                            is24HourFormat(requireContext()),
+                        )
+                    dialog.show()
                 }
+            } ?: Log.e(TAG, "daily notification Preference not found")
 
-                findPreference<PreferenceScreen>("export_data_pref")?.onClick {
-                    exportActivityResultLauncher.launch(
-                        Intent(ACTION_CREATE_DOCUMENT).apply {
-                            addCategory(CATEGORY_OPENABLE)
-                            type = "application/json"
-                            putExtra(EXTRA_TITLE, "sudoku_export".toSafeFileName(".json"))
-                        },
-                    )
-                }
+            findPreference<PreferenceScreen>("intro_pref")?.onClick {
+                startActivity(Intent(requireContext(), IntroActivity::class.java).putExtra("openedFromSettings", true))
+            }
 
-                findPreference<PreferenceScreen>("import_data_pref")?.onClick {
+            findPreference<PreferenceScreen>("export_data_pref")?.onClick {
+                exportActivityResultLauncher.launch(
+                    Intent(ACTION_CREATE_DOCUMENT).apply {
+                        addCategory(CATEGORY_OPENABLE)
+                        type = "application/json"
+                        putExtra(EXTRA_TITLE, "sudoku_export".toSafeFileName(".json"))
+                    },
+                )
+            }
+
+            findPreference<PreferenceScreen>("import_data_pref")?.onClick {
+                AlertDialog
+                    .Builder(requireContext())
+                    .setTitle(R.string.import_data)
+                    .setMessage(R.string.import_data_message)
+                    .setNegativeButton(designR.string.oui_des_common_cancel, null)
+                    .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
+                        importActivityResultLauncher.launch("application/json")
+                    }.show()
+            }
+
+            findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
+                val dialog =
                     AlertDialog
                         .Builder(requireContext())
-                        .setTitle(R.string.import_data)
-                        .setMessage(R.string.import_data_message)
+                        .setTitle(R.string.delete_invalid_sudokus)
+                        .setMessage(R.string.delete_invalid_sudokus_summary)
                         .setNegativeButton(designR.string.oui_des_common_cancel, null)
-                        .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                            importActivityResultLauncher.launch("application/json")
-                        }.show()
-                }
-
-                findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
-                    val dialog =
-                        AlertDialog
-                            .Builder(requireContext())
-                            .setTitle(R.string.delete_invalid_sudokus)
-                            .setMessage(R.string.delete_invalid_sudokus_summary)
-                            .setNegativeButton(designR.string.oui_des_common_cancel, null)
-                            .setPositiveButton(R.string.commonutils_delete, null)
-                            .create()
-                    dialog.show()
-                    dialog.getButton(BUTTON_POSITIVE).apply {
-                        setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
-                        setOnClickListenerWithProgress { _, _ ->
-                            lifecycleScope.launch {
-                                deleteInvalidSudokus()
-                                delay(500)
-                                dialog.dismiss()
-                            }
+                        .setPositiveButton(R.string.commonutils_delete, null)
+                        .create()
+                dialog.show()
+                dialog.getButton(BUTTON_POSITIVE).apply {
+                    setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
+                    setOnClickListenerWithProgress { _, _ ->
+                        lifecycleScope.launch {
+                            deleteInvalidSudokus()
+                            delay(500)
+                            dialog.dismiss()
                         }
                     }
                 }
@@ -334,10 +320,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun setDailySudokuNotification(enabled: Boolean) {
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(dailySudokuNotificationEnabled = enabled) }
-                sendDailyNotification.setDailySudokuNotification(enable = enabled)
-            }
+            userSettings.dailySudokuNotificationEnabled = enabled
+            lifecycleScope.launch { sendDailyNotification.setDailySudokuNotification(enable = enabled) }
         }
 
         private fun areNotificationsEnabled(

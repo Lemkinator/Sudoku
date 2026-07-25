@@ -28,14 +28,14 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.restoreSearchAndActionMode
-import de.lemke.commonutils.saveSearchAndActionMode
-import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.utils.restoreSearchAndActionMode
+import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
-import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
@@ -82,7 +82,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     lateinit var deleteSudoku: DeleteSudokusUseCase
 
     @Inject
-    lateinit var observeUserSettings: ObserveUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -110,13 +110,23 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 if (it.size > previousSize) binding.sudokuHistoryList.scrollToPosition(0)
             }
         }
-        lifecycleScope.launch {
-            observeUserSettings().flowWithLifecycle(lifecycle).collectLatest {
-                if (it.errorLimit != sudokuListAdapter.errorLimit) {
-                    sudokuListAdapter.errorLimit = it.errorLimit
-                    sudokuListAdapter.notifyItemRangeChanged(0, sudokuHistory.size)
-                }
-            }
+        // errorLimit has no reactive flow on UserSettings (only filterFlags/dailyShowUncompleted do, see UserSettings.kt) — refresh
+        // synchronously whenever this tab becomes visible instead. MainActivity.onTabItemSelected() calls Fragment.onResume()
+        // directly on tab switch, so this fires on every switch back to this tab, which is the only time settings could have
+        // changed (Settings is a separate Activity, never visible at the same time as this tab).
+        refreshErrorLimit()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshErrorLimit()
+    }
+
+    private fun refreshErrorLimit() {
+        if (!this::binding.isInitialized) return
+        if (userSettings.errorLimit != sudokuListAdapter.errorLimit) {
+            sudokuListAdapter.errorLimit = userSettings.errorLimit
+            sudokuListAdapter.notifyItemRangeChanged(0, sudokuHistory.size)
         }
     }
 

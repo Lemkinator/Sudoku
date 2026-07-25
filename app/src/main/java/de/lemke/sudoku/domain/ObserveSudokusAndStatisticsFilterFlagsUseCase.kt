@@ -16,7 +16,7 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.UserSettingsRepository
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
@@ -46,11 +46,11 @@ import kotlinx.coroutines.flow.flowOn
 
 class ObserveSudokusAndStatisticsFilterFlagsUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
-    private val userSettingsRepository: UserSettingsRepository,
+    private val userSettings: UserSettings,
 ) {
     @Suppress("CyclomaticComplexMethod")
     operator fun invoke(): Flow<List<Sudoku>> =
-        combine(userSettingsRepository.observeStatisticsFilterFlags(), sudokusRepository.observeAllSudokus()) { flags, sudokus ->
+        combine(userSettings.filterFlagsFlow, sudokusRepository.observeAllSudokus()) { flags, sudokus ->
             val typeAll = flags and TYPE_ALL != 0
             val typeNormal = flags and TYPE_NORMAL != 0
             val typeDaily = flags and TYPE_DAILY != 0

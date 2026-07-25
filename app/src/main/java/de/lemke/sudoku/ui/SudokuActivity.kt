@@ -43,11 +43,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.prepareActivityTransformationTo
-import de.lemke.commonutils.setCustomBackAnimation
-import de.lemke.commonutils.showInAppReviewIfPossible
-import de.lemke.commonutils.toast
-import de.lemke.commonutils.transformTo
+import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
+import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
+import de.lemke.commonutils.ui.utils.toast
+import de.lemke.commonutils.ui.utils.transformTo
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
@@ -55,7 +55,6 @@ import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
@@ -84,7 +83,6 @@ import dev.oneuiproject.oneui.design.R as designR
 class SudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
-    private lateinit var userSettings: UserSettings
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -98,7 +96,7 @@ class SudokuActivity : AppCompatActivity() {
     private val transparent get() = ColorStateList.valueOf(getColor(android.R.color.transparent))
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
+    lateinit var userSettings: UserSettings
 
     @Inject
     lateinit var getSudoku: GetSudokuUseCase
@@ -139,7 +137,6 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
         lifecycleScope.launch {
-            userSettings = getUserSettings()
             val nullableSudoku = getSudoku(SudokuId(id))
             if (nullableSudoku == null) {
                 Log.e("SudokuActivity", "Sudoku not found")

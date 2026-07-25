@@ -29,13 +29,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.ui.utils.AlarmReceiver
 import java.util.Calendar
 import javax.inject.Inject
 
 class SendDailyNotificationUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val getUserSettings: GetUserSettingsUseCase,
+    private val userSettings: UserSettings,
 ) {
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
     private val notificationId = 5
@@ -88,7 +89,6 @@ class SendDailyNotificationUseCase @Inject constructor(
     private suspend fun enableDailySudokuNotification() {
         createNotificationChannel()
         val alarmIntent = createAlarmIntent()
-        val userSettings = getUserSettings()
         val calendar: Calendar =
             Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, userSettings.dailySudokuNotificationHour)
