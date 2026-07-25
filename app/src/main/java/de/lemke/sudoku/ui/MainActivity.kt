@@ -34,6 +34,7 @@ import android.view.MenuItem
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
@@ -68,9 +69,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
-import de.lemke.sudoku.domain.ImportSudokuUseCase
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EASY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
@@ -102,18 +100,10 @@ class MainActivity : AppCompatActivity() {
     private var selectedPosition = 0
     private var isUIReady = false
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(StartActivityForResult()) {}
+    private val viewModel: MainViewModel by viewModels()
 
     @Inject
     lateinit var userSettings: UserSettings
-
-    @Inject
-    lateinit var importSudoku: ImportSudokuUseCase
-
-    @Inject
-    lateinit var sendDailyNotification: SendDailyNotificationUseCase
-
-    @Inject
-    lateinit var updatePlayGames: UpdatePlayGamesUseCase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -154,8 +144,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             isUIReady = true
             checkImportedSudoku()
-            sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
-            updatePlayGames(this@MainActivity)
+            viewModel.onScreenReady(this@MainActivity)
         }
     }
 
@@ -165,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             dialog.setProgressStyle(CIRCLE)
             dialog.setCancelable(false)
             dialog.show()
-            val sudoku = importSudoku(intent.data)
+            val sudoku = viewModel.handleImportedSudoku(intent.data)
             if (sudoku != null) {
                 findViewById<AppCompatButton?>(R.id.newGameButton)?.transformToActivity(
                     Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),

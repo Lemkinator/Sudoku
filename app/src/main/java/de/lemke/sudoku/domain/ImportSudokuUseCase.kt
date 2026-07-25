@@ -19,7 +19,7 @@ package de.lemke.sudoku.domain
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.parseJSON
@@ -32,7 +32,7 @@ import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
 
 class ImportSudokuUseCase @Inject constructor(
-    @param:ActivityContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val saveSudoku: SaveSudokuUseCase,
 ) {
     @Suppress("TooGenericExceptionCaught")
