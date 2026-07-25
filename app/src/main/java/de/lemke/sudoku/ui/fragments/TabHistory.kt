@@ -110,23 +110,13 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 if (it.size > previousSize) binding.sudokuHistoryList.scrollToPosition(0)
             }
         }
-        // errorLimit has no reactive flow on UserSettings (only filterFlags/dailyShowUncompleted do, see UserSettings.kt) — refresh
-        // synchronously whenever this tab becomes visible instead. MainActivity.onTabItemSelected() calls Fragment.onResume()
-        // directly on tab switch, so this fires on every switch back to this tab, which is the only time settings could have
-        // changed (Settings is a separate Activity, never visible at the same time as this tab).
-        refreshErrorLimit()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        refreshErrorLimit()
-    }
-
-    private fun refreshErrorLimit() {
-        if (!this::binding.isInitialized) return
-        if (userSettings.errorLimit != sudokuListAdapter.errorLimit) {
-            sudokuListAdapter.errorLimit = userSettings.errorLimit
-            sudokuListAdapter.notifyItemRangeChanged(0, sudokuHistory.size)
+        lifecycleScope.launch {
+            userSettings.errorLimitFlow.flowWithLifecycle(lifecycle).collectLatest {
+                if (it != sudokuListAdapter.errorLimit) {
+                    sudokuListAdapter.errorLimit = it
+                    sudokuListAdapter.notifyItemRangeChanged(0, sudokuHistory.size)
+                }
+            }
         }
     }
 

@@ -19,7 +19,6 @@ package de.lemke.sudoku.data
 import android.content.SharedPreferences
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.data.delegates
-import de.lemke.commonutils.data.sanitized
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
@@ -57,4 +56,11 @@ class UserSettings(
      * needs to re-filter when this changes while being observed.
      */
     val filterFlagsFlow: StateFlow<Int> = settingsFlow(scope) { filterFlags }
+
+    /**
+     * Reactive view of [errorLimit] — [TabHistory][de.lemke.sudoku.ui.fragments.TabHistory] needs to update its
+     * error-limit highlighting live while visible-but-unfocused (e.g. split-screen alongside Settings), not just
+     * on resume.
+     */
+    val errorLimitFlow: StateFlow<Int> = settingsFlow(scope) { errorLimit }
 }
