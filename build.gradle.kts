@@ -27,7 +27,12 @@ plugins {
 
 spotless {
     kotlinGradle {
-        target("*.gradle.kts")
+        target(
+            fileTree(rootDir) {
+                include("**/*.gradle.kts")
+                exclude("**/build/**", "**/.gradle/**")
+            },
+        )
         licenseHeaderFile(rootProject.file("config/spotless/apache-2.0.kt"), "(^(?![\\/ ]\\*).*$)")
         ktlint(libs.versions.ktlint.get())
     }
