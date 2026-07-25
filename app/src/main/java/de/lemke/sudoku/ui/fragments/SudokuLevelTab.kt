@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.ui.fragments
 
 import android.content.Intent
@@ -33,10 +49,10 @@ import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
 import dev.oneuiproject.oneui.utils.ItemDecorRule.NONE
 import dev.oneuiproject.oneui.utils.SemItemDecoration
+import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class SudokuLevelTab : Fragment() {
@@ -61,10 +77,16 @@ class SudokuLevelTab : Fragment() {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        FragmentTabLevelBinding.inflate(inflater, container, false).also { binding = it }.root
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View = FragmentTabLevelBinding.inflate(inflater, container, false).also { binding = it }.root
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
         super.onViewCreated(view, savedInstanceState)
         lifecycleScope.launch {
             initRecycler()
@@ -75,8 +97,13 @@ class SudokuLevelTab : Fragment() {
                     binding.tabLevelProgressBar.isVisible = true
                     nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
                     sudokuLevel = listOf(SudokuItem(nextLevelSudoku!!, nextLevelSudoku!!.modeLevel.toString())) + sudokuLevel
-                    lifecycleScope.launch { delay(200); binding.sudokuLevelsRecycler.smoothScrollToPosition(0) }
-                } else nextLevelSudoku = null
+                    lifecycleScope.launch {
+                        delay(200)
+                        binding.sudokuLevelsRecycler.smoothScrollToPosition(0)
+                    }
+                } else {
+                    nextLevelSudoku = null
+                }
                 sudokuListAdapter.submitList(sudokuLevel)
                 binding.sudokuLevelsRecycler.isVisible = true
                 binding.tabLevelProgressBar.isVisible = false
@@ -104,11 +131,10 @@ class SudokuLevelTab : Fragment() {
                         binding.tabLevelProgressBar.isVisible = false
                     }
                     viewHolder.itemView.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value)
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
                     )
                 }
             }
         }
     }
 }
-

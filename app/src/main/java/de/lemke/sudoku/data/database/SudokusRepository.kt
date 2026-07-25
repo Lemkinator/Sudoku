@@ -1,10 +1,26 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
-import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.flow.map
 
 class SudokusRepository @Inject constructor(
     private val sudokuDao: SudokuDao,
@@ -29,10 +45,15 @@ class SudokusRepository @Inject constructor(
 
     suspend fun deleteSudoku(sudoku: Sudoku) = sudokuDao.delete(sudokuToDb(sudoku))
 
-    suspend fun saveSudoku(sudoku: Sudoku, onlyUpdate: Boolean = false) {
-        if (!onlyUpdate) when {
-            sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { if (it.id != sudoku.id) deleteSudoku(it) }
-            sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { if (it.id != sudoku.id) deleteSudoku(it) }
+    suspend fun saveSudoku(
+        sudoku: Sudoku,
+        onlyUpdate: Boolean = false,
+    ) {
+        if (!onlyUpdate) {
+            when {
+                sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { if (it.id != sudoku.id) deleteSudoku(it) }
+                sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { if (it.id != sudoku.id) deleteSudoku(it) }
+            }
         }
         sudokuDao.insert(sudokuToDb(sudoku), sudoku.fields.map { fieldToDb(it, sudoku.id) })
     }
@@ -41,7 +62,10 @@ class SudokusRepository @Inject constructor(
 
     suspend fun deleteInvalidSudokus() = getAllSudokus().filter { it.fields.size != it.size * it.size }.forEach { deleteSudoku(it) }
 
-    private suspend fun getSudokuLevel(size: Int, level: Int): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size, level))
+    private suspend fun getSudokuLevel(
+        size: Int,
+        level: Int,
+    ): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size, level))
 
     private suspend fun getDailySudoku(date: LocalDate): Sudoku? =
         sudokuFromDb(sudokuDao.getDailySudokus().firstOrNull { it.sudoku.created.toLocalDate() == date })

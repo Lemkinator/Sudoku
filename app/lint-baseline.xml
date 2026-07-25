@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.3.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.3.1)" variant="all" version="9.3.1">
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of io.github.lemkinator:common-utils than 1.1.4 is available: 1.2.2"
+        errorLine1="common-utils = &quot;1.1.4&quot;"
+        errorLine2="               ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="5"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?roundedCornerColor` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_daily_sudoku.xml"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?roundedCornerColor` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_intro.xml"
+            line="8"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?roundedCornerColor` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_settings.xml"
+            line="7"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?roundedCornerColor` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_sudoku.xml"
+            line="8"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?roundedCornerColor` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_sudoku_level.xml"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?selectableItemBackground` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?selectableItemBackground&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/field_view.xml"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.package_name` appears to be unused"
+        errorLine1="    &lt;string name=&quot;package_name&quot; translatable=&quot;false&quot;>de.lemke.sudoku&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/games-ids.xml"
+            line="7"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_launcher_foreground` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_launcher_foreground.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_splash` appears to be unused"
+        errorLine1="&lt;vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_splash.xml"
+            line="2"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.drawable.ic_splash_animated` appears to be unused"
+        errorLine1="&lt;animated-vector xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
+        errorLine2="^">
+        <location
+            file="src/main/res/drawable/ic_splash_animated.xml"
+            line="3"
+            column="1"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_app_description` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_app_description&quot; translatable=&quot;false&quot;>@string/app_description&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="13"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_email` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_email&quot; translatable=&quot;false&quot;>sudoku@leonard-lemke.com&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="14"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_privacy_website` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_privacy_website&quot; translatable=&quot;false&quot;>https://www.leonard-lemke.com/apps/sudoku/privacy-policy&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="15"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_no_entry` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_no_entry&quot;>No entry&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="20"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe1_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe1_title&quot;>Beautiful design&lt;/string>."
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="27"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe2_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe2_title&quot;>Free&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="28"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe3_title` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe3_title&quot;>No ads&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe2_summary` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe2_summary&quot;>No subscriptions, no in-app purchases, no costs at all.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="30"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe3_summary` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe3_summary&quot;>No annoying ads after each Sudoku.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="31"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_tos` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_tos&quot;>Terms of Service&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="32"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_tos_content` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_tos_content&quot;>It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com. \n\nRegarding the contact features provided in various places within this app, which generate a topic-specific, prewritten email when activated, the following applies: These templates are intended solely as a starting point for your personalized message. Sending one of these templates unchanged, or a blank email, constitutes misuse of the feature and is not permitted. By doing so anyway, you legally agree to be classified as a person demonstrably incapable of properly operating basic functions of their smartphone and its email application functions. Such a classification renders further communication obsolete and releases the recipient from any obligation to respond.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="33"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe_tos_text` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe_tos_text&quot;>By continuing, you agree to the %1$s.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="34"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_oobe_new_tos_text` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_oobe_new_tos_text&quot;>The %1$s have been updated. By continuing, you agree to the new %1$s.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="35"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_open_in_playstore` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_open_in_playstore&quot;>Open in Play Store&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="38"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_open_source_licenses` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_open_source_licenses&quot;>Open source licenses&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="39"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_write_email` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_write_email&quot;>Write an e-mail&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="43"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_website` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_website&quot;>Website&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="44"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_support_me_text` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_support_me_text&quot;>If you want to support me in any way, feel free to send me an e-mail&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="45"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_support_me` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_support_me&quot;>Support me&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="46"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_write_review` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_write_review&quot;>Write a review&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="48"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_useful_links` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_useful_links&quot;>Useful links&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="51"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_playstore_ad` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_playstore_ad&quot;>ADVERTISEMENT!!!&amp;#129313;&amp;#129396;&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="52"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_playstore_redirect_message` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_playstore_redirect_message&quot;>According to Google Play, this is \&quot;Deceptive advertisement that simulates or impersonates the user interface of an app feature\&quot;… Since app updates are otherwise rejected by Google Play, here\&apos;s a hint: This button leads (surprisingly?&amp;#129313;) to my developer page on Google Play, continue?&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="53"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_design` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_design&quot;>Design&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="57"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_system_default` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_system_default&quot;>System default&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="58"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_change_language_not_supported_by_device` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_change_language_not_supported_by_device&quot;>Change language is not supported by your device.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="62"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_delete_appdata_and_exit_warning` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_delete_appdata_and_exit_warning&quot;>Attention: This will delete all personal data. Continue? &lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="64"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_privacy_policy` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_privacy_policy&quot;>Privacy Policy&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="67"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_report_bug` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_report_bug&quot;>Report bug or improvement&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="68"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_no_email_app_installed` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_no_email_app_installed&quot;>No e-mail app installed…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="71"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_no_browser_app_installed` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_no_browser_app_installed&quot;>No browser app installed…&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="72"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.commonutils_error_cant_open_url` appears to be unused"
+        errorLine1="    &lt;string name=&quot;commonutils_error_cant_open_url&quot;>Error: URL could not be opened.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="73"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.error_no_folder_selected` appears to be unused"
+        errorLine1="    &lt;string name=&quot;error_no_folder_selected&quot;>Error: No folder selected.&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="108"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.string.no_game_played` appears to be unused"
+        errorLine1="    &lt;string name=&quot;no_game_played&quot;>No game played yet&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="221"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.style.ButtonStyle_NumberButton_Land` appears to be unused"
+        errorLine1="    &lt;style name=&quot;ButtonStyle.NumberButton.Land&quot; parent=&quot;ButtonStyle.NumberButton&quot;>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="26"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        message="The resource `R.integer.commonutils_tos_version` appears to be unused"
+        errorLine1="    &lt;integer name=&quot;commonutils_tos_version&quot;>1&lt;/integer>"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/values.xml"
+            line="3"
+            column="14"/>
+    </issue>
+
+</issues>

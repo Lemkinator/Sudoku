@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.lemke.sudoku.data
 
 import androidx.datastore.core.DataStore
@@ -5,18 +21,17 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.model.SudokuFilterFlags
+import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
 
 /** Provides CRUD operations for user settings. */
 class UserSettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
 ) {
-
     /** Returns the current user settings. */
     suspend fun getSettings(): UserSettings = dataStore.data.map(::settingsFromPreferences).first()
 
@@ -27,53 +42,56 @@ class UserSettingsRepository @Inject constructor(
     fun observeDailyShowUncompleted(): Flow<Boolean> = dataStore.data.map { it[KEY_DAILY_SHOW_UNCOMPLETED] == true }.distinctUntilChanged()
 
     /** Observe statisticsFilterFlags. */
-    fun observeStatisticsFilterFlags(): Flow<Int> = dataStore.data.map {
-        it[KEY_STATISTICS_FILTER_FLAGS]
-            ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL)
-    }.distinctUntilChanged()
+    fun observeStatisticsFilterFlags(): Flow<Int> =
+        dataStore.data
+            .map {
+                it[KEY_STATISTICS_FILTER_FLAGS]
+                    ?: (SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_ALL or SudokuFilterFlags.DIFFICULTY_ALL)
+            }.distinctUntilChanged()
 
     /**
      * Updates the current user settings and returns the new settings.
      * @param f Invoked with the current settings; The settings returned from this function will replace the current ones.
      */
     suspend fun updateSettings(f: (UserSettings) -> UserSettings): UserSettings {
-        val prefs = dataStore.edit {
-            val newSettings = f(settingsFromPreferences(it))
-            it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
-            it[KEY_SIZE_SLIDER_VALUE] = newSettings.sizeSliderValue
-            it[KEY_KEEP_SCREEN_ON] = newSettings.keepScreenOn
-            it[KEY_ANIMATIONS_ENABLED] = newSettings.animationsEnabled
-            it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
-            it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
-            it[KEY_ERROR_LIMIT] = newSettings.errorLimit
-            it[KEY_STATISTICS_FILTER_FLAGS] = newSettings.filterFlags
-            it[KEY_DAILY_SHOW_UNCOMPLETED] = newSettings.dailyShowUncompleted
-            it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
-            it[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] = newSettings.dailySudokuNotificationHour
-            it[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] = newSettings.dailySudokuNotificationMinute
-            it[KEY_CURRENT_LEVEL_TAB] = newSettings.currentLevelTab
-        }
+        val prefs =
+            dataStore.edit {
+                val newSettings = f(settingsFromPreferences(it))
+                it[KEY_DIFFICULTY_SLIDER_VALUE] = newSettings.difficultySliderValue
+                it[KEY_SIZE_SLIDER_VALUE] = newSettings.sizeSliderValue
+                it[KEY_KEEP_SCREEN_ON] = newSettings.keepScreenOn
+                it[KEY_ANIMATIONS_ENABLED] = newSettings.animationsEnabled
+                it[KEY_REGIONAL_HIGHLIGHT] = newSettings.highlightRegional
+                it[KEY_NUMBER_HIGHLIGHT] = newSettings.highlightNumber
+                it[KEY_ERROR_LIMIT] = newSettings.errorLimit
+                it[KEY_STATISTICS_FILTER_FLAGS] = newSettings.filterFlags
+                it[KEY_DAILY_SHOW_UNCOMPLETED] = newSettings.dailyShowUncompleted
+                it[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] = newSettings.dailySudokuNotificationEnabled
+                it[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] = newSettings.dailySudokuNotificationHour
+                it[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] = newSettings.dailySudokuNotificationMinute
+                it[KEY_CURRENT_LEVEL_TAB] = newSettings.currentLevelTab
+            }
         return settingsFromPreferences(prefs)
     }
 
-
-    private fun settingsFromPreferences(prefs: Preferences) = UserSettings(
-        difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
-        sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
-        keepScreenOn = prefs[KEY_KEEP_SCREEN_ON] != false,
-        animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] != false,
-        highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] != false,
-        highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] != false,
-        errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
-        filterFlags = prefs[KEY_STATISTICS_FILTER_FLAGS]
-            ?: (GetAllSudokusUseCase.TYPE_ALL or GetAllSudokusUseCase.SIZE_ALL or GetAllSudokusUseCase.DIFFICULTY_ALL),
-        dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] != false,
-        dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] != false,
-        dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,
-        dailySudokuNotificationMinute = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] ?: 0,
-        currentLevelTab = prefs[KEY_CURRENT_LEVEL_TAB] ?: 1,
-    )
-
+    private fun settingsFromPreferences(prefs: Preferences) =
+        UserSettings(
+            difficultySliderValue = prefs[KEY_DIFFICULTY_SLIDER_VALUE] ?: 2,
+            sizeSliderValue = prefs[KEY_SIZE_SLIDER_VALUE] ?: 1,
+            keepScreenOn = prefs[KEY_KEEP_SCREEN_ON] != false,
+            animationsEnabled = prefs[KEY_ANIMATIONS_ENABLED] != false,
+            highlightRegional = prefs[KEY_REGIONAL_HIGHLIGHT] != false,
+            highlightNumber = prefs[KEY_NUMBER_HIGHLIGHT] != false,
+            errorLimit = prefs[KEY_ERROR_LIMIT] ?: 3,
+            filterFlags =
+                prefs[KEY_STATISTICS_FILTER_FLAGS]
+                    ?: (SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_ALL or SudokuFilterFlags.DIFFICULTY_ALL),
+            dailyShowUncompleted = prefs[KEY_DAILY_SHOW_UNCOMPLETED] != false,
+            dailySudokuNotificationEnabled = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_ENABLED] != false,
+            dailySudokuNotificationHour = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_HOUR] ?: 9,
+            dailySudokuNotificationMinute = prefs[KEY_DAILY_SUDOKU_NOTIFICATION_MINUTE] ?: 0,
+            currentLevelTab = prefs[KEY_CURRENT_LEVEL_TAB] ?: 1,
+        )
 
     private companion object {
         private val KEY_DIFFICULTY_SLIDER_VALUE = intPreferencesKey("difficultySliderValue")
