@@ -34,7 +34,7 @@ class CodingConventionsTest : ShouldSpec() {
         should("properties declared before functions in class body") {
             codeScope
                 .classes()
-                .assertTrue(testName = this.testCase.name.toString()) { koClass ->
+                .assertTrue(testName = "${this.testCase.name} – classes") { koClass ->
                     val declarations = koClass.declarations(includeNested = false, includeLocal = false)
                     val lastPropertyIndex = declarations.indexOfLast { it is KoPropertyDeclaration }
                     val firstFunctionIndex = declarations.indexOfFirst { it is KoFunctionDeclaration }
@@ -42,7 +42,7 @@ class CodingConventionsTest : ShouldSpec() {
                 }
             codeScope
                 .interfaces()
-                .assertTrue(testName = this.testCase.name.toString()) { koInterface ->
+                .assertTrue(testName = "${this.testCase.name} – interfaces") { koInterface ->
                     val declarations = koInterface.declarations(includeNested = false, includeLocal = false)
                     val lastPropertyIndex = declarations.indexOfLast { it is KoPropertyDeclaration }
                     val firstFunctionIndex = declarations.indexOfFirst { it is KoFunctionDeclaration }
@@ -62,7 +62,7 @@ class CodingConventionsTest : ShouldSpec() {
         should("override functions declared before non-override functions in class body") {
             codeScope
                 .classes()
-                .assertTrue(testName = this.testCase.name.toString()) { koClass ->
+                .assertTrue(testName = "${this.testCase.name} – classes") { koClass ->
                     val functions = koClass.functions(includeNested = false, includeLocal = false)
                     val lastOverrideIndex = functions.indexOfLast { it.hasModifier(KoModifier.OVERRIDE) }
                     val firstNonOverrideIndex = functions.indexOfFirst { !it.hasModifier(KoModifier.OVERRIDE) }
@@ -70,7 +70,7 @@ class CodingConventionsTest : ShouldSpec() {
                 }
             codeScope
                 .interfaces()
-                .assertTrue(testName = this.testCase.name.toString()) { koInterface ->
+                .assertTrue(testName = "${this.testCase.name} – interfaces") { koInterface ->
                     val functions = koInterface.functions(includeNested = false, includeLocal = false)
                     val lastOverrideIndex = functions.indexOfLast { it.hasModifier(KoModifier.OVERRIDE) }
                     val firstNonOverrideIndex = functions.indexOfFirst { !it.hasModifier(KoModifier.OVERRIDE) }
@@ -80,7 +80,7 @@ class CodingConventionsTest : ShouldSpec() {
         should("companion object is the last non-class member in class body") {
             codeScope
                 .classes()
-                .assertTrue(testName = this.testCase.name.toString()) {
+                .assertTrue(testName = "${this.testCase.name} – classes") {
                     val declarations = it.declarations(includeNested = false, includeLocal = false)
                     val companion = it.objects(includeNested = false).lastOrNull { obj -> obj.hasModifier(KoModifier.COMPANION) }
                     companion == null ||
@@ -90,7 +90,7 @@ class CodingConventionsTest : ShouldSpec() {
                 }
             codeScope
                 .interfaces()
-                .assertTrue(testName = this.testCase.name.toString()) {
+                .assertTrue(testName = "${this.testCase.name} – interfaces") {
                     val declarations = it.declarations(includeNested = false, includeLocal = false)
                     val companion = it.objects(includeNested = false).lastOrNull { obj -> obj.hasModifier(KoModifier.COMPANION) }
                     companion == null ||
@@ -102,7 +102,7 @@ class CodingConventionsTest : ShouldSpec() {
         should("non-private nested class declarations are last in class body") {
             codeScope
                 .classes()
-                .assertTrue(testName = this.testCase.name.toString()) {
+                .assertTrue(testName = "${this.testCase.name} – classes") {
                     val declarations = it.declarations(includeNested = false, includeLocal = false)
                     val firstNonPrivateClassTypeIndex =
                         declarations.indexOfFirst { decl ->
@@ -124,7 +124,7 @@ class CodingConventionsTest : ShouldSpec() {
                 }
             codeScope
                 .interfaces()
-                .assertTrue(testName = this.testCase.name.toString()) {
+                .assertTrue(testName = "${this.testCase.name} – interfaces") {
                     val declarations = it.declarations(includeNested = false, includeLocal = false)
                     val firstNonPrivateClassTypeIndex =
                         declarations.indexOfFirst { decl ->
