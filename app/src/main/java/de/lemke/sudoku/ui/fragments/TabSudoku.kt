@@ -27,16 +27,12 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
-import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetRecentlyUpdatedNormalSudokuUseCase
-import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
@@ -46,27 +42,12 @@ import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
-
-    @Inject
-    lateinit var userSettings: UserSettings
-
-    @Inject
-    lateinit var generateSudoku: GenerateSudokuUseCase
-
-    @Inject
-    lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
-    lateinit var getRecentSudoku: GetRecentlyUpdatedNormalSudokuUseCase
-
-    @Inject
-    lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
+    private val viewModel: TabSudokuViewModel by viewModels()
 
     private val SeslSeekBar.sudokuSize: Int
         get() =
@@ -96,8 +77,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.newGameButton.onSingleClick {
             binding.newSudokuProgressBar.visibility = VISIBLE
             lifecycleScope.launch {
-                val sudoku = generateSudoku(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
-                saveSudoku(sudoku)
+                val sudoku =
+                    viewModel.createNewSudoku(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
                 binding.newGameButton.transformToActivity(
                     Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
                 )
@@ -122,7 +103,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 "SudokuLevelActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
-        binding.difficultySeekbar.progress = userSettings.difficultySliderValue
+        binding.difficultySeekbar.progress = viewModel.difficultySliderValue
         binding.difficultySeekbar.setOnSeekBarChangeListener(
             object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
@@ -134,11 +115,11 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                     progress: Int,
                     fromUser: Boolean,
                 ) {
-                    userSettings.difficultySliderValue = progress
+                    viewModel.difficultySliderValue = progress
                 }
             },
         )
-        binding.sizeSeekbar.progress = userSettings.sizeSliderValue
+        binding.sizeSeekbar.progress = viewModel.sizeSliderValue
         binding.sizeSeekbar.setOnSeekBarChangeListener(
             object : SeslSeekBar.OnSeekBarChangeListener {
                 override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
@@ -150,7 +131,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                     progress: Int,
                     fromUser: Boolean,
                 ) {
-                    userSettings.sizeSliderValue = progress
+                    viewModel.sizeSliderValue = progress
                 }
             },
         )
@@ -159,8 +140,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch {
-            val sudoku = getRecentSudoku()
-            if (sudoku != null && !sudoku.completed && !sudoku.errorLimitReached(userSettings.errorLimit)) {
+            val sudoku = viewModel.getContinuableSudoku()
+            if (sudoku != null) {
                 binding.continueGameButton.isVisible = true
                 binding.continueGameButton.text =
                     getString(
@@ -176,7 +157,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             } else {
                 binding.continueGameButton.isVisible = false
             }
-            isDailySudokuCompleted().let {
+            viewModel.checkDailySudokuCompleted().let {
                 binding.dailyAvailableButton.isVisible = !it
                 binding.dailyButton.isVisible = it
             }
