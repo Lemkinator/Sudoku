@@ -227,5 +227,6 @@
     <string name="error_sudoku_not_found">Sudoku nicht gefunden…</string>
     <string name="error_loading_daily_sudokus_failed">Tägliche Sudokus konnten nicht geladen werden</string>
     <string name="error_loading_sudoku_level_failed">Sudoku-Level konnten nicht geladen werden</string>
+    <string name="error_loading_sudoku_history_failed">Sudoku-Verlauf konnte nicht geladen werden</string>
 
 </resources>
