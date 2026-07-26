@@ -34,6 +34,7 @@ import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
 import android.widget.TextView
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
@@ -51,13 +52,6 @@ import de.lemke.commonutils.ui.utils.transformTo
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
-import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
-import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
-import de.lemke.sudoku.domain.GetSudokuUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
-import de.lemke.sudoku.domain.ShareSudokuUseCase
-import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
@@ -98,26 +92,7 @@ class SudokuActivity : AppCompatActivity() {
     @Inject
     lateinit var userSettings: UserSettings
 
-    @Inject
-    lateinit var getSudoku: GetSudokuUseCase
-
-    @Inject
-    lateinit var generateSudoku: GenerateSudokuUseCase
-
-    @Inject
-    lateinit var generateSudokuLevel: GenerateSudokuLevelUseCase
-
-    @Inject
-    lateinit var getMaxSudokuLevel: GetMaxSudokuLevelUseCase
-
-    @Inject
-    lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
-    lateinit var shareSudoku: ShareSudokuUseCase
-
-    @Inject
-    lateinit var updatePlayGames: UpdatePlayGamesUseCase
+    private val viewModel: SudokuViewModel by viewModels()
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -137,7 +112,7 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
         lifecycleScope.launch {
-            val nullableSudoku = getSudoku(SudokuId(id))
+            val nullableSudoku = viewModel.loadSudoku(SudokuId(id))
             if (nullableSudoku == null) {
                 Log.e("SudokuActivity", "Sudoku not found")
                 toast(R.string.error_sudoku_not_found)
@@ -288,7 +263,7 @@ class SudokuActivity : AppCompatActivity() {
         menuPausePlayVisible = true
         invalidateOptionsMenu()
         if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
-        lifecycleScope.launch { saveSudoku(sudoku, onlyUpdate = true) }
+        lifecycleScope.launch { viewModel.saveSudokuProgress(sudoku, onlyUpdate = true) }
     }
 
     private fun animateGameButtonsVisibility(visible: Boolean) {
@@ -316,15 +291,15 @@ class SudokuActivity : AppCompatActivity() {
                 .setMessage(sudoku.getLocalStatisticsString(resources))
                 .setNeutralButton(commonutilsR.string.commonutils_ok, null)
         lifecycleScope.launch {
-            saveSudoku(sudoku, onlyUpdate = true)
+            viewModel.saveSudokuProgress(sudoku, onlyUpdate = true)
             if (sudoku.isSudokuLevel &&
-                getMaxSudokuLevel(sudoku.size) == sudoku.modeLevel
+                viewModel.isMaxSudokuLevel(sudoku.size, sudoku.modeLevel)
             ) {
                 dialog.setPositiveButton(R.string.next_level) { _, _ ->
                     lifecycleScope.launch {
                         loadingDialog.show()
-                        val nextSudokuLevel = generateSudokuLevel(sudoku.size, level = sudoku.modeLevel + 1)
-                        saveSudoku(nextSudokuLevel)
+                        val nextSudokuLevel = viewModel.generateNextLevelSudoku(sudoku.size, level = sudoku.modeLevel + 1)
+                        viewModel.saveSudokuProgress(nextSudokuLevel)
                         initSudoku(nextSudokuLevel)
                     }
                 }
@@ -332,14 +307,14 @@ class SudokuActivity : AppCompatActivity() {
                 dialog.setPositiveButton(R.string.new_game) { _, _ ->
                     lifecycleScope.launch {
                         loadingDialog.show()
-                        val newSudoku = generateSudoku(sudoku.size, sudoku.difficulty)
-                        saveSudoku(newSudoku)
+                        val newSudoku = viewModel.generateNewSudoku(sudoku.size, sudoku.difficulty)
+                        viewModel.saveSudokuProgress(newSudoku)
                         initSudoku(newSudoku)
                     }
                 }
             }
             dialog.show()
-            updatePlayGames(this@SudokuActivity, sudoku)
+            viewModel.syncPlayGames(this@SudokuActivity, sudoku)
             showInAppReviewIfPossible()
         }
     }
@@ -374,7 +349,7 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.show()
         sudoku.reset()
         lifecycleScope.launch {
-            saveSudoku(sudoku)
+            viewModel.saveSudokuProgress(sudoku)
             initSudoku(sudoku)
         }
     }
@@ -749,7 +724,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private suspend fun shareGame(sudoku: Sudoku) {
         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
-        val uri = shareSudoku(sudoku)
+        val uri = viewModel.exportSudoku(sudoku)
         val shareIntent = Intent(ACTION_SEND)
         shareIntent.type = "application/sudoku" // octet-stream"
         shareIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION)
@@ -770,7 +745,7 @@ class SudokuActivity : AppCompatActivity() {
             gameAdapter.updateFieldView(position.index)
             checkAnyNumberCompleted()
             checkRowColumnBlockCompleted(position)
-            lifecycleScope.launch { saveSudoku(sudoku, onlyUpdate = true) }
+            lifecycleScope.launch { viewModel.saveSudokuProgress(sudoku, onlyUpdate = true) }
         }
 
         override fun onCompleted(position: Position) {

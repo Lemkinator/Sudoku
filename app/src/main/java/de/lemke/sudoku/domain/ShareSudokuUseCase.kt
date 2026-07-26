@@ -20,7 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
-import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Sudoku
@@ -32,7 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class ShareSudokuUseCase @Inject constructor(
-    @param:ActivityContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(sudoku: Sudoku): Uri =
