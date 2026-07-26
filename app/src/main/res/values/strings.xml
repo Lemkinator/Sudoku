@@ -240,5 +240,6 @@
     <string name="error_loading_daily_sudokus_failed">Failed to load daily sudokus</string>
     <string name="error_loading_sudoku_level_failed">Failed to load sudoku levels</string>
     <string name="error_loading_sudoku_history_failed">Failed to load sudoku history</string>
+    <string name="error_loading_statistics_failed">Failed to load statistics</string>
 
 </resources>
