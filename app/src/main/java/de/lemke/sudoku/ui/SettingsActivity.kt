@@ -24,10 +24,7 @@ import android.content.Intent.ACTION_CREATE_DOCUMENT
 import android.content.Intent.CATEGORY_OPENABLE
 import android.content.Intent.EXTRA_TITLE
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
-import android.os.Build.VERSION.SDK_INT
-import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
 import android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
 import android.provider.Settings.EXTRA_APP_PACKAGE
@@ -41,9 +38,7 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestPermissi
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
-import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
@@ -64,10 +59,8 @@ import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
-import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
 import de.lemke.sudoku.domain.ExportDataUseCase
 import de.lemke.sudoku.domain.ImportDataUseCase
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
 import dev.oneuiproject.oneui.ktx.onClick
 import dev.oneuiproject.oneui.ktx.onNewValue
@@ -102,11 +95,10 @@ class SettingsActivity : AppCompatActivity() {
         private lateinit var exportActivityResultLauncher: ActivityResultLauncher<Intent>
         private lateinit var importActivityResultLauncher: ActivityResultLauncher<String>
 
-        @Inject
-        lateinit var userSettings: UserSettings
+        private val viewModel: SettingsViewModel by viewModels()
 
         @Inject
-        lateinit var sendDailyNotification: SendDailyNotificationUseCase
+        lateinit var userSettings: UserSettings
 
         @Inject
         lateinit var exportData: ExportDataUseCase
@@ -114,20 +106,9 @@ class SettingsActivity : AppCompatActivity() {
         @Inject
         lateinit var importData: ImportDataUseCase
 
-        @Inject
-        lateinit var deleteInvalidSudokus: DeleteInvalidSudokusUseCase
-
         private val requestPermissionLauncher =
             registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-                if (isGranted) {
-                    // Permission is granted. Continue the action or workflow in your app.
-                    setDailySudokuNotification(true)
-                } else {
-                    // Explain to the user that the feature is unavailable because the features requires a permission that the
-                    // user has denied. At the same time, respect the user's decision. Don't link to system settings in an effort
-                    // to convince the user to change their decision.
-                    setDailySudokuNotification(false)
-                }
+                viewModel.onNotificationPermissionResult(isGranted)
             }
 
         override fun onCreatePreferences(
@@ -176,50 +157,46 @@ class SettingsActivity : AppCompatActivity() {
         @Suppress("CyclomaticComplexMethod", "LongMethod")
         private fun initPreferences() {
             findPreference<DropDownPreference>("error_limit_pref")?.apply {
-                summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
+                summary = if (viewModel.errorLimit == 0) getString(R.string.no_limit) else viewModel.errorLimit.toString()
                 onNewValue { newValue: String ->
-                    userSettings.errorLimit = newValue.toIntOrNull() ?: 0
+                    viewModel.errorLimit = newValue.toIntOrNull() ?: 0
                     summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
                 }
             } ?: Log.e(TAG, "error limit Preference not found")
 
             findPreference<SwitchPreferenceCompat>("keep_screen_on_pref")?.apply {
-                isChecked = userSettings.keepScreenOn
-                onNewValue { v: Boolean -> userSettings.keepScreenOn = v }
+                isChecked = viewModel.keepScreenOn
+                onNewValue { v: Boolean -> viewModel.keepScreenOn = v }
             } ?: Log.e(TAG, "keep screen on Preference not found")
 
             findPreference<SwitchPreferenceCompat>("highlight_regional_pref")?.apply {
-                isChecked = userSettings.highlightRegional
-                onNewValue { v: Boolean -> userSettings.highlightRegional = v }
+                isChecked = viewModel.highlightRegional
+                onNewValue { v: Boolean -> viewModel.highlightRegional = v }
             } ?: Log.e(TAG, "regional highlight Preference not found")
 
             findPreference<SwitchPreferenceCompat>("highlight_number_pref")?.apply {
-                isChecked = userSettings.highlightNumber
-                onNewValue { v: Boolean -> userSettings.highlightNumber = v }
+                isChecked = viewModel.highlightNumber
+                onNewValue { v: Boolean -> viewModel.highlightNumber = v }
             } ?: Log.e(TAG, "number highlight Preference not found")
 
             findPreference<SwitchPreferenceCompat>("animations_pref")?.apply {
-                isChecked = userSettings.animationsEnabled
-                onNewValue { v: Boolean -> userSettings.animationsEnabled = v }
+                isChecked = viewModel.animationsEnabled
+                onNewValue { v: Boolean -> viewModel.animationsEnabled = v }
             } ?: Log.e(TAG, "animations Preference not found")
 
             findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
-                isChecked = userSettings.dailySudokuNotificationEnabled &&
-                    areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id))
-                setDailyNotificationPrefTime(userSettings.dailySudokuNotificationHour, userSettings.dailySudokuNotificationMinute)
+                isChecked = viewModel.isDailyNotificationChecked
+                setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
                 onNewValue {
-                    when {
-                        !it -> {
-                            setDailySudokuNotification(false)
-                        }
+                    when (viewModel.onDailyNotificationToggleRequested(it)) {
+                        DailyNotificationToggleResult.Applied -> {}
 
-                        SDK_INT >= TIRAMISU &&
-                            checkSelfPermission(requireContext(), POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
+                        DailyNotificationToggleResult.NeedsPermission -> {
                             requestPermissionLauncher.launch(POST_NOTIFICATIONS)
                             isChecked = false
                         }
 
-                        !areNotificationsEnabled(getString(R.string.daily_sudoku_notification_channel_id)) -> {
+                        DailyNotificationToggleResult.SystemNotificationsDisabled -> {
                             val settingsIntent =
                                 Intent(ACTION_APP_NOTIFICATION_SETTINGS)
                                     .addFlags(FLAG_ACTIVITY_NEW_TASK)
@@ -227,10 +204,6 @@ class SettingsActivity : AppCompatActivity() {
                             // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
                             startActivity(settingsIntent)
                             isChecked = false
-                        }
-
-                        else -> {
-                            setDailySudokuNotification(true)
                         }
                     }
                 }
@@ -241,13 +214,11 @@ class SettingsActivity : AppCompatActivity() {
                         SeslTimePickerDialog(
                             requireContext(),
                             { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
-                                userSettings.dailySudokuNotificationHour = hourOfDay
-                                userSettings.dailySudokuNotificationMinute = minute
+                                viewModel.onDailyNotificationTimeSelected(hourOfDay, minute)
                                 setDailyNotificationPrefTime(hourOfDay, minute)
-                                setDailySudokuNotification(true)
                             },
-                            userSettings.dailySudokuNotificationHour,
-                            userSettings.dailySudokuNotificationMinute,
+                            viewModel.dailySudokuNotificationHour,
+                            viewModel.dailySudokuNotificationMinute,
                             is24HourFormat(requireContext()),
                         )
                     dialog.show()
@@ -293,7 +264,7 @@ class SettingsActivity : AppCompatActivity() {
                     setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
                     setOnClickListenerWithProgress { _, _ ->
                         lifecycleScope.launch {
-                            deleteInvalidSudokus()
+                            viewModel.onDeleteInvalidSudokusConfirmed()
                             delay(500)
                             dialog.dismiss()
                         }
@@ -317,21 +288,6 @@ class SettingsActivity : AppCompatActivity() {
                         },
                     ),
                 )
-        }
-
-        private fun setDailySudokuNotification(enabled: Boolean) {
-            userSettings.dailySudokuNotificationEnabled = enabled
-            lifecycleScope.launch { sendDailyNotification.setDailySudokuNotification(enable = enabled) }
-        }
-
-        private fun areNotificationsEnabled(
-            channelId: String,
-            notificationManager: NotificationManagerCompat = NotificationManagerCompat.from(requireContext()),
-        ) = when {
-            !notificationManager.areNotificationsEnabled() -> false
-            notificationManager.getNotificationChannel(channelId)?.importance == IMPORTANCE_NONE -> false
-            SDK_INT >= TIRAMISU -> checkSelfPermission(requireContext(), POST_NOTIFICATIONS) == PERMISSION_GRANTED
-            else -> true
         }
     }
 }
