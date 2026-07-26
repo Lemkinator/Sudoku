@@ -21,52 +21,36 @@ import android.os.Bundle
 import android.view.Gravity.START
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.commonutils.ui.widget.InfoBottomSheet.Companion.showInfoBottomSheet
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
-import de.lemke.sudoku.domain.InitDailySudokusUseCase
-import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.DAILY
-import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
-import javax.inject.Inject
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class DailySudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDailySudokuBinding
-    private var dailySudokus: List<SudokuListItem> = emptyList()
     private val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(this, MODE_DAILY_ERROR_LIMIT, DAILY) }
-
-    @Inject
-    lateinit var initDailySudokus: InitDailySudokusUseCase
-
-    @Inject
-    lateinit var observeDailySudokus: ObserveDailySudokusUseCase
-
-    @Inject
-    lateinit var userSettings: UserSettings
+    private val viewModel: DailySudokuViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareActivityTransformationBetween()
@@ -75,15 +59,10 @@ class DailySudokuActivity : AppCompatActivity() {
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
         initRecycler()
-        lifecycleScope.launch {
-            initDailySudokus()
-            invalidateOptionsMenu()
-            observeDailySudokus().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
-                dailySudokus = it
-                sudokuListAdapter.submitList(it)
-                binding.dailySudokuRecycler.isVisible = true
-                binding.dailyProgressBar.isVisible = false
-            }
+        collectState(viewModel.state, minActiveState = RESUMED) { state ->
+            sudokuListAdapter.submitList(state.sudokus)
+            binding.dailySudokuRecycler.isVisible = !state.isLoading
+            binding.dailyProgressBar.isVisible = state.isLoading
         }
     }
 
@@ -94,7 +73,7 @@ class DailySudokuActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        userSettings.dailyShowUncompleted.let {
+        viewModel.dailyShowUncompleted.let {
             menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
             menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
         }
@@ -112,13 +91,13 @@ class DailySudokuActivity : AppCompatActivity() {
             }
 
             R.id.menuitem_show_all_sudokus -> {
-                userSettings.dailyShowUncompleted = true
+                viewModel.dailyShowUncompleted = true
                 invalidateOptionsMenu()
                 true
             }
 
             R.id.menuitem_show_only_completed_sudokus -> {
-                userSettings.dailyShowUncompleted = false
+                viewModel.dailyShowUncompleted = false
                 invalidateOptionsMenu()
                 true
             }
