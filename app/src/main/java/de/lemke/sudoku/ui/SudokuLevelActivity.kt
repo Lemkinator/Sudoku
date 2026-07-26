@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -27,17 +28,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class SudokuLevelActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySudokuLevelBinding
-
-    @Inject
-    lateinit var userSettings: UserSettings
+    private val viewModel: SudokuLevelViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareActivityTransformationBetween()
@@ -50,7 +47,7 @@ class SudokuLevelActivity : AppCompatActivity() {
         TabLayoutMediator(binding.fragmentLevelSubTabs, binding.viewPagerLevel) { tab, position ->
             tab.text = arrayOf(getString(R.string.size4), getString(R.string.size9), getString(R.string.size16))[position]
         }.attach()
-        binding.viewPagerLevel.setCurrentItem(userSettings.currentLevelTab, false)
+        binding.viewPagerLevel.setCurrentItem(viewModel.currentLevelTab, false)
         binding.viewPagerLevel.registerOnPageChangeCallback(
             object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrollStateChanged(state: Int) {}
@@ -62,7 +59,7 @@ class SudokuLevelActivity : AppCompatActivity() {
                 ) {}
 
                 override fun onPageSelected(position: Int) {
-                    userSettings.currentLevelTab = position
+                    viewModel.currentLevelTab = position
                 }
             },
         )

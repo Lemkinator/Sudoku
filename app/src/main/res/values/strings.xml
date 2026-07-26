@@ -238,5 +238,6 @@
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
     <string name="error_sudoku_not_found">Sudoku not found…</string>
     <string name="error_loading_daily_sudokus_failed">Failed to load daily sudokus</string>
+    <string name="error_loading_sudoku_level_failed">Failed to load sudoku levels</string>
 
 </resources>
