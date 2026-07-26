@@ -20,6 +20,7 @@ ksp = "2.3.10"
 # Used via spotless { kotlin { ktlint(libs.versions.ktlint.get()) } } — version-only ref, no library/plugin alias
 #noinspection UnusedVersionCatalogEntry
 ktlint = "1.8.0"
+leakcanary = "2.14"
 oneui-design = "0.9.14+oneui8"
 oneui-icons = "1.1.0"
 play-services-games = "21.0.0"
@@ -39,6 +40,7 @@ json-kotlin-schema = { module = "net.pwall.json:json-kotlin-schema", version.ref
 kjson = { module = "io.kjson:kjson", version.ref = "kjson" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 oneui-design = { module = "io.github.tribalfs:oneui-design", version.ref = "oneui-design" }
 oneui-icons = { module = "io.github.oneuiproject:icons", version.ref = "oneui-icons" }
 play-services-games = { module = "com.google.android.gms:play-services-games-v2", version.ref = "play-services-games" }

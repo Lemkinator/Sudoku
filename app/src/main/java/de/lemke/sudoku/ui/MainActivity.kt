@@ -83,6 +83,7 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
+import de.lemke.sudoku.openLeakCanary
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
@@ -208,6 +209,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initDrawer() {
+        binding.navigationView.findMenuItem(R.id.leaks_dest)?.isVisible = BuildConfig.DEBUG
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
         binding.navigationView.onNavigationSingleClick { item ->
             when (item.itemId) {
@@ -243,6 +245,10 @@ class MainActivity : AppCompatActivity() {
                     findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
                 }
 
+                R.id.leaks_dest -> {
+                    openLeakCanary(this)
+                }
+
                 else -> {
                     return@onNavigationSingleClick false
                 }
@@ -250,7 +256,7 @@ class MainActivity : AppCompatActivity() {
             true
         }
         binding.drawerLayout.apply {
-            setTitle(BuildConfig.APP_NAME)
+            setTitle(getString(R.string.app_name))
             setupHeaderAndNavRail(getString(R.string.about_app))
             // setupNavigation(binding.bottomTab, binding.navigationHost.getFragment())
         }

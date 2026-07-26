@@ -27,14 +27,6 @@ fun String.toEnvVarStyle(): String = replace(Regex("([a-z])([A-Z])"), "$1_$2").u
 
 fun getProperty(key: String): String? = rootProject.findProperty(key)?.toString() ?: System.getenv(key.toEnvVarStyle())
 
-fun com.android.build.api.dsl.ApplicationBuildType.addConstant(
-    name: String,
-    value: String,
-) {
-    manifestPlaceholders += mapOf(name to value)
-    buildConfigField("String", name, "\"$value\"")
-}
-
 android {
     namespace = "de.lemke.sudoku"
     compileSdk = 37
@@ -70,7 +62,6 @@ android {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
-            addConstant("APP_NAME", "Sudoku")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             ndk { debugSymbolLevel = "FULL" }
         }
@@ -80,7 +71,6 @@ android {
             //noinspection NotShrinkingResources
             isShrinkResources = false
             applicationIdSuffix = ".debug"
-            addConstant("APP_NAME", "Sudoku (Debug)")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -128,6 +118,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
+    debugImplementation(libs.leakcanary)
 
     testImplementation(libs.konsist)
     testImplementation(libs.kotest.runner.junit5)
