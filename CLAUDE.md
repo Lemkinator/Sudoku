@@ -26,16 +26,16 @@ Missing this opt-in is a top build-failure cause for new contributors — CI enf
 
 ## Architecture
 
-Clean Architecture with three layers, no ViewModels — Activities/Fragments inject use cases directly via Hilt.
+Clean Architecture with three layers. Activities/Fragments use `@HiltViewModel` ViewModels, which own the use-case injections; screens with state/events expose them via `StateFlow`/`Channel<Event>`.
 
 ```
 de.lemke.sudoku/
-├── ui/           # Activities, Fragments, custom views, RecyclerView adapters
+├── ui/           # Activities, Fragments, custom views, RecyclerView adapters, ViewModels
 ├── domain/       # Use cases + domain models (Sudoku, Field, Position, Difficulty)
-└── data/         # Room DB + DataStore preferences, mappers, repositories
+└── data/         # Room DB + SharedPreferences-backed settings, mappers, repositories
 ```
 
-**Data flow:** UI → UseCase → Repository → Room/DataStore. Reactive updates via `Flow<>`. Background work via `withContext(Dispatchers.Default)`.
+**Data flow:** UI → ViewModel → UseCase → Repository → Room/SharedPreferences. Reactive updates via `Flow<>`. Background work via `withContext(Dispatchers.Default)`.
 
 **Domain models:** `Sudoku` (4×4/9×9/16×16), `Field` (cell with solution/value/notes), `Position` (row/col/block), `Difficulty` (VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`, `setHint()`, `errorLimitReached()`).
 
@@ -43,13 +43,15 @@ de.lemke.sudoku/
 
 ## Key Patterns
 
-**Hilt DI:** `@HiltAndroidApp` on `App`, `@AndroidEntryPoint` on Activities/Fragments. `PersistenceModule` provides singleton `AppDatabase` and DataStore.
+**Hilt DI:** `@HiltAndroidApp` on `App`, `@AndroidEntryPoint` on Activities/Fragments. `PersistenceModule` provides singleton `AppDatabase`.
 
 **Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent CLAUDE.md convention).
 
 **Room:** Two entities (`SudokuDb`, `FieldDb`). Schema exported to `app/schemas/`. Bidirectional mappers in `data/database/`.
 
-**Settings:** All user preferences stored via `UserSettingsRepository` (DataStore). Daily sudoku notifications scheduled via `AlarmReceiver`.
+**Settings:** All user preferences stored via `UserSettings : SettingsRepository`, a SharedPreferences-backed implementation from the `common-utils` library, constructor-injected into ViewModels. `di/SettingsModule.kt` provides it via Hilt. Daily sudoku notifications scheduled via `AlarmReceiver`.
+
+**ViewModels:** `@HiltViewModel` per Activity/Fragment. Screen state (where present) as `StateFlow<UiState>` using Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events as `Channel<Event>(BUFFERED).receiveAsFlow()`.
 
 ## Notable Dependencies
 

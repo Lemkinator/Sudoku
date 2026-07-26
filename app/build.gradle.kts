@@ -107,7 +107,6 @@ dependencies {
     implementation(libs.oneui.design)
     implementation(libs.oneui.icons)
     implementation(libs.common.utils)
-    implementation(libs.datastore.preferences)
     implementation(libs.async.layout.inflater)
     implementation(libs.bundler)
     implementation(libs.documentfile)

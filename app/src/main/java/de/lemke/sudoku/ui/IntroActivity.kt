@@ -171,7 +171,7 @@ class IntroActivity : AppCompatActivity() {
                 },
         )
 
-    @SuppressLint("RestrictedApi")
+    @SuppressLint("RestrictedApi", "InlinedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)

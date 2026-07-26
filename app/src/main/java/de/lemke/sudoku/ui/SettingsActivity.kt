@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.Manifest.permission.POST_NOTIFICATIONS
+import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
@@ -154,6 +155,7 @@ class SettingsActivity : AppCompatActivity() {
             )
         }
 
+        @SuppressLint("InlinedApi")
         @Suppress("CyclomaticComplexMethod", "LongMethod")
         private fun initPreferences() {
             findPreference<DropDownPreference>("error_limit_pref")?.apply {
