@@ -24,15 +24,24 @@ import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 data class DailySudokuUiState(
     val sudokus: List<SudokuListItem> = emptyList(),
     val isLoading: Boolean = true,
 )
+
+sealed interface DailySudokuEvent {
+    data object ShowLoadError : DailySudokuEvent
+}
 
 @HiltViewModel
 class DailySudokuViewModel @Inject constructor(
@@ -43,6 +52,9 @@ class DailySudokuViewModel @Inject constructor(
     val state: StateFlow<DailySudokuUiState>
         field = MutableStateFlow(DailySudokuUiState())
 
+    private val _events = Channel<DailySudokuEvent>(BUFFERED)
+    val events: Flow<DailySudokuEvent> = _events.receiveAsFlow()
+
     var dailyShowUncompleted: Boolean
         get() = userSettings.dailyShowUncompleted
         set(value) {
@@ -51,9 +63,14 @@ class DailySudokuViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            initDailySudokus()
-            observeDailySudokus().collectLatest { sudokus ->
-                state.value = DailySudokuUiState(sudokus = sudokus, isLoading = false)
+            runCatching {
+                initDailySudokus()
+                observeDailySudokus().collectLatest { sudokus ->
+                    state.value = DailySudokuUiState(sudokus = sudokus, isLoading = false)
+                }
+            }.onFailure { e ->
+                if (e is CancellationException) throw e
+                _events.send(DailySudokuEvent.ShowLoadError)
             }
         }
     }
