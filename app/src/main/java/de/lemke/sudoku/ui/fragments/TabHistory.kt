@@ -55,7 +55,6 @@ import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.BottomTabLayout
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -104,7 +103,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         collectState(viewModel.errorLimit) { limit ->
             if (limit != sudokuListAdapter.errorLimit) {
                 sudokuListAdapter.errorLimit = limit
-                sudokuListAdapter.notifyItemRangeChanged(0, viewModel.sudokuHistory.value.size)
+                sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             }
         }
     }
