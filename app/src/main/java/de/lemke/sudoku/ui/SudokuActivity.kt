@@ -60,6 +60,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
+import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -160,34 +161,21 @@ class SudokuActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
 
-    @Suppress("CyclomaticComplexMethod")
     override fun onKeyUp(
         keyCode: Int,
         event: KeyEvent,
-    ): Boolean =
-        when (keyCode) {
-            KeyEvent.KEYCODE_1 -> select(sudoku.itemCount).let { true }
-            KeyEvent.KEYCODE_2 -> select(sudoku.itemCount + 1).let { true }
-            KeyEvent.KEYCODE_3 -> select(sudoku.itemCount + 2).let { true }
-            KeyEvent.KEYCODE_4 -> select(sudoku.itemCount + 3).let { true }
-            KeyEvent.KEYCODE_5 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 4) }?.let { true } == true
-            KeyEvent.KEYCODE_6 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 5) }?.let { true } == true
-            KeyEvent.KEYCODE_7 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 6) }?.let { true } == true
-            KeyEvent.KEYCODE_8 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 7) }?.let { true } == true
-            KeyEvent.KEYCODE_9 -> (sudoku.size > 4).takeIf { it }?.let { select(sudoku.itemCount + 8) }?.let { true } == true
-            KeyEvent.KEYCODE_A -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 9) }?.let { true } == true
-            KeyEvent.KEYCODE_B -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 10) }?.let { true } == true
-            KeyEvent.KEYCODE_C -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 11) }?.let { true } == true
-            KeyEvent.KEYCODE_D -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 12) }?.let { true } == true
-            KeyEvent.KEYCODE_E -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 13) }?.let { true } == true
-            KeyEvent.KEYCODE_F -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 14) }?.let { true } == true
-            KeyEvent.KEYCODE_G -> (sudoku.size > 9).takeIf { it }?.let { select(sudoku.itemCount + 15) }?.let { true } == true
+    ): Boolean {
+        digitKeyButtons[keyCode]?.let { (minSize, buttonIndex) ->
+            return if (sudoku.size > minSize) select(sudoku.itemCount + buttonIndex).let { true } else false
+        }
+        return when (keyCode) {
             KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size).let { true }
             KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size + 1).let { true } else false
             KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
             KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
             else -> super.onKeyUp(keyCode, event)
         }
+    }
 
     private fun initSudoku(sudoku: Sudoku) {
         this.sudoku = sudoku
@@ -356,161 +344,154 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun select(newSelected: Int?) {
         if (checkErrorLimit()) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
-            null -> { // nothing is selected
-                when (newSelected) {
-                    // selected nothing
-                    null -> {}
+            null -> selectFromNothing(newSelected)
 
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        gameAdapter.selectFieldView(newSelected, userSettings.highlightRegional, userSettings.highlightNumber)
-                        selected = newSelected
-                    }
+            // nothing is selected
+            in 0 until sudoku.itemCount -> selectFromField(newSelected)
 
-                    // selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
-                    }
+            // field is selected
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected)
 
-                    // selected nothing
-                    else -> {}
-                }
+            // number button is selected
+            sudoku.itemCount + sudoku.size -> selectFromDeleteButton(newSelected)
+
+            // delete button is selected
+            sudoku.itemCount + sudoku.size + 1 -> selectFromHintButton(newSelected) // hint button is selected
+        }
+    }
+
+    private fun selectFromNothing(newSelected: Int?) {
+        when (newSelected) {
+            // selected nothing
+            null -> {}
+
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                gameAdapter.selectFieldView(newSelected, userSettings.highlightRegional, userSettings.highlightNumber)
+                selected = newSelected
             }
 
-            in 0 until sudoku.itemCount -> { // field is selected
-                val position = Position.create(selected!!, sudoku.size)
-                when (newSelected) {
-                    // selected nothing
-                    null -> {
-                        selected = null
-                    }
-
-                    // selected same field
-                    selected -> {
-                        selected = null
-                    }
-
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        selected = newSelected
-                    }
-
-                    // selected number
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                        sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
-                        selected = null
-                    }
-
-                    // selected delete
-                    sudoku.itemCount + sudoku.size -> {
-                        sudoku.move(position, null, notesEnabled)
-                        selected = null
-                    }
-
-                    // selected hint
-                    sudoku.itemCount + sudoku.size + 1 -> {
-                        sudoku.setHint(position)
-                        selected = null
-                        refreshHintButton()
-                    }
-                }
-                gameAdapter.selectFieldView(selected, userSettings.highlightRegional, userSettings.highlightNumber)
+            // selected button
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { // number button is selected
-                when (newSelected) {
-                    // selected nothing
-                    null -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
+            // selected nothing
+            else -> {}
+        }
+    }
 
-                    // selected same button
-                    selected -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
-
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
-                        highlightCurrentNumber(selected!! - sudoku.itemCount + 1)
-                    }
-
-                    // selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                        gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
-                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
-                    }
-
-                    // selected nothing
-                    else -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
-                }
+    private fun selectFromField(newSelected: Int?) {
+        val position = Position.create(selected!!, sudoku.size)
+        when (newSelected) {
+            // selected nothing / selected same field
+            null, selected -> {
+                selected = null
             }
 
-            sudoku.itemCount + sudoku.size -> { // delete button is selected
-                when (newSelected) {
-                    // selected nothing
-                    null -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
-
-                    // selected same button
-                    selected -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
-
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        sudoku.move(newSelected, null, notesEnabled)
-                    }
-
-                    // selected button(not delete)
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
-                    }
-
-                    // selected nothing
-                    else -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
-                }
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                selected = newSelected
             }
 
-            sudoku.itemCount + sudoku.size + 1 -> { // hint button is selected
-                when (newSelected) {
-                    // selected nothing
-                    null -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
+            // selected number
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+                sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
+                selected = null
+            }
 
-                    // selected same button
-                    selected -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
+            // selected delete
+            sudoku.itemCount + sudoku.size -> {
+                sudoku.move(position, null, notesEnabled)
+                selected = null
+            }
 
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        sudoku.setHint(newSelected)
-                        if (!sudoku.isHintAvailable) selected = null
-                        refreshHintButton()
-                    }
+            // selected hint
+            sudoku.itemCount + sudoku.size + 1 -> {
+                sudoku.setHint(position)
+                selected = null
+                refreshHintButton()
+            }
+        }
+        gameAdapter.selectFieldView(selected, userSettings.highlightRegional, userSettings.highlightNumber)
+    }
 
-                    // selected button(not hint)
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> {
-                        selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
-                    }
+    private fun selectFromNumberButton(newSelected: Int?) {
+        when (newSelected) {
+            // selected nothing / selected same button
+            null, selected -> {
+                selectButton(null, userSettings.highlightNumber)
+            }
 
-                    // selected nothing
-                    else -> {
-                        selectButton(null, userSettings.highlightNumber)
-                    }
-                }
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
+                highlightCurrentNumber(selected!! - sudoku.itemCount + 1)
+            }
+
+            // selected button
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
+                selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+            }
+
+            // selected nothing
+            else -> {
+                selectButton(null, userSettings.highlightNumber)
+            }
+        }
+    }
+
+    private fun selectFromDeleteButton(newSelected: Int?) {
+        when (newSelected) {
+            // selected nothing / selected same button
+            null, selected -> {
+                selectButton(null, userSettings.highlightNumber)
+            }
+
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                sudoku.move(newSelected, null, notesEnabled)
+            }
+
+            // selected button(not delete)
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+            }
+
+            // selected nothing
+            else -> {
+                selectButton(null, userSettings.highlightNumber)
+            }
+        }
+    }
+
+    private fun selectFromHintButton(newSelected: Int?) {
+        when (newSelected) {
+            // selected nothing / selected same button
+            null, selected -> {
+                selectButton(null, userSettings.highlightNumber)
+            }
+
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                sudoku.setHint(newSelected)
+                if (!sudoku.isHintAvailable) selected = null
+                refreshHintButton()
+            }
+
+            // selected button(not hint)
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> {
+                selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
+            }
+
+            // selected nothing
+            else -> {
+                selectButton(null, userSettings.highlightNumber)
             }
         }
     }
@@ -526,7 +507,6 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("CyclomaticComplexMethod")
     private fun animate(
         position: Position,
         animateRow: Boolean = false,
@@ -538,24 +518,30 @@ class SudokuActivity : AppCompatActivity() {
         val delay = 60L / sudoku.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews
-                .filter {
-                    (animateRow && it?.position?.row == position.row && it.position.column <= position.column) ||
-                        (animateColumn && it?.position?.column == position.column && it.position.row <= position.row) ||
-                        (animateBlock && it?.position?.block == position.block && it.position.index <= position.index) ||
-                        (animateSudoku && it?.position?.index!! <= position.index)
-                }.reversed()
+                .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
+                .reversed()
                 .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
         }
         return lifecycleScope.launch {
             gameAdapter.fieldViews
-                .filter {
-                    (animateRow && it?.position?.row == position.row && it.position.column > position.column) ||
-                        (animateColumn && it?.position?.column == position.column && it.position.row > position.row) ||
-                        (animateBlock && it?.position?.block == position.block && it.position.index > position.index) ||
-                        (animateSudoku && it?.position?.index!! > position.index)
-                }.forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
+                .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a > b } }
+                .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
         }
     }
+
+    private fun matchesAnimation(
+        fieldView: FieldView?,
+        position: Position,
+        animateRow: Boolean,
+        animateColumn: Boolean,
+        animateBlock: Boolean,
+        animateSudoku: Boolean,
+        compare: (Int, Int) -> Boolean,
+    ): Boolean =
+        (animateRow && fieldView?.position?.row == position.row && compare(fieldView.position.column, position.column)) ||
+            (animateColumn && fieldView?.position?.column == position.column && compare(fieldView.position.row, position.row)) ||
+            (animateBlock && fieldView?.position?.block == position.block && compare(fieldView.position.index, position.index)) ||
+            (animateSudoku && compare(fieldView?.position?.index!!, position.index))
 
     private suspend fun animateField(
         fieldTextView: TextView?,
@@ -736,6 +722,27 @@ class SudokuActivity : AppCompatActivity() {
 
     companion object {
         const val KEY_SUDOKU_ID = "key_sudoku_id"
+
+        // keyCode -> (minimum sudoku size to enable this key, number-button index)
+        private val digitKeyButtons: Map<Int, Pair<Int, Int>> =
+            mapOf(
+                KeyEvent.KEYCODE_1 to (0 to 0),
+                KeyEvent.KEYCODE_2 to (0 to 1),
+                KeyEvent.KEYCODE_3 to (0 to 2),
+                KeyEvent.KEYCODE_4 to (0 to 3),
+                KeyEvent.KEYCODE_5 to (4 to 4),
+                KeyEvent.KEYCODE_6 to (4 to 5),
+                KeyEvent.KEYCODE_7 to (4 to 6),
+                KeyEvent.KEYCODE_8 to (4 to 7),
+                KeyEvent.KEYCODE_9 to (4 to 8),
+                KeyEvent.KEYCODE_A to (9 to 9),
+                KeyEvent.KEYCODE_B to (9 to 10),
+                KeyEvent.KEYCODE_C to (9 to 11),
+                KeyEvent.KEYCODE_D to (9 to 12),
+                KeyEvent.KEYCODE_E to (9 to 13),
+                KeyEvent.KEYCODE_F to (9 to 14),
+                KeyEvent.KEYCODE_G to (9 to 15),
+            )
     }
 
     inner class SudokuGameListener : GameListener {
