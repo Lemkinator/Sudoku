@@ -62,6 +62,7 @@ class GetAllSudokusUseCase @Inject constructor(
             val size9x9 = flags and SIZE_9X9 != 0
             val size16x16 = flags and SIZE_16X16 != 0
             sudokusRepository.getAllSudokus().filter {
+                @Suppress("IncorrectFormatting")
                 (typeAll || (typeNormal && it.isNormalSudoku) || (typeDaily && it.isDailySudoku) || (typeLevel && it.isSudokuLevel)) &&
                     (sizeAll || (size4x4 && it.size == 4) || (size9x9 && it.size == 9) || (size16x16 && it.size == 16)) &&
                     (
