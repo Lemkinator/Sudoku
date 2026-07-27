@@ -19,6 +19,8 @@ package de.lemke.sudoku.data
 import android.content.SharedPreferences
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.data.delegates
+import de.lemke.commonutils.data.sanitized
+import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
@@ -30,13 +32,13 @@ class UserSettings(
     preferences: SharedPreferences,
     scope: CoroutineScope,
 ) : SettingsRepository(preferences) {
-    var difficultySliderValue: Int by preferences.delegates.int(2)
+    var difficultySliderValue: Int by preferences.delegates.int(2).sanitized { it.coerceIn(0, Difficulty.max) }
     var sizeSliderValue: Int by preferences.delegates.int(1)
     var keepScreenOn: Boolean by preferences.delegates.boolean(true)
     var animationsEnabled: Boolean by preferences.delegates.boolean(true)
     var highlightRegional: Boolean by preferences.delegates.boolean(true)
     var highlightNumber: Boolean by preferences.delegates.boolean(true)
-    var errorLimit: Int by preferences.delegates.int(3)
+    var errorLimit: Int by preferences.delegates.int(3).sanitized { it.coerceAtLeast(0) }
     var filterFlags: Int by preferences.delegates.int(TYPE_ALL or SIZE_ALL or DIFFICULTY_ALL)
     var dailyShowUncompleted: Boolean by preferences.delegates.boolean(true)
     var dailySudokuNotificationEnabled: Boolean by preferences.delegates.boolean(true)
