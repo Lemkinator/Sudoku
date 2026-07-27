@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui
 
 import android.Manifest.permission.POST_NOTIFICATIONS
-import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
@@ -158,9 +157,20 @@ class SettingsActivity : AppCompatActivity() {
             )
         }
 
-        @SuppressLint("InlinedApi")
-        @Suppress("CyclomaticComplexMethod", "LongMethod")
         private fun initPreferences() {
+            initErrorLimitPreference()
+            initKeepScreenOnPreference()
+            initHighlightRegionalPreference()
+            initHighlightNumberPreference()
+            initAnimationsPreference()
+            initDailyNotificationPreference()
+            initIntroPreference()
+            initExportDataPreference()
+            initImportDataPreference()
+            initDeleteInvalidSudokusPreference()
+        }
+
+        private fun initErrorLimitPreference() {
             findPreference<DropDownPreference>("error_limit_pref")?.apply {
                 summary = if (viewModel.errorLimit == 0) getString(R.string.no_limit) else viewModel.errorLimit.toString()
                 onNewValue { newValue: String ->
@@ -168,27 +178,37 @@ class SettingsActivity : AppCompatActivity() {
                     summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
                 }
             } ?: Log.e(TAG, "error limit Preference not found")
+        }
 
+        private fun initKeepScreenOnPreference() {
             findPreference<SwitchPreferenceCompat>("keep_screen_on_pref")?.apply {
                 isChecked = viewModel.keepScreenOn
                 onNewValue { v: Boolean -> viewModel.keepScreenOn = v }
             } ?: Log.e(TAG, "keep screen on Preference not found")
+        }
 
+        private fun initHighlightRegionalPreference() {
             findPreference<SwitchPreferenceCompat>("highlight_regional_pref")?.apply {
                 isChecked = viewModel.highlightRegional
                 onNewValue { v: Boolean -> viewModel.highlightRegional = v }
             } ?: Log.e(TAG, "regional highlight Preference not found")
+        }
 
+        private fun initHighlightNumberPreference() {
             findPreference<SwitchPreferenceCompat>("highlight_number_pref")?.apply {
                 isChecked = viewModel.highlightNumber
                 onNewValue { v: Boolean -> viewModel.highlightNumber = v }
             } ?: Log.e(TAG, "number highlight Preference not found")
+        }
 
+        private fun initAnimationsPreference() {
             findPreference<SwitchPreferenceCompat>("animations_pref")?.apply {
                 isChecked = viewModel.animationsEnabled
                 onNewValue { v: Boolean -> viewModel.animationsEnabled = v }
             } ?: Log.e(TAG, "animations Preference not found")
+        }
 
+        private fun initDailyNotificationPreference() {
             findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
                 isChecked = viewModel.isDailyNotificationChecked
                 setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
@@ -211,13 +231,17 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             } ?: Log.e(TAG, "daily notification Preference not found")
+        }
 
+        private fun initIntroPreference() {
             findPreference<PreferenceScreen>("intro_pref")?.onClick {
                 startActivity(
                     Intent(requireContext(), IntroActivity::class.java).putExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, true),
                 )
             }
+        }
 
+        private fun initExportDataPreference() {
             findPreference<PreferenceScreen>("export_data_pref")?.onClick {
                 exportActivityResultLauncher.launch(
                     Intent(ACTION_CREATE_DOCUMENT).apply {
@@ -227,7 +251,9 @@ class SettingsActivity : AppCompatActivity() {
                     },
                 )
             }
+        }
 
+        private fun initImportDataPreference() {
             findPreference<PreferenceScreen>("import_data_pref")?.onClick {
                 AlertDialog
                     .Builder(requireContext())
@@ -238,7 +264,9 @@ class SettingsActivity : AppCompatActivity() {
                         importActivityResultLauncher.launch("application/json")
                     }.show()
             }
+        }
 
+        private fun initDeleteInvalidSudokusPreference() {
             findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
                 val dialog =
                     AlertDialog
