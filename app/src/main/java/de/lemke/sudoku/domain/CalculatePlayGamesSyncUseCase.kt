@@ -16,7 +16,9 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
@@ -25,227 +27,140 @@ import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class CalculatePlayGamesSyncUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
     suspend operator fun invoke(sudoku: Sudoku? = null): PlayGamesSync =
-        withContext(Dispatchers.Default) {
+        withContext(defaultDispatcher) {
             val sudokus = getAllSudokus().filter { it.completed }
-            val scores = mutableListOf<Pair<Int, Long>>()
+            val scores = baseScores(sudokus).toMutableList()
             val unlocks = mutableListOf<Int>()
             val increments = mutableListOf<Pair<Int, Int>>()
-
-            scores += R.string.leaderboard_total_wins to sudokus.size.toLong()
-            scores += R.string.leaderboard_daily_sudokus to sudokus.count { it.isDailySudoku }.toLong()
-            scores += R.string.leaderboard_level_44 to sudokus.count { it.size == 4 && it.isSudokuLevel }.toLong()
-            scores += R.string.leaderboard_level_99 to sudokus.count { it.size == 9 && it.isSudokuLevel }.toLong()
-            scores += R.string.leaderboard_level_1616 to sudokus.count { it.size == 16 && it.isSudokuLevel }.toLong()
-
             if (sudoku != null) {
-                unlocks += R.string.achievement_first_win
+                unlocks += winUnlocks(sudoku)
                 scores += R.string.leaderboard_best_time to sudoku.seconds * 1000L
-                if (sudoku.eraserUsed) unlocks += R.string.achievement_eraser
-                if (sudoku.hintsUsed == 0) unlocks += R.string.achievement_no_hints
-                if (sudoku.notesMade > 0) unlocks += R.string.achievement_use_notes
-                if (sudoku.isChecklist) unlocks += R.string.achievement_checklist
-                if (sudoku.isReverseChecklist) unlocks += R.string.achievement_reverse_checklist
-                if (sudoku.seconds < 10) unlocks += R.string.achievement_i_am_speed
-
-                when (sudoku.size) {
-                    4 -> {
-                        increments += R.string.achievement_10_sudokus_44 to 1
-                        increments += R.string.achievement_50_sudokus_44 to 1
-                        if (sudoku.seconds < 30) unlocks += R.string.achievement_stopwatch_44
-                        scores += R.string.leaderboard_wins_44 to sudokus.count { it.size == 4 }.toLong()
-                    }
-
-                    9 -> {
-                        increments += R.string.achievement_10_sudokus_99 to 1
-                        increments += R.string.achievement_50_sudokus_99 to 1
-                        if (sudoku.seconds < 120) unlocks += R.string.achievement_stopwatch_99
-                        scores += R.string.leaderboard_wins_99 to sudokus.count { it.size == 9 }.toLong()
-                    }
-
-                    16 -> {
-                        increments += R.string.achievement_10_sudokus_1616 to 1
-                        increments += R.string.achievement_50_sudokus_1616 to 1
-                        if (sudoku.seconds < 420) unlocks += R.string.achievement_stopwatch_1616
-                        scores += R.string.leaderboard_wins_1616 to sudokus.count { it.size == 16 }.toLong()
-                    }
-                }
-
-                when (sudoku.difficulty) {
-                    VERY_EASY -> {
-                        increments += R.string.achievement_10_sudokus_very_easy to 1
-                        increments += R.string.achievement_50_sudokus_very_easy to 1
-                        when (sudoku.size) {
-                            4 -> {
-                                scores += R.string.leaderboard_time_44_very_easy to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_44_very_easy,
-                                        sudokus.count { it.size == 4 && it.difficulty == VERY_EASY }.toLong(),
-                                    )
-                            }
-
-                            9 -> {
-                                scores += R.string.leaderboard_time_99_very_easy to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_99_very_easy,
-                                        sudokus.count { it.size == 9 && it.difficulty == VERY_EASY }.toLong(),
-                                    )
-                            }
-
-                            16 -> {
-                                scores += R.string.leaderboard_time_1616_very_easy to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_1616_very_easy,
-                                        sudokus.count { it.size == 16 && it.difficulty == VERY_EASY }.toLong(),
-                                    )
-                            }
-                        }
-                    }
-
-                    EASY -> {
-                        increments += R.string.achievement_10_sudokus_easy to 1
-                        increments += R.string.achievement_50_sudokus_easy to 1
-                        when (sudoku.size) {
-                            4 -> {
-                                scores += R.string.leaderboard_time_44_easy to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_44_easy,
-                                        sudokus.count { it.size == 4 && it.difficulty == EASY }.toLong(),
-                                    )
-                            }
-
-                            9 -> {
-                                scores += R.string.leaderboard_time_99_easy to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_99_easy,
-                                        sudokus.count { it.size == 9 && it.difficulty == EASY }.toLong(),
-                                    )
-                            }
-
-                            16 -> {
-                                scores += R.string.leaderboard_time_1616_easy to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_1616_easy,
-                                        sudokus.count { it.size == 16 && it.difficulty == EASY }.toLong(),
-                                    )
-                            }
-                        }
-                    }
-
-                    MEDIUM -> {
-                        increments += R.string.achievement_10_sudokus_medium to 1
-                        increments += R.string.achievement_50_sudokus_medium to 1
-                        when (sudoku.size) {
-                            4 -> {
-                                scores += R.string.leaderboard_time_44_medium to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_44_medium,
-                                        sudokus.count { it.size == 4 && it.difficulty == MEDIUM }.toLong(),
-                                    )
-                            }
-
-                            9 -> {
-                                scores += R.string.leaderboard_time_99_medium to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_99_medium,
-                                        sudokus.count { it.size == 9 && it.difficulty == MEDIUM }.toLong(),
-                                    )
-                            }
-
-                            16 -> {
-                                scores += R.string.leaderboard_time_1616_medium to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_1616_medium,
-                                        sudokus.count { it.size == 16 && it.difficulty == MEDIUM }.toLong(),
-                                    )
-                            }
-                        }
-                    }
-
-                    HARD -> {
-                        increments += R.string.achievement_10_sudokus_hard to 1
-                        increments += R.string.achievement_50_sudokus_hard to 1
-                        when (sudoku.size) {
-                            4 -> {
-                                scores += R.string.leaderboard_time_44_hard to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_44_hard,
-                                        sudokus.count { it.size == 4 && it.difficulty == HARD }.toLong(),
-                                    )
-                            }
-
-                            9 -> {
-                                scores += R.string.leaderboard_time_99_hard to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_99_hard,
-                                        sudokus.count { it.size == 9 && it.difficulty == HARD }.toLong(),
-                                    )
-                            }
-
-                            16 -> {
-                                scores += R.string.leaderboard_time_1616_hard to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_1616_hard,
-                                        sudokus.count { it.size == 16 && it.difficulty == HARD }.toLong(),
-                                    )
-                            }
-                        }
-                    }
-
-                    EXPERT -> {
-                        increments += R.string.achievement_10_sudokus_expert to 1
-                        increments += R.string.achievement_50_sudokus_expert to 1
-                        when (sudoku.size) {
-                            4 -> {
-                                scores += R.string.leaderboard_time_44_expert to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_44_expert,
-                                        sudokus.count { it.size == 4 && it.difficulty == EXPERT }.toLong(),
-                                    )
-                            }
-
-                            9 -> {
-                                scores += R.string.leaderboard_time_99_expert to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_99_expert,
-                                        sudokus.count { it.size == 9 && it.difficulty == EXPERT }.toLong(),
-                                    )
-                            }
-
-                            16 -> {
-                                scores += R.string.leaderboard_time_1616_expert to sudoku.seconds * 1000L
-                                scores +=
-                                    Pair(
-                                        R.string.leaderboard_wins_1616_expert,
-                                        sudokus.count { it.size == 16 && it.difficulty == EXPERT }.toLong(),
-                                    )
-                            }
-                        }
-                    }
-                }
+                addSizeStats(sudoku, sudokus, scores, unlocks, increments)
+                addDifficultyStats(sudoku, sudokus, scores, increments)
             }
-
             PlayGamesSync(scores, unlocks, increments)
         }
+
+    private fun baseScores(sudokus: List<Sudoku>): List<Pair<Int, Long>> =
+        listOf(
+            R.string.leaderboard_total_wins to sudokus.size.toLong(),
+            R.string.leaderboard_daily_sudokus to sudokus.count { it.isDailySudoku }.toLong(),
+            R.string.leaderboard_level_44 to sudokus.count { it.size == 4 && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_99 to sudokus.count { it.size == 9 && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_1616 to sudokus.count { it.size == 16 && it.isSudokuLevel }.toLong(),
+        )
+
+    private fun winUnlocks(sudoku: Sudoku): List<Int> =
+        buildList {
+            add(R.string.achievement_first_win)
+            if (sudoku.eraserUsed) add(R.string.achievement_eraser)
+            if (sudoku.hintsUsed == 0) add(R.string.achievement_no_hints)
+            if (sudoku.notesMade > 0) add(R.string.achievement_use_notes)
+            if (sudoku.isChecklist) add(R.string.achievement_checklist)
+            if (sudoku.isReverseChecklist) add(R.string.achievement_reverse_checklist)
+            if (sudoku.seconds < 10) add(R.string.achievement_i_am_speed)
+        }
+
+    private fun addSizeStats(
+        sudoku: Sudoku,
+        sudokus: List<Sudoku>,
+        scores: MutableList<Pair<Int, Long>>,
+        unlocks: MutableList<Int>,
+        increments: MutableList<Pair<Int, Int>>,
+    ) {
+        val stats = sizeStats.getValue(sudoku.size)
+        increments += stats.achievement10 to 1
+        increments += stats.achievement50 to 1
+        if (sudoku.seconds < stats.stopwatchSeconds) unlocks += stats.stopwatchAchievement
+        scores += stats.winsId to sudokus.count { it.size == sudoku.size }.toLong()
+    }
+
+    private fun addDifficultyStats(
+        sudoku: Sudoku,
+        sudokus: List<Sudoku>,
+        scores: MutableList<Pair<Int, Long>>,
+        increments: MutableList<Pair<Int, Int>>,
+    ) {
+        val (achievement10, achievement50) = difficultyAchievements.getValue(sudoku.difficulty)
+        increments += achievement10 to 1
+        increments += achievement50 to 1
+        val (timeId, winsId) = sizeDifficultyLeaderboard.getValue(sudoku.size to sudoku.difficulty)
+        scores += timeId to sudoku.seconds * 1000L
+        scores += winsId to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
+    }
+
+    private data class SizeStats(
+        val achievement10: Int,
+        val achievement50: Int,
+        val stopwatchAchievement: Int,
+        val stopwatchSeconds: Int,
+        val winsId: Int,
+    )
+
+    companion object {
+        private val sizeStats: Map<Int, SizeStats> =
+            mapOf(
+                4 to
+                    SizeStats(
+                        R.string.achievement_10_sudokus_44,
+                        R.string.achievement_50_sudokus_44,
+                        R.string.achievement_stopwatch_44,
+                        30,
+                        R.string.leaderboard_wins_44,
+                    ),
+                9 to
+                    SizeStats(
+                        R.string.achievement_10_sudokus_99,
+                        R.string.achievement_50_sudokus_99,
+                        R.string.achievement_stopwatch_99,
+                        120,
+                        R.string.leaderboard_wins_99,
+                    ),
+                16 to
+                    SizeStats(
+                        R.string.achievement_10_sudokus_1616,
+                        R.string.achievement_50_sudokus_1616,
+                        R.string.achievement_stopwatch_1616,
+                        420,
+                        R.string.leaderboard_wins_1616,
+                    ),
+            )
+
+        private val difficultyAchievements: Map<Difficulty, Pair<Int, Int>> =
+            mapOf(
+                VERY_EASY to (R.string.achievement_10_sudokus_very_easy to R.string.achievement_50_sudokus_very_easy),
+                EASY to (R.string.achievement_10_sudokus_easy to R.string.achievement_50_sudokus_easy),
+                MEDIUM to (R.string.achievement_10_sudokus_medium to R.string.achievement_50_sudokus_medium),
+                HARD to (R.string.achievement_10_sudokus_hard to R.string.achievement_50_sudokus_hard),
+                EXPERT to (R.string.achievement_10_sudokus_expert to R.string.achievement_50_sudokus_expert),
+            )
+
+        private val sizeDifficultyLeaderboard: Map<Pair<Int, Difficulty>, Pair<Int, Int>> =
+            mapOf(
+                (4 to VERY_EASY) to (R.string.leaderboard_time_44_very_easy to R.string.leaderboard_wins_44_very_easy),
+                (9 to VERY_EASY) to (R.string.leaderboard_time_99_very_easy to R.string.leaderboard_wins_99_very_easy),
+                (16 to VERY_EASY) to
+                    (R.string.leaderboard_time_1616_very_easy to R.string.leaderboard_wins_1616_very_easy),
+                (4 to EASY) to (R.string.leaderboard_time_44_easy to R.string.leaderboard_wins_44_easy),
+                (9 to EASY) to (R.string.leaderboard_time_99_easy to R.string.leaderboard_wins_99_easy),
+                (16 to EASY) to (R.string.leaderboard_time_1616_easy to R.string.leaderboard_wins_1616_easy),
+                (4 to MEDIUM) to (R.string.leaderboard_time_44_medium to R.string.leaderboard_wins_44_medium),
+                (9 to MEDIUM) to (R.string.leaderboard_time_99_medium to R.string.leaderboard_wins_99_medium),
+                (16 to MEDIUM) to (R.string.leaderboard_time_1616_medium to R.string.leaderboard_wins_1616_medium),
+                (4 to HARD) to (R.string.leaderboard_time_44_hard to R.string.leaderboard_wins_44_hard),
+                (9 to HARD) to (R.string.leaderboard_time_99_hard to R.string.leaderboard_wins_99_hard),
+                (16 to HARD) to (R.string.leaderboard_time_1616_hard to R.string.leaderboard_wins_1616_hard),
+                (4 to EXPERT) to (R.string.leaderboard_time_44_expert to R.string.leaderboard_wins_44_expert),
+                (9 to EXPERT) to (R.string.leaderboard_time_99_expert to R.string.leaderboard_wins_99_expert),
+                (16 to EXPERT) to (R.string.leaderboard_time_1616_expert to R.string.leaderboard_wins_1616_expert),
+            )
+    }
 }
