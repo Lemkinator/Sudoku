@@ -26,7 +26,8 @@ Missing this opt-in is a top build-failure cause for new contributors — CI enf
 
 ## Architecture
 
-Clean Architecture with three layers. Activities/Fragments obtain a `@HiltViewModel`-annotated ViewModel via `by viewModels()`, which owns the use-case injections; screens with state/events expose them via `StateFlow`/`Channel<Event>`.
+Clean Architecture with three layers. Activities/Fragments obtain a `@HiltViewModel`-annotated ViewModel via `by viewModels()`, which owns
+the use-case injections; screens with state/events expose them via `StateFlow`/`Channel<Event>`.
 
 ```text
 de.lemke.sudoku/
@@ -35,9 +36,11 @@ de.lemke.sudoku/
 └── data/         # Room DB + SharedPreferences-backed settings, mappers, repositories
 ```
 
-**Data flow:** UI → ViewModel → UseCase → Repository → Room/SharedPreferences. Reactive updates via `Flow<>`. Background work via `withContext(Dispatchers.Default)`.
+**Data flow:** UI → ViewModel → UseCase → Repository → Room/SharedPreferences. Reactive updates via `Flow<>`. Background work via
+`withContext(Dispatchers.Default)`.
 
-**Domain models:** `Sudoku` (4×4/9×9/16×16), `Field` (cell with solution/value/notes), `Position` (row/col/block), `Difficulty` (VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`, `setHint()`, `errorLimitReached()`).
+**Domain models:** `Sudoku` (4×4/9×9/16×16), `Field` (cell with solution/value/notes), `Position` (row/col/block), `Difficulty` (
+VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`, `setHint()`, `errorLimitReached()`).
 
 **Sudoku modes:** Normal (modeLevel = 0), Level (modeLevel > 0), Daily (modeLevel = -1).
 
@@ -45,13 +48,17 @@ de.lemke.sudoku/
 
 **Hilt DI:** `@HiltAndroidApp` on `App`, `@AndroidEntryPoint` on Activities/Fragments. `PersistenceModule` provides singleton `AppDatabase`.
 
-**Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent CLAUDE.md convention).
+**Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent
+CLAUDE.md convention).
 
 **Room:** Two entities (`SudokuDb`, `FieldDb`). Schema exported to `app/schemas/`. Bidirectional mappers in `data/database/`.
 
-**Settings:** All user preferences stored via `UserSettings : SettingsRepository`, a SharedPreferences-backed implementation from the `common-utils` library, constructor-injected into ViewModels. `di/SettingsModule.kt` provides it via Hilt. Daily sudoku notifications scheduled via `AlarmReceiver`.
+**Settings:** All user preferences stored via `UserSettings : SettingsRepository`, a SharedPreferences-backed implementation from the
+`common-utils` library, constructor-injected into ViewModels. `di/SettingsModule.kt` provides it via Hilt. Daily sudoku notifications
+scheduled via `AlarmReceiver`.
 
-**ViewModels:** One `@HiltViewModel`-annotated ViewModel per Activity/Fragment. Screen state (where present) as `StateFlow<UiState>` using Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events as `Channel<Event>(BUFFERED).receiveAsFlow()`.
+**ViewModels:** One `@HiltViewModel`-annotated ViewModel per Activity/Fragment. Screen state (where present) as `StateFlow<UiState>` using
+Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events as `Channel<Event>(BUFFERED).receiveAsFlow()`.
 
 ## Notable Dependencies
 
