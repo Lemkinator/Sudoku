@@ -23,7 +23,7 @@ class SetDailyNotificationEnabledUseCase @Inject constructor(
     private val userSettings: UserSettings,
     private val sendDailyNotification: SendDailyNotificationUseCase,
 ) {
-    suspend operator fun invoke(enabled: Boolean) {
+    operator fun invoke(enabled: Boolean) {
         userSettings.dailySudokuNotificationEnabled = enabled
         sendDailyNotification.setDailySudokuNotification(enable = enabled)
     }

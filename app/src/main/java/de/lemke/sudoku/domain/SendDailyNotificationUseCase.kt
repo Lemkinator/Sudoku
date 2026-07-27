@@ -83,8 +83,7 @@ class SendDailyNotificationUseCase @Inject constructor(
             .setAutoCancel(true)
     }
 
-    suspend fun setDailySudokuNotification(enable: Boolean) =
-        if (enable) enableDailySudokuNotification() else disableDailySudokuNotification()
+    fun setDailySudokuNotification(enable: Boolean) = if (enable) enableDailySudokuNotification() else disableDailySudokuNotification()
 
     private fun enableDailySudokuNotification() {
         createNotificationChannel()
