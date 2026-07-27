@@ -23,25 +23,25 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.restoreSearchAndActionMode
-import de.lemke.commonutils.saveSearchAndActionMode
-import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.utils.collectEvents
+import de.lemke.commonutils.ui.utils.collectState
+import de.lemke.commonutils.ui.utils.restoreSearchAndActionMode
+import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
+import de.lemke.commonutils.ui.utils.toast
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
-import de.lemke.sudoku.domain.DeleteSudokusUseCase
-import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
-import de.lemke.sudoku.domain.ObserveUserSettingsUseCase
+import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
-import de.lemke.sudoku.ui.utils.SudokuListItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -55,9 +55,7 @@ import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.BottomTabLayout
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -65,7 +63,6 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabHistoryBinding
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var bottomTab: BottomTabLayout
-    private var sudokuHistory: List<SudokuListItem> = emptyList()
     private val allSelectorStateFlow: MutableStateFlow<AllSelectorState> = MutableStateFlow(AllSelectorState())
     private val sudokuListAdapter: SudokuListAdapter by lazy {
         SudokuListAdapter(
@@ -74,15 +71,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             onBlockActionMode = ::launchActionMode,
         )
     }
-
-    @Inject
-    lateinit var observeSudokuHistory: ObserveSudokuHistoryUseCase
-
-    @Inject
-    lateinit var deleteSudoku: DeleteSudokusUseCase
-
-    @Inject
-    lateinit var observeUserSettings: ObserveUserSettingsUseCase
+    private val viewModel: TabHistoryViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -102,20 +91,19 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.noEntryView.translateYWithAppBar(drawerLayout.appBarLayout, this)
         initRecycler()
         savedInstanceState?.restoreSearchAndActionMode(onActionMode = { launchActionMode(it) })
-        lifecycleScope.launch {
-            observeSudokuHistory().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
-                val previousSize = sudokuHistory.size
-                sudokuHistory = it
-                updateRecyclerView()
-                if (it.size > previousSize) binding.sudokuHistoryList.scrollToPosition(0)
+        collectState(viewModel.sudokuHistory, minActiveState = RESUMED) { history ->
+            updateRecyclerView(history)
+        }
+        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
+            when (event) {
+                TabHistoryEvent.ScrollToTop -> binding.sudokuHistoryList.scrollToPosition(0)
+                TabHistoryEvent.ShowLoadError -> toast(R.string.error_loading_sudoku_history_failed)
             }
         }
-        lifecycleScope.launch {
-            observeUserSettings().flowWithLifecycle(lifecycle).collectLatest {
-                if (it.errorLimit != sudokuListAdapter.errorLimit) {
-                    sudokuListAdapter.errorLimit = it.errorLimit
-                    sudokuListAdapter.notifyItemRangeChanged(0, sudokuHistory.size)
-                }
+        collectState(viewModel.errorLimit) { limit ->
+            if (limit != sudokuListAdapter.errorLimit) {
+                sudokuListAdapter.errorLimit = limit
+                sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             }
         }
     }
@@ -144,10 +132,10 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             enableCoreSeslFeatures()
             sudokuListAdapter.configureWith(this)
         }
-        updateRecyclerView()
+        updateRecyclerView(viewModel.sudokuHistory.value)
     }
 
-    private fun updateRecyclerView() {
+    private fun updateRecyclerView(sudokuHistory: List<SudokuListItem>) {
         if (sudokuHistory.isNotEmpty()) sudokuListAdapter.submitList(sudokuHistory)
         binding.noEntryView.updateVisibilityWith(sudokuHistory, binding.sudokuHistoryList)
     }
@@ -187,8 +175,8 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                         dialog.setCancelable(false)
                         dialog.show()
                         lifecycleScope.launch {
-                            deleteSudoku(
-                                sudokuHistory
+                            viewModel.deleteSelectedSudokus(
+                                viewModel.sudokuHistory.value
                                     .filterIsInstance<SudokuItem>()
                                     .filter { it.stableId in sudokuListAdapter.getSelectedIds() }
                                     .map { it.sudoku },

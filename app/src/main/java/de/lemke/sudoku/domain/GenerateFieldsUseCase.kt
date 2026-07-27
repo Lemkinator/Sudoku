@@ -16,21 +16,24 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.sfuhrm.sudoku.Creator
 import de.sfuhrm.sudoku.GameSchemas
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class GenerateFieldsUseCase @Inject constructor() {
+class GenerateFieldsUseCase @Inject constructor(
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+) {
     suspend operator fun invoke(
         size: Int,
         difficulty: Difficulty,
     ): MutableList<Field> =
-        withContext(Dispatchers.Default) {
+        withContext(defaultDispatcher) {
             val schema =
                 when (size) {
                     4 -> GameSchemas.SCHEMA_4X4

@@ -16,16 +16,18 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.UserSettingsRepository
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.content.Context
+import android.content.pm.PackageManager.PERMISSION_GRANTED
+import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.TIRAMISU
+import androidx.core.content.ContextCompat
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-class GetUserSettingsUseCase @Inject constructor(
-    private val userSettingsRepository: UserSettingsRepository,
+class IsNotificationPermissionGrantedUseCase @Inject constructor(
+    @param:ApplicationContext private val context: Context,
 ) {
-    suspend operator fun invoke() =
-        withContext(Dispatchers.Default) {
-            userSettingsRepository.getSettings()
-        }
+    operator fun invoke(): Boolean =
+        SDK_INT < TIRAMISU || ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_GRANTED
 }
