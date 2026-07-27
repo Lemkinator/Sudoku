@@ -86,22 +86,28 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                             4 -> {
                                 scores += R.string.leaderboard_time_44_very_easy to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_44_very_easy to
-                                    sudokus.count { it.size == 4 && it.difficulty == VERY_EASY }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_44_very_easy,
+                                        sudokus.count { it.size == 4 && it.difficulty == VERY_EASY }.toLong(),
+                                    )
                             }
 
                             9 -> {
                                 scores += R.string.leaderboard_time_99_very_easy to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_99_very_easy to
-                                    sudokus.count { it.size == 9 && it.difficulty == VERY_EASY }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_99_very_easy,
+                                        sudokus.count { it.size == 9 && it.difficulty == VERY_EASY }.toLong(),
+                                    )
                             }
 
                             16 -> {
                                 scores += R.string.leaderboard_time_1616_very_easy to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_1616_very_easy to
-                                    sudokus.count { it.size == 16 && it.difficulty == VERY_EASY }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_1616_very_easy,
+                                        sudokus.count { it.size == 16 && it.difficulty == VERY_EASY }.toLong(),
+                                    )
                             }
                         }
                     }
@@ -113,22 +119,28 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                             4 -> {
                                 scores += R.string.leaderboard_time_44_easy to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_44_easy to
-                                    sudokus.count { it.size == 4 && it.difficulty == EASY }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_44_easy,
+                                        sudokus.count { it.size == 4 && it.difficulty == EASY }.toLong(),
+                                    )
                             }
 
                             9 -> {
                                 scores += R.string.leaderboard_time_99_easy to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_99_easy to
-                                    sudokus.count { it.size == 9 && it.difficulty == EASY }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_99_easy,
+                                        sudokus.count { it.size == 9 && it.difficulty == EASY }.toLong(),
+                                    )
                             }
 
                             16 -> {
                                 scores += R.string.leaderboard_time_1616_easy to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_1616_easy to
-                                    sudokus.count { it.size == 16 && it.difficulty == EASY }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_1616_easy,
+                                        sudokus.count { it.size == 16 && it.difficulty == EASY }.toLong(),
+                                    )
                             }
                         }
                     }
@@ -140,22 +152,28 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                             4 -> {
                                 scores += R.string.leaderboard_time_44_medium to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_44_medium to
-                                    sudokus.count { it.size == 4 && it.difficulty == MEDIUM }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_44_medium,
+                                        sudokus.count { it.size == 4 && it.difficulty == MEDIUM }.toLong(),
+                                    )
                             }
 
                             9 -> {
                                 scores += R.string.leaderboard_time_99_medium to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_99_medium to
-                                    sudokus.count { it.size == 9 && it.difficulty == MEDIUM }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_99_medium,
+                                        sudokus.count { it.size == 9 && it.difficulty == MEDIUM }.toLong(),
+                                    )
                             }
 
                             16 -> {
                                 scores += R.string.leaderboard_time_1616_medium to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_1616_medium to
-                                    sudokus.count { it.size == 16 && it.difficulty == MEDIUM }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_1616_medium,
+                                        sudokus.count { it.size == 16 && it.difficulty == MEDIUM }.toLong(),
+                                    )
                             }
                         }
                     }
@@ -167,22 +185,28 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                             4 -> {
                                 scores += R.string.leaderboard_time_44_hard to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_44_hard to
-                                    sudokus.count { it.size == 4 && it.difficulty == HARD }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_44_hard,
+                                        sudokus.count { it.size == 4 && it.difficulty == HARD }.toLong(),
+                                    )
                             }
 
                             9 -> {
                                 scores += R.string.leaderboard_time_99_hard to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_99_hard to
-                                    sudokus.count { it.size == 9 && it.difficulty == HARD }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_99_hard,
+                                        sudokus.count { it.size == 9 && it.difficulty == HARD }.toLong(),
+                                    )
                             }
 
                             16 -> {
                                 scores += R.string.leaderboard_time_1616_hard to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_1616_hard to
-                                    sudokus.count { it.size == 16 && it.difficulty == HARD }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_1616_hard,
+                                        sudokus.count { it.size == 16 && it.difficulty == HARD }.toLong(),
+                                    )
                             }
                         }
                     }
@@ -194,22 +218,28 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                             4 -> {
                                 scores += R.string.leaderboard_time_44_expert to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_44_expert to
-                                    sudokus.count { it.size == 4 && it.difficulty == EXPERT }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_44_expert,
+                                        sudokus.count { it.size == 4 && it.difficulty == EXPERT }.toLong(),
+                                    )
                             }
 
                             9 -> {
                                 scores += R.string.leaderboard_time_99_expert to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_99_expert to
-                                    sudokus.count { it.size == 9 && it.difficulty == EXPERT }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_99_expert,
+                                        sudokus.count { it.size == 9 && it.difficulty == EXPERT }.toLong(),
+                                    )
                             }
 
                             16 -> {
                                 scores += R.string.leaderboard_time_1616_expert to sudoku.seconds * 1000L
                                 scores +=
-                                    R.string.leaderboard_wins_1616_expert to
-                                    sudokus.count { it.size == 16 && it.difficulty == EXPERT }.toLong()
+                                    Pair(
+                                        R.string.leaderboard_wins_1616_expert,
+                                        sudokus.count { it.size == 16 && it.difficulty == EXPERT }.toLong(),
+                                    )
                             }
                         }
                     }
