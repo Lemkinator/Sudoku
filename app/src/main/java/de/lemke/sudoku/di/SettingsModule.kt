@@ -25,11 +25,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.UserSettings
 import javax.inject.Qualifier
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 @Retention(AnnotationRetention.RUNTIME)
@@ -42,7 +43,9 @@ object SettingsProvideModule {
     @Provides
     @Singleton
     @ApplicationScope
-    fun providesApplicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    fun providesApplicationScope(
+        @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
+    ): CoroutineScope = CoroutineScope(SupervisorJob() + defaultDispatcher)
 
     @Provides
     @Singleton

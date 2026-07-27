@@ -14,20 +14,30 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.domain
+package de.lemke.sudoku.di
 
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.sudoku.data.database.SudokusRepository
-import javax.inject.Inject
+import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.commonutils.di.MainDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
-class DeleteInvalidSudokusUseCase @Inject constructor(
-    private val sudokusRepository: SudokusRepository,
-    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-) {
-    suspend operator fun invoke() =
-        withContext(defaultDispatcher) {
-            sudokusRepository.deleteInvalidSudokus()
-        }
+@Module
+@InstallIn(SingletonComponent::class)
+object DispatchersModule {
+    @Provides
+    @IoDispatcher
+    fun provideIo(): CoroutineDispatcher = Dispatchers.IO
+
+    @Provides
+    @DefaultDispatcher
+    fun provideDefault(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
+    @MainDispatcher
+    fun provideMain(): CoroutineDispatcher = Dispatchers.Main
 }

@@ -16,18 +16,20 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.dateFormatShort
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.collections.map
 import kotlin.collections.toMutableList
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 class ObserveSudokuHistoryUseCase @Inject constructor(
     private val observeAllNormalSudokus: ObserveAllNormalSudokusUseCase,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     operator fun invoke() =
         observeAllNormalSudokus()
@@ -44,5 +46,5 @@ class ObserveSudokuHistoryUseCase @Inject constructor(
                     }
                 }
                 sudokuHistory
-            }.flowOn(Dispatchers.Default)
+            }.flowOn(defaultDispatcher)
 }

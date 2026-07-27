@@ -16,19 +16,21 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.SudokuListItem
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 class ObserveSudokuLevelUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     operator fun invoke(size: Int) =
         sudokusRepository
             .observeSudokuLevel(size)
             .map { sudokus -> sudokus.map { SudokuListItem.SudokuItem(it, it.modeLevel.toString()) } }
-            .flowOn(Dispatchers.Default)
+            .flowOn(defaultDispatcher)
 }

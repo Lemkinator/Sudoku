@@ -16,16 +16,19 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuStatistics
 import javax.inject.Inject
 import kotlin.math.roundToInt
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class CalculateStatisticsUseCase @Inject constructor() {
+class CalculateStatisticsUseCase @Inject constructor(
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+) {
     suspend operator fun invoke(sudokus: List<Sudoku>): SudokuStatistics =
-        withContext(Dispatchers.Default) {
+        withContext(defaultDispatcher) {
             val sortedAsc = sudokus.sortedBy { it.updated }
             val completed = sortedAsc.filter { it.completed }
             val n = sudokus.size
