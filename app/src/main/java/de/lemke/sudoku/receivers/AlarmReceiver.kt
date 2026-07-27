@@ -21,11 +21,11 @@ import android.content.Context
 import android.content.Intent
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import javax.inject.Inject
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -39,27 +39,34 @@ class AlarmReceiver : BroadcastReceiver() {
     @Inject
     lateinit var userSettings: UserSettings
 
+    @Inject
+    @ApplicationScope
+    lateinit var applicationScope: CoroutineScope
+
     /**
      * sends notification when receives alarm
      * and then reschedule the reminder again
      * */
-    @OptIn(DelicateCoroutinesApi::class)
-    @Suppress("GlobalCoroutineUsage")
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
-        GlobalScope.launch {
-            val notificationEnabled = userSettings.dailySudokuNotificationEnabled
-            if (
-                !intent.action.equals(Intent.ACTION_BOOT_COMPLETED) &&
-                !intent.action.equals(Intent.ACTION_MY_PACKAGE_REPLACED) &&
-                notificationEnabled &&
-                !isDailySudokuCompleted()
-            ) {
-                sendDailyNotification()
+        val pendingResult = goAsync()
+        applicationScope.launch {
+            try {
+                val notificationEnabled = userSettings.dailySudokuNotificationEnabled
+                if (
+                    !intent.action.equals(Intent.ACTION_BOOT_COMPLETED) &&
+                    !intent.action.equals(Intent.ACTION_MY_PACKAGE_REPLACED) &&
+                    notificationEnabled &&
+                    !isDailySudokuCompleted()
+                ) {
+                    sendDailyNotification()
+                }
+                sendDailyNotification.setDailySudokuNotification(enable = notificationEnabled)
+            } finally {
+                pendingResult.finish()
             }
-            sendDailyNotification.setDailySudokuNotification(enable = notificationEnabled)
         }
     }
 }
