@@ -358,28 +358,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("CyclomaticComplexMethod", "ComplexCondition")
     private fun updateFilterSettings(dialogBinding: DialogStatisticsFilterBinding) {
+        val typeFlags =
+            combineFlags(
+                dialogBinding.filterNormal.isChecked to TYPE_NORMAL,
+                dialogBinding.filterDaily.isChecked to TYPE_DAILY,
+                dialogBinding.filterLevel.isChecked to TYPE_LEVEL,
+                allFlag = TYPE_ALL,
+            )
+        val sizeFlags =
+            combineFlags(
+                dialogBinding.filterSize4.isChecked to SIZE_4X4,
+                dialogBinding.filterSize9.isChecked to SIZE_9X9,
+                dialogBinding.filterSize16.isChecked to SIZE_16X16,
+                allFlag = SIZE_ALL,
+            )
+        val difficultyFlags =
+            combineFlags(
+                dialogBinding.filterDifficultyVeryEasy.isChecked to DIFFICULTY_VERY_EASY,
+                dialogBinding.filterDifficultyEasy.isChecked to DIFFICULTY_EASY,
+                dialogBinding.filterDifficultyMedium.isChecked to DIFFICULTY_MEDIUM,
+                dialogBinding.filterDifficultyHard.isChecked to DIFFICULTY_HARD,
+                dialogBinding.filterDifficultyExpert.isChecked to DIFFICULTY_EXPERT,
+                allFlag = DIFFICULTY_ALL,
+            )
+        userSettings.filterFlags = typeFlags or sizeFlags or difficultyFlags
+    }
+
+    private fun combineFlags(
+        vararg entries: Pair<Boolean, Int>,
+        allFlag: Int,
+    ): Int {
         var flags = 0
-        if (dialogBinding.filterNormal.isChecked) flags = flags or TYPE_NORMAL
-        if (dialogBinding.filterDaily.isChecked) flags = flags or TYPE_DAILY
-        if (dialogBinding.filterLevel.isChecked) flags = flags or TYPE_LEVEL
-        if (flags and TYPE_NORMAL != 0 && flags and TYPE_DAILY != 0 && flags and TYPE_LEVEL != 0) flags = flags or TYPE_ALL
-        if (dialogBinding.filterSize4.isChecked) flags = flags or SIZE_4X4
-        if (dialogBinding.filterSize9.isChecked) flags = flags or SIZE_9X9
-        if (dialogBinding.filterSize16.isChecked) flags = flags or SIZE_16X16
-        if (flags and SIZE_4X4 != 0 && flags and SIZE_9X9 != 0 && flags and SIZE_16X16 != 0) flags = flags or SIZE_ALL
-        if (dialogBinding.filterDifficultyVeryEasy.isChecked) flags = flags or DIFFICULTY_VERY_EASY
-        if (dialogBinding.filterDifficultyEasy.isChecked) flags = flags or DIFFICULTY_EASY
-        if (dialogBinding.filterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
-        if (dialogBinding.filterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
-        if (dialogBinding.filterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
-        if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0 &&
-            flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
-        ) {
-            flags = flags or DIFFICULTY_ALL
-        }
-        userSettings.filterFlags = flags
+        for ((isChecked, flag) in entries) if (isChecked) flags = flags or flag
+        if (entries.all { (isChecked, _) -> isChecked }) flags = flags or allFlag
+        return flags
     }
 
     private fun initFragments() {
