@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku
+package de.lemke.sudoku.di
 
-import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import dagger.Module
@@ -31,8 +30,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object
-PersistenceModule : Application() {
+object PersistenceModule {
     @Provides
     @Singleton
     fun provideAppDatabase(
