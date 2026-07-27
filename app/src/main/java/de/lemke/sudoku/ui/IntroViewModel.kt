@@ -16,19 +16,12 @@
 
 package de.lemke.sudoku.ui
 
-import android.Manifest.permission.POST_NOTIFICATIONS
-import android.content.Context
-import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.os.Build.VERSION.SDK_INT
-import android.os.Build.VERSION_CODES.TIRAMISU
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
+import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
+import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import javax.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
@@ -44,12 +37,11 @@ sealed interface IntroEvent {
 
 @HiltViewModel
 class IntroViewModel @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-    private val userSettings: UserSettings,
-    private val sendDailyNotification: SendDailyNotificationUseCase,
+    private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
+    private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val openedFromSettings: Boolean = savedStateHandle["openedFromSettings"] ?: false
+    val openedFromSettings: Boolean = savedStateHandle[IntroActivity.KEY_OPENED_FROM_SETTINGS] ?: false
 
     private val _events = Channel<IntroEvent>(BUFFERED)
     val events: Flow<IntroEvent> = _events.receiveAsFlow()
@@ -57,7 +49,7 @@ class IntroViewModel @Inject constructor(
     fun onNotificationsDeclined() = setNotificationsEnabledAndAdvance(false)
 
     fun onNotificationsAccepted() {
-        if (SDK_INT < TIRAMISU || ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
+        if (isNotificationPermissionGranted()) {
             setNotificationsEnabledAndAdvance(true)
         } else {
             viewModelScope.launch { _events.send(IntroEvent.RequestNotificationPermission) }
@@ -67,9 +59,8 @@ class IntroViewModel @Inject constructor(
     fun onNotificationPermissionResult(isGranted: Boolean) = setNotificationsEnabledAndAdvance(isGranted)
 
     private fun setNotificationsEnabledAndAdvance(enabled: Boolean) {
-        userSettings.dailySudokuNotificationEnabled = enabled
         viewModelScope.launch {
-            sendDailyNotification.setDailySudokuNotification(enable = enabled)
+            setDailyNotificationEnabled(enabled)
             _events.send(IntroEvent.AdvanceOnboarding)
         }
     }

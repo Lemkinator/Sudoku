@@ -61,6 +61,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
+import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
@@ -314,7 +315,7 @@ class SudokuActivity : AppCompatActivity() {
                 }
             }
             dialog.show()
-            viewModel.syncPlayGames(this@SudokuActivity, sudoku)
+            applyPlayGamesSync(viewModel.syncPlayGames(sudoku))
             showInAppReviewIfPossible()
         }
     }

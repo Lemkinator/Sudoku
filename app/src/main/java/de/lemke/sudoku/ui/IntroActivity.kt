@@ -35,6 +35,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -178,7 +179,7 @@ class IntroActivity : AppCompatActivity() {
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
-        collectEvents(viewModel.events) { event ->
+        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
             when (event) {
                 IntroEvent.AdvanceOnboarding -> advanceOnboarding()
                 IntroEvent.RequestNotificationPermission -> requestPermissionLauncher.launch(POST_NOTIFICATIONS)
@@ -660,6 +661,10 @@ class IntroActivity : AppCompatActivity() {
                 .create()
         dialog.show()
         dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_des_functional_red_color))
+    }
+
+    companion object {
+        const val KEY_OPENED_FROM_SETTINGS = "openedFromSettings"
     }
 
     inner class SudokuGameListener : GameListener {

@@ -65,7 +65,6 @@ class SudokuLevelTabViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val size: Int = savedStateHandle["size"] ?: 4
-    private var nextLevelSudoku: Sudoku? = null
 
     val state: StateFlow<SudokuLevelTabUiState>
         field = MutableStateFlow(SudokuLevelTabUiState())
@@ -75,37 +74,44 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            runCatching {
-                initSudokuLevel(size)
-                observeSudokuLevel(size).collectLatest { sudokuLevel ->
-                    if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
-                        state.value = state.value.copy(isGeneratingNextLevel = true)
-                        nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
-                        val levelWithNext = listOf(SudokuItem(nextLevelSudoku!!, nextLevelSudoku!!.modeLevel.toString())) + sudokuLevel
-                        state.value =
-                            SudokuLevelTabUiState(
-                                sudokuLevel = levelWithNext,
-                                isLoading = false,
-                                isGeneratingNextLevel = false,
-                                hasNextLevelToStart = true,
-                            )
-                        delay(SCROLL_TO_TOP_DELAY_MS)
-                        _events.send(SudokuLevelTabEvent.ScrollToTop)
-                    } else {
-                        nextLevelSudoku = null
-                        state.value =
-                            SudokuLevelTabUiState(
-                                sudokuLevel = sudokuLevel,
-                                isLoading = false,
-                                isGeneratingNextLevel = false,
-                                hasNextLevelToStart = false,
-                            )
+            runCatching { initSudokuLevel(size) }
+                .onFailure { e ->
+                    if (e is CancellationException) throw e
+                    state.value = state.value.copy(isLoading = false)
+                    _events.send(SudokuLevelTabEvent.ShowLoadError)
+                }.onSuccess {
+                    observeSudokuLevel(size).collectLatest { sudokuLevel ->
+                        runCatching {
+                            if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
+                                state.value = state.value.copy(isGeneratingNextLevel = true)
+                                val nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
+                                val levelWithNext =
+                                    listOf(SudokuItem(nextLevelSudoku, nextLevelSudoku.modeLevel.toString())) + sudokuLevel
+                                state.value =
+                                    SudokuLevelTabUiState(
+                                        sudokuLevel = levelWithNext,
+                                        isLoading = false,
+                                        isGeneratingNextLevel = false,
+                                        hasNextLevelToStart = true,
+                                    )
+                                delay(SCROLL_TO_TOP_DELAY_MS)
+                                _events.send(SudokuLevelTabEvent.ScrollToTop)
+                            } else {
+                                state.value =
+                                    SudokuLevelTabUiState(
+                                        sudokuLevel = sudokuLevel,
+                                        isLoading = false,
+                                        isGeneratingNextLevel = false,
+                                        hasNextLevelToStart = false,
+                                    )
+                            }
+                        }.onFailure { e ->
+                            if (e is CancellationException) throw e
+                            state.value = state.value.copy(isGeneratingNextLevel = false)
+                            _events.send(SudokuLevelTabEvent.ShowLoadError)
+                        }
                     }
                 }
-            }.onFailure { e ->
-                if (e is CancellationException) throw e
-                _events.send(SudokuLevelTabEvent.ShowLoadError)
-            }
         }
     }
 

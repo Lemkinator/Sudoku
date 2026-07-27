@@ -16,18 +16,18 @@
 
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
-import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
@@ -40,7 +40,7 @@ class SudokuViewModel @Inject constructor(
     private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
     private val saveSudoku: SaveSudokuUseCase,
     private val shareSudoku: ShareSudokuUseCase,
-    private val updatePlayGames: UpdatePlayGamesUseCase,
+    private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
 ) : ViewModel() {
     suspend fun loadSudoku(id: SudokuId): Sudoku? = getSudoku(id)
 
@@ -66,8 +66,5 @@ class SudokuViewModel @Inject constructor(
 
     suspend fun exportSudoku(sudoku: Sudoku): Uri = shareSudoku(sudoku)
 
-    suspend fun syncPlayGames(
-        activity: Activity,
-        sudoku: Sudoku? = null,
-    ) = updatePlayGames(activity, sudoku)
+    suspend fun syncPlayGames(sudoku: Sudoku? = null): PlayGamesSync = calculatePlayGamesSync(sudoku)
 }

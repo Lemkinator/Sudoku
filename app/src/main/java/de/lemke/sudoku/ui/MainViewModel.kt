@@ -16,14 +16,14 @@
 
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
 
@@ -32,12 +32,12 @@ class MainViewModel @Inject constructor(
     private val userSettings: UserSettings,
     private val importSudoku: ImportSudokuUseCase,
     private val sendDailyNotification: SendDailyNotificationUseCase,
-    private val updatePlayGames: UpdatePlayGamesUseCase,
+    private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
 ) : ViewModel() {
     suspend fun handleImportedSudoku(uri: Uri?): Sudoku? = importSudoku(uri)
 
-    suspend fun onScreenReady(activity: Activity) {
+    suspend fun onScreenReady(): PlayGamesSync {
         sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
-        updatePlayGames(activity)
+        return calculatePlayGamesSync()
     }
 }

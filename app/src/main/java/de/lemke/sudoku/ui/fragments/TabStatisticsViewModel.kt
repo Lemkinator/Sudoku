@@ -63,6 +63,7 @@ class TabStatisticsViewModel @Inject constructor(
                 }
             }.onFailure { e ->
                 if (e is CancellationException) throw e
+                state.value = state.value.copy(isLoading = false)
                 _events.send(TabStatisticsEvent.ShowLoadError)
             }
         }

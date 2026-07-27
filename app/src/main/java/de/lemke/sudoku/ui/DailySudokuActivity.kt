@@ -66,7 +66,7 @@ class DailySudokuActivity : AppCompatActivity() {
             binding.dailySudokuRecycler.isVisible = !state.isLoading
             binding.dailyProgressBar.isVisible = state.isLoading
         }
-        collectEvents(viewModel.events) { event ->
+        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
             when (event) {
                 DailySudokuEvent.ShowLoadError -> toast(R.string.error_loading_daily_sudokus_failed)
             }

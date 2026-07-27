@@ -110,6 +110,7 @@ class SettingsActivity : AppCompatActivity() {
         private val requestPermissionLauncher =
             registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
                 viewModel.onNotificationPermissionResult(isGranted)
+                findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.isChecked = viewModel.isDailyNotificationChecked
             }
 
         override fun onCreatePreferences(
@@ -189,46 +190,30 @@ class SettingsActivity : AppCompatActivity() {
             findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
                 isChecked = viewModel.isDailyNotificationChecked
                 setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
-                onNewValue {
-                    when (viewModel.onDailyNotificationToggleRequested(it)) {
-                        DailyNotificationToggleResult.Applied -> {}
-
-                        DailyNotificationToggleResult.NeedsPermission -> {
-                            requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-                            isChecked = false
-                        }
-
-                        DailyNotificationToggleResult.SystemNotificationsDisabled -> {
-                            val settingsIntent =
-                                Intent(ACTION_APP_NOTIFICATION_SETTINGS)
-                                    .addFlags(FLAG_ACTIVITY_NEW_TASK)
-                                    .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
-                            // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
-                            startActivity(settingsIntent)
-                            isChecked = false
-                        }
-                    }
-                }
+                onNewValue { applyDailyNotificationToggle(it) }
                 onClick {
                     isChecked = true
-                    onPreferenceChangeListener?.onPreferenceChange(this@apply, true)
-                    val dialog =
-                        SeslTimePickerDialog(
-                            requireContext(),
-                            { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
-                                viewModel.onDailyNotificationTimeSelected(hourOfDay, minute)
-                                setDailyNotificationPrefTime(hourOfDay, minute)
-                            },
-                            viewModel.dailySudokuNotificationHour,
-                            viewModel.dailySudokuNotificationMinute,
-                            is24HourFormat(requireContext()),
-                        )
-                    dialog.show()
+                    if (applyDailyNotificationToggle(true) == DailyNotificationToggleResult.Applied) {
+                        val dialog =
+                            SeslTimePickerDialog(
+                                requireContext(),
+                                { _: SeslTimePicker?, hourOfDay: Int, minute: Int ->
+                                    viewModel.onDailyNotificationTimeSelected(hourOfDay, minute)
+                                    setDailyNotificationPrefTime(hourOfDay, minute)
+                                },
+                                viewModel.dailySudokuNotificationHour,
+                                viewModel.dailySudokuNotificationMinute,
+                                is24HourFormat(requireContext()),
+                            )
+                        dialog.show()
+                    }
                 }
             } ?: Log.e(TAG, "daily notification Preference not found")
 
             findPreference<PreferenceScreen>("intro_pref")?.onClick {
-                startActivity(Intent(requireContext(), IntroActivity::class.java).putExtra("openedFromSettings", true))
+                startActivity(
+                    Intent(requireContext(), IntroActivity::class.java).putExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, true),
+                )
             }
 
             findPreference<PreferenceScreen>("export_data_pref")?.onClick {
@@ -274,6 +259,28 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+
+        private fun SeslSwitchPreferenceScreen.applyDailyNotificationToggle(enabled: Boolean): DailyNotificationToggleResult =
+            viewModel.onDailyNotificationToggleRequested(enabled).also { result ->
+                when (result) {
+                    DailyNotificationToggleResult.Applied -> {}
+
+                    DailyNotificationToggleResult.NeedsPermission -> {
+                        requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                        isChecked = false
+                    }
+
+                    DailyNotificationToggleResult.SystemNotificationsDisabled -> {
+                        val settingsIntent =
+                            Intent(ACTION_APP_NOTIFICATION_SETTINGS)
+                                .addFlags(FLAG_ACTIVITY_NEW_TASK)
+                                .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
+                        // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
+                        startActivity(settingsIntent)
+                        isChecked = false
+                    }
+                }
+            }
 
         private fun SeslSwitchPreferenceScreen.setDailyNotificationPrefTime(
             hourOfDay: Int,

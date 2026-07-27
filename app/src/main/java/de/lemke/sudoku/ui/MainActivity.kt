@@ -88,6 +88,7 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
+import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import javax.inject.Inject
@@ -145,7 +146,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             isUIReady = true
             checkImportedSudoku()
-            viewModel.onScreenReady(this@MainActivity)
+            applyPlayGamesSync(viewModel.onScreenReady())
         }
     }
 

@@ -26,9 +26,9 @@ Missing this opt-in is a top build-failure cause for new contributors — CI enf
 
 ## Architecture
 
-Clean Architecture with three layers. Activities/Fragments use `@HiltViewModel` ViewModels, which own the use-case injections; screens with state/events expose them via `StateFlow`/`Channel<Event>`.
+Clean Architecture with three layers. Activities/Fragments obtain a `@HiltViewModel`-annotated ViewModel via `by viewModels()`, which owns the use-case injections; screens with state/events expose them via `StateFlow`/`Channel<Event>`.
 
-```
+```text
 de.lemke.sudoku/
 ├── ui/           # Activities, Fragments, custom views, RecyclerView adapters, ViewModels
 ├── domain/       # Use cases + domain models (Sudoku, Field, Position, Difficulty)
@@ -51,7 +51,7 @@ de.lemke.sudoku/
 
 **Settings:** All user preferences stored via `UserSettings : SettingsRepository`, a SharedPreferences-backed implementation from the `common-utils` library, constructor-injected into ViewModels. `di/SettingsModule.kt` provides it via Hilt. Daily sudoku notifications scheduled via `AlarmReceiver`.
 
-**ViewModels:** `@HiltViewModel` per Activity/Fragment. Screen state (where present) as `StateFlow<UiState>` using Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events as `Channel<Event>(BUFFERED).receiveAsFlow()`.
+**ViewModels:** One `@HiltViewModel`-annotated ViewModel per Activity/Fragment. Screen state (where present) as `StateFlow<UiState>` using Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events as `Channel<Event>(BUFFERED).receiveAsFlow()`.
 
 ## Notable Dependencies
 

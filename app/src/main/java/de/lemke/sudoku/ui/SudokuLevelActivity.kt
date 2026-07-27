@@ -50,14 +50,6 @@ class SudokuLevelActivity : AppCompatActivity() {
         binding.viewPagerLevel.setCurrentItem(viewModel.currentLevelTab, false)
         binding.viewPagerLevel.registerOnPageChangeCallback(
             object : ViewPager2.OnPageChangeCallback() {
-                override fun onPageScrollStateChanged(state: Int) {}
-
-                override fun onPageScrolled(
-                    position: Int,
-                    positionOffset: Float,
-                    positionOffsetPixels: Int,
-                ) {}
-
                 override fun onPageSelected(position: Int) {
                     viewModel.currentLevelTab = position
                 }

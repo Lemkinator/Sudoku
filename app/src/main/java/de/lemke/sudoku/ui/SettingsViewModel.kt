@@ -31,7 +31,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
+import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
+import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import javax.inject.Inject
 import kotlinx.coroutines.launch
 
@@ -47,7 +48,8 @@ sealed interface DailyNotificationToggleResult {
 class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val userSettings: UserSettings,
-    private val sendDailyNotification: SendDailyNotificationUseCase,
+    private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
+    private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
 ) : ViewModel() {
     var errorLimit: Int
@@ -93,7 +95,7 @@ class SettingsViewModel @Inject constructor(
                 DailyNotificationToggleResult.Applied
             }
 
-            SDK_INT >= TIRAMISU && ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) != PERMISSION_GRANTED -> {
+            !isNotificationPermissionGranted() -> {
                 DailyNotificationToggleResult.NeedsPermission
             }
 
@@ -121,8 +123,7 @@ class SettingsViewModel @Inject constructor(
     suspend fun onDeleteInvalidSudokusConfirmed() = deleteInvalidSudokus()
 
     private fun setDailySudokuNotification(enabled: Boolean) {
-        userSettings.dailySudokuNotificationEnabled = enabled
-        viewModelScope.launch { sendDailyNotification.setDailySudokuNotification(enable = enabled) }
+        viewModelScope.launch { setDailyNotificationEnabled(enabled) }
     }
 
     private fun systemNotificationsEnabled(): Boolean {
