@@ -22,10 +22,11 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 
-@Suppress("ReturnCount")
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
-    val fields = sudokuWithFields?.fields?.mapNotNull { fieldFromDb(it) }?.toMutableList() ?: return null
-    if (fields.size != sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size) return null
+    val fields = sudokuWithFields?.fields?.mapNotNull { fieldFromDb(it) }?.toMutableList()
+    if (sudokuWithFields == null || fields == null || fields.size != sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size) {
+        return null
+    }
     return Sudoku(
         id = SudokuId(sudokuWithFields.sudoku.id),
         size = sudokuWithFields.sudoku.size,
