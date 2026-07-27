@@ -41,7 +41,6 @@ import dev.oneuiproject.oneui.recyclerview.model.AdapterItem
 import dev.oneuiproject.oneui.widget.SelectableLinearLayout
 import dev.oneuiproject.oneui.widget.Separator
 
-@Suppress("IncorrectFormatting")
 class SudokuListAdapter(
     private val context: Context,
     var errorLimit: Int = 0,
