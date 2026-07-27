@@ -94,8 +94,6 @@ android {
         checkReleaseBuilds = true
         abortOnError = true
         baseline = file("lint-baseline.xml")
-        sarifReport = true
-        htmlReport = true
     }
     testOptions {
         unitTests {
