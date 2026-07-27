@@ -71,6 +71,7 @@ import java.util.Calendar
 import java.util.Calendar.HOUR_OF_DAY
 import java.util.Calendar.MINUTE
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import de.lemke.commonutils.R as commonutilsR
@@ -252,7 +253,7 @@ class SettingsActivity : AppCompatActivity() {
                     setOnClickListenerWithProgress { _, _ ->
                         lifecycleScope.launch {
                             viewModel.onDeleteInvalidSudokusConfirmed()
-                            delay(500)
+                            delay(500.milliseconds)
                             dialog.dismiss()
                         }
                     }

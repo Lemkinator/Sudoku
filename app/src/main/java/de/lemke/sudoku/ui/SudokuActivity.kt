@@ -67,6 +67,7 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -578,7 +579,7 @@ class SudokuActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay / sudoku.blockSize)
+        delay((delay / sudoku.blockSize).milliseconds)
     }
 
     private fun selectButton(

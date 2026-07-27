@@ -29,6 +29,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.utils.SudokuListItem
 import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
@@ -94,7 +95,7 @@ class SudokuLevelTabViewModel @Inject constructor(
                                         isGeneratingNextLevel = false,
                                         hasNextLevelToStart = true,
                                     )
-                                delay(SCROLL_TO_TOP_DELAY_MS)
+                                delay(SCROLL_TO_TOP_DELAY_MS.milliseconds)
                                 _events.send(SudokuLevelTabEvent.ScrollToTop)
                             } else {
                                 state.value =

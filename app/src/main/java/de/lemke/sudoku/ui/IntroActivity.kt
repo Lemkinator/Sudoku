@@ -54,6 +54,7 @@ import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import java.util.Timer
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -375,7 +376,7 @@ class IntroActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay / sudoku.blockSize)
+        delay((delay / sudoku.blockSize).milliseconds)
     }
 
     @Suppress("CyclomaticComplexMethod", "LongMethod")
@@ -385,7 +386,7 @@ class IntroActivity : AppCompatActivity() {
                 when (currentIntroStep) {
                     0 -> {
                         while (introStep == 0) {
-                            delay(900)
+                            delay(900.milliseconds)
                             val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
                             val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
                             val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
@@ -398,7 +399,7 @@ class IntroActivity : AppCompatActivity() {
                                 it?.setBackground()
                             }
                             block.forEach { animateIntroFieldText(it?.fieldViewValue) }
-                            delay(900)
+                            delay(900.milliseconds)
                             block.forEach {
                                 it?.isHighlighted = false
                                 it?.setBackground()
@@ -408,7 +409,7 @@ class IntroActivity : AppCompatActivity() {
                                 it?.setBackground()
                             }
                             row.forEach { animateIntroFieldText(it?.fieldViewValue) }
-                            delay(900)
+                            delay(900.milliseconds)
                             row.forEach {
                                 it?.isHighlighted = false
                                 it?.setBackground()
@@ -448,18 +449,18 @@ class IntroActivity : AppCompatActivity() {
                     8 -> {
                         val delayMillis = 1200L
                         while (introStep == 8) {
-                            delay(delayMillis)
+                            delay(delayMillis.milliseconds)
                             selectButton(null)
                             gameAdapter.selectFieldView(4, highlightNeighbors = true, highlightNumber = true)
-                            delay(delayMillis)
+                            delay(delayMillis.milliseconds)
                             gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
                             selectButton(7)
-                            delay(delayMillis)
+                            delay(delayMillis.milliseconds)
                             selectButton(4)
-                            delay(delayMillis)
+                            delay(delayMillis.milliseconds)
                             selectButton(null)
                             gameAdapter.selectFieldView(21, highlightNeighbors = true, highlightNumber = true)
-                            delay(delayMillis)
+                            delay(delayMillis.milliseconds)
                             gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
                             selectButton(1)
                         }
@@ -503,7 +504,7 @@ class IntroActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay)
+        delay(delay.milliseconds)
     }
 
     private suspend fun animateIntroFieldView(
@@ -524,7 +525,7 @@ class IntroActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay)
+        delay(delay.milliseconds)
     }
 
     private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
