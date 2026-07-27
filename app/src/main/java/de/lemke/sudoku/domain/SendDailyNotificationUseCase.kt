@@ -86,7 +86,7 @@ class SendDailyNotificationUseCase @Inject constructor(
     suspend fun setDailySudokuNotification(enable: Boolean) =
         if (enable) enableDailySudokuNotification() else disableDailySudokuNotification()
 
-    private suspend fun enableDailySudokuNotification() {
+    private fun enableDailySudokuNotification() {
         createNotificationChannel()
         val alarmIntent = createAlarmIntent()
         val calendar: Calendar =

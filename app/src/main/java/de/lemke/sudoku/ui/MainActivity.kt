@@ -341,7 +341,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun DialogStatisticsFilterBinding.initDialog() {
+    private fun DialogStatisticsFilterBinding.initDialog() {
         userSettings.let {
             filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
             filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
