@@ -26,6 +26,7 @@ import android.content.Intent.CATEGORY_OPENABLE
 import android.content.Intent.EXTRA_TITLE
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
 import android.provider.Settings.EXTRA_APP_PACKAGE
@@ -267,7 +268,9 @@ class SettingsActivity : AppCompatActivity() {
                     DailyNotificationToggleResult.Applied -> {}
 
                     DailyNotificationToggleResult.NeedsPermission -> {
-                        requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                        }
                         isChecked = false
                     }
 
