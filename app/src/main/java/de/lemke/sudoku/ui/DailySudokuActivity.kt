@@ -38,11 +38,11 @@ import de.lemke.commonutils.ui.widget.InfoBottomSheet.Companion.showInfoBottomSh
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.DAILY
-import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED

@@ -30,7 +30,7 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.ui.utils.AlarmReceiver
+import de.lemke.sudoku.receivers.AlarmReceiver
 import java.util.Calendar
 import javax.inject.Inject
 

@@ -26,8 +26,8 @@ import de.lemke.sudoku.domain.InitSudokuLevelUseCase
 import de.lemke.sudoku.domain.ObserveSudokuLevelUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.ui.utils.SudokuListItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException

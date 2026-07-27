@@ -18,8 +18,8 @@ package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.monthAndYear
-import de.lemke.sudoku.ui.utils.SudokuListItem
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers

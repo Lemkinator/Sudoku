@@ -31,9 +31,10 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.formatFull
-import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.layout.ToolbarLayout.AllSelectorState
 import dev.oneuiproject.oneui.recyclerview.adapter.IndexedSelectableListAdapter
 import dev.oneuiproject.oneui.recyclerview.model.AdapterItem

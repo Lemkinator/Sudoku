@@ -16,8 +16,8 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.dateFormatShort
-import de.lemke.sudoku.ui.utils.SudokuListItem
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.collections.map

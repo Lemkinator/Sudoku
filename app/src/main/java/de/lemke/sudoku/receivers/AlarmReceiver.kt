@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.ui.utils
+package de.lemke.sudoku.receivers
 
 import android.content.BroadcastReceiver
 import android.content.Context

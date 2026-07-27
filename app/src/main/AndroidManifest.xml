@@ -120,7 +120,7 @@
         </provider>
 
         <receiver
-            android:name=".ui.utils.AlarmReceiver"
+            android:name=".receivers.AlarmReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

@@ -22,7 +22,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
-import de.lemke.sudoku.ui.utils.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuListItem
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel

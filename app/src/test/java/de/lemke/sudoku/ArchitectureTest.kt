@@ -45,23 +45,9 @@ class ArchitectureTest : ShouldSpec() {
                     }
                 }
         }
-        // TODO(backlog): ObserveDailySudokusUseCase/ObserveSudokuHistoryUseCase/ObserveSudokuLevelUseCase
-        // currently build ui.utils.SudokuListItem (presentation model) directly, and SendDailyNotificationUseCase
-        // references ui.utils.AlarmReceiver to target its PendingIntent. The Plan 3 MVVM refactor introduced a
-        // ViewModel layer but deliberately did not move this list-item mapping into it (would touch four
-        // ViewModels' state types in an already-large branch) — still pre-existing debt, now unblocked but not
-        // yet paid down. Excluded here by name so the rule still catches new violations.
         should("domain layer does not depend on ui") {
-            val knownExceptions =
-                setOf(
-                    "ObserveDailySudokusUseCase",
-                    "ObserveSudokuHistoryUseCase",
-                    "ObserveSudokuLevelUseCase",
-                    "SendDailyNotificationUseCase",
-                )
             codeScope.files
                 .withPackage("de.lemke.sudoku.domain..")
-                .filterNot { it.name in knownExceptions }
                 .assertFalse(testName = this.testCase.name.toString()) {
                     it.hasImport { import -> import.name.startsWith("de.lemke.sudoku.ui.") }
                 }

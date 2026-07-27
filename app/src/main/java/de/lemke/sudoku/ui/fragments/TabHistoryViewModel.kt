@@ -23,7 +23,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.ui.utils.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuListItem
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
