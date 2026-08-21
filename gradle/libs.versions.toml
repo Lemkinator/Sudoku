@@ -20,7 +20,7 @@ ksp = "2.3.11"
 # Used via spotless { kotlin { ktlint(libs.versions.ktlint.get()) } } — version-only ref, no library/plugin alias
 #noinspection UnusedVersionCatalogEntry
 ktlint = "1.8.0"
-oneui-design = "0.9.14+oneui8"
+oneui-design = "0.9.16+oneui8"
 oneui-icons = "1.1.0"
 play-services-games = "22.0.0"
 room = "2.8.4"
