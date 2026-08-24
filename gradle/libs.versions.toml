@@ -7,7 +7,7 @@ datastore-preferences = "1.2.1"
 dependency-analysis = "3.18.0"
 detekt = "2.0.0-alpha.6"
 documentfile = "1.1.0"
-gradle = "9.3.1"
+gradle = "9.3.2"
 hilt = "2.60.1"
 json-kotlin-schema = "0.58"
 #noinspection UnusedVersionCatalogEntry
