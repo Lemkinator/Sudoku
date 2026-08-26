@@ -37,10 +37,12 @@ More Information: <a target="_blank" href='https://www.leonard-lemke.com/apps/su
 
 <br>
 
-<picture>
-    <!--suppress HtmlUnknownTarget -->
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Lemkinator/Sudoku&type=Date&theme=dark" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Lemkinator/Sudoku&type=Date" />
-</picture>
+<a href="https://www.star-history.com/?repos=Lemkinator%2FSudoku&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Lemkinator/Sudoku&type=date&theme=dark&legend=top-left&sealed_token=joM3Ceq0WLOabHAqMh7Wk--j6JhWJEwUFqPOQZpK4RbiROIfOvTTLF3kV3vFA5jZDU4a6_NK4LZ3NhdplQQMf2DxJ4Ix9DCC7prB52m7LSaRz_dRcDg7UtOv-KvQSKtW5qWSJ58IfYXXD8uT1alh1m3QktSn_n45jweoUFrbgnu2xQRClk2DlgHL-avF" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Lemkinator/Sudoku&type=date&legend=top-left&sealed_token=joM3Ceq0WLOabHAqMh7Wk--j6JhWJEwUFqPOQZpK4RbiROIfOvTTLF3kV3vFA5jZDU4a6_NK4LZ3NhdplQQMf2DxJ4Ix9DCC7prB52m7LSaRz_dRcDg7UtOv-KvQSKtW5qWSJ58IfYXXD8uT1alh1m3QktSn_n45jweoUFrbgnu2xQRClk2DlgHL-avF" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Lemkinator/Sudoku&type=date&legend=top-left&sealed_token=joM3Ceq0WLOabHAqMh7Wk--j6JhWJEwUFqPOQZpK4RbiROIfOvTTLF3kV3vFA5jZDU4a6_NK4LZ3NhdplQQMf2DxJ4Ix9DCC7prB52m7LSaRz_dRcDg7UtOv-KvQSKtW5qWSJ58IfYXXD8uT1alh1m3QktSn_n45jweoUFrbgnu2xQRClk2DlgHL-avF" />
+ </picture>
+</a>
 
 </div>
