@@ -24,7 +24,7 @@ oneui-design = "0.9.17+oneui8"
 oneui-icons = "1.1.0"
 play-services-games = "22.0.0"
 room = "2.8.4"
-spotless = "8.10.0"
+spotless = "8.10.1"
 sudoku = "5.3.1"
 
 [libraries]
