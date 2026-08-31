@@ -34,6 +34,7 @@ import android.view.MenuItem
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
@@ -51,27 +52,23 @@ import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.configureCommonUtilsSplashScreen
-import de.lemke.commonutils.onNavigationSingleClick
-import de.lemke.commonutils.onboardIfNeeded
-import de.lemke.commonutils.openURL
-import de.lemke.commonutils.prepareActivityTransformationFrom
-import de.lemke.commonutils.setupCommonUtilsAboutActivity
-import de.lemke.commonutils.setupCommonUtilsAboutMeActivity
-import de.lemke.commonutils.setupHeaderAndNavRail
-import de.lemke.commonutils.toast
-import de.lemke.commonutils.transformToActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
+import de.lemke.commonutils.ui.utils.configureCommonUtilsSplashScreen
+import de.lemke.commonutils.ui.utils.onNavigationSingleClick
+import de.lemke.commonutils.ui.utils.onboardIfNeeded
+import de.lemke.commonutils.ui.utils.openURL
+import de.lemke.commonutils.ui.utils.prepareActivityTransformationFrom
+import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutActivity
+import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutMeActivity
+import de.lemke.commonutils.ui.utils.setupHeaderAndNavRail
+import de.lemke.commonutils.ui.utils.toast
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityMainBinding
 import de.lemke.sudoku.databinding.DialogStatisticsFilterBinding
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.ImportSudokuUseCase
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdatePlayGamesUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EASY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
@@ -86,10 +83,12 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
+import de.lemke.sudoku.openLeakCanary
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
+import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import javax.inject.Inject
@@ -103,26 +102,20 @@ class MainActivity : AppCompatActivity() {
     private var selectedPosition = 0
     private var isUIReady = false
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(StartActivityForResult()) {}
+    private val viewModel: MainViewModel by viewModels()
 
     @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
-
-    @Inject
-    lateinit var importSudoku: ImportSudokuUseCase
-
-    @Inject
-    lateinit var sendDailyNotification: SendDailyNotificationUseCase
-
-    @Inject
-    lateinit var updatePlayGames: UpdatePlayGamesUseCase
+    lateinit var userSettings: UserSettings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        onboardIfNeeded(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME, allowSkip = BuildConfig.FIRST_RUN_SKIPPABLE) ?: return
+        onboardIfNeeded(
+            BuildConfig.VERSION_CODE,
+            BuildConfig.VERSION_NAME,
+            userSettings,
+            allowSkip = BuildConfig.FIRST_RUN_SKIPPABLE,
+        ) ?: return
         prepareActivityTransformationFrom()
         if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -153,8 +146,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             isUIReady = true
             checkImportedSudoku()
-            sendDailyNotification.setDailySudokuNotification(enable = getUserSettings().dailySudokuNotificationEnabled)
-            updatePlayGames(this@MainActivity)
+            applyPlayGamesSync(viewModel.onScreenReady())
         }
     }
 
@@ -164,7 +156,7 @@ class MainActivity : AppCompatActivity() {
             dialog.setProgressStyle(CIRCLE)
             dialog.setCancelable(false)
             dialog.show()
-            val sudoku = importSudoku(intent.data)
+            val sudoku = viewModel.handleImportedSudoku(intent.data)
             if (sudoku != null) {
                 findViewById<AppCompatButton?>(R.id.newGameButton)?.transformToActivity(
                     Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
@@ -218,6 +210,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initDrawer() {
+        binding.navigationView.findMenuItem(R.id.leaks_dest)?.isVisible = BuildConfig.DEBUG
         val gamesSignInClient = PlayGames.getGamesSignInClient(this)
         binding.navigationView.onNavigationSingleClick { item ->
             when (item.itemId) {
@@ -253,6 +246,10 @@ class MainActivity : AppCompatActivity() {
                     findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
                 }
 
+                R.id.leaks_dest -> {
+                    openLeakCanary(this)
+                }
+
                 else -> {
                     return@onNavigationSingleClick false
                 }
@@ -260,7 +257,7 @@ class MainActivity : AppCompatActivity() {
             true
         }
         binding.drawerLayout.apply {
-            setTitle(BuildConfig.APP_NAME)
+            setTitle(getString(R.string.app_name))
             setupHeaderAndNavRail(getString(R.string.about_app))
             // setupNavigation(binding.bottomTab, binding.navigationHost.getFragment())
         }
@@ -344,8 +341,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun DialogStatisticsFilterBinding.initDialog() {
-        getUserSettings().let {
+    private fun DialogStatisticsFilterBinding.initDialog() {
+        userSettings.let {
             filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
             filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
             filterLevel.isChecked = it.filterFlags and TYPE_LEVEL != 0 || it.filterFlags and TYPE_ALL != 0
@@ -361,28 +358,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("CyclomaticComplexMethod", "ComplexCondition")
     private fun updateFilterSettings(dialogBinding: DialogStatisticsFilterBinding) {
+        val typeFlags =
+            combineFlags(
+                dialogBinding.filterNormal.isChecked to TYPE_NORMAL,
+                dialogBinding.filterDaily.isChecked to TYPE_DAILY,
+                dialogBinding.filterLevel.isChecked to TYPE_LEVEL,
+                allFlag = TYPE_ALL,
+            )
+        val sizeFlags =
+            combineFlags(
+                dialogBinding.filterSize4.isChecked to SIZE_4X4,
+                dialogBinding.filterSize9.isChecked to SIZE_9X9,
+                dialogBinding.filterSize16.isChecked to SIZE_16X16,
+                allFlag = SIZE_ALL,
+            )
+        val difficultyFlags =
+            combineFlags(
+                dialogBinding.filterDifficultyVeryEasy.isChecked to DIFFICULTY_VERY_EASY,
+                dialogBinding.filterDifficultyEasy.isChecked to DIFFICULTY_EASY,
+                dialogBinding.filterDifficultyMedium.isChecked to DIFFICULTY_MEDIUM,
+                dialogBinding.filterDifficultyHard.isChecked to DIFFICULTY_HARD,
+                dialogBinding.filterDifficultyExpert.isChecked to DIFFICULTY_EXPERT,
+                allFlag = DIFFICULTY_ALL,
+            )
+        userSettings.filterFlags = typeFlags or sizeFlags or difficultyFlags
+    }
+
+    private fun combineFlags(
+        vararg entries: Pair<Boolean, Int>,
+        allFlag: Int,
+    ): Int {
         var flags = 0
-        if (dialogBinding.filterNormal.isChecked) flags = flags or TYPE_NORMAL
-        if (dialogBinding.filterDaily.isChecked) flags = flags or TYPE_DAILY
-        if (dialogBinding.filterLevel.isChecked) flags = flags or TYPE_LEVEL
-        if (flags and TYPE_NORMAL != 0 && flags and TYPE_DAILY != 0 && flags and TYPE_LEVEL != 0) flags = flags or TYPE_ALL
-        if (dialogBinding.filterSize4.isChecked) flags = flags or SIZE_4X4
-        if (dialogBinding.filterSize9.isChecked) flags = flags or SIZE_9X9
-        if (dialogBinding.filterSize16.isChecked) flags = flags or SIZE_16X16
-        if (flags and SIZE_4X4 != 0 && flags and SIZE_9X9 != 0 && flags and SIZE_16X16 != 0) flags = flags or SIZE_ALL
-        if (dialogBinding.filterDifficultyVeryEasy.isChecked) flags = flags or DIFFICULTY_VERY_EASY
-        if (dialogBinding.filterDifficultyEasy.isChecked) flags = flags or DIFFICULTY_EASY
-        if (dialogBinding.filterDifficultyMedium.isChecked) flags = flags or DIFFICULTY_MEDIUM
-        if (dialogBinding.filterDifficultyHard.isChecked) flags = flags or DIFFICULTY_HARD
-        if (dialogBinding.filterDifficultyExpert.isChecked) flags = flags or DIFFICULTY_EXPERT
-        if (flags and DIFFICULTY_VERY_EASY != 0 && flags and DIFFICULTY_EASY != 0 && flags and DIFFICULTY_MEDIUM != 0 &&
-            flags and DIFFICULTY_HARD != 0 && flags and DIFFICULTY_EXPERT != 0
-        ) {
-            flags = flags or DIFFICULTY_ALL
-        }
-        lifecycleScope.launch { updateUserSettings { it.copy(filterFlags = flags) } }
+        for ((isChecked, flag) in entries) if (isChecked) flags = flags or flag
+        if (entries.all { (isChecked, _) -> isChecked }) flags = flags or allFlag
+        return flags
     }
 
     private fun initFragments() {

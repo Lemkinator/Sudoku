@@ -21,56 +21,38 @@ import android.os.Bundle
 import android.view.Gravity.START
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.MenuCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.prepareActivityTransformationBetween
-import de.lemke.commonutils.setCustomBackAnimation
-import de.lemke.commonutils.transformToActivity
+import de.lemke.commonutils.ui.utils.collectEvents
+import de.lemke.commonutils.ui.utils.collectState
+import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
+import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.toast
+import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.commonutils.ui.widget.InfoBottomSheet.Companion.showInfoBottomSheet
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityDailySudokuBinding
-import de.lemke.sudoku.domain.GetUserSettingsUseCase
-import de.lemke.sudoku.domain.InitDailySudokusUseCase
-import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode.DAILY
-import de.lemke.sudoku.ui.utils.SudokuListItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SeparatorItem
-import de.lemke.sudoku.ui.utils.SudokuListItem.SudokuItem
 import dev.oneuiproject.oneui.ktx.dpToPx
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
-import javax.inject.Inject
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class DailySudokuActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDailySudokuBinding
-    private var dailySudokus: List<SudokuListItem> = emptyList()
     private val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(this, MODE_DAILY_ERROR_LIMIT, DAILY) }
-
-    @Inject
-    lateinit var initDailySudokus: InitDailySudokusUseCase
-
-    @Inject
-    lateinit var observeDailySudokus: ObserveDailySudokusUseCase
-
-    @Inject
-    lateinit var getUserSettings: GetUserSettingsUseCase
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
+    private val viewModel: DailySudokuViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareActivityTransformationBetween()
@@ -79,14 +61,14 @@ class DailySudokuActivity : AppCompatActivity() {
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
         initRecycler()
-        lifecycleScope.launch {
-            initDailySudokus()
-            invalidateOptionsMenu()
-            observeDailySudokus().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
-                dailySudokus = it
-                sudokuListAdapter.submitList(it)
-                binding.dailySudokuRecycler.isVisible = true
-                binding.dailyProgressBar.isVisible = false
+        collectState(viewModel.state, minActiveState = RESUMED) { state ->
+            sudokuListAdapter.submitList(state.sudokus)
+            binding.dailySudokuRecycler.isVisible = !state.isLoading
+            binding.dailyProgressBar.isVisible = state.isLoading
+        }
+        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
+            when (event) {
+                DailySudokuEvent.ShowLoadError -> toast(R.string.error_loading_daily_sudokus_failed)
             }
         }
     }
@@ -98,11 +80,9 @@ class DailySudokuActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
-        lifecycleScope.launch {
-            getUserSettings().dailyShowUncompleted.let {
-                menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
-                menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
-            }
+        viewModel.dailyShowUncompleted.let {
+            menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
+            menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
         }
         return super.onPrepareOptionsMenu(menu)
     }
@@ -118,19 +98,15 @@ class DailySudokuActivity : AppCompatActivity() {
             }
 
             R.id.menuitem_show_all_sudokus -> {
-                lifecycleScope
-                    .launch {
-                        updateUserSettings { it.copy(dailyShowUncompleted = true) }
-                        invalidateOptionsMenu()
-                    }.let { true }
+                viewModel.dailyShowUncompleted = true
+                invalidateOptionsMenu()
+                true
             }
 
             R.id.menuitem_show_only_completed_sudokus -> {
-                lifecycleScope
-                    .launch {
-                        updateUserSettings { it.copy(dailyShowUncompleted = false) }
-                        invalidateOptionsMenu()
-                    }.let { true }
+                viewModel.dailyShowUncompleted = false
+                invalidateOptionsMenu()
+                true
             }
 
             else -> {

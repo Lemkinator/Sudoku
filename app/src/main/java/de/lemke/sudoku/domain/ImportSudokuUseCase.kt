@@ -19,7 +19,8 @@ package de.lemke.sudoku.domain
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.qualifiers.ApplicationContext
+import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.parseJSON
@@ -27,17 +28,18 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
 
 class ImportSudokuUseCase @Inject constructor(
-    @param:ActivityContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val saveSudoku: SaveSudokuUseCase,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     @Suppress("TooGenericExceptionCaught")
     suspend operator fun invoke(uri: Uri?): Sudoku? =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             if (uri == null) return@withContext null
             try {
                 val schema =

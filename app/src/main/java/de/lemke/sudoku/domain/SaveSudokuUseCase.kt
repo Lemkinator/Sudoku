@@ -16,19 +16,21 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class SaveSudokuUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(
         sudoku: Sudoku,
         onlyUpdate: Boolean = false,
-    ) = withContext(Dispatchers.Default) {
+    ) = withContext(defaultDispatcher) {
         sudokusRepository.saveSudoku(sudoku, onlyUpdate)
     }
 }

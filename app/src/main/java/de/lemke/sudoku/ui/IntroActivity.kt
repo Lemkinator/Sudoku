@@ -22,30 +22,29 @@ import android.R.anim.fade_out
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.content.DialogInterface.BUTTON_NEGATIVE
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.ColorStateList
+import android.os.Build
 import android.os.Build.VERSION.SDK_INT
-import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.advanceOnboarding
-import de.lemke.commonutils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.advanceOnboarding
+import de.lemke.commonutils.ui.utils.collectEvents
+import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
-import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.UpdateUserSettingsUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.GameListener
@@ -56,7 +55,7 @@ import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import java.util.Timer
-import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -74,21 +73,11 @@ class IntroActivity : AppCompatActivity() {
     private var introStep = -1
     private var animation: Job? = null
     private var notesEnabled = false
-    private var openedFromSettings = false
-
-    @Inject
-    lateinit var updateUserSettings: UpdateUserSettingsUseCase
-
-    @Inject
-    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+    private val viewModel: IntroViewModel by viewModels()
 
     private val requestPermissionLauncher =
         registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-            lifecycleScope.launch {
-                updateUserSettings { it.copy(dailySudokuNotificationEnabled = isGranted) }
-                sendDailyNotification.setDailySudokuNotification(enable = isGranted)
-                advanceOnboarding()
-            }
+            viewModel.onNotificationPermissionResult(isGranted)
         }
 
     var sudoku: Sudoku =
@@ -192,8 +181,17 @@ class IntroActivity : AppCompatActivity() {
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
+        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
+            when (event) {
+                IntroEvent.AdvanceOnboarding -> {
+                    advanceOnboarding()
+                }
 
-        openedFromSettings = intent.getBooleanExtra("openedFromSettings", false)
+                IntroEvent.RequestNotificationPermission -> {
+                    if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                }
+            }
+        }
 
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(CIRCLE)
@@ -331,7 +329,6 @@ class IntroActivity : AppCompatActivity() {
         )
     }
 
-    @Suppress("CyclomaticComplexMethod")
     private fun animate(
         position: Position,
         animateRow: Boolean = false,
@@ -343,24 +340,30 @@ class IntroActivity : AppCompatActivity() {
         val delay = 60L / sudoku.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews
-                .filter {
-                    (animateRow && it?.position?.row == position.row && it.position.column <= position.column) ||
-                        (animateColumn && it?.position?.column == position.column && it.position.row <= position.row) ||
-                        (animateBlock && it?.position?.block == position.block && it.position.index <= position.index) ||
-                        (animateSudoku && it?.position?.index!! <= position.index)
-                }.reversed()
+                .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
+                .reversed()
                 .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
         }
         return lifecycleScope.launch {
             gameAdapter.fieldViews
-                .filter {
-                    (animateRow && it?.position?.row == position.row && it.position.column > position.column) ||
-                        (animateColumn && it?.position?.column == position.column && it.position.row > position.row) ||
-                        (animateBlock && it?.position?.block == position.block && it.position.index > position.index) ||
-                        (animateSudoku && it?.position?.index!! > position.index)
-                }.forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
+                .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a > b } }
+                .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
         }
     }
+
+    private fun matchesAnimation(
+        fieldView: FieldView?,
+        position: Position,
+        animateRow: Boolean,
+        animateColumn: Boolean,
+        animateBlock: Boolean,
+        animateSudoku: Boolean,
+        compare: (Int, Int) -> Boolean,
+    ): Boolean =
+        (animateRow && fieldView?.position?.row == position.row && compare(fieldView.position.column, position.column)) ||
+            (animateColumn && fieldView?.position?.column == position.column && compare(fieldView.position.row, position.row)) ||
+            (animateBlock && fieldView?.position?.block == position.block && compare(fieldView.position.index, position.index)) ||
+            (animateSudoku && compare(fieldView?.position?.index!!, position.index))
 
     private suspend fun animateField(
         fieldTextView: TextView?,
@@ -384,97 +387,98 @@ class IntroActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay / sudoku.blockSize)
+        delay((delay / sudoku.blockSize).milliseconds)
     }
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
     private fun startAnimation(currentIntroStep: Int) {
         animation =
             lifecycleScope.launch {
                 when (currentIntroStep) {
-                    0 -> {
-                        while (introStep == 0) {
-                            delay(900)
-                            val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
-                            val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
-                            val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
-                            column.forEach {
-                                it?.isHighlighted = false
-                                it?.setBackground()
-                            }
-                            block.forEach {
-                                it?.isHighlighted = true
-                                it?.setBackground()
-                            }
-                            block.forEach { animateIntroFieldText(it?.fieldViewValue) }
-                            delay(900)
-                            block.forEach {
-                                it?.isHighlighted = false
-                                it?.setBackground()
-                            }
-                            row.forEach {
-                                it?.isHighlighted = true
-                                it?.setBackground()
-                            }
-                            row.forEach { animateIntroFieldText(it?.fieldViewValue) }
-                            delay(900)
-                            row.forEach {
-                                it?.isHighlighted = false
-                                it?.setBackground()
-                            }
-                            column.forEach {
-                                it?.isHighlighted = true
-                                it?.setBackground()
-                            }
-                            column.forEach { animateIntroFieldText(it?.fieldViewValue) }
-                        }
-                    }
-
-                    2 -> {
-                        gameAdapter.fieldViews.filter { it?.position?.row == 0 }.forEach {
-                            it?.isHighlighted = true
-                            it?.setBackground()
-                        }
-                        while (introStep == 2) animateIntroFieldView(gameAdapter.fieldViews[4])
-                    }
-
-                    5 -> {
-                        gameAdapter.fieldViews.filter { it?.position?.row == 3 || it?.position?.row == 4 }.forEach {
-                            it?.isHighlighted = true
-                            it?.setBackground()
-                        }
-                        while (introStep == 5) animateIntroFieldView(gameAdapter.fieldViews[49])
-                    }
-
-                    6 -> {
-                        gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach {
-                            it?.isHighlighted = true
-                            it?.setBackground()
-                        }
-                        while (introStep == 6) animateIntroFieldView(gameAdapter.fieldViews[24])
-                    }
-
-                    8 -> {
-                        val delayMillis = 1200L
-                        while (introStep == 8) {
-                            delay(delayMillis)
-                            selectButton(null)
-                            gameAdapter.selectFieldView(4, highlightNeighbors = true, highlightNumber = true)
-                            delay(delayMillis)
-                            gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
-                            selectButton(7)
-                            delay(delayMillis)
-                            selectButton(4)
-                            delay(delayMillis)
-                            selectButton(null)
-                            gameAdapter.selectFieldView(21, highlightNeighbors = true, highlightNumber = true)
-                            delay(delayMillis)
-                            gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
-                            selectButton(1)
-                        }
-                    }
+                    0 -> animateIntroStepRowColumnBlock()
+                    2 -> animateIntroStepField(rows = listOf(0), fieldIndex = 4, introStep = 2)
+                    5 -> animateIntroStepField(rows = listOf(3, 4), fieldIndex = 49, introStep = 5)
+                    6 -> animateIntroStepBlock()
+                    8 -> animateIntroStepNumberEntry()
                 }
             }
+    }
+
+    private suspend fun animateIntroStepRowColumnBlock() {
+        while (introStep == 0) {
+            delay(900.milliseconds)
+            val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
+            val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
+            val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
+            column.forEach {
+                it?.isHighlighted = false
+                it?.setBackground()
+            }
+            block.forEach {
+                it?.isHighlighted = true
+                it?.setBackground()
+            }
+            block.forEach { animateIntroFieldText(it?.fieldViewValue) }
+            delay(900.milliseconds)
+            block.forEach {
+                it?.isHighlighted = false
+                it?.setBackground()
+            }
+            row.forEach {
+                it?.isHighlighted = true
+                it?.setBackground()
+            }
+            row.forEach { animateIntroFieldText(it?.fieldViewValue) }
+            delay(900.milliseconds)
+            row.forEach {
+                it?.isHighlighted = false
+                it?.setBackground()
+            }
+            column.forEach {
+                it?.isHighlighted = true
+                it?.setBackground()
+            }
+            column.forEach { animateIntroFieldText(it?.fieldViewValue) }
+        }
+    }
+
+    private suspend fun animateIntroStepField(
+        rows: List<Int>,
+        fieldIndex: Int,
+        introStep: Int,
+    ) {
+        gameAdapter.fieldViews.filter { it?.position?.row in rows }.forEach {
+            it?.isHighlighted = true
+            it?.setBackground()
+        }
+        while (this.introStep == introStep) animateIntroFieldView(gameAdapter.fieldViews[fieldIndex])
+    }
+
+    private suspend fun animateIntroStepBlock() {
+        gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach {
+            it?.isHighlighted = true
+            it?.setBackground()
+        }
+        while (introStep == 6) animateIntroFieldView(gameAdapter.fieldViews[24])
+    }
+
+    private suspend fun animateIntroStepNumberEntry() {
+        val delayMillis = 1200L
+        while (introStep == 8) {
+            delay(delayMillis.milliseconds)
+            selectButton(null)
+            gameAdapter.selectFieldView(4, highlightNeighbors = true, highlightNumber = true)
+            delay(delayMillis.milliseconds)
+            gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+            selectButton(7)
+            delay(delayMillis.milliseconds)
+            selectButton(4)
+            delay(delayMillis.milliseconds)
+            selectButton(null)
+            gameAdapter.selectFieldView(21, highlightNeighbors = true, highlightNumber = true)
+            delay(delayMillis.milliseconds)
+            gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+            selectButton(1)
+        }
     }
 
     private fun stopAnimation(currentIntroStep: Int) {
@@ -512,7 +516,7 @@ class IntroActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay)
+        delay(delay.milliseconds)
     }
 
     private suspend fun animateIntroFieldView(
@@ -533,7 +537,7 @@ class IntroActivity : AppCompatActivity() {
                     ?.setDuration(duration)
                     ?.start()
             }?.start()
-        delay(delay)
+        delay(delay.milliseconds)
     }
 
     private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
@@ -580,80 +584,84 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
-    @Suppress("CyclomaticComplexMethod")
     private fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
-            null -> { // nothing is selected
-                when (newSelected) {
-                    // selected nothing
-                    null -> {}
+            null -> selectFromNothing(newSelected)
 
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        if (newSelected == 4 && introStep == 2) {
-                            gameAdapter.selectFieldView(newSelected, highlightNeighbors = true, highlightNumber = true)
-                            selected = newSelected
-                            nextIntroStep()
-                        }
-                    }
+            // nothing is selected
+            in 0 until sudoku.itemCount -> selectFromField(newSelected)
 
-                    // selected button
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                        if (introStep == 4 && newSelected == sudoku.itemCount + 1) {
-                            selectButton(newSelected - sudoku.itemCount)
-                            nextIntroStep()
-                        }
-                    }
+            // field is selected
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected) // number button is selected
+        }
+    }
 
-                    // selected nothing
-                    else -> {}
+    private fun selectFromNothing(newSelected: Int?) {
+        when (newSelected) {
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                if (newSelected == 4 && introStep == 2) {
+                    gameAdapter.selectFieldView(newSelected, highlightNeighbors = true, highlightNumber = true)
+                    selected = newSelected
+                    nextIntroStep()
                 }
             }
 
-            in 0 until sudoku.itemCount -> { // field is selected
-                val position = Position.create(selected!!, sudoku.size)
-                when (newSelected) {
-                    // selected nothing
-                    null -> {
-                        selected = null
-                    }
-
-                    // selected number
-                    in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                        if (introStep == 3 && newSelected == sudoku.itemCount + 4) {
-                            sudoku.move(position, newSelected - sudoku.itemCount + 1, false)
-                            selected = null
-                            gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
-                            nextIntroStep()
-                        }
-                    }
+            // selected button
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                if (introStep == 4 && newSelected == sudoku.itemCount + 1) {
+                    selectButton(newSelected - sudoku.itemCount)
+                    nextIntroStep()
                 }
             }
 
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> { // number button is selected
-                when (newSelected) {
-                    // selected nothing
-                    null -> {
-                        selectButton(null)
-                    }
+            // selected nothing
+            else -> {}
+        }
+    }
 
-                    // selected field
-                    in 0 until sudoku.itemCount -> {
-                        val number = selected!! - sudoku.itemCount + 1
-                        if ((introStep == 5 && newSelected == 49) || (introStep == 6 && newSelected == 24)) {
-                            sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, false)
-                            gameAdapter.highlightNumber(number)
-                            nextIntroStep()
-                        }
-                    }
+    private fun selectFromField(newSelected: Int?) {
+        val position = Position.create(selected!!, sudoku.size)
+        when (newSelected) {
+            // selected nothing
+            null -> {
+                selected = null
+            }
+
+            // selected number
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+                if (introStep == 3 && newSelected == sudoku.itemCount + 4) {
+                    sudoku.move(position, newSelected - sudoku.itemCount + 1, false)
+                    selected = null
+                    gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+                    nextIntroStep()
+                }
+            }
+        }
+    }
+
+    private fun selectFromNumberButton(newSelected: Int?) {
+        when (newSelected) {
+            // selected nothing
+            null -> {
+                selectButton(null)
+            }
+
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                val number = selected!! - sudoku.itemCount + 1
+                if ((introStep == 5 && newSelected == 49) || (introStep == 6 && newSelected == 24)) {
+                    sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, false)
+                    gameAdapter.highlightNumber(number)
+                    nextIntroStep()
                 }
             }
         }
     }
 
     private fun showNotificationsDialogOrFinish() {
-        if (!openedFromSettings) notificationsDialog() else finishAfterTransition()
+        if (!viewModel.openedFromSettings) notificationsDialog() else finishAfterTransition()
     }
 
     private fun notificationsDialog() {
@@ -663,28 +671,17 @@ class IntroActivity : AppCompatActivity() {
                 .setTitle(getString(R.string.notifications_title))
                 .setMessage(getString(R.string.daily_sudoku_notification_channel_description))
                 .setNegativeButton(R.string.decline_notifications) { _: DialogInterface, _: Int ->
-                    lifecycleScope.launch {
-                        updateUserSettings { it.copy(dailySudokuNotificationEnabled = false) }
-                        sendDailyNotification.setDailySudokuNotification(enable = false)
-                        advanceOnboarding()
-                    }
+                    viewModel.onNotificationsDeclined()
                 }.setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                    lifecycleScope.launch {
-                        // Enable Notifications when < Android 13 or permission is granted, else ask for permission
-                        if (SDK_INT < TIRAMISU ||
-                            ContextCompat.checkSelfPermission(this@IntroActivity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
-                        ) {
-                            updateUserSettings { it.copy(dailySudokuNotificationEnabled = true) }
-                            sendDailyNotification.setDailySudokuNotification(enable = true)
-                            advanceOnboarding()
-                        } else {
-                            requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-                        }
-                    }
+                    viewModel.onNotificationsAccepted()
                 }.setCancelable(false)
                 .create()
         dialog.show()
         dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_des_functional_red_color))
+    }
+
+    companion object {
+        const val KEY_OPENED_FROM_SETTINGS = "openedFromSettings"
     }
 
     inner class SudokuGameListener : GameListener {

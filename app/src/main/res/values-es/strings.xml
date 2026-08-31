@@ -225,5 +225,9 @@
     <string name="no_game_played">No se ha jugado ningún juego aún</string>
     <string name="error_import_failed">Fallo al importar el sudoku</string>
     <string name="error_sudoku_not_found">Sudoku no encontrado…</string>
+    <string name="error_loading_daily_sudokus_failed">No se pudieron cargar los sudokus diarios</string>
+    <string name="error_loading_sudoku_level_failed">No se pudieron cargar los niveles de sudoku</string>
+    <string name="error_loading_sudoku_history_failed">No se pudo cargar el historial de sudoku</string>
+    <string name="error_loading_statistics_failed">No se pudieron cargar las estadísticas</string>
 
 </resources>

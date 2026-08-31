@@ -20,6 +20,7 @@ ksp = "2.3.11"
 # Used via spotless { kotlin { ktlint(libs.versions.ktlint.get()) } } — version-only ref, no library/plugin alias
 #noinspection UnusedVersionCatalogEntry
 ktlint = "1.8.0"
+leakcanary = "2.14"
 oneui-design = "0.9.17+oneui8"
 oneui-icons = "1.1.0"
 play-services-games = "22.0.0"
@@ -31,7 +32,6 @@ sudoku = "5.3.1"
 async-layout-inflater = { module = "androidx.asynclayoutinflater:asynclayoutinflater", version.ref = "async-layout-inflater" }
 bundler = { module = "com.github.skydoves:bundler", version.ref = "bundler" }
 common-utils = { module = "io.github.lemkinator:common-utils", version.ref = "common-utils" }
-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore-preferences" }
 documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
@@ -39,6 +39,7 @@ json-kotlin-schema = { module = "net.pwall.json:json-kotlin-schema", version.ref
 kjson = { module = "io.kjson:kjson", version.ref = "kjson" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 oneui-design = { module = "io.github.tribalfs:oneui-design", version.ref = "oneui-design" }
 oneui-icons = { module = "io.github.oneuiproject:icons", version.ref = "oneui-icons" }
 play-services-games = { module = "com.google.android.gms:play-services-games-v2", version.ref = "play-services-games" }
