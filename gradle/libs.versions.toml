@@ -7,7 +7,7 @@ datastore-preferences = "1.2.1"
 dependency-analysis = "3.19.1"
 detekt = "2.0.0-alpha.6"
 documentfile = "1.1.0"
-gradle = "9.3.2"
+gradle = "9.4.0"
 hilt = "2.60.1"
 json-kotlin-schema = "0.58"
 #noinspection UnusedVersionCatalogEntry
@@ -25,7 +25,7 @@ oneui-design = "0.9.17+oneui8"
 oneui-icons = "1.1.0"
 play-services-games = "22.0.0"
 room = "2.8.4"
-spotless = "8.10.1"
+spotless = "8.10.2"
 sudoku = "5.3.1"
 
 [libraries]
