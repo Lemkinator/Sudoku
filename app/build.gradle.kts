@@ -29,7 +29,9 @@ fun getProperty(key: String): String? = rootProject.findProperty(key)?.toString(
 
 android {
     namespace = "de.lemke.sudoku"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) { minorApiLevel = 1 }
+    }
     defaultConfig {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
