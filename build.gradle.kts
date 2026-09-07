@@ -70,6 +70,8 @@ fun getProperty(key: String): String =
 val githubUsername = getProperty("ghUsername")
 val githubAccessToken = getProperty("ghAccessToken")
 
+val checkDependencyUpdates = providers.gradleProperty("lint.checkDependencyUpdates").getOrElse("true").toBoolean()
+
 allprojects {
     repositories {
         google()
@@ -106,6 +108,12 @@ subprojects {
             compileOptions.apply {
                 sourceCompatibility = JavaVersion.VERSION_21
                 targetCompatibility = JavaVersion.VERSION_21
+            }
+
+            // Renovate owns dependency freshness on its own PRs; enforcing there would fail every
+            // in-flight bump against every other still-pending one.
+            if (!checkDependencyUpdates) {
+                lint.informational += setOf("GradleDependency", "NewerVersionAvailable")
             }
             // oneui-design replaces these AOSP AndroidX modules with Samsung's SESL forks, which
             // keep the original package names — exclude the AOSP originals everywhere to prevent
