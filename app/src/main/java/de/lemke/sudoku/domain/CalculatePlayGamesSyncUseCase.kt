@@ -76,7 +76,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         unlocks: MutableList<Int>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val stats = sizeStats.getValue(sudoku.size)
+        val stats = sizeStats[sudoku.size] ?: return
         increments += stats.achievement10 to 1
         increments += stats.achievement50 to 1
         if (sudoku.seconds < stats.stopwatchSeconds) unlocks += stats.stopwatchAchievement
@@ -89,10 +89,10 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores: MutableList<Pair<Int, Long>>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val (achievement10, achievement50) = difficultyAchievements.getValue(sudoku.difficulty)
+        val (achievement10, achievement50) = difficultyAchievements[sudoku.difficulty] ?: return
         increments += achievement10 to 1
         increments += achievement50 to 1
-        val (timeId, winsId) = sizeDifficultyLeaderboard.getValue(sudoku.size to sudoku.difficulty)
+        val (timeId, winsId) = sizeDifficultyLeaderboard[sudoku.size to sudoku.difficulty] ?: return
         scores += timeId to sudoku.seconds * 1000L
         scores += winsId to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
     }
