@@ -348,19 +348,20 @@ class SudokuActivity : AppCompatActivity() {
         if (checkErrorLimit()) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
+            // nothing is selected
             null -> selectFromNothing(newSelected)
 
-            // nothing is selected
+            // field is selected
             in 0 until sudoku.itemCount -> selectFromField(newSelected)
 
-            // field is selected
+            // number button is selected
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected)
 
-            // number button is selected
+            // delete button is selected
             sudoku.itemCount + sudoku.size -> selectFromDeleteButton(newSelected)
 
-            // delete button is selected
-            sudoku.itemCount + sudoku.size + 1 -> selectFromHintButton(newSelected) // hint button is selected
+            // hint button is selected
+            sudoku.itemCount + sudoku.size + 1 -> selectFromHintButton(newSelected)
         }
     }
 
