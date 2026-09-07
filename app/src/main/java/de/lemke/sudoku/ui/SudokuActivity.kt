@@ -541,7 +541,7 @@ class SudokuActivity : AppCompatActivity() {
         (animateRow && fieldView?.position?.row == position.row && compare(fieldView.position.column, position.column)) ||
             (animateColumn && fieldView?.position?.column == position.column && compare(fieldView.position.row, position.row)) ||
             (animateBlock && fieldView?.position?.block == position.block && compare(fieldView.position.index, position.index)) ||
-            (animateSudoku && compare(fieldView?.position?.index!!, position.index))
+            (animateSudoku && fieldView != null && compare(fieldView.position.index, position.index))
 
     private suspend fun animateField(
         fieldTextView: TextView?,
