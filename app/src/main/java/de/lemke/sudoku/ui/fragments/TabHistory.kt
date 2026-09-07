@@ -136,7 +136,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     }
 
     private fun updateRecyclerView(sudokuHistory: List<SudokuListItem>) {
-        if (sudokuHistory.isNotEmpty()) sudokuListAdapter.submitList(sudokuHistory)
+        sudokuListAdapter.submitList(sudokuHistory)
         binding.noEntryView.updateVisibilityWith(sudokuHistory, binding.sudokuHistoryList)
     }
 
