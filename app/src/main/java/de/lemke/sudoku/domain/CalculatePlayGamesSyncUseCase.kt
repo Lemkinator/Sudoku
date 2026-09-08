@@ -162,5 +162,17 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                 (9 to EXPERT) to (R.string.leaderboard_time_99_expert to R.string.leaderboard_wins_99_expert),
                 (16 to EXPERT) to (R.string.leaderboard_time_1616_expert to R.string.leaderboard_wins_1616_expert),
             )
+
+        private val supportedSizes = setOf(4, 9, 16)
+
+        init {
+            check(sizeStats.keys == supportedSizes) {
+                "sizeStats missing entries for sizes: ${supportedSizes - sizeStats.keys}"
+            }
+            val difficultyLeaderboardSizes = sizeDifficultyLeaderboard.keys.map { it.first }.toSet()
+            check(difficultyLeaderboardSizes == supportedSizes) {
+                "sizeDifficultyLeaderboard missing entries for sizes: ${supportedSizes - difficultyLeaderboardSizes}"
+            }
+        }
     }
 }
