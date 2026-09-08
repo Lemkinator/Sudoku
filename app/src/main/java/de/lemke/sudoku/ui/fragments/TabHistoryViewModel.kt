@@ -57,9 +57,11 @@ class TabHistoryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            var isFirstEmission = true
             runCatching {
                 observeSudokuHistory().collectLatest { newHistory ->
-                    val grew = newHistory.size > sudokuHistory.value.size
+                    val grew = !isFirstEmission && newHistory.size > sudokuHistory.value.size
+                    isFirstEmission = false
                     sudokuHistory.value = newHistory
                     if (grew) _events.send(TabHistoryEvent.ScrollToTop)
                 }
