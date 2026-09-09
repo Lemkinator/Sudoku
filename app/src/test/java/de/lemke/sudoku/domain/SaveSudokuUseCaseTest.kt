@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kotest.core.spec.style.ShouldSpec
+import io.mockk.clearMocks
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,6 +31,8 @@ class SaveSudokuUseCaseTest : ShouldSpec(
         val sudokusRepository = mockk<SudokusRepository>(relaxUnitFun = true)
         val useCase = SaveSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
         val sudoku = mockk<Sudoku>()
+
+        beforeEach { clearMocks(sudokusRepository) }
 
         should("saves with onlyUpdate = false by default") {
             useCase(sudoku)

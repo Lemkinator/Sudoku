@@ -42,13 +42,14 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
         beforeEach { clearMocks(getAllSudokus) }
 
         should("returns true when a completed daily sudoku exists for the date") {
+            val completedField = Field(Position.create(0, 4), solution = 1, value = 1)
             val completedSudoku =
                 Sudoku.create(
                     size = 4,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),
-                    fields = mutableListOf(),
+                    fields = mutableListOf(completedField),
                 )
             coEvery { getAllSudokus(flags) } returns listOf(completedSudoku)
 

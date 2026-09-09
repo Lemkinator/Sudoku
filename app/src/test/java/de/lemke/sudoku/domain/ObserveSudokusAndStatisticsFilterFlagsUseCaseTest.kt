@@ -25,7 +25,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +40,6 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
         lateinit var useCase: ObserveSudokusAndStatisticsFilterFlagsUseCase
 
         beforeEach {
-            clearMocks(sudokusRepository)
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
             useCase = ObserveSudokusAndStatisticsFilterFlagsUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
         }
