@@ -21,6 +21,8 @@ plugins {
     alias(libs.plugins.aboutlibraries)
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.android.junit)
 }
 
 fun String.toEnvVarStyle(): String = replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
@@ -100,7 +102,10 @@ android {
     }
     testOptions {
         unitTests {
-            all { test -> test.useJUnitPlatform() }
+            all { test ->
+                test.useJUnitPlatform()
+                test.jvmArgs("-XX:+EnableDynamicAgentLoading")
+            }
         }
     }
 }
@@ -121,7 +126,14 @@ dependencies {
     debugImplementation(libs.leakcanary)
 
     testImplementation(libs.konsist)
-    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.bundles.unit.test)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    testImplementation(testFixtures(libs.common.utils))
+
+    androidTestImplementation(testFixtures(libs.common.utils))
 }
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
@@ -159,5 +171,34 @@ tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
     reports {
         html.required.set(true)
         sarif.required.set(true)
+    }
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*.databinding.*",
+                    "*.BuildConfig",
+                    "*.di.*",
+                    "*Hilt_*",
+                    "*_HiltModules*",
+                    "*_Factory",
+                    "*_Provide*",
+                    "*_MembersInjector",
+                    "dagger.hilt.*",
+                    "hilt_aggregated_deps.*",
+                )
+            }
+        }
+        variant("debug") {
+            verify {
+                rule {
+                    minBound(0, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
+                    minBound(0, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
+                }
+            }
+        }
     }
 }
