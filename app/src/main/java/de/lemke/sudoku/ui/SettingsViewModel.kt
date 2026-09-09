@@ -58,30 +58,6 @@ class SettingsViewModel @Inject constructor(
             userSettings.errorLimit = value
         }
 
-    var keepScreenOn: Boolean
-        get() = userSettings.keepScreenOn
-        set(value) {
-            userSettings.keepScreenOn = value
-        }
-
-    var highlightRegional: Boolean
-        get() = userSettings.highlightRegional
-        set(value) {
-            userSettings.highlightRegional = value
-        }
-
-    var highlightNumber: Boolean
-        get() = userSettings.highlightNumber
-        set(value) {
-            userSettings.highlightNumber = value
-        }
-
-    var animationsEnabled: Boolean
-        get() = userSettings.animationsEnabled
-        set(value) {
-            userSettings.animationsEnabled = value
-        }
-
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
 

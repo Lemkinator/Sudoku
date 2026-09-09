@@ -19,7 +19,8 @@
 
     <PreferenceCategory android:title="@string/commonutils_general">
         <SwitchPreferenceCompat
-            android:key="keep_screen_on_pref"
+            android:defaultValue="true"
+            android:key="keepScreenOn"
             android:summary="@string/keep_screen_on_summary"
             android:title="@string/keep_screen_on" />
 
@@ -33,19 +34,22 @@
 
     <PreferenceCategory android:title="@string/sudoku">
         <PreferenceScreen
-            android:key="intro_pref"
+            android:key="intro"
             android:summary="@string/intro_title"
             android:title="@string/intro" />
         <SwitchPreferenceCompat
-            android:key="animations_pref"
+            android:defaultValue="true"
+            android:key="animationsEnabled"
             android:summary="@string/animations_summary"
             android:title="@string/animations" />
         <SwitchPreferenceCompat
-            android:key="highlight_regional_pref"
+            android:defaultValue="true"
+            android:key="highlightRegional"
             android:summary="@string/regional_highlight_summary"
             android:title="@string/regional_highlight" />
         <SwitchPreferenceCompat
-            android:key="highlight_number_pref"
+            android:defaultValue="true"
+            android:key="highlightNumber"
             android:summary="@string/number_highlight_summary"
             android:title="@string/number_highlight" />
         <DropDownPreference
@@ -58,7 +62,8 @@
 
     <PreferenceCategory android:title="@string/notifications">
         <SeslSwitchPreferenceScreen
-            android:key="daily_notification_pref"
+            android:defaultValue="true"
+            android:key="dailySudokuNotificationEnabled"
             android:summary="@string/daily_sudoku_notification_channel_description"
             android:title="@string/daily_sudoku_notification_channel_name" />
     </PreferenceCategory>
@@ -68,15 +73,15 @@
         android:title="@string/commonutils_dev_options"
         app:isPreferenceVisible="false">
         <PreferenceScreen
-            android:key="export_data_pref"
+            android:key="exportData"
             android:summary="@string/export_data_summary"
             android:title="@string/export_data" />
         <PreferenceScreen
-            android:key="import_data_pref"
+            android:key="importData"
             android:summary="@string/import_data_summary"
             android:title="@string/import_data" />
         <PreferenceScreen
-            android:key="delete_invalid_sudokus_pref"
+            android:key="deleteInvalidSudokus"
             android:summary="@string/delete_invalid_sudokus_summary"
             android:title="@string/delete_invalid_sudokus" />
         <PreferenceScreen
