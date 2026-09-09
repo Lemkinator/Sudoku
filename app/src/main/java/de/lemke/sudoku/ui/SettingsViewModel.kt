@@ -52,12 +52,6 @@ class SettingsViewModel @Inject constructor(
     private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
 ) : ViewModel() {
-    var errorLimit: Int
-        get() = userSettings.errorLimit
-        set(value) {
-            userSettings.errorLimit = value
-        }
-
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
 

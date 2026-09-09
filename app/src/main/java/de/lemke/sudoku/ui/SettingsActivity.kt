@@ -167,10 +167,9 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun initErrorLimitPreference() {
-            findPreference<DropDownPreference>("error_limit_pref")?.apply {
-                summary = if (viewModel.errorLimit == 0) getString(R.string.no_limit) else viewModel.errorLimit.toString()
+            findPreference<DropDownPreference>("errorLimit")?.apply {
+                summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 onNewValue { newValue: String ->
-                    viewModel.errorLimit = newValue.toIntOrNull() ?: 0
                     summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
                 }
             } ?: Log.e(TAG, "error limit Preference not found")

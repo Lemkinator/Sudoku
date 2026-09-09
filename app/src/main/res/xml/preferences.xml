@@ -56,7 +56,7 @@
             android:defaultValue="3"
             android:entries="@array/error_limit_entries"
             android:entryValues="@array/error_limit_values"
-            android:key="error_limit_pref"
+            android:key="errorLimit"
             android:title="@string/error_limit" />
     </PreferenceCategory>
 
