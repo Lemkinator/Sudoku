@@ -238,7 +238,6 @@ class Sudoku(
         isNote: Boolean = false,
     ) = move(Position.create(index, size), value, isNote)
 
-    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     fun move(
         position: Position,
         value: Int?,
@@ -246,51 +245,60 @@ class Sudoku(
     ): Boolean {
         val field = get(position)
         return when {
-            timer == null || field.given || field.hint -> {
-                false
-            }
-
-            isNote -> {
-                if (field.value != null) return false
-                if (value != null) {
-                    if (field.toggleNote(value)) notesMade++
-                } else {
-                    field.notes.clear()
-                }
-                gameListener?.onFieldChanged(position)
-                true
-            }
-
-            value == null -> {
-                if (field.value == null && field.notes.isEmpty()) return false
-                eraserUsed = true
-                if (field.value == null) field.notes.clear()
-                field.value = null
-                gameListener?.onFieldChanged(position)
-                true
-            }
-
-            field.correct || field.value == value -> {
-                false
-            }
-
-            else -> {
-                field.value = value
-                gameListener?.onFieldChanged(position)
-                checkChecklist(value)
-                if (field.error) {
-                    errorsMade++
-                    gameListener?.onError()
-                } else {
-                    removeNumberNotesFromNeighbors(position, value)
-                }
-                if (completed) {
-                    stopTimer()
-                    gameListener?.onCompleted(position)
-                }
-                true
-            }
+            timer == null || field.given || field.hint -> false
+            isNote -> moveNote(position, field, value)
+            value == null -> moveErase(position, field)
+            field.correct || field.value == value -> false
+            else -> moveSet(position, field, value)
         }
+    }
+
+    private fun moveNote(
+        position: Position,
+        field: Field,
+        value: Int?,
+    ): Boolean {
+        if (field.value != null) return false
+        if (value != null) {
+            if (field.toggleNote(value)) notesMade++
+        } else {
+            field.notes.clear()
+        }
+        gameListener?.onFieldChanged(position)
+        return true
+    }
+
+    private fun moveErase(
+        position: Position,
+        field: Field,
+    ): Boolean {
+        if (field.value == null && field.notes.isEmpty()) return false
+        eraserUsed = true
+        if (field.value == null) field.notes.clear()
+        field.value = null
+        gameListener?.onFieldChanged(position)
+        return true
+    }
+
+    private fun moveSet(
+        position: Position,
+        field: Field,
+        value: Int,
+    ): Boolean {
+        field.value = value
+        gameListener?.onFieldChanged(position)
+        checkChecklist(value)
+        if (field.error) {
+            errorsMade++
+            gameListener?.onError()
+        } else {
+            removeNumberNotesFromNeighbors(position, value)
+        }
+        if (completed) {
+            stopTimer()
+            gameListener?.onCompleted(position)
+        }
+        return true
     }
 
     private fun checkChecklist(value: Int) {
@@ -393,15 +401,6 @@ class Sudoku(
     fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.correct }
 
     fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
-
-    @Suppress("unused")
-    private fun getPossibleValues(position: Position): List<Int> {
-        val values = (1..size).toMutableList()
-        getRow(position.row).forEach { values.remove(it.value) }
-        getColumn(position.column).forEach { values.remove(it.value) }
-        getBlock(position.block).forEach { values.remove(it.value) }
-        return values
-    }
 
     fun getCompletedNumbers(): List<Pair<Int, Boolean>> {
         val numbers = MutableList(size) { 0 }

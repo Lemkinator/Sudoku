@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.domain
+package de.lemke.sudoku.ui
 
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.UserSettingsRepository
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-class UpdateUserSettingsUseCase @Inject constructor(
-    private val userSettingsRepository: UserSettingsRepository,
-) {
-    suspend operator fun invoke(f: (UserSettings) -> UserSettings) =
-        withContext(Dispatchers.Default) {
-            userSettingsRepository.updateSettings(f)
+@HiltViewModel
+class SudokuLevelViewModel @Inject constructor(
+    private val userSettings: UserSettings,
+) : ViewModel() {
+    var currentLevelTab: Int
+        get() = userSettings.currentLevelTab
+        set(value) {
+            userSettings.currentLevelTab = value
         }
 }

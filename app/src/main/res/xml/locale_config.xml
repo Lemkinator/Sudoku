@@ -15,7 +15,7 @@
     limitations under the License.
 -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
-    <locale android:name="en"/>
-    <locale android:name="de"/>
-    <locale android:name="es"/>
+    <locale android:name="en" />
+    <locale android:name="de" />
+    <locale android:name="es" />
 </locale-config>

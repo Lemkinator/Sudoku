@@ -16,18 +16,20 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class InitSudokuLevelUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     private val generateSudokuLevel: GenerateSudokuLevelUseCase,
     private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(size: Int) =
-        withContext(Dispatchers.Default) {
+        withContext(defaultDispatcher) {
             val sudokuLevel = sudokusRepository.getSudokuLevel(size)
             val maxLevel = getMaxSudokuLevel(size)
             if (sudokuLevel.size < maxLevel) {

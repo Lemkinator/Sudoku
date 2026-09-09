@@ -21,23 +21,27 @@ import android.content.Context
 import android.net.Uri
 import androidx.appcompat.app.AlertDialog
 import dagger.hilt.android.qualifiers.ActivityContext
+import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.sudokuToExport
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import io.kjson.stringifyJSON
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import de.lemke.commonutils.R as commonutilsR
 
 class ExportDataUseCase @Inject constructor(
     @param:ActivityContext private val context: Context,
     private val getAllSudokus: GetAllSudokusUseCase,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(destination: Uri): Unit =
-        withContext(Dispatchers.Main) {
+        withContext(mainDispatcher) {
             val dialog = ProgressDialog(context)
             dialog.setCancelable(false)
             dialog.isIndeterminate = true
@@ -46,19 +50,19 @@ class ExportDataUseCase @Inject constructor(
             dialog.setTitle(R.string.export_data)
             dialog.setMessage(context.getString(R.string.export_data_ongoing))
             dialog.show()
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val sudokus = getAllSudokus()
-                withContext(Dispatchers.Main) {
+                withContext(mainDispatcher) {
                     dialog.isIndeterminate = false
                     dialog.max = sudokus.size
                     dialog.progress = 0
                 }
                 val exportSudokus =
                     sudokus.map { sudoku ->
-                        withContext(Dispatchers.Main) { dialog.incrementProgressBy(1) }
+                        withContext(mainDispatcher) { dialog.incrementProgressBy(1) }
                         sudokuToExport(sudoku)
                     }
-                withContext(Dispatchers.Main) {
+                withContext(mainDispatcher) {
                     dialog.isIndeterminate = true
                     dialog.max = 1
                     dialog.setMessage(context.getString(R.string.export_data_ongoing_writing_file))

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.ui.utils
-
-import de.lemke.sudoku.domain.model.Sudoku
+package de.lemke.sudoku.domain.model
 
 sealed class SudokuListItem {
     abstract val label: String

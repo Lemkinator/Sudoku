@@ -35,7 +35,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun sudokuDao(): SudokuDao
 }
 
-@Suppress("MaxLineLength")
 val MIGRATION_1_2 =
     object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
@@ -43,10 +42,15 @@ val MIGRATION_1_2 =
             // Drop column isn't supported by SQLite, so the data must manually be moved
             with(db) {
                 execSQL(
-                    "CREATE TABLE sudoku_backup (id TEXT NOT NULL, size INTEGER NOT NULL, difficulty INTEGER NOT NULL, modeLevel INTEGER NOT NULL, regionalHighlightingUsed INTEGER NOT NULL, numberHighlightingUsed INTEGER NOT NULL, hintsUsed INTEGER NOT NULL, notesMade INTEGER NOT NULL, errorsMade INTEGER NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL, seconds INTEGER NOT NULL, PRIMARY KEY(id))",
+                    "CREATE TABLE sudoku_backup (" +
+                        "id TEXT NOT NULL, size INTEGER NOT NULL, difficulty INTEGER NOT NULL, modeLevel INTEGER NOT NULL, " +
+                        "regionalHighlightingUsed INTEGER NOT NULL, numberHighlightingUsed INTEGER NOT NULL, " +
+                        "hintsUsed INTEGER NOT NULL, notesMade INTEGER NOT NULL, errorsMade INTEGER NOT NULL, " +
+                        "created TEXT NOT NULL, updated TEXT NOT NULL, seconds INTEGER NOT NULL, PRIMARY KEY(id))",
                 )
                 execSQL(
-                    "INSERT INTO sudoku_backup SELECT id, size, difficulty, modeLevel, neighborHighlightingUsed, numberHighlightingUsed, hintsUsed, notesMade, errorsMade, created, updated, seconds FROM sudoku",
+                    "INSERT INTO sudoku_backup SELECT id, size, difficulty, modeLevel, neighborHighlightingUsed, " +
+                        "numberHighlightingUsed, hintsUsed, notesMade, errorsMade, created, updated, seconds FROM sudoku",
                 )
                 execSQL("DROP TABLE sudoku")
                 execSQL("ALTER TABLE sudoku_backup RENAME to sudoku")

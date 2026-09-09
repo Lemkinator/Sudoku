@@ -15,6 +15,7 @@
     limitations under the License.
 -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
+    <string name="app_name" translatable="false">Sudoku</string>
     <string name="sudoku" translatable="false">Sudoku</string>
     <string name="app_description">A Sudoku app with OneUI-Design.</string>
     <string name="about_app">About Sudoku</string>
@@ -235,7 +236,12 @@
     <string name="next_level">Next level</string>
 
     <string name="no_game_played">No game played yet</string>
-    <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
+    <string name="error_import_failed">Failed to import Sudoku</string>
     <string name="error_sudoku_not_found">Sudoku not found…</string>
+    <string name="error_loading_daily_sudokus_failed">Failed to load daily sudokus</string>
+    <string name="error_loading_sudoku_level_failed">Failed to load sudoku levels</string>
+    <string name="error_loading_sudoku_history_failed">Failed to load sudoku history</string>
+    <string name="error_loading_statistics_failed">Failed to load statistics</string>
+    <string name="memory_leaks" translatable="false">Memory leaks</string>
 
 </resources>

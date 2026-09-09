@@ -20,7 +20,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
-import dagger.hilt.android.qualifiers.ActivityContext
+import dagger.hilt.android.qualifiers.ApplicationContext
+import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Sudoku
@@ -28,15 +29,16 @@ import io.kjson.JSONConfig
 import io.kjson.stringifyJSON
 import java.io.File
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class ShareSudokuUseCase @Inject constructor(
-    @param:ActivityContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     @SuppressLint("Recycle")
     suspend operator fun invoke(sudoku: Sudoku): Uri =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             val fileName = "Sudoku (${sudoku.sizeString} ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"
             val file = File(context.cacheDir, fileName)
             val uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider", file)

@@ -22,6 +22,8 @@ import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ActivityContext
+import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokusRepository
@@ -33,7 +35,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
 import de.lemke.commonutils.R as commonutilsR
@@ -41,9 +43,11 @@ import de.lemke.commonutils.R as commonutilsR
 class ImportDataUseCase @Inject constructor(
     @param:ActivityContext private val context: Context,
     private val sudokusRepository: SudokusRepository,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(origin: Uri): Unit =
-        withContext(Dispatchers.Main) {
+        withContext(mainDispatcher) {
             val progressDialog = ProgressDialog(context)
             progressDialog.setCancelable(false)
             progressDialog.isIndeterminate = true
@@ -53,7 +57,7 @@ class ImportDataUseCase @Inject constructor(
             progressDialog.setProgressStyle(HORIZONTAL)
             progressDialog.show()
             var result: String
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val importFile = DocumentFile.fromSingleUri(context, origin)
                 result =
                     if (importFile != null && importFile.exists() && importFile.canRead() && importFile.type == "application/json") {
@@ -93,23 +97,23 @@ class ImportDataUseCase @Inject constructor(
             output.errors?.forEach { Log.e("ImportDataUseCase", "${it.error} - ${it.instanceLocation}") }
             return if (output.errors.isNullOrEmpty()) {
                 val exportSudokus = json.parseJSON<List<SudokuExport>>()
-                withContext(Dispatchers.Main) {
+                withContext(mainDispatcher) {
                     progressDialog.isIndeterminate = false
                     progressDialog.max = exportSudokus.size
                     progressDialog.progress = 0
                 }
                 val sudokus =
                     exportSudokus.mapNotNull { sudokuExport ->
-                        withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
+                        withContext(mainDispatcher) { progressDialog.incrementProgressBy(1) }
                         sudokuFromExport(sudokuExport)
                     }
-                withContext(Dispatchers.Main) {
+                withContext(mainDispatcher) {
                     progressDialog.progress = 0
                     progressDialog.setMessage(context.getString(R.string.import_data_ongoing_processing))
                 }
                 sudokus.forEach { sudoku ->
                     sudokusRepository.saveSudoku(sudoku)
-                    withContext(Dispatchers.Main) { progressDialog.incrementProgressBy(1) }
+                    withContext(mainDispatcher) { progressDialog.incrementProgressBy(1) }
                 }
                 true
             } else {

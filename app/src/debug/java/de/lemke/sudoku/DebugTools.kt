@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.domain
+package de.lemke.sudoku
 
-import de.lemke.sudoku.data.UserSettingsRepository
-import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flowOn
+import android.content.Context
+import leakcanary.LeakCanary
 
-class ObserveUserSettingsUseCase @Inject constructor(
-    private val userSettingsRepository: UserSettingsRepository,
-) {
-    operator fun invoke() = userSettingsRepository.observeSettings().flowOn(Dispatchers.Default)
-}
+fun openLeakCanary(context: Context) = context.startActivity(LeakCanary.newLeakDisplayActivityIntent())

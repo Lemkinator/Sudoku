@@ -29,48 +29,10 @@ enum class Difficulty(val value: Int) {
 
     fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficulty)[this.ordinal]
 
-    @Suppress("CyclomaticComplexMethod")
-    private fun givenNumbers(size: Int): Int =
-        when (size) {
-            4 -> {
-                when (this) {
-                    VERY_EASY -> 10
-                    EASY -> 9
-                    MEDIUM -> 7
-                    HARD -> 6
-                    EXPERT -> 4
-                }
-            }
-
-            9 -> {
-                /*
-                total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
-                minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
-                more than 50, 36-49, 32-35, 28-31, 22-27
-                 */
-                when (this) {
-                    VERY_EASY -> 50
-                    EASY -> 40
-                    MEDIUM -> 35
-                    HARD -> 30
-                    EXPERT -> 23
-                }
-            }
-
-            16 -> {
-                when (this) {
-                    VERY_EASY -> 196
-                    EASY -> 176
-                    MEDIUM -> 156
-                    HARD -> 136
-                    EXPERT -> 116
-                }
-            }
-
-            else -> {
-                givenNumbers(9)
-            }
-        }
+    // total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
+    // minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
+    // more than 50, 36-49, 32-35, 28-31, 22-27
+    private fun givenNumbers(size: Int): Int = givenNumbersTable[size to this] ?: givenNumbersTable.getValue(9 to this)
 
     fun numbersToRemove(size: Int): Int = size * size - givenNumbers(size)
 
@@ -92,5 +54,24 @@ enum class Difficulty(val value: Int) {
 
         val max: Int
             get() = Difficulty.entries.size - 1
+
+        private val givenNumbersTable: Map<Pair<Int, Difficulty>, Int> =
+            mapOf(
+                (4 to VERY_EASY) to 10,
+                (4 to EASY) to 9,
+                (4 to MEDIUM) to 7,
+                (4 to HARD) to 6,
+                (4 to EXPERT) to 4,
+                (9 to VERY_EASY) to 50,
+                (9 to EASY) to 40,
+                (9 to MEDIUM) to 35,
+                (9 to HARD) to 30,
+                (9 to EXPERT) to 23,
+                (16 to VERY_EASY) to 196,
+                (16 to EASY) to 176,
+                (16 to MEDIUM) to 156,
+                (16 to HARD) to 136,
+                (16 to EXPERT) to 116,
+            )
     }
 }

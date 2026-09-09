@@ -39,15 +39,15 @@ class Field(
             hint = false,
         )
 
-    @Suppress("ReturnCount")
     fun toggleNote(note: Int?): Boolean {
         val noteChar = note.toSudokuChar() ?: return false
-        if (!notes.remove(noteChar)) {
+        return if (!notes.remove(noteChar)) {
             notes.add(noteChar)
             notes.sort()
-            return true
+            true
+        } else {
+            false
         }
-        return false
     }
 
     fun removeNote(note: Int?) = notes.remove(note.toSudokuChar())

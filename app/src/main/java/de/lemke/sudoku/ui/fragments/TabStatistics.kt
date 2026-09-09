@@ -27,16 +27,16 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.flowWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.collectEvents
+import de.lemke.commonutils.ui.utils.collectState
+import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
-import de.lemke.sudoku.domain.CalculateStatisticsUseCase
-import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.SudokuStatistics
 import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.ViewHolder
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
@@ -44,21 +44,13 @@ import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.Separator
 import java.util.Locale
-import javax.inject.Inject
 import kotlin.math.roundToInt
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabStatistics : Fragment() {
     private lateinit var binding: FragmentTabStatisticsBinding
     private var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
-
-    @Inject
-    lateinit var observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase
-
-    @Inject
-    lateinit var calculateStatistics: CalculateStatisticsUseCase
+    private val viewModel: TabStatisticsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -86,12 +78,16 @@ class TabStatistics : Fragment() {
             enableCoreSeslFeatures()
         }
         // setupMenuProvider()
-        lifecycleScope.launch {
-            observeSudokusAndStatisticsFilterFlags().flowWithLifecycle(lifecycle, RESUMED).collectLatest {
-                binding.statisticsProgressBar.isVisible = true
-                updateStatistics(calculateStatistics(it))
+        collectState(viewModel.state, minActiveState = RESUMED) { state ->
+            binding.statisticsProgressBar.isVisible = state.isLoading
+            state.statistics?.let {
+                updateStatistics(it)
                 binding.statisticsListRecycler.adapter?.notifyDataSetChanged()
-                binding.statisticsProgressBar.isVisible = false
+            }
+        }
+        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
+            when (event) {
+                TabStatisticsEvent.ShowLoadError -> toast(R.string.error_loading_statistics_failed)
             }
         }
     }

@@ -16,18 +16,20 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class GenerateDailySudokuUseCase @Inject constructor(
     private val generateFields: GenerateFieldsUseCase,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(size: Int = 9): Sudoku =
-        withContext(Dispatchers.Default) {
+        withContext(defaultDispatcher) {
             val randomDifficulty =
                 listOf(
                     Difficulty.VERY_EASY,
