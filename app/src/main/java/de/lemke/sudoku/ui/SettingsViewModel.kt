@@ -52,36 +52,6 @@ class SettingsViewModel @Inject constructor(
     private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
 ) : ViewModel() {
-    var errorLimit: Int
-        get() = userSettings.errorLimit
-        set(value) {
-            userSettings.errorLimit = value
-        }
-
-    var keepScreenOn: Boolean
-        get() = userSettings.keepScreenOn
-        set(value) {
-            userSettings.keepScreenOn = value
-        }
-
-    var highlightRegional: Boolean
-        get() = userSettings.highlightRegional
-        set(value) {
-            userSettings.highlightRegional = value
-        }
-
-    var highlightNumber: Boolean
-        get() = userSettings.highlightNumber
-        set(value) {
-            userSettings.highlightNumber = value
-        }
-
-    var animationsEnabled: Boolean
-        get() = userSettings.animationsEnabled
-        set(value) {
-            userSettings.animationsEnabled = value
-        }
-
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
 

@@ -47,7 +47,6 @@ import androidx.preference.DropDownPreference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import androidx.preference.SeslSwitchPreferenceScreen
-import androidx.preference.SwitchPreferenceCompat
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
@@ -111,7 +110,8 @@ class SettingsActivity : AppCompatActivity() {
         private val requestPermissionLauncher =
             registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
                 viewModel.onNotificationPermissionResult(isGranted)
-                findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.isChecked = viewModel.isDailyNotificationChecked
+                findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")?.isChecked =
+                    viewModel.isDailyNotificationChecked
             }
 
         override fun onCreatePreferences(
@@ -159,10 +159,6 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun initPreferences() {
             initErrorLimitPreference()
-            initKeepScreenOnPreference()
-            initHighlightRegionalPreference()
-            initHighlightNumberPreference()
-            initAnimationsPreference()
             initDailyNotificationPreference()
             initIntroPreference()
             initExportDataPreference()
@@ -171,45 +167,16 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun initErrorLimitPreference() {
-            findPreference<DropDownPreference>("error_limit_pref")?.apply {
-                summary = if (viewModel.errorLimit == 0) getString(R.string.no_limit) else viewModel.errorLimit.toString()
+            findPreference<DropDownPreference>("errorLimit")?.apply {
+                summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 onNewValue { newValue: String ->
-                    viewModel.errorLimit = newValue.toIntOrNull() ?: 0
                     summary = if (newValue.toIntOrNull() == 0) getString(R.string.no_limit) else newValue
                 }
             } ?: Log.e(TAG, "error limit Preference not found")
         }
 
-        private fun initKeepScreenOnPreference() {
-            findPreference<SwitchPreferenceCompat>("keep_screen_on_pref")?.apply {
-                isChecked = viewModel.keepScreenOn
-                onNewValue { v: Boolean -> viewModel.keepScreenOn = v }
-            } ?: Log.e(TAG, "keep screen on Preference not found")
-        }
-
-        private fun initHighlightRegionalPreference() {
-            findPreference<SwitchPreferenceCompat>("highlight_regional_pref")?.apply {
-                isChecked = viewModel.highlightRegional
-                onNewValue { v: Boolean -> viewModel.highlightRegional = v }
-            } ?: Log.e(TAG, "regional highlight Preference not found")
-        }
-
-        private fun initHighlightNumberPreference() {
-            findPreference<SwitchPreferenceCompat>("highlight_number_pref")?.apply {
-                isChecked = viewModel.highlightNumber
-                onNewValue { v: Boolean -> viewModel.highlightNumber = v }
-            } ?: Log.e(TAG, "number highlight Preference not found")
-        }
-
-        private fun initAnimationsPreference() {
-            findPreference<SwitchPreferenceCompat>("animations_pref")?.apply {
-                isChecked = viewModel.animationsEnabled
-                onNewValue { v: Boolean -> viewModel.animationsEnabled = v }
-            } ?: Log.e(TAG, "animations Preference not found")
-        }
-
         private fun initDailyNotificationPreference() {
-            findPreference<SeslSwitchPreferenceScreen>("daily_notification_pref")?.apply {
+            findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")?.apply {
                 isChecked = viewModel.isDailyNotificationChecked
                 setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
                 onNewValue { applyDailyNotificationToggle(it) }
@@ -234,7 +201,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun initIntroPreference() {
-            findPreference<PreferenceScreen>("intro_pref")?.onClick {
+            findPreference<PreferenceScreen>("intro")?.onClick {
                 startActivity(
                     Intent(requireContext(), IntroActivity::class.java).putExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, true),
                 )
@@ -242,7 +209,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun initExportDataPreference() {
-            findPreference<PreferenceScreen>("export_data_pref")?.onClick {
+            findPreference<PreferenceScreen>("exportData")?.onClick {
                 exportActivityResultLauncher.launch(
                     Intent(ACTION_CREATE_DOCUMENT).apply {
                         addCategory(CATEGORY_OPENABLE)
@@ -254,7 +221,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun initImportDataPreference() {
-            findPreference<PreferenceScreen>("import_data_pref")?.onClick {
+            findPreference<PreferenceScreen>("importData")?.onClick {
                 AlertDialog
                     .Builder(requireContext())
                     .setTitle(R.string.import_data)
@@ -267,7 +234,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun initDeleteInvalidSudokusPreference() {
-            findPreference<PreferenceScreen>("delete_invalid_sudokus_pref")?.onClick {
+            findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onClick {
                 val dialog =
                     AlertDialog
                         .Builder(requireContext())

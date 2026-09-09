@@ -305,7 +305,7 @@ class SudokuActivity : AppCompatActivity() {
             }
             dialog.show()
             applyPlayGamesSync(viewModel.syncPlayGames(sudoku))
-            showInAppReviewIfPossible()
+            showInAppReviewIfPossible(userSettings)
         }
     }
 

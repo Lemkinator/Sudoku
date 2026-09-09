@@ -19,6 +19,7 @@ package de.lemke.sudoku.data
 import android.content.SharedPreferences
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.data.delegates
+import de.lemke.commonutils.data.mapped
 import de.lemke.commonutils.data.sanitized
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
@@ -38,7 +39,10 @@ class UserSettings(
     var animationsEnabled: Boolean by preferences.delegates.boolean(true)
     var highlightRegional: Boolean by preferences.delegates.boolean(true)
     var highlightNumber: Boolean by preferences.delegates.boolean(true)
-    var errorLimit: Int by preferences.delegates.int(3).sanitized { it.coerceAtLeast(0) }
+    var errorLimit: Int by preferences.delegates
+        .string("3")
+        .mapped(to = { it.toIntOrNull() ?: 0 }, from = Int::toString)
+        .sanitized { it.coerceAtLeast(0) }
     var filterFlags: Int by preferences.delegates.int(TYPE_ALL or SIZE_ALL or DIFFICULTY_ALL)
     var dailyShowUncompleted: Boolean by preferences.delegates.boolean(true)
     var dailySudokuNotificationEnabled: Boolean by preferences.delegates.boolean(true)
