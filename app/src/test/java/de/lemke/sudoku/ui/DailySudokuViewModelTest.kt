@@ -57,6 +57,7 @@ class DailySudokuViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.state.value shouldBe DailySudokuUiState(sudokus = items, isLoading = false)
+            viewModel.events.test { expectNoEvents() }
         }
 
         should("init sets isLoading false and emits ShowLoadError when initDailySudokus throws") {
