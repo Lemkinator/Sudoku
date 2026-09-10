@@ -106,6 +106,13 @@ android {
         abortOnError = true
         baseline = file("lint-baseline.xml")
     }
+    // Plain Kotlin test-data builders shared between Robolectric (src/test) and instrumented (src/androidTest)
+    // tests. Unlike TestSettingsModule, these carry no Hilt/Robolectric coupling, so one shared dir works — no
+    // per-source-set twin needed.
+    sourceSets {
+        getByName("test") { kotlin.srcDir("src/testShared/kotlin") }
+        getByName("androidTest") { kotlin.srcDir("src/testShared/kotlin") }
+    }
     testOptions {
         unitTests {
             isIncludeAndroidResources = true

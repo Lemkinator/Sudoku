@@ -20,23 +20,34 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
+import kotlin.math.sqrt
 
 /**
- * A deterministic, hand-formulaic (not solver-generated) board for screenshot tests — game logic never validates
- * solvability at construction, so the exact digits don't matter, only that every run produces the same ones.
+ * A real, valid solved grid via the standard band-shifted base pattern
+ * `(blockSize * (row % blockSize) + row / blockSize + col) % size + 1` — deterministic (no solver, no RNG) but
+ * satisfies every row/column/box constraint, unlike a naive formula. Every third cell (in reading order) is given;
+ * the rest start blank. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented) — this is a
+ * plain data builder with no Hilt/Robolectric coupling, so unlike `TestSettingsModule` it doesn't need per-source-set
+ * twins.
  */
 fun testLevelSudoku(
     size: Int,
     level: Int = 1,
     completed: Boolean = false,
-): Sudoku =
-    Sudoku.create(
+    sudokuId: SudokuId = SudokuId.generate(),
+): Sudoku {
+    val blockSize = sqrt(size.toDouble()).toInt()
+    return Sudoku.create(
+        sudokuId = sudokuId,
         size = size,
         difficulty = Difficulty.VERY_EASY,
         modeLevel = level,
         fields =
             MutableList(size * size) { index ->
-                val solution = index % size + 1
+                val row = index / size
+                val col = index % size
+                val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
                 val given = index % 3 == 0
                 Field(
                     position = Position.create(index, size),
@@ -46,3 +57,4 @@ fun testLevelSudoku(
                 )
             },
     )
+}
