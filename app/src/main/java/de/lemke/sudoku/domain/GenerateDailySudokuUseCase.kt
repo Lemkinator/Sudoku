@@ -20,12 +20,15 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import java.time.Clock
+import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class GenerateDailySudokuUseCase @Inject constructor(
     private val generateFields: GenerateFieldsUseCase,
+    private val clock: Clock,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(size: Int = 9): Sudoku =
@@ -49,6 +52,7 @@ class GenerateDailySudokuUseCase @Inject constructor(
                 difficulty = randomDifficulty,
                 fields = generateFields(size, randomDifficulty),
                 modeLevel = Sudoku.MODE_DAILY,
+                created = LocalDateTime.now(clock),
             )
         }
 }

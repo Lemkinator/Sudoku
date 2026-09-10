@@ -23,6 +23,8 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.model.SudokuListItem
+import java.time.Clock
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -48,6 +50,7 @@ class DailySudokuViewModel @Inject constructor(
     private val userSettings: UserSettings,
     private val initDailySudokus: InitDailySudokusUseCase,
     private val observeDailySudokus: ObserveDailySudokusUseCase,
+    private val clock: Clock,
 ) : ViewModel() {
     val state: StateFlow<DailySudokuUiState>
         field = MutableStateFlow(DailySudokuUiState())
@@ -64,8 +67,9 @@ class DailySudokuViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             runCatching {
-                initDailySudokus()
-                observeDailySudokus().collectLatest { sudokus ->
+                val today = LocalDate.now(clock)
+                initDailySudokus(today)
+                observeDailySudokus(today).collectLatest { sudokus ->
                     state.value = DailySudokuUiState(sudokus = sudokus, isLoading = false)
                 }
             }.onFailure { e ->

@@ -28,6 +28,9 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import java.time.Clock
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,19 +43,20 @@ class DailySudokuViewModelTest : ShouldSpec(
         lateinit var userSettings: UserSettings
         val initDailySudokus = mockk<InitDailySudokusUseCase>()
         val observeDailySudokus = mockk<ObserveDailySudokusUseCase>()
+        val clock = Clock.fixed(ZonedDateTime.of(2026, 1, 15, 12, 0, 0, 0, ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
 
         beforeEach {
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            coEvery { initDailySudokus() } returns Unit
-            every { observeDailySudokus() } returns flowOf(mutableListOf())
+            coEvery { initDailySudokus(any()) } returns Unit
+            every { observeDailySudokus(any()) } returns flowOf(mutableListOf())
         }
 
-        fun newViewModel() = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus)
+        fun newViewModel() = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus, clock)
 
         should("init loads sudokus from observeDailySudokus and sets isLoading false on success") {
             val items: MutableList<SudokuListItem> =
                 mutableListOf(SudokuListItem.SeparatorItem("Jan 2026"), SudokuListItem.SeparatorItem("Feb 2026"))
-            every { observeDailySudokus() } returns flowOf(items)
+            every { observeDailySudokus(any()) } returns flowOf(items)
 
             val viewModel = newViewModel()
 
@@ -61,7 +65,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         }
 
         should("init sets isLoading false and emits ShowLoadError when initDailySudokus throws") {
-            coEvery { initDailySudokus() } throws RuntimeException("init failed")
+            coEvery { initDailySudokus(any()) } throws RuntimeException("init failed")
 
             val viewModel = newViewModel()
 
@@ -73,7 +77,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         }
 
         should("init sets isLoading false and emits ShowLoadError when observeDailySudokus throws") {
-            every { observeDailySudokus() } throws RuntimeException("observe failed")
+            every { observeDailySudokus(any()) } throws RuntimeException("observe failed")
 
             val viewModel = newViewModel()
 
@@ -85,7 +89,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         }
 
         should("init does not treat CancellationException as a load failure: no isLoading flip, no ShowLoadError event") {
-            coEvery { initDailySudokus() } throws CancellationException("cancelled")
+            coEvery { initDailySudokus(any()) } throws CancellationException("cancelled")
 
             val viewModel = newViewModel()
 
