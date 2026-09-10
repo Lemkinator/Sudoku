@@ -105,6 +105,16 @@ subprojects {
             if (!checkDependencyUpdates) {
                 lint.informational += setOf("GradleDependency", "NewerVersionAvailable")
             }
+            // Centralized here (not per-module) so a future :benchmarks module inherits it with no migration.
+            @Suppress("UnstableApiUsage")
+            testOptions.managedDevices.localDevices {
+                register("pixel9Api35") {
+                    device = "Pixel 9"
+                    apiLevel = 35
+                    systemImageSource = "aosp" // NOT google_apis — Play background work adds noise
+                    testedAbi = "x86_64" // preserve ABI before AGP 10.0 changes default to arm64-v8a
+                }
+            }
             // oneui-design replaces these AOSP AndroidX modules with Samsung's SESL forks, which
             // keep the original package names — exclude the AOSP originals everywhere to prevent
             // shadowing. androidTest specifically needs SESL: instrumented tests launch SESL

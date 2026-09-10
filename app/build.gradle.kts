@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalRoborazziApi::class)
+
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.hilt.android)
@@ -23,6 +27,7 @@ plugins {
     alias(libs.plugins.spotless)
     alias(libs.plugins.kover)
     alias(libs.plugins.android.junit)
+    alias(libs.plugins.roborazzi)
 }
 
 fun String.toEnvVarStyle(): String = replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
@@ -40,6 +45,7 @@ android {
         targetSdk = 37
         versionCode = 62
         versionName = "3.5.6"
+        testInstrumentationRunner = "de.lemke.sudoku.HiltTestRunner"
         buildConfigField("boolean", "FIRST_RUN_SKIPPABLE", "false")
     }
     @Suppress("UnstableApiUsage")
@@ -102,11 +108,17 @@ android {
     }
     testOptions {
         unitTests {
+            isIncludeAndroidResources = true
+
             all { test ->
                 test.useJUnitPlatform()
                 test.jvmArgs("-XX:+EnableDynamicAgentLoading")
+                test.systemProperty("robolectric.graphicsMode", "NATIVE")
+                test.systemProperty("roborazzi.test.record", project.findProperty("roborazzi.record") ?: "false")
+                test.systemProperty("roborazzi.test.verify", project.findProperty("roborazzi.verify") ?: "true")
             }
         }
+        animationsDisabled = true
     }
 }
 dependencies {
@@ -127,13 +139,25 @@ dependencies {
 
     testImplementation(libs.konsist)
     testImplementation(libs.bundles.unit.test)
+    testImplementation(libs.bundles.robolectric.test)
+    testImplementation(libs.arch.core.testing)
+    testImplementation(libs.hilt.android.testing)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit4)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(testFixtures(libs.common.utils))
+    kspTest(libs.hilt.compiler)
 
     androidTestImplementation(testFixtures(libs.common.utils))
+    androidTestImplementation(libs.bundles.android.test)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.turbine)
+    androidTestImplementation(libs.kotest.assertions.core)
+    androidTestImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
@@ -171,6 +195,13 @@ tasks.withType<dev.detekt.gradle.Detekt>().configureEach {
     reports {
         html.required.set(true)
         sarif.required.set(true)
+    }
+}
+
+roborazzi {
+    outputDir.set(layout.projectDirectory.dir("src/test/screenshots"))
+    compare {
+        outputDir.set(layout.buildDirectory.dir("reports/roborazzi"))
     }
 }
 
