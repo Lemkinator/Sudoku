@@ -26,9 +26,15 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.int
+import io.kotest.property.checkAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,6 +98,15 @@ class UserSettingsTest {
     }
 
     @Test
+    fun `difficultySliderValue is always clamped into 0 until Difficulty max for any written value`() =
+        runTest {
+            checkAll(Arb.int()) { value ->
+                settings.difficultySliderValue = value
+                settings.difficultySliderValue.shouldBeInRange(0..Difficulty.max)
+            }
+        }
+
+    @Test
     fun `keepScreenOn round-trips false`() {
         settings.keepScreenOn = false
         reload().keepScreenOn.shouldBeFalse()
@@ -120,6 +135,15 @@ class UserSettingsTest {
         prefs.edit().putString("errorLimit", "not-a-number").apply()
         reload().errorLimit shouldBe 0
     }
+
+    @Test
+    fun `errorLimit is always at least 0 for any written value`() =
+        runTest {
+            checkAll(Arb.int()) { value ->
+                settings.errorLimit = value
+                settings.errorLimit.shouldBeGreaterThanOrEqual(0)
+            }
+        }
 
     @Test
     fun `filterFlags round-trips`() {
