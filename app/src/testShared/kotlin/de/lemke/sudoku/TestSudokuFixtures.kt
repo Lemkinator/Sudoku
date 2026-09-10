@@ -21,22 +21,25 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.tutorialSudoku
 import kotlin.math.sqrt
 
 /**
- * A real, valid solved grid via the standard band-shifted base pattern
- * `(blockSize * (row % blockSize) + row / blockSize + col) % size + 1` — deterministic (no solver, no RNG) but
- * satisfies every row/column/box constraint, unlike a naive formula. Every third cell (in reading order) is given;
- * the rest start blank. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented) — this is a
- * plain data builder with no Hilt/Robolectric coupling, so unlike `TestSettingsModule` it doesn't need per-source-set
- * twins.
+ * For size 9 (the only size ever actually rendered in a screenshot test), reuses
+ * [tutorialSudoku][de.lemke.sudoku.domain.model.tutorialSudoku] — the same real, hand-verified board
+ * [IntroActivity][de.lemke.sudoku.ui.IntroActivity] ships — rather than hardcoding a second one. Size 4/16 boards
+ * are only ever used to seed [de.lemke.sudoku.ui.SudokuLevelActivity]'s level list (never rendered as a grid), so
+ * they fall back to the standard band-shifted base pattern
+ * `(blockSize * (row % blockSize) + row / blockSize + col) % size + 1` — a real valid solved grid, just not one a
+ * human authored. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented) — a plain data
+ * builder with no Hilt/Robolectric coupling, so unlike `TestSettingsModule` it doesn't need per-source-set twins.
  */
 fun testLevelSudoku(
     size: Int,
     level: Int = 1,
-    completed: Boolean = false,
     sudokuId: SudokuId = SudokuId.generate(),
 ): Sudoku {
+    if (size == 9) return tutorialSudoku(sudokuId = sudokuId, modeLevel = level)
     val blockSize = sqrt(size.toDouble()).toInt()
     return Sudoku.create(
         sudokuId = sudokuId,
@@ -52,7 +55,7 @@ fun testLevelSudoku(
                 Field(
                     position = Position.create(index, size),
                     solution = solution,
-                    value = if (given || completed) solution else null,
+                    value = if (given) solution else null,
                     given = given,
                 )
             },
