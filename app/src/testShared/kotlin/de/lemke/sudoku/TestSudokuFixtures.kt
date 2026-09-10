@@ -31,8 +31,7 @@ import kotlin.math.sqrt
  * are only ever used to seed [de.lemke.sudoku.ui.SudokuLevelActivity]'s level list (never rendered as a grid), so
  * they fall back to the standard band-shifted base pattern
  * `(blockSize * (row % blockSize) + row / blockSize + col) % size + 1` — a real valid solved grid, just not one a
- * human authored. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented) — a plain data
- * builder with no Hilt/Robolectric coupling, so unlike `TestSettingsModule` it doesn't need per-source-set twins.
+ * human authored. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented).
  */
 fun testLevelSudoku(
     size: Int,

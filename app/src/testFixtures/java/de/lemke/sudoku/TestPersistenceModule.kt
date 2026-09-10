@@ -26,11 +26,22 @@ import dagger.hilt.testing.TestInstallIn
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.di.PersistenceModule
+import java.util.concurrent.Executor
 import javax.inject.Singleton
 
+/**
+ * Production Room runs queries on a real background thread pool. Under Robolectric's single-threaded, paused-looper
+ * model that races the test's own execution: a suspend DAO call or `Flow` emission can still be in flight on that
+ * pool when `captureRoboImage` runs, producing a screenshot that randomly differs (empty list vs. loaded, stale
+ * elapsed count, ...) between recordings. A same-thread executor makes every Room operation finish synchronously
+ * before the calling coroutine resumes, which removes the race entirely instead of papering over it with idle()/
+ * sleep() polling in each screenshot test.
+ */
 @Module
 @TestInstallIn(components = [SingletonComponent::class], replaces = [PersistenceModule::class])
 object TestPersistenceModule {
+    private val directExecutor = Executor { it.run() }
+
     @Provides
     @Singleton
     fun provideTestAppDatabase(
@@ -39,6 +50,8 @@ object TestPersistenceModule {
         Room
             .inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
+            .setQueryExecutor(directExecutor)
+            .setTransactionExecutor(directExecutor)
             .build()
 
     @Provides
