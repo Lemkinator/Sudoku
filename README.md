@@ -17,6 +17,7 @@ src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web
 [![](https://img.shields.io/github/repo-size/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku)
 [![](https://sloc.xyz/github/Lemkinator/Sudoku)](https://github.com/Lemkinator/Sudoku)
 [![CodeFactor](https://www.codefactor.io/repository/github/lemkinator/sudoku/badge)](https://www.codefactor.io/repository/github/lemkinator/sudoku)
+[![codecov](https://codecov.io/gh/Lemkinator/Sudoku/graph/badge.svg)](https://codecov.io/gh/Lemkinator/Sudoku)
 
 # Sudoku
 
