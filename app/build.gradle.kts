@@ -48,6 +48,11 @@ android {
         testInstrumentationRunner = "de.lemke.sudoku.HiltTestRunner"
         buildConfigField("boolean", "FIRST_RUN_SKIPPABLE", "false")
     }
+    // Hosts the fake Hilt modules shared by testDebugUnitTest and connectedDebugAndroidTest.
+    @Suppress("UnstableApiUsage")
+    testFixtures {
+        enable = true
+    }
     @Suppress("UnstableApiUsage")
     androidResources.localeFilters += listOf("en", "de", "es", "es-rES")
     signingConfigs {
@@ -155,6 +160,13 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(testFixtures(libs.common.utils))
+
+    testFixturesImplementation(libs.bundles.room)
+    testFixturesImplementation(libs.hilt.android.testing)
+    testFixturesImplementation(libs.coroutines.test)
+    testFixturesImplementation(testFixtures(libs.common.utils))
+    kspTestFixtures(libs.hilt.compiler)
+
     kspTest(libs.hilt.compiler)
 
     androidTestImplementation(testFixtures(libs.common.utils))
