@@ -23,10 +23,11 @@ src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web
 
 A Sudoku app with OneUI-Design.
 
-<img loading="lazy" src="img/mobile1.png" height="350" alt="Mobile 1"/>
-<img loading="lazy" src="img/mobile2.png" height="350" alt="Mobile 2"/>
-<img loading="lazy" src="img/mobile3.png" height="350" alt="Mobile 3"/>
-<img loading="lazy" src="img/mobile4.png" height="350" alt="Mobile 4"/>
+<img loading="lazy" src="app/src/test/screenshots/main_default_dark.png" height="350" alt="Main screen"/>
+<img loading="lazy" src="app/src/test/screenshots/sudoku_default_dark.png" height="350" alt="Sudoku game"/>
+<img loading="lazy" src="app/src/test/screenshots/sudoku_level_default_dark.png" height="350" alt="Level select"/>
+<img loading="lazy" src="app/src/test/screenshots/daily_sudoku_default_dark.png" height="350" alt="Daily Sudoku"/>
+<img loading="lazy" src="app/src/test/screenshots/settings_default_dark.png" height="350" alt="Settings"/>
 
 <br><br>
 
