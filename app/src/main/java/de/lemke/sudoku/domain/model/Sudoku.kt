@@ -95,7 +95,7 @@ class Sudoku(
     val progress: Int
         get() {
             val total = fields.count { !it.given }
-            return fields.count { !it.given && it.correct } * 100 / total
+            return if (total == 0) 100 else fields.count { !it.given && it.correct } * 100 / total
         }
 
     val timeString: String
