@@ -23,7 +23,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.sudoku.data.UserSettings
 import javax.inject.Inject
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -55,12 +55,13 @@ class TestFixturesModuleInstallationTest {
     @Test
     fun `injected settings do not write through to production SharedPreferences`() {
         val productionPrefs = PreferenceManager.getDefaultSharedPreferences(ApplicationProvider.getApplicationContext())
-        productionPrefs.edit().remove("keepScreenOn").commit()
-        settings.keepScreenOn = false
-        assertFalse(
-            "keepScreenOn leaked into production SharedPreferences - TestSettingsModule (src/testFixtures) was " +
+        val keepScreenOnBefore = productionPrefs.all["keepScreenOn"]
+        settings.keepScreenOn = !(keepScreenOnBefore as? Boolean ?: false)
+        assertEquals(
+            "keepScreenOn changed in production SharedPreferences - TestSettingsModule (src/testFixtures) was " +
                 "NOT installed; production SettingsProvideModule won instead",
-            productionPrefs.contains("keepScreenOn"),
+            keepScreenOnBefore,
+            productionPrefs.all["keepScreenOn"],
         )
     }
 }
