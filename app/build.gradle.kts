@@ -48,6 +48,11 @@ android {
         testInstrumentationRunner = "de.lemke.sudoku.HiltTestRunner"
         buildConfigField("boolean", "FIRST_RUN_SKIPPABLE", "false")
     }
+    // Hosts the fake Hilt modules shared by testDebugUnitTest and connectedDebugAndroidTest.
+    @Suppress("UnstableApiUsage")
+    testFixtures {
+        enable = true
+    }
     @Suppress("UnstableApiUsage")
     androidResources.localeFilters += listOf("en", "de", "es", "es-rES")
     signingConfigs {
@@ -107,8 +112,7 @@ android {
         baseline = file("lint-baseline.xml")
     }
     // Plain Kotlin test-data builders shared between Robolectric (src/test) and instrumented (src/androidTest)
-    // tests. Unlike TestSettingsModule, these carry no Hilt/Robolectric coupling, so one shared dir works — no
-    // per-source-set twin needed.
+    // tests.
     sourceSets {
         getByName("test") { kotlin.srcDir("src/testShared/kotlin") }
         getByName("androidTest") { kotlin.srcDir("src/testShared/kotlin") }
@@ -119,7 +123,17 @@ android {
 
             all { test ->
                 test.useJUnitPlatform()
-                test.jvmArgs("-XX:+EnableDynamicAgentLoading")
+                test.jvmArgs(
+                    "-XX:+EnableDynamicAgentLoading",
+                    "--add-opens=java.base/java.lang=ALL-UNNAMED",
+                    "--add-opens=java.base/java.util=ALL-UNNAMED",
+                    "--add-opens=java.base/java.io=ALL-UNNAMED",
+                    "--add-opens=java.base/java.net=ALL-UNNAMED",
+                    "--add-opens=java.base/java.security=ALL-UNNAMED",
+                    "--add-opens=java.base/java.text=ALL-UNNAMED",
+                    "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+                    "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
+                )
                 test.systemProperty("robolectric.graphicsMode", "NATIVE")
                 test.systemProperty("roborazzi.test.record", project.findProperty("roborazzi.record") ?: "false")
                 test.systemProperty("roborazzi.test.verify", project.findProperty("roborazzi.verify") ?: "true")
@@ -155,6 +169,13 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(testFixtures(libs.common.utils))
+
+    testFixturesImplementation(libs.bundles.room)
+    testFixturesImplementation(libs.hilt.android.testing)
+    testFixturesImplementation(libs.coroutines.test)
+    testFixturesImplementation(testFixtures(libs.common.utils))
+    kspTestFixtures(libs.hilt.compiler)
+
     kspTest(libs.hilt.compiler)
 
     androidTestImplementation(testFixtures(libs.common.utils))
