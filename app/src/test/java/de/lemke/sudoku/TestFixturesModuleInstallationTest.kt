@@ -54,8 +54,9 @@ class TestFixturesModuleInstallationTest {
 
     @Test
     fun `injected settings do not write through to production SharedPreferences`() {
-        settings.keepScreenOn = false
         val productionPrefs = PreferenceManager.getDefaultSharedPreferences(ApplicationProvider.getApplicationContext())
+        productionPrefs.edit().remove("keepScreenOn").commit()
+        settings.keepScreenOn = false
         assertFalse(
             "keepScreenOn leaked into production SharedPreferences - TestSettingsModule (src/testFixtures) was " +
                 "NOT installed; production SettingsProvideModule won instead",
