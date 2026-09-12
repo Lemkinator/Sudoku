@@ -25,6 +25,10 @@ import androidx.test.uiautomator.Until
 const val PACKAGE_NAME = "de.lemke.sudoku"
 const val TIMEOUT_MS = 5_000L
 
+// Sudoku generation (de.sfuhrm:sudoku) runs synchronously before SudokuActivity launches —
+// duration varies with size/difficulty, so this hop needs more headroom than a plain nav wait.
+const val GENERATION_TIMEOUT_MS = 15_000L
+
 // Must match de.lemke.commonutils.EXTRA_SKIP_ONBOARDING — cannot import from test module
 const val EXTRA_SKIP_ONBOARDING = "commonUtilsSkipOnboarding"
 

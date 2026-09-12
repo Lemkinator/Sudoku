@@ -52,12 +52,22 @@ class BaselineProfileGenerator {
             pressHome()
             startActivityAndSkipOnboarding()
             navigateToLevelsAndBack()
+            navigateToNewGameAndBack()
         }
 }
 
 private fun MacrobenchmarkScope.navigateToLevelsAndBack() {
     device.waitAndFindObject(By.res(PACKAGE_NAME, "levelsButton"), TIMEOUT_MS).click()
     device.waitAndFindObject(By.res(PACKAGE_NAME, "viewPagerLevel"), TIMEOUT_MS)
+    device.pressBack()
+    device.waitForIdle()
+}
+
+// Covers actual gameplay (domain model, game_recycler adapter, number input) — the code path
+// levelsButton alone never touches.
+private fun MacrobenchmarkScope.navigateToNewGameAndBack() {
+    device.waitAndFindObject(By.res(PACKAGE_NAME, "newGameButton"), TIMEOUT_MS).click()
+    device.waitAndFindObject(By.res(PACKAGE_NAME, "game_recycler"), GENERATION_TIMEOUT_MS)
     device.pressBack()
     device.waitForIdle()
 }
