@@ -29,7 +29,8 @@ const val TIMEOUT_MS = 5_000L
 // duration varies with size/difficulty, so this hop needs more headroom than a plain nav wait.
 const val GENERATION_TIMEOUT_MS = 15_000L
 
-// Must match de.lemke.commonutils.EXTRA_SKIP_ONBOARDING — cannot import from test module
+// Must match de.lemke.commonutils.ui.utils.EXTRA_SKIP_ONBOARDING — cannot import from test module.
+// Pinned by app/src/test/.../BenchmarkOnboardingKeyTest.kt.
 const val EXTRA_SKIP_ONBOARDING = "commonUtilsSkipOnboarding"
 
 fun MacrobenchmarkScope.startActivityAndSkipOnboarding() =
