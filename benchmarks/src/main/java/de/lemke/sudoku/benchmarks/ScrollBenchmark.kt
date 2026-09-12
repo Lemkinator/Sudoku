@@ -46,9 +46,11 @@ class ScrollBenchmark {
                 pressHome()
                 startActivityAndSkipOnboarding()
                 device.waitAndFindObject(By.res(PACKAGE_NAME, "levelsButton"), TIMEOUT_MS).click()
+                // sudokuLevelsRecycler stays GONE until InitSudokuLevelUseCase finishes generating levels on a
+                // fresh install, and the separator row has no item_text — wait on a real level row's own id.
                 device.waitAndFindObject(
-                    By.res(PACKAGE_NAME, "sudokuLevelsRecycler").hasDescendant(By.clazz("android.widget.TextView")),
-                    TIMEOUT_MS,
+                    By.res(PACKAGE_NAME, "sudokuLevelsRecycler").hasDescendant(By.res(PACKAGE_NAME, "item_text")),
+                    GENERATION_TIMEOUT_MS,
                 )
             },
         ) {

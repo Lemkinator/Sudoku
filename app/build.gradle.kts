@@ -173,12 +173,14 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
-    implementation(libs.profileinstaller)
     implementation(libs.bundles.json)
     implementation(libs.bundles.room)
     implementation(libs.hilt.android)
     ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
+
+    implementation(libs.profileinstaller)
+    baselineProfile(project(":benchmarks"))
     debugImplementation(libs.leakcanary)
 
     testImplementation(libs.konsist)
