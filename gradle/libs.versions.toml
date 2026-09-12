@@ -7,6 +7,7 @@ androidx-test-rules = "1.7.0"
 androidx-test-runner = "1.7.0"
 arch-core-testing = "2.2.0"
 async-layout-inflater = "1.1.0"
+benchmark-macro = "1.5.0"
 bundler = "1.0.4"
 common-utils = "1.2.6"
 coroutines-test = "1.11.0"
@@ -36,12 +37,14 @@ mockk = "1.14.11"
 oneui-design = "0.9.19+oneui8"
 oneui-icons = "1.1.0"
 play-services-games = "22.0.0"
+profileinstaller = "1.4.1"
 robolectric = "4.17"
 roborazzi = "1.74.0"
 room = "2.8.5"
 spotless = "8.10.2"
 sudoku = "5.3.1"
 turbine = "1.2.1"
+uiautomator = "2.4.0"
 
 [libraries]
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
@@ -53,6 +56,7 @@ androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 arch-core-testing = { module = "androidx.arch.core:core-testing", version.ref = "arch-core-testing" }
 async-layout-inflater = { module = "androidx.asynclayoutinflater:asynclayoutinflater", version.ref = "async-layout-inflater" }
+benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark-macro" }
 bundler = { module = "com.github.skydoves:bundler", version.ref = "bundler" }
 common-utils = { module = "io.github.lemkinator:common-utils", version.ref = "common-utils" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines-test" }
@@ -77,6 +81,7 @@ mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 oneui-design = { module = "io.github.tribalfs:oneui-design", version.ref = "oneui-design" }
 oneui-icons = { module = "io.github.oneuiproject:icons", version.ref = "oneui-icons" }
 play-services-games = { module = "com.google.android.gms:play-services-games-v2", version.ref = "play-services-games" }
+profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
@@ -85,11 +90,14 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 sudoku = { module = "de.sfuhrm:sudoku", version.ref = "sudoku" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator" }
 
 [plugins]
 aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
 android-application = { id = "com.android.application", version.ref = "gradle" }
 android-junit = { id = "de.mannodermaus.android-junit", version.ref = "junit-android-framework" }
+android-test = { id = "com.android.test", version.ref = "gradle" }
+baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark-macro" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
