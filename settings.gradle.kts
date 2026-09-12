@@ -29,3 +29,4 @@ plugins {
 
 rootProject.name = "Sudoku"
 include(":app")
+include(":benchmarks")
