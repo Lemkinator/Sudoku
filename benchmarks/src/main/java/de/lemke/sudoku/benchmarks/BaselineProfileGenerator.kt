@@ -42,8 +42,22 @@ class BaselineProfileGenerator {
             startActivityAndSkipOnboarding()
         }
 
+    // Split from levelsJourney so a flaky game-generation wait doesn't risk losing the other
+    // journey's contribution, and each gets its own stableIterations/maxIterations budget.
     @Test
-    fun generate() =
+    fun newGameJourney() =
+        rule.collect(
+            packageName = PACKAGE_NAME,
+            stableIterations = 3,
+            maxIterations = 10,
+        ) {
+            pressHome()
+            startActivityAndSkipOnboarding()
+            navigateToNewGameAndBack()
+        }
+
+    @Test
+    fun levelsJourney() =
         rule.collect(
             packageName = PACKAGE_NAME,
             stableIterations = 3,
@@ -52,7 +66,6 @@ class BaselineProfileGenerator {
             pressHome()
             startActivityAndSkipOnboarding()
             navigateToLevelsAndBack()
-            navigateToNewGameAndBack()
         }
 }
 

@@ -14,8 +14,8 @@ coroutines-test = "1.11.0"
 datastore-preferences = "1.2.1"
 dependency-analysis = "3.19.1"
 detekt = "2.0.0-alpha.6"
+agp = "9.4.0"
 documentfile = "1.1.0"
-gradle = "9.4.0"
 hilt = "2.60.1"
 json-kotlin-schema = "0.58"
 junit-android-framework = "2.0.1"
@@ -94,9 +94,9 @@ uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = 
 
 [plugins]
 aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutlibraries" }
-android-application = { id = "com.android.application", version.ref = "gradle" }
+android-application = { id = "com.android.application", version.ref = "agp" }
 android-junit = { id = "de.mannodermaus.android-junit", version.ref = "junit-android-framework" }
-android-test = { id = "com.android.test", version.ref = "gradle" }
+android-test = { id = "com.android.test", version.ref = "agp" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark-macro" }
 dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "dependency-analysis" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
