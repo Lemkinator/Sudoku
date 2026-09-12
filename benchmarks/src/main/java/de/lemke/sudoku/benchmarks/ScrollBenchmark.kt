@@ -26,6 +26,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+// Level list stays at exactly 1 row on a fresh install (levels only accumulate by finishing
+// puzzles, which this black-box UI test can't do). History instead grows just by starting games
+// — TabSudokuViewModel.createNewSudoku saves immediately, before SudokuActivity even opens — so
+// seed that list directly instead.
+private const val HISTORY_SEED_COUNT = 8
+
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class ScrollBenchmark {
@@ -45,17 +51,21 @@ class ScrollBenchmark {
             setupBlock = {
                 pressHome()
                 startActivityAndSkipOnboarding()
-                device.waitAndFindObject(By.res(PACKAGE_NAME, "levelsButton"), TIMEOUT_MS).click()
-                // sudokuLevelsRecycler stays GONE until InitSudokuLevelUseCase finishes generating levels on a
-                // fresh install, and the separator row has no item_text — wait on a real level row's own id.
+                repeat(HISTORY_SEED_COUNT) {
+                    device.waitAndFindObject(By.res(PACKAGE_NAME, "newGameButton"), TIMEOUT_MS).click()
+                    device.waitAndFindObject(By.res(PACKAGE_NAME, "game_recycler"), GENERATION_TIMEOUT_MS)
+                    device.pressBack()
+                    device.waitForIdle()
+                }
+                device.waitAndFindObject(By.res(PACKAGE_NAME, "history_dest"), TIMEOUT_MS).click()
                 device.waitAndFindObject(
-                    By.res(PACKAGE_NAME, "sudokuLevelsRecycler").hasDescendant(By.res(PACKAGE_NAME, "item_text")),
-                    GENERATION_TIMEOUT_MS,
+                    By.res(PACKAGE_NAME, "sudokuHistoryList").hasDescendant(By.res(PACKAGE_NAME, "item_text")),
+                    TIMEOUT_MS,
                 )
             },
         ) {
             val recycler =
-                checkNotNull(device.findObject(By.res(PACKAGE_NAME, "sudokuLevelsRecycler"))) { "sudokuLevelsRecycler not found" }
+                checkNotNull(device.findObject(By.res(PACKAGE_NAME, "sudokuHistoryList"))) { "sudokuHistoryList not found" }
             device.flingElementDownUp(recycler)
         }
 }
