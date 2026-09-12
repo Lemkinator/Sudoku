@@ -30,7 +30,11 @@ import org.junit.runner.RunWith
 // puzzles, which this black-box UI test can't do). History instead grows just by starting games
 // — TabSudokuViewModel.createNewSudoku saves immediately, before SudokuActivity even opens — so
 // seed that list directly instead.
-private const val HISTORY_SEED_COUNT = 8
+//
+// All seeded rows land under one date separator, and each two-line row is
+// ?android:listPreferredItemHeight (~72dp) tall — a tall device like pixel9Api35 fits ~10-12 rows
+// without scrolling at all, so the count needs real margin above that, not just >1.
+private const val HISTORY_SEED_COUNT = 20
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
