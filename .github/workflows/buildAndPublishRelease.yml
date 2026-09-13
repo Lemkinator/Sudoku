@@ -58,9 +58,7 @@ jobs:
 
       - name: Prepare for build
         if: steps.version_info.outputs.changed == 'true'
-        run: |
-          chmod +x ./gradlew
-          echo "${{ secrets.KEYSTORE }}" | base64 --decode > keystore.jks
+        run: echo "${{ secrets.KEYSTORE }}" | base64 --decode > keystore.jks
 
       - name: Enable KVM
         if: steps.version_info.outputs.changed == 'true'
@@ -77,7 +75,7 @@ jobs:
       - name: Build APK
         if: steps.version_info.outputs.changed == 'true'
         run: |
-          ./gradlew :app:assembleRelease \
+          chmod +x ./gradlew && ./gradlew :app:assembleRelease \
             -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect --stacktrace
 
       - name: Verify baseline profile packaged

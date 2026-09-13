@@ -38,12 +38,25 @@ fun getProperty(key: String): String? = rootProject.findProperty(key)?.toString(
 android {
     namespace = "de.lemke.sudoku"
     compileSdk {
-        version = release(37) { minorApiLevel = 1 }
+        version =
+            release(
+                libs.versions.compileSdk
+                    .get()
+                    .toInt(),
+            ) {
+                minorApiLevel =
+                    libs.versions.compileSdkMinor
+                        .get()
+                        .toInt()
+            }
     }
     defaultConfig {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
-        targetSdk = 37
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
         versionCode = 62
         versionName = "3.5.6"
         testInstrumentationRunner = "de.lemke.sudoku.HiltTestRunner"
