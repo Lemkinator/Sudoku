@@ -113,6 +113,19 @@ class SudokuViewAdapterTest {
     }
 
     @Test
+    fun `selecting a hint field does not highlight neighbors even when highlightNeighbors is true`() {
+        sudoku[PLAIN_INDEX].hint = true
+
+        adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
+
+        sudoku.regionalHighlightingUsed shouldBe true
+        for (i in 0 until sudoku.itemCount) {
+            adapter.fieldViews[i].isHighlighted shouldBe false
+        }
+        adapter.fieldViews[PLAIN_INDEX].isSelected shouldBe true
+    }
+
+    @Test
     fun `selecting a field with highlightNeighbors false does not touch highlighting state`() {
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = false, highlightNumber = false)
 
@@ -135,6 +148,18 @@ class SudokuViewAdapterTest {
             adapter.fieldViews[i].isSelected shouldBe false
             adapter.fieldViews[i].isHighlightedNumber shouldBe false
         }
+    }
+
+    @Test
+    fun `selecting null position with highlightNumber false does not touch number highlighting`() {
+        adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
+        adapter.fieldViews[2].isHighlightedNumber = true
+
+        // highlightNeighbors false this time skips the block that would otherwise reset isHighlightedNumber
+        // for every field, isolating the else-if (highlightNumber)'s own false arm.
+        adapter.selectFieldView(null, highlightNeighbors = false, highlightNumber = false)
+
+        adapter.fieldViews[2].isHighlightedNumber shouldBe true
     }
 
     @Test
