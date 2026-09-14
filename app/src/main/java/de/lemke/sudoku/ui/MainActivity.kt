@@ -89,6 +89,7 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
+import de.lemke.sudoku.ui.utils.GamesSignInProvider
 import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
@@ -107,6 +108,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var userSettings: UserSettings
+
+    @Inject
+    lateinit var gamesSignInProvider: GamesSignInProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -212,7 +216,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initDrawer() {
         binding.navigationView.findMenuItem(R.id.leaks_dest)?.isVisible = BuildConfig.DEBUG
-        val gamesSignInClient = PlayGames.getGamesSignInClient(this)
+        val gamesSignInClient = gamesSignInProvider.getClient(this)
         binding.navigationView.onNavigationSingleClick { item ->
             when (item.itemId) {
                 R.id.achievements_dest -> {
