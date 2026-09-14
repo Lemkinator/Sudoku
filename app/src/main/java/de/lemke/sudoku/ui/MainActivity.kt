@@ -369,7 +369,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-private fun DialogStatisticsFilterBinding.initFilterDialog(settings: UserSettings) {
+internal fun DialogStatisticsFilterBinding.initFilterDialog(settings: UserSettings) {
     filterNormal.isChecked = settings.filterFlags and TYPE_NORMAL != 0 || settings.filterFlags and TYPE_ALL != 0
     filterDaily.isChecked = settings.filterFlags and TYPE_DAILY != 0 || settings.filterFlags and TYPE_ALL != 0
     filterLevel.isChecked = settings.filterFlags and TYPE_LEVEL != 0 || settings.filterFlags and TYPE_ALL != 0
@@ -385,7 +385,7 @@ private fun DialogStatisticsFilterBinding.initFilterDialog(settings: UserSetting
         settings.filterFlags and DIFFICULTY_EXPERT != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
 }
 
-private fun updateFilterSettings(
+internal fun updateFilterSettings(
     dialogBinding: DialogStatisticsFilterBinding,
     settings: UserSettings,
 ) {
@@ -415,7 +415,7 @@ private fun updateFilterSettings(
     settings.filterFlags = typeFlags or sizeFlags or difficultyFlags
 }
 
-private fun combineFlags(
+internal fun combineFlags(
     vararg entries: Pair<Boolean, Int>,
     allFlag: Int,
 ): Int {
