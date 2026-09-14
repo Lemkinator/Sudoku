@@ -38,6 +38,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -190,6 +191,12 @@ class DailySudokuActivityMenuTest {
             activity.onOptionsItemSelected(RoboMenuItem(-12345)).shouldBeFalse()
         }
 
+    @Test
+    fun `onPrepareOptionsMenu is a no-op when the framework passes a null menu`() =
+        launch { activity ->
+            activity.onPrepareOptionsMenu(null)
+        }
+
     // endregion
 
     // region recycler click wiring
@@ -209,6 +216,14 @@ class DailySudokuActivityMenuTest {
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
             started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+        }
+
+    @Test
+    fun `clicking a separator item does not start anything`() =
+        launch { activity ->
+            val holder = activity.sudokuListAdapter.onCreateViewHolder(activity.binding.dailySudokuRecycler, SeparatorItem.VIEW_TYPE)
+            activity.sudokuListAdapter.onClickItem?.invoke(0, SeparatorItem("label"), holder)
+            shadowOf(activity).nextStartedActivity.shouldBe(null)
         }
 
     // endregion

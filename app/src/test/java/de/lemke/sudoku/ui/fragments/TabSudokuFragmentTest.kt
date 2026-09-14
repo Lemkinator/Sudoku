@@ -36,6 +36,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -102,6 +103,9 @@ class TabSudokuFragmentTest {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
+    @Inject
+    lateinit var getAllSudokus: GetAllSudokusUseCase
+
     @Before
     fun setup() {
         hiltRule.inject()
@@ -150,6 +154,14 @@ class TabSudokuFragmentTest {
 
     private fun click(view: View) {
         SystemClock.sleep(601L)
+        view.performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+    }
+
+    /** Two clicks with no gap in between: the second falls inside `onSingleClick`'s debounce window and is dropped. */
+    private fun doubleClick(view: View) {
+        SystemClock.sleep(601L)
+        view.performClick()
         view.performClick()
         shadowOf(Looper.getMainLooper()).idle()
     }
@@ -260,4 +272,80 @@ class TabSudokuFragmentTest {
                 .shouldBeFalse()
         }
     }
+
+    @Test
+    fun `onResume shows the daily-available button when today's daily sudoku is unfinished`() {
+        runBlocking { saveSudoku(formulaicSudoku(modeLevel = MODE_DAILY, allCorrect = false)) }
+        launch { fragment ->
+            fragment
+                .requireView()
+                .findViewById<View>(R.id.dailyButton)
+                .isVisible
+                .shouldBeFalse()
+            fragment
+                .requireView()
+                .findViewById<View>(R.id.dailyAvailableButton)
+                .isVisible
+                .shouldBeTrue()
+        }
+    }
+
+    @Test
+    fun `double-clicking newGameButton is debounced to a single game`() =
+        launch { fragment ->
+            doubleClick(fragment.requireView().findViewById(R.id.newGameButton))
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+            runBlocking { getAllSudokus() }.size shouldBe 1
+        }
+
+    @Test
+    fun `double-clicking dailyButton is debounced to a single navigation`() =
+        launch { fragment ->
+            doubleClick(fragment.requireView().findViewById(R.id.dailyButton))
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+        }
+
+    @Test
+    fun `double-clicking dailyAvailableButton is debounced to a single navigation`() =
+        launch { fragment ->
+            doubleClick(fragment.requireView().findViewById(R.id.dailyAvailableButton))
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+        }
+
+    @Test
+    fun `double-clicking levelsButton is debounced to a single navigation`() =
+        launch { fragment ->
+            doubleClick(fragment.requireView().findViewById(R.id.levelsButton))
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+        }
+
+    @Test
+    fun `double-clicking continueGameButton is debounced to a single navigation`() {
+        runBlocking { saveSudoku(formulaicSudoku()) }
+        launch { fragment ->
+            doubleClick(fragment.requireView().findViewById(R.id.continueGameButton))
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+        }
+    }
+
+    @Test
+    fun `newGameButton with the size seekbar at its minimum creates a 4x4 sudoku`() =
+        launch { fragment ->
+            fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 0
+            click(fragment.requireView().findViewById(R.id.newGameButton))
+            runBlocking { getAllSudokus() }.single().size shouldBe Sudoku.SIZE_4X4
+        }
+
+    @Test
+    fun `newGameButton with the size seekbar at its maximum creates a 16x16 sudoku`() =
+        launch { fragment ->
+            fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 2
+            click(fragment.requireView().findViewById(R.id.newGameButton))
+            runBlocking { getAllSudokus() }.single().size shouldBe Sudoku.SIZE_16X16
+        }
 }

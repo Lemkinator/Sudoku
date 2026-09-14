@@ -34,6 +34,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -42,6 +43,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
@@ -124,6 +126,9 @@ class TabHistoryActionModeTest {
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
+
+    @Inject
+    lateinit var userSettings: UserSettings
 
     @Before
     fun setup() {
@@ -324,6 +329,38 @@ class TabHistoryActionModeTest {
                 drawerLayout.isActionMode.shouldBeTrue()
                 fragment.sudokuListAdapter.getSelectedIds() shouldBe setOf(selectedId)
             }
+        }
+    }
+
+    @Test
+    fun `onSaveInstanceState returns early when only the drawer layout was never assigned`() {
+        launch { fragment ->
+            val drawerLayoutField = TabHistory::class.java.getDeclaredField("drawerLayout").apply { isAccessible = true }
+            drawerLayoutField.set(fragment, null)
+
+            fragment.onSaveInstanceState(Bundle())
+        }
+    }
+
+    @Test
+    fun `clicking a separator item outside action mode does not open or select anything`() {
+        val sudoku = historySudoku()
+        runBlocking { saveSudoku(sudoku) }
+        launch { fragment ->
+            val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SeparatorItem.VIEW_TYPE)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SeparatorItem("label"), holder)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            fragment.sudokuListAdapter.getSelectedIds().shouldBeEmpty()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+        }
+    }
+
+    @Test
+    fun `the history list keeps a zero error limit without flagging the adapter as out of sync`() {
+        userSettings.errorLimit = 0
+        launch { fragment ->
+            fragment.sudokuListAdapter.errorLimit shouldBe 0
         }
     }
 }

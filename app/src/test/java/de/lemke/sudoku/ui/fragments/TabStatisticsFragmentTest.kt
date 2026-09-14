@@ -40,6 +40,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.ui.MainActivity
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -120,6 +121,16 @@ class TabStatisticsFragmentTest {
         )
     }
 
+    private fun startedSudoku(): Sudoku {
+        val size = 4
+        return Sudoku.create(
+            size = size,
+            difficulty = Difficulty.VERY_EASY,
+            modeLevel = MODE_NORMAL,
+            fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = 1) },
+        )
+    }
+
     private fun launch(block: (TabStatistics) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(2) }
@@ -152,6 +163,19 @@ class TabStatisticsFragmentTest {
             bestTime.second.shouldContain("02:00:00")
             val totalTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.total_time_played) }
             totalTime.second.shouldContain("2h 0m")
+        }
+    }
+
+    @Test
+    fun `an unfinished game populates most-started stats but leaves most-won at the placeholder`() {
+        runBlocking { saveSudoku(startedSudoku()) }
+        launch { fragment ->
+            fragment.statisticsList
+                .filter { it.first == fragment.getString(de.lemke.sudoku.R.string.most_games_started) }
+                .forEach { it.second shouldNotBe "-" }
+            fragment.statisticsList
+                .filter { it.first == fragment.getString(de.lemke.sudoku.R.string.most_games_won) }
+                .forEach { it.second shouldBe "-" }
         }
     }
 }

@@ -21,6 +21,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.os.Looper
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -28,6 +29,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -373,5 +377,107 @@ class SudokuListAdapterTest {
         adapter.submitListAndAwait(listOf(otherSeparator))
 
         adapter.currentList shouldBe listOf(otherSeparator)
+    }
+
+    /**
+     * Reflectively retrieves the private `diffCallback` held by [SudokuListAdapter]'s companion object.
+     * `submitList`'s real `DiffUtil` pass only ever calls `areContentsTheSame` for pairs `areItemsTheSame` already
+     * matched, so a same-type/different-type or separator/separator combination that should fall to `else` is
+     * otherwise unreachable through the public API.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun diffCallback(): DiffUtil.ItemCallback<SudokuListItem> {
+        // A private companion `val` referenced from the enclosing class's own superclass constructor call
+        // (`diffCallback = diffCallback` above) gets its backing field placed as a static field directly on
+        // SudokuListAdapter itself, not on the nested Companion class.
+        val field = SudokuListAdapter::class.java.getDeclaredField("diffCallback").apply { isAccessible = true }
+        return field.get(null) as DiffUtil.ItemCallback<SudokuListItem>
+    }
+
+    @Test
+    fun `diffCallback matches separators by stable id independently of sudoku items`() {
+        val callback = diffCallback()
+        val separatorA = SeparatorItem("A")
+        val separatorASame = SeparatorItem("A")
+        val separatorB = SeparatorItem("B")
+
+        callback.areItemsTheSame(separatorA, separatorASame) shouldBe true
+        callback.areItemsTheSame(separatorA, separatorB) shouldBe false
+        callback.areContentsTheSame(separatorA, separatorASame) shouldBe true
+        callback.areContentsTheSame(separatorA, separatorB) shouldBe false
+    }
+
+    @Test
+    fun `diffCallback falls through to else for a sudoku item and separator pair`() {
+        val callback = diffCallback()
+        val sudokuItem = SudokuItem(sudokuFixture(), "A")
+        val separator = SeparatorItem("A")
+
+        callback.areItemsTheSame(sudokuItem, separator) shouldBe false
+        callback.areItemsTheSame(separator, sudokuItem) shouldBe false
+        callback.areContentsTheSame(sudokuItem, separator) shouldBe false
+        callback.areContentsTheSame(separator, sudokuItem) shouldBe false
+    }
+
+    /** Attaches [adapter] to a real, laid-out [RecyclerView] so its bound `ViewHolder`s have a resolved adapter position. */
+    private fun layoutRecyclerViewWith(adapter: SudokuListAdapter): RecyclerView {
+        val recyclerView =
+            RecyclerView(context).apply {
+                layoutManager = LinearLayoutManager(context)
+                this.adapter = adapter
+            }
+        context.setContentView(recyclerView)
+        shadowOf(Looper.getMainLooper()).idle()
+        recyclerView.measure(
+            View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY),
+        )
+        recyclerView.layout(0, 0, 1080, 1920)
+        shadowOf(Looper.getMainLooper()).idle()
+        return recyclerView
+    }
+
+    @Test
+    fun `the click listener wired in onCreateViewHolder reports the bound position`() {
+        val sudoku = sudokuFixture()
+        val item = SudokuItem(sudoku, "A")
+        val adapter = buildAdapter()
+        adapter.submitList(listOf(item))
+        var clicked: Pair<Int, SudokuListItem>? = null
+        adapter.onClickItem = { position, listItem, _ -> clicked = position to listItem }
+
+        val recyclerView = layoutRecyclerViewWith(adapter)
+        val holder = recyclerView.findViewHolderForAdapterPosition(0).shouldNotBeNull()
+        holder.itemView.performClick()
+
+        clicked shouldBe (0 to item)
+    }
+
+    @Test
+    fun `the long-click listener wired in onCreateViewHolder invokes onLongClickItem and consumes the event`() {
+        val sudoku = sudokuFixture()
+        val item = SudokuItem(sudoku, "A")
+        val adapter = buildAdapter()
+        adapter.submitList(listOf(item))
+        var longClicked = false
+        adapter.onLongClickItem = { longClicked = true }
+
+        val recyclerView = layoutRecyclerViewWith(adapter)
+        val holder = recyclerView.findViewHolderForAdapterPosition(0).shouldNotBeNull()
+        holder.itemView.performLongClick().shouldBeTrue()
+
+        longClicked.shouldBeTrue()
+    }
+
+    @Test
+    fun `a SELECTION_MODE payload on a separator holder is a no-op instead of crashing`() {
+        val separatorItem = SeparatorItem("Sep")
+        val adapter = buildAdapter()
+        adapter.submitList(listOf(separatorItem))
+        val holder = adapter.onCreateViewHolder(FrameLayout(context), SeparatorItem.VIEW_TYPE)
+
+        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
+
+        holder.selectableLayout shouldBe null
     }
 }

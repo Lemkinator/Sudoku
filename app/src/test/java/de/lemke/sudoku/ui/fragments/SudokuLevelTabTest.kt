@@ -36,9 +36,11 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -104,10 +106,12 @@ class SudokuLevelTabTest {
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             shadowOf(Looper.getMainLooper()).idle()
             scenario.onActivity { activity ->
+                // offscreenPageLimit = 2 makes ViewPager2 eagerly create all 3 size tabs' fragments, so
+                // .first() alone doesn't reliably mean "the 4x4 tab" - match it by its own declared size.
                 val fragment =
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<SudokuLevelTab>()
-                        .first()
+                        .first { it.arguments?.getInt("size") == SIZE_4X4 }
                 block(fragment)
             }
         }
@@ -188,4 +192,35 @@ class SudokuLevelTabTest {
             started.component?.className shouldBe SudokuActivity::class.java.name
         }
     }
+
+    @Test
+    fun `clicking an existing level at position 0 starts it without confirming a next level`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            fragment.viewModel.state.value.hasNextLevelToStart
+                .shouldBeFalse()
+            val level =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+
+            clickItem(fragment, 0, level)
+
+            val started = shadowOf(fragment.requireActivity()).nextStartedActivity
+            started.shouldNotBeNull()
+            started.component?.className shouldBe SudokuActivity::class.java.name
+        }
+    }
+
+    @Test
+    fun `clicking a separator in the level list does not start anything`() =
+        launch { fragment ->
+            val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuLevelsRecycler, SeparatorItem.VIEW_TYPE)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SeparatorItem("label"), holder)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+        }
 }
