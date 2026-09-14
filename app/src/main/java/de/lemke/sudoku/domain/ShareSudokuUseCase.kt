@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.domain
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
@@ -36,7 +35,6 @@ class ShareSudokuUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
-    @SuppressLint("Recycle")
     suspend operator fun invoke(sudoku: Sudoku): Uri =
         withContext(ioDispatcher) {
             val fileName = "Sudoku (${sudoku.sizeString} ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"

@@ -24,6 +24,8 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
+private const val PERCENT_SCALE = 100
+
 class CalculateStatisticsUseCase @Inject constructor(
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
@@ -85,7 +87,7 @@ class CalculateStatisticsUseCase @Inject constructor(
     private fun winRate(
         n: Int,
         c: Int,
-    ): Int = if (n == 0) 0 else (c.toFloat() / n * 100).roundToInt()
+    ): Int = if (n == 0) 0 else (c.toFloat() / n * PERCENT_SCALE).roundToInt()
 
     private fun average(
         completed: List<Sudoku>,

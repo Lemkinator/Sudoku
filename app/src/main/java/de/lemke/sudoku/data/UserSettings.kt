@@ -28,6 +28,8 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
+private const val DEFAULT_DAILY_NOTIFICATION_HOUR = 9
+
 /** Sudoku-specific settings, layered on top of common-utils [SettingsRepository]. */
 class UserSettings(
     preferences: SharedPreferences,
@@ -46,7 +48,7 @@ class UserSettings(
     var filterFlags: Int by preferences.delegates.int(TYPE_ALL or SIZE_ALL or DIFFICULTY_ALL)
     var dailyShowUncompleted: Boolean by preferences.delegates.boolean(true)
     var dailySudokuNotificationEnabled: Boolean by preferences.delegates.boolean(true)
-    var dailySudokuNotificationHour: Int by preferences.delegates.int(9)
+    var dailySudokuNotificationHour: Int by preferences.delegates.int(DEFAULT_DAILY_NOTIFICATION_HOUR)
     var dailySudokuNotificationMinute: Int by preferences.delegates.int(0)
     var currentLevelTab: Int by preferences.delegates.int(1)
 

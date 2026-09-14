@@ -39,13 +39,11 @@ class SendDailyNotificationUseCase @Inject constructor(
     private val userSettings: UserSettings,
 ) {
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
-    private val notificationId = 5
-    private val dailySudokuNotificationRequestCode = 55
 
     operator fun invoke() {
         createNotificationChannel()
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            NotificationManagerCompat.from(context).notify(notificationId, createNotificationBuilder().build())
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, createNotificationBuilder().build())
         }
     }
 
@@ -109,8 +107,13 @@ class SendDailyNotificationUseCase @Inject constructor(
     private fun createAlarmIntent(): PendingIntent =
         PendingIntent.getBroadcast(
             context.applicationContext,
-            dailySudokuNotificationRequestCode,
+            DAILY_SUDOKU_NOTIFICATION_REQUEST_CODE,
             Intent(context.applicationContext, AlarmReceiver::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+    private companion object {
+        const val NOTIFICATION_ID = 5
+        const val DAILY_SUDOKU_NOTIFICATION_REQUEST_CODE = 55
+    }
 }
