@@ -79,6 +79,17 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromDb(null).shouldBeNull()
         }
 
+        should("sudokuFromDb filters out a raw field with a null solution before checking the count") {
+            val sudoku = sudoku()
+            val fields =
+                sudoku.fields
+                    .map { fieldToDb(it, sudoku.id) }
+                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
+            val sudokuWithFields = SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)
+
+            sudokuFromDb(sudokuWithFields).shouldBeNull()
+        }
+
         should("sudokuFromDb round-trips a valid sudoku") {
             val sudoku = sudoku()
             val sudokuWithFields = SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = sudoku.fields.map { fieldToDb(it, sudoku.id) })

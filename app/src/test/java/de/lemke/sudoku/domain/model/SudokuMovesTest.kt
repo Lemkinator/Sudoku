@@ -69,6 +69,7 @@ private class MoveRecordingGameListener : GameListener {
     val fieldChanged = mutableListOf<Position>()
     val completed = mutableListOf<Position>()
     var errorCount = 0
+    var timeChangedCount = 0
 
     override fun onFieldClicked(position: Position) = Unit
 
@@ -84,7 +85,20 @@ private class MoveRecordingGameListener : GameListener {
         errorCount++
     }
 
-    override fun onTimeChanged() = Unit
+    override fun onTimeChanged() {
+        timeChangedCount++
+    }
+}
+
+private fun awaitUntil(
+    timeoutMillis: Long = 2000,
+    condition: () -> Boolean,
+) {
+    val deadline = System.currentTimeMillis() + timeoutMillis
+    while (System.currentTimeMillis() < deadline) {
+        if (condition()) return
+        Thread.sleep(10)
+    }
 }
 
 class SudokuMovesTest : ShouldSpec(
@@ -202,6 +216,16 @@ class SudokuMovesTest : ShouldSpec(
             val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 2)))
 
             sudoku.move(0, 2) shouldBe false
+            sudoku.timer?.cancel()
+        }
+
+        should("overwrite an existing incorrect value with a different one") {
+            val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 2)))
+
+            val result = sudoku.move(0, 3)
+
+            result shouldBe true
+            sudoku[0].value shouldBe 3
             sudoku.timer?.cancel()
         }
 
@@ -402,6 +426,32 @@ class SudokuMovesTest : ShouldSpec(
 
             sudoku.timer shouldNotBe null
             sudoku.timer shouldNotBe oldTimer
+            sudoku.timer?.cancel()
+        }
+
+        should("tick the running timer, incrementing seconds and notifying the listener") {
+            val listener = MoveRecordingGameListener()
+            val sudoku = runningSudoku(gameListener = listener)
+            sudoku.timer?.cancel()
+            val secondsBefore = sudoku.seconds
+
+            sudoku.startTimer(delay = 0L)
+            awaitUntil { sudoku.seconds > secondsBefore }
+
+            sudoku.seconds shouldNotBe secondsBefore
+            listener.timeChangedCount shouldNotBe 0
+            sudoku.timer?.cancel()
+        }
+
+        should("tick the running timer without a listener to notify") {
+            val sudoku = runningSudoku()
+            sudoku.timer?.cancel()
+            val secondsBefore = sudoku.seconds
+
+            sudoku.startTimer(delay = 0L)
+            awaitUntil { sudoku.seconds > secondsBefore }
+
+            sudoku.seconds shouldNotBe secondsBefore
             sudoku.timer?.cancel()
         }
 

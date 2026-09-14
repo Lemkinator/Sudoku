@@ -23,6 +23,7 @@ import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.sqlite.execSQL
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -106,6 +107,25 @@ class AppDatabaseMigrationTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, TEST_DB).addMigrations(MIGRATION_1_2).build()
         runBlocking { realDatabase.sudokuDao().getMaxSudokuLevel(4) }.shouldBeNull()
+        realDatabase.close()
+    }
+
+    @Test
+    fun `opening a v1 database file stamped as v2 without migrating fails real schema validation`() {
+        // Bumps the on-disk user_version to 2 without ever running MIGRATION_1_2, so the real generated
+        // onValidateSchema (AppDatabase_Impl$createOpenDelegate$_openDelegate$1) runs against the untouched v1
+        // schema, finds a genuine column mismatch, and returns an invalid ValidationResult for real (rather than
+        // the always-matching schema every other test in this suite produces via a correct migration).
+        helper.createDatabase(1).apply {
+            execSQL("PRAGMA user_version = 2")
+            close()
+        }
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, TEST_DB).build()
+        shouldThrow<IllegalStateException> {
+            runBlocking { realDatabase.sudokuDao().getMaxSudokuLevel(4) }
+        }
         realDatabase.close()
     }
 }

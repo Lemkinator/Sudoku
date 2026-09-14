@@ -99,6 +99,13 @@ class PositionTest : ShouldSpec(
             (position.equals("not a position")) shouldBe false
         }
 
+        should("not equal null") {
+            val position = Position.create(5, 9)
+            val other: Any? = null
+
+            position.equals(other) shouldBe false
+        }
+
         should("equal itself") {
             val position = Position.create(5, 9)
 

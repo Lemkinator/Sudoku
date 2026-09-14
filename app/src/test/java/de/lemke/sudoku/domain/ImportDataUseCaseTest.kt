@@ -39,12 +39,14 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import io.kjson.stringifyJSON
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.File
 import java.time.LocalDateTime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -169,6 +171,20 @@ class ImportDataUseCaseTest {
     }
 
     @Test
+    fun `shows the invalid-file error when the resolved document has no readable mime type`() {
+        // DocumentsContractApi19.canRead() (androidx.documentfile 1.1.0) returns false once the raw MIME type is
+        // empty, before the compound condition ever reaches the "application/json" comparison - a null mime type
+        // from the provider is the only fixture that reaches canRead()'s false branch instead of the type mismatch.
+        val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
+        val uri = registerDocument("import.nomime", json, mimeType = null)
+
+        runTest { useCase(uri) }
+
+        coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+        resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_file)
+    }
+
+    @Test
     fun `logs and reports failure instead of crashing when saving an imported sudoku throws`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
@@ -177,6 +193,15 @@ class ImportDataUseCaseTest {
         runTest { useCase(uri) }
 
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
+    }
+
+    @Test
+    fun `rethrows a CancellationException from saving instead of reporting it as a failed import`() {
+        val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
+        val uri = registerDocument("import.cancelled", json)
+        coEvery { sudokusRepository.saveSudoku(any(), any()) } throws CancellationException()
+
+        shouldThrow<CancellationException> { runTest { useCase(uri) } }
     }
 
     @Test

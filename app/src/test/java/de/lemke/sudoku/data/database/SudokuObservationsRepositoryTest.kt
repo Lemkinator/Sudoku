@@ -130,4 +130,29 @@ class SudokuObservationsRepositoryTest {
                 awaitItem().single().isDailySudoku shouldBe true
             }
         }
+
+    @Test
+    fun `sudokuObserveDao observeAll round-trips a raw field row with a null solution`() =
+        runTest {
+            // sudokuFromDb would drop a sudoku with a null-solution field entirely (field-count mismatch), so this
+            // goes through SudokuObserveDao directly to reach the generated relation-fetch code that reads the raw
+            // (nullable) solution column, rather than through the repository's domain-mapped Flow.
+            val sudoku = sudoku(size = 4)
+            val fields =
+                sudoku.fields
+                    .map { fieldToDb(it, sudoku.id) }
+                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
+
+            database.sudokuObserveDao().observeAll().test {
+                awaitItem().shouldBeEmpty()
+
+                database.sudokuDao().insert(sudokuToDb(sudoku), fields)
+
+                awaitItem()
+                    .single()
+                    .fields
+                    .single { it.index == 0 }
+                    .solution shouldBe null
+            }
+        }
 }

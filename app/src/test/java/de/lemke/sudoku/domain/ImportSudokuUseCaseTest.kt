@@ -25,13 +25,16 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.stringifyJSON
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.File
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -123,5 +126,15 @@ class ImportSudokuUseCaseTest {
             useCase(uri).shouldBeNull()
 
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
+    fun `rethrows a CancellationException instead of swallowing it as a failed import`() =
+        runTest {
+            val sudoku = testSudoku()
+            val uri = uriFor(sudokuToExport(sudoku).stringifyJSON())
+            coEvery { saveSudoku(any(), any()) } throws CancellationException()
+
+            shouldThrow<CancellationException> { useCase(uri) }
         }
 }

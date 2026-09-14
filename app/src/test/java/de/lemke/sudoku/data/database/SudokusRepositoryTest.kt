@@ -276,4 +276,22 @@ class SudokusRepositoryTest {
 
             database.sudokuDao().getAll() shouldHaveSize 2
         }
+
+    @Test
+    fun `sudokuDao insert and getAll round-trip a raw field row with a null solution`() =
+        runTest {
+            // The domain layer (Field.solution: Int) never writes a null solution, but the field table's column is
+            // nullable at the DAO/DB layer, and the generated DAO reads it back via an explicit null check, so this
+            // goes through SudokuDao directly rather than through the repository/domain mapping.
+            val sudoku = sudoku(size = 4)
+            val fields =
+                sudoku.fields
+                    .map { fieldToDb(it, sudoku.id) }
+                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
+            database.sudokuDao().insert(sudokuToDb(sudoku), fields)
+
+            val fetched = database.sudokuDao().getAll().single()
+
+            fetched.fields.single { it.index == 0 }.solution shouldBe null
+        }
 }

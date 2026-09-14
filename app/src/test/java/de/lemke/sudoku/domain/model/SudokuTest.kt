@@ -112,6 +112,25 @@ class SudokuTest : ShouldSpec(
             (sudoku.equals("not a sudoku")) shouldBe false
         }
 
+        should("never equal null") {
+            val sudoku = fourByFourSudoku()
+            val other: Any? = null
+
+            sudoku.equals(other) shouldBe false
+        }
+
+        should("fall back to the default hint limit for a board size without a dedicated entry") {
+            val sudoku =
+                Sudoku.create(
+                    size = 5,
+                    difficulty = Difficulty.VERY_EASY,
+                    modeLevel = Sudoku.MODE_NORMAL,
+                    fields = MutableList(25) { index -> Field(position = Position.create(index, 5), solution = index % 5 + 1) },
+                )
+
+            sudoku.availableHints shouldBe 3
+        }
+
         should("generate unique ids") {
             val first = SudokuId.generate()
             val second = SudokuId.generate()
