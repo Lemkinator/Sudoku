@@ -102,10 +102,22 @@ class IntroActivityAnimationTest {
 
     private fun idle(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
 
+    /**
+     * Advancing the paused main looper's clock in several smaller steps (instead of one big
+     * `idleFor`) is what actually drains a chain of sequential `delay()` calls inside a single loop
+     * iteration (`delay(); work; delay(); work; ...`) — a single large `idleFor` call only ever
+     * resolves the *first* pending delay, leaving the rest of that iteration's body never entered,
+     * even though the total duration comfortably covers all of them.
+     */
+    private fun idleRepeated(
+        times: Int,
+        millisEach: Long,
+    ) = repeat(times) { idle(millisEach) }
+
     @Test
-    fun `step 0's row-column-block loop runs at least one full highlight cycle`() =
+    fun `step 0's row-column-block loop runs a full block-row-column highlight cycle`() =
         launch { activity ->
-            idle(4200)
+            idleRepeated(5, 1000)
             activity.introStep shouldBe 0
             activity.nextIntroStep()
             activity.introStep shouldBe 1
@@ -117,7 +129,7 @@ class IntroActivityAnimationTest {
             activity.nextIntroStep()
             activity.nextIntroStep()
             activity.introStep shouldBe 2
-            idle(4000)
+            idleRepeated(5, 800)
             activity.select(DEMO_CELL_INDEX_4)
             activity.introStep shouldBe 3
         }
@@ -131,7 +143,7 @@ class IntroActivityAnimationTest {
             activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
             activity.select(activity.sudoku.itemCount + 1)
             activity.introStep shouldBe 5
-            idle(4000)
+            idleRepeated(5, 800)
             activity.select(DEMO_CELL_INDEX_49)
             activity.introStep shouldBe 6
         }
@@ -146,7 +158,7 @@ class IntroActivityAnimationTest {
             activity.select(activity.sudoku.itemCount + 1)
             activity.select(DEMO_CELL_INDEX_49)
             activity.introStep shouldBe 6
-            idle(4000)
+            idleRepeated(5, 800)
             activity.select(DEMO_CELL_INDEX_24)
             activity.introStep shouldBe 7
         }
@@ -184,7 +196,7 @@ class IntroActivityAnimationTest {
             activity.select(DEMO_CELL_INDEX_24)
             activity.nextIntroStep()
             activity.introStep shouldBe 8
-            idle(9500)
+            idleRepeated(8, 1200)
             activity.nextIntroStep()
             activity.introStep shouldBe 9
         }
