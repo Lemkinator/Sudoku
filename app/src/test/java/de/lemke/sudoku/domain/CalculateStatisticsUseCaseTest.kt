@@ -136,5 +136,45 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
             stats.mostHints shouldBe 4
             stats.mostNotes shouldBe 9
         }
+
+        should("break a tie between equally-started sizes by first appearance") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = false, size = 9),
+                    testSudoku(completed = false, size = 4),
+                    testSudoku(completed = false, size = 9),
+                    testSudoku(completed = false, size = 4),
+                )
+
+            useCase(sudokus).mostGamesStartedSize shouldBe 9
+        }
+
+        should("report null won-difficulty/won-size while still reporting started ones when nothing is completed") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = false, difficulty = EASY, size = 9),
+                    testSudoku(completed = false, difficulty = MEDIUM, size = 16),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostGamesWonDifficulty shouldBe null
+            stats.mostGamesWonSize shouldBe null
+            stats.mostGamesStartedDifficulty shouldBe EASY
+            stats.mostGamesStartedSize shouldBe 9
+        }
+
+        should("break a tie between equally-won difficulties and sizes by first appearance") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = true, difficulty = EASY, size = 9),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 4),
+                    testSudoku(completed = true, difficulty = EASY, size = 9),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 4),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostGamesWonDifficulty shouldBe EASY
+            stats.mostGamesWonSize shouldBe 9
+        }
     },
 )

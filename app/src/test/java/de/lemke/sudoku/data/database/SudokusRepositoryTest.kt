@@ -194,6 +194,32 @@ class SudokusRepositoryTest {
         }
 
     @Test
+    fun `saveSudoku does not delete the daily sudoku being updated`() =
+        runTest {
+            val daily = sudoku(modeLevel = Sudoku.MODE_DAILY)
+            repository.saveSudoku(daily)
+
+            repository.saveSudoku(daily)
+
+            val all = repository.getAllSudokus()
+            all shouldHaveSize 1
+            all.single().id shouldBe daily.id
+        }
+
+    @Test
+    fun `saveSudoku does not delete the level sudoku being updated`() =
+        runTest {
+            val level = sudoku(size = 4, modeLevel = 3)
+            repository.saveSudoku(level)
+
+            repository.saveSudoku(level)
+
+            val all = repository.getAllSudokus()
+            all shouldHaveSize 1
+            all.single().id shouldBe level.id
+        }
+
+    @Test
     fun `saveSudoku with onlyUpdate true skips the level dedup even for a matching level`() =
         runTest {
             val first = sudoku(size = 4, modeLevel = 3)

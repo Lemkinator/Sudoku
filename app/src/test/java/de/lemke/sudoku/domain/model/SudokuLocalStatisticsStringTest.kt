@@ -30,12 +30,14 @@ import org.robolectric.annotation.Config
 private fun statisticsSudoku(
     modeLevel: Int,
     completed: Boolean = false,
+    numberHighlightingUsed: Boolean = false,
 ): Sudoku {
     val created = LocalDateTime.of(2024, 1, 1, 12, 0)
     return Sudoku.create(
         size = 4,
         difficulty = Difficulty.EASY,
         modeLevel = modeLevel,
+        numberHighlightingUsed = numberHighlightingUsed,
         errorsMade = 2,
         hintsUsed = 1,
         notesMade = 3,
@@ -84,6 +86,15 @@ class SudokuLocalStatisticsStringTest {
         val text = sudoku.getLocalStatisticsString(context.resources)
 
         text.contains("${context.resources.getString(R.string.level)} 5") shouldBe true
+    }
+
+    @Test
+    fun `getLocalStatisticsString reports number highlighting used`() {
+        val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_NORMAL, numberHighlightingUsed = true)
+
+        val text = sudoku.getLocalStatisticsString(context.resources)
+
+        text.contains(context.resources.getString(R.string.commonutils_yes)) shouldBe true
     }
 
     @Test

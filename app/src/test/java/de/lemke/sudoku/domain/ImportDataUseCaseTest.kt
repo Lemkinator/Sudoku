@@ -169,6 +169,17 @@ class ImportDataUseCaseTest {
     }
 
     @Test
+    fun `logs and reports failure instead of crashing when saving an imported sudoku throws`() {
+        val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
+        val uri = registerDocument("import.savefails", json)
+        coEvery { sudokusRepository.saveSudoku(any(), any()) } throws RuntimeException("boom")
+
+        runTest { useCase(uri) }
+
+        resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
+    }
+
+    @Test
     fun `shows the invalid-file error when the document does not exist`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.missing", json, exists = false)

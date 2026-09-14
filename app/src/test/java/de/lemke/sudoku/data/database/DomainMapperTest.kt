@@ -50,6 +50,10 @@ class DomainMapperTest : ShouldSpec(
             fieldFromDb(fieldDb.copy(solution = null)).shouldBeNull()
         }
 
+        should("fieldFromDb returns null for a null input") {
+            fieldFromDb(null).shouldBeNull()
+        }
+
         should("fieldFromDb round-trips notes as a char list") {
             val sudoku = sudoku()
             val fieldDb = fieldToDb(sudoku[0], sudoku.id)
@@ -89,6 +93,24 @@ class DomainMapperTest : ShouldSpec(
         should("fieldFromExport returns null when the stored solution is null") {
             val export = fieldToExport(sudoku()[0])
             fieldFromExport(export.copy(solution = null), size = 4).shouldBeNull()
+        }
+
+        should("fieldFromExport defaults notes to empty when absent") {
+            val export = FieldExport(index = 0, solution = 1, notes = null)
+
+            val field = fieldFromExport(export, size = 4)
+
+            field.shouldNotBeNull()
+            field.notes shouldBe mutableListOf()
+        }
+
+        should("fieldFromExport restores notes characters when present") {
+            val export = FieldExport(index = 0, solution = 1, notes = "12")
+
+            val field = fieldFromExport(export, size = 4)
+
+            field.shouldNotBeNull()
+            field.notes shouldBe mutableListOf('1', '2')
         }
 
         should("fieldToExport blanks out false flags and empty notes to null") {

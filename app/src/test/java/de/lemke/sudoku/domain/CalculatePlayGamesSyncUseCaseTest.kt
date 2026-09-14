@@ -146,5 +146,24 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
             sync.leaderboardScores.map { it.first } shouldNotContain R.string.leaderboard_time_99_hard
             sync.achievementUnlocks shouldContain R.string.achievement_first_win
         }
+
+        should("not unlock the no-hints achievement when a hint was used") {
+            val sudoku = testSudoku(hintsUsed = 1)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            useCase(sudoku).achievementUnlocks shouldNotContain R.string.achievement_no_hints
+        }
+
+        should("count only sudokus matching size, and matching both size and difficulty, for their respective win totals") {
+            val sudoku = testSudoku(size = 9, difficulty = HARD, seconds = 42)
+            val sameSizeDifferentDifficulty = testSudoku(size = 9, difficulty = VERY_EASY)
+            val differentSize = testSudoku(size = 4)
+            coEvery { getAllSudokus() } returns listOf(sudoku, sameSizeDifferentDifficulty, differentSize)
+
+            val scores = useCase(sudoku).leaderboardScores.toMap()
+
+            scores[R.string.leaderboard_wins_99] shouldBe 2L
+            scores[R.string.leaderboard_wins_99_hard] shouldBe 1L
+        }
     },
 )

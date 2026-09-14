@@ -163,6 +163,98 @@ class SudokuTest : ShouldSpec(
             first.contentEquals(second) shouldBe false
         }
 
+        should("contentEquals is false once eraserUsed differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { eraserUsed = true }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once isChecklist differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { isChecklist = true }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once isReverseChecklist differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { isReverseChecklist = true }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once checklistNumber differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { checklistNumber = 1 }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once hintsUsed differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { hintsUsed = 1 }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once notesMade differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { notesMade = 1 }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once errorsMade differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { errorsMade = 1 }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once created differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val sameUpdated = LocalDateTime.of(2026, 1, 1, 12, 0)
+            val first = contentEqualsBaseSudoku(id, fields, created = LocalDateTime.of(2026, 1, 1, 12, 0), updated = sameUpdated)
+            val second = contentEqualsBaseSudoku(id, fields, created = LocalDateTime.of(2026, 1, 2, 12, 0), updated = sameUpdated)
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once updated differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val sameCreated = LocalDateTime.of(2026, 1, 1, 12, 0)
+            val first = contentEqualsBaseSudoku(id, fields, created = sameCreated, updated = sameCreated)
+            val second = contentEqualsBaseSudoku(id, fields, created = sameCreated, updated = sameCreated.plusHours(1))
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("contentEquals is false once seconds differs") {
+            val id = SudokuId.generate()
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { seconds = 1 }
+
+            first.contentEquals(second) shouldBe false
+        }
+
         should("reset cancels a running timer") {
             val sudoku = fourByFourSudoku()
             sudoku.startTimer()
@@ -192,4 +284,23 @@ private fun fourByFourSudoku(
         difficulty = difficulty,
         modeLevel = Sudoku.MODE_NORMAL,
         fields = MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) },
+    )
+
+private fun sharedFieldList(): MutableList<Field> =
+    MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) }
+
+private fun contentEqualsBaseSudoku(
+    sudokuId: SudokuId,
+    fields: MutableList<Field>,
+    created: LocalDateTime = LocalDateTime.of(2026, 1, 1, 12, 0),
+    updated: LocalDateTime = created,
+): Sudoku =
+    Sudoku.create(
+        sudokuId = sudokuId,
+        size = 4,
+        difficulty = Difficulty.VERY_EASY,
+        modeLevel = Sudoku.MODE_NORMAL,
+        created = created,
+        updated = updated,
+        fields = fields,
     )

@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain.model
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import java.util.Timer
 
 // A valid 4x4 solved grid (rows, columns and 2x2 blocks each contain 1..4 exactly once).
@@ -381,6 +382,88 @@ class SudokuMovesTest : ShouldSpec(
             sudoku.completed shouldBe true
             sudoku.timer shouldBe null
             listener.completed shouldContain sudoku[5].position
+        }
+
+        should("do nothing when starting the timer on an already-completed sudoku") {
+            val sudoku = runningSudoku(fields = testFields(given = (0..15).toSet()))
+            sudoku.timer?.cancel()
+            sudoku.timer = null
+
+            sudoku.startTimer()
+
+            sudoku.timer shouldBe null
+        }
+
+        should("cancel a previously running timer before starting a new one") {
+            val sudoku = runningSudoku()
+            val oldTimer = sudoku.timer
+
+            sudoku.startTimer()
+
+            sudoku.timer shouldNotBe null
+            sudoku.timer shouldNotBe oldTimer
+            sudoku.timer?.cancel()
+        }
+
+        should("count an error without notifying when there is no listener") {
+            val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('2'))))
+
+            val result = sudoku.move(0, 2)
+
+            result shouldBe true
+            sudoku.errorsMade shouldBe 1
+            sudoku.timer?.cancel()
+        }
+
+        should("leave a neighbor's unrelated note untouched when there is no listener") {
+            val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('2'))))
+
+            val result = sudoku.move(0, 1)
+
+            result shouldBe true
+            sudoku[1].notes shouldBe mutableListOf('2')
+            sudoku.timer?.cancel()
+        }
+
+        should("clear a matching neighbor note without notifying when there is no listener") {
+            val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('1'))))
+
+            val result = sudoku.move(0, 1)
+
+            result shouldBe true
+            sudoku[1].notes shouldBe mutableListOf()
+            sudoku.timer?.cancel()
+        }
+
+        should("complete the board via a move without notifying when there is no listener") {
+            val given = (0..15).filter { it != 5 }.toSet()
+            val sudoku = runningSudoku(fields = testFields(given = given))
+
+            val result = sudoku.move(5, solutions[5])
+
+            result shouldBe true
+            sudoku.completed shouldBe true
+            sudoku.timer shouldBe null
+        }
+
+        should("set a hint value without notifying when there is no listener") {
+            val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('1'))))
+
+            sudoku.setHint(0)
+
+            sudoku.hintsUsed shouldBe 1
+            sudoku[0].value shouldBe 1
+            sudoku.timer?.cancel()
+        }
+
+        should("complete the board via a hint without notifying when there is no listener") {
+            val given = (0..15).filter { it != 5 }.toSet()
+            val sudoku = runningSudoku(fields = testFields(given = given))
+
+            sudoku.setHint(5)
+
+            sudoku.completed shouldBe true
+            sudoku.timer shouldBe null
         }
     },
 )
