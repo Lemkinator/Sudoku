@@ -24,6 +24,7 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.Typeface.NORMAL
 import android.os.Build.VERSION.SDK_INT
+import android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -117,7 +118,7 @@ class MainActivity : AppCompatActivity() {
             allowSkip = BuildConfig.FIRST_RUN_SKIPPABLE,
         ) ?: return
         prepareActivityTransformationFrom()
-        if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
+        if (SDK_INT >= UPSIDE_DOWN_CAKE) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         configureCommonUtilsSplashScreen(splashScreen, binding.root) { !isUIReady }
@@ -291,7 +292,7 @@ class MainActivity : AppCompatActivity() {
             object : OnTabSelectedListener {
                 override fun onTabSelected(tab: TabLayout.Tab) = onTabItemSelected(tab.position, tab)
 
-                override fun onTabUnselected(tab: TabLayout.Tab) {}
+                override fun onTabUnselected(tab: TabLayout.Tab) { /* no-op */ }
 
                 override fun onTabReselected(tab: TabLayout.Tab) {
                     try {
@@ -330,69 +331,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun showStatisticsFilterDialog() {
         lifecycleScope.launch {
-            val dialogBinding = DialogStatisticsFilterBinding.inflate(layoutInflater).apply { initDialog() }
+            val dialogBinding = DialogStatisticsFilterBinding.inflate(layoutInflater).apply { initFilterDialog(userSettings) }
             AlertDialog.Builder(this@MainActivity).apply {
                 setTitle(getString(R.string.statistics_filter))
                 setView(dialogBinding.root)
                 setNegativeButton(getString(designR.string.oui_des_common_cancel)) { d, _ -> d.dismiss() }
-                setPositiveButton(getString(designR.string.oui_des_common_apply)) { _, _ -> updateFilterSettings(dialogBinding) }
+                setPositiveButton(getString(designR.string.oui_des_common_apply)) { _, _ ->
+                    updateFilterSettings(dialogBinding, userSettings)
+                }
                 show()
             }
         }
-    }
-
-    private fun DialogStatisticsFilterBinding.initDialog() {
-        userSettings.let {
-            filterNormal.isChecked = it.filterFlags and TYPE_NORMAL != 0 || it.filterFlags and TYPE_ALL != 0
-            filterDaily.isChecked = it.filterFlags and TYPE_DAILY != 0 || it.filterFlags and TYPE_ALL != 0
-            filterLevel.isChecked = it.filterFlags and TYPE_LEVEL != 0 || it.filterFlags and TYPE_ALL != 0
-            filterSize4.isChecked = it.filterFlags and SIZE_4X4 != 0 || it.filterFlags and SIZE_ALL != 0
-            filterSize9.isChecked = it.filterFlags and SIZE_9X9 != 0 || it.filterFlags and SIZE_ALL != 0
-            filterSize16.isChecked = it.filterFlags and SIZE_16X16 != 0 || it.filterFlags and SIZE_ALL != 0
-            filterDifficultyVeryEasy.isChecked =
-                it.filterFlags and DIFFICULTY_VERY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-            filterDifficultyEasy.isChecked = it.filterFlags and DIFFICULTY_EASY != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-            filterDifficultyMedium.isChecked = it.filterFlags and DIFFICULTY_MEDIUM != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-            filterDifficultyHard.isChecked = it.filterFlags and DIFFICULTY_HARD != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-            filterDifficultyExpert.isChecked = it.filterFlags and DIFFICULTY_EXPERT != 0 || it.filterFlags and DIFFICULTY_ALL != 0
-        }
-    }
-
-    private fun updateFilterSettings(dialogBinding: DialogStatisticsFilterBinding) {
-        val typeFlags =
-            combineFlags(
-                dialogBinding.filterNormal.isChecked to TYPE_NORMAL,
-                dialogBinding.filterDaily.isChecked to TYPE_DAILY,
-                dialogBinding.filterLevel.isChecked to TYPE_LEVEL,
-                allFlag = TYPE_ALL,
-            )
-        val sizeFlags =
-            combineFlags(
-                dialogBinding.filterSize4.isChecked to SIZE_4X4,
-                dialogBinding.filterSize9.isChecked to SIZE_9X9,
-                dialogBinding.filterSize16.isChecked to SIZE_16X16,
-                allFlag = SIZE_ALL,
-            )
-        val difficultyFlags =
-            combineFlags(
-                dialogBinding.filterDifficultyVeryEasy.isChecked to DIFFICULTY_VERY_EASY,
-                dialogBinding.filterDifficultyEasy.isChecked to DIFFICULTY_EASY,
-                dialogBinding.filterDifficultyMedium.isChecked to DIFFICULTY_MEDIUM,
-                dialogBinding.filterDifficultyHard.isChecked to DIFFICULTY_HARD,
-                dialogBinding.filterDifficultyExpert.isChecked to DIFFICULTY_EXPERT,
-                allFlag = DIFFICULTY_ALL,
-            )
-        userSettings.filterFlags = typeFlags or sizeFlags or difficultyFlags
-    }
-
-    private fun combineFlags(
-        vararg entries: Pair<Boolean, Int>,
-        allFlag: Int,
-    ): Int {
-        var flags = 0
-        for ((isChecked, flag) in entries) if (isChecked) flags = flags or flag
-        if (entries.all { (isChecked, _) -> isChecked }) flags = flags or allFlag
-        return flags
     }
 
     private fun initFragments() {
@@ -418,4 +367,60 @@ class MainActivity : AppCompatActivity() {
         newFragment.onResume()
         invalidateOptionsMenu()
     }
+}
+
+private fun DialogStatisticsFilterBinding.initFilterDialog(settings: UserSettings) {
+    filterNormal.isChecked = settings.filterFlags and TYPE_NORMAL != 0 || settings.filterFlags and TYPE_ALL != 0
+    filterDaily.isChecked = settings.filterFlags and TYPE_DAILY != 0 || settings.filterFlags and TYPE_ALL != 0
+    filterLevel.isChecked = settings.filterFlags and TYPE_LEVEL != 0 || settings.filterFlags and TYPE_ALL != 0
+    filterSize4.isChecked = settings.filterFlags and SIZE_4X4 != 0 || settings.filterFlags and SIZE_ALL != 0
+    filterSize9.isChecked = settings.filterFlags and SIZE_9X9 != 0 || settings.filterFlags and SIZE_ALL != 0
+    filterSize16.isChecked = settings.filterFlags and SIZE_16X16 != 0 || settings.filterFlags and SIZE_ALL != 0
+    filterDifficultyVeryEasy.isChecked =
+        settings.filterFlags and DIFFICULTY_VERY_EASY != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
+    filterDifficultyEasy.isChecked = settings.filterFlags and DIFFICULTY_EASY != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
+    filterDifficultyMedium.isChecked = settings.filterFlags and DIFFICULTY_MEDIUM != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
+    filterDifficultyHard.isChecked = settings.filterFlags and DIFFICULTY_HARD != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
+    filterDifficultyExpert.isChecked =
+        settings.filterFlags and DIFFICULTY_EXPERT != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
+}
+
+private fun updateFilterSettings(
+    dialogBinding: DialogStatisticsFilterBinding,
+    settings: UserSettings,
+) {
+    val typeFlags =
+        combineFlags(
+            dialogBinding.filterNormal.isChecked to TYPE_NORMAL,
+            dialogBinding.filterDaily.isChecked to TYPE_DAILY,
+            dialogBinding.filterLevel.isChecked to TYPE_LEVEL,
+            allFlag = TYPE_ALL,
+        )
+    val sizeFlags =
+        combineFlags(
+            dialogBinding.filterSize4.isChecked to SIZE_4X4,
+            dialogBinding.filterSize9.isChecked to SIZE_9X9,
+            dialogBinding.filterSize16.isChecked to SIZE_16X16,
+            allFlag = SIZE_ALL,
+        )
+    val difficultyFlags =
+        combineFlags(
+            dialogBinding.filterDifficultyVeryEasy.isChecked to DIFFICULTY_VERY_EASY,
+            dialogBinding.filterDifficultyEasy.isChecked to DIFFICULTY_EASY,
+            dialogBinding.filterDifficultyMedium.isChecked to DIFFICULTY_MEDIUM,
+            dialogBinding.filterDifficultyHard.isChecked to DIFFICULTY_HARD,
+            dialogBinding.filterDifficultyExpert.isChecked to DIFFICULTY_EXPERT,
+            allFlag = DIFFICULTY_ALL,
+        )
+    settings.filterFlags = typeFlags or sizeFlags or difficultyFlags
+}
+
+private fun combineFlags(
+    vararg entries: Pair<Boolean, Int>,
+    allFlag: Int,
+): Int {
+    var flags = 0
+    for ((isChecked, flag) in entries) if (isChecked) flags = flags or flag
+    if (entries.all { (isChecked, _) -> isChecked }) flags = flags or allFlag
+    return flags
 }
