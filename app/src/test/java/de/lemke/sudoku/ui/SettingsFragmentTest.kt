@@ -43,6 +43,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -50,6 +51,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.time.Duration
 import javax.inject.Inject
@@ -104,6 +106,9 @@ class SettingsFragmentTest {
 
     @Inject
     lateinit var settings: SettingsRepository
+
+    @Inject
+    lateinit var userSettings: UserSettings
 
     @Before
     fun setup() {
@@ -160,6 +165,23 @@ class SettingsFragmentTest {
             val pref = fragment.pref<DropDownPreference>("errorLimit")
             pref.onPreferenceChangeListener?.onPreferenceChange(pref, "5")
             pref.summary.toString() shouldBe "5"
+        }
+
+    @Test
+    fun `errorLimit shows the no-limit summary at launch when already set to 0`() {
+        userSettings.errorLimit = 0
+        launch { fragment ->
+            fragment.pref<DropDownPreference>("errorLimit").summary.toString() shouldBe
+                fragment.getString(R.string.no_limit)
+        }
+    }
+
+    @Test
+    fun `errorLimit shows the entered text when it cannot be parsed as a number`() =
+        launch { fragment ->
+            val pref = fragment.pref<DropDownPreference>("errorLimit")
+            pref.onPreferenceChangeListener?.onPreferenceChange(pref, "abc")
+            pref.summary.toString() shouldBe "abc"
         }
 
     // endregion
@@ -231,6 +253,17 @@ class SettingsFragmentTest {
             val shadowActivity = shadowOf(fragment.requireActivity())
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent())
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+
+    @Test
+    fun `exportData's result callback ignores an OK result with a null data intent`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("exportData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val shadowActivity = shadowOf(fragment.requireActivity())
+            val started = shadowActivity.peekNextStartedActivityForResult()!!
+            shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, null)
             shadowOf(Looper.getMainLooper()).idle()
         }
 
@@ -413,6 +446,90 @@ class SettingsFragmentTest {
         launch { fragment ->
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceChangeListener?.onPreferenceChange(pref, false)
+        }
+
+    @Test
+    fun `daily notification summary uses a 24-hour time when the system uses 24-hour format`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        android.provider.Settings.System
+            .putString(context.contentResolver, android.provider.Settings.System.TIME_12_24, "24")
+        launch { fragment ->
+            val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            // production picks "HH:mm" (no AM/PM marker) once is24HourFormat() is true; the 12-hour
+            // "h:mm a" pattern used by every other test in this file always includes one.
+            pref.summary.toString() shouldNotContain "AM"
+            pref.summary.toString() shouldNotContain "PM"
+        }
+    }
+
+    // endregion
+
+    // region preference not found (production removes the preference before re-running init)
+
+    private fun <T : Preference> SettingsActivity.SettingsFragment.removePref(key: String) {
+        val pref = pref<T>(key)
+        pref.parent?.removePreference(pref)
+    }
+
+    @Test
+    fun `errorLimit init logs and no-ops when the preference is missing`() =
+        launch { fragment ->
+            fragment.removePref<DropDownPreference>("errorLimit")
+            fragment.initErrorLimitPreference()
+        }
+
+    @Test
+    fun `dailyNotification init logs and no-ops when the preference is missing`() =
+        launch { fragment ->
+            fragment.removePref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            fragment.initDailyNotificationPreference()
+        }
+
+    @Test
+    fun `intro init logs and no-ops when the preference is missing`() =
+        launch { fragment ->
+            fragment.removePref<PreferenceScreen>("intro")
+            fragment.initIntroPreference()
+        }
+
+    @Test
+    fun `exportData init logs and no-ops when the preference is missing`() =
+        launch { fragment ->
+            fragment.removePref<PreferenceScreen>("exportData")
+            fragment.initExportDataPreference()
+        }
+
+    @Test
+    fun `importData init logs and no-ops when the preference is missing`() =
+        launch { fragment ->
+            fragment.removePref<PreferenceScreen>("importData")
+            fragment.initImportDataPreference()
+        }
+
+    @Test
+    fun `deleteInvalidSudokus init logs and no-ops when the preference is missing`() =
+        launch { fragment ->
+            fragment.removePref<PreferenceScreen>("deleteInvalidSudokus")
+            fragment.initDeleteInvalidSudokusPreference()
+        }
+
+    @Test
+    fun `the notification permission launcher's callback is a no-op when the preference is missing`() =
+        launch { fragment ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            shadowOf(context).denyPermissions(POST_NOTIFICATIONS)
+            val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val request = shadowOf(fragment.requireActivity()).lastRequestedPermission.shouldNotBeNull()
+
+            fragment.removePref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
+            fragment.requireActivity().onRequestPermissionsResult(
+                request.requestCode,
+                request.requestedPermissions,
+                intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
+            )
+            shadowOf(Looper.getMainLooper()).idle()
         }
 
     // endregion

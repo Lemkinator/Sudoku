@@ -24,6 +24,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -37,12 +38,21 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
+import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -147,6 +157,17 @@ class MainActivityMenuTest {
         }
 
     @Test
+    @Config(application = HiltTestApplication::class, sdk = [33])
+    fun `onCreate skips the activity transition override below UPSIDE_DOWN_CAKE`() =
+        launch { activity -> activity.isFinishing.shouldBeFalse() }
+
+    @Test
+    fun `onPrepareOptionsMenu is a no-op for a null menu`() =
+        launch { activity ->
+            activity.onPrepareOptionsMenu(null).shouldBeTrue()
+        }
+
+    @Test
     fun `menu_item_filter shows the statistics filter dialog`() =
         launch { activity ->
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter)).shouldBeTrue()
@@ -224,6 +245,34 @@ class MainActivityMenuTest {
             started.component?.className shouldBe SettingsActivity::class.java.name
         }
 
+    @Test
+    fun `leaks_dest opens the memory leak screen`() =
+        launch { activity ->
+            clickNavItem(activity, R.id.leaks_dest)
+            shadowOf(activity).nextStartedActivity.shouldNotBeNull()
+        }
+
+    /**
+     * `DrawerNavigationView`'s fixed `menu_navigation.xml` resource has no item id left unhandled by
+     * `initDrawer`'s `when`, so the `else` fallthrough can't be reached through a real click on an
+     * actual menu item. Reflectively retrieves the real, already-registered
+     * `NavigationView.OnNavigationItemSelectedListener` (same technique as
+     * `TabHistoryActionModeTest.actionModeListenerOf`) and invokes it with a real but unrecognized id —
+     * every side effect from there on is real production code.
+     */
+    private fun navigationListenerOf(navigationView: DrawerNavigationView): NavigationView.OnNavigationItemSelectedListener {
+        val field = DrawerNavigationView::class.java.getDeclaredField("navigationItemSelectedListener").apply { isAccessible = true }
+        return field.get(navigationView) as NavigationView.OnNavigationItemSelectedListener
+    }
+
+    @Test
+    fun `an unrecognized navigation item is ignored`() =
+        launch { activity ->
+            SystemClock.sleep(601L)
+            val listener = navigationListenerOf(activity.binding.navigationView)
+            listener.onNavigationItemSelected(RoboMenuItem(-54321)).shouldBeFalse()
+        }
+
     // endregion
 
     // region about links (ClickableSpan)
@@ -276,6 +325,36 @@ class MainActivityMenuTest {
             shadowOf(Looper.getMainLooper()).idle()
             org.robolectric.shadows.ShadowToast
                 .getTextOfLatestToast() shouldBe context.getString(R.string.error_import_failed)
+        }
+    }
+
+    @Test
+    fun `launching with a resolvable import uri opens the imported sudoku`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val size = 4
+        val sudoku =
+            Sudoku.create(
+                size = size,
+                difficulty = Difficulty.VERY_EASY,
+                modeLevel = Sudoku.MODE_NORMAL,
+                fields =
+                    MutableList(size * size) { i ->
+                        Field(position = Position.create(i, size), solution = (i % size) + 1, value = (i % size) + 1, given = true)
+                    },
+            )
+        val file = File.createTempFile("main-activity-import", ".json")
+        file.writeText(sudokuToExport(sudoku).stringifyJSON())
+        try {
+            val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
+            launch(intent) { activity ->
+                shadowOf(Looper.getMainLooper()).idle()
+                val started = shadowOf(activity).nextStartedActivity
+                started.shouldNotBeNull()
+                started.component?.className shouldBe SudokuActivity::class.java.name
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+            }
+        } finally {
+            file.delete()
         }
     }
 

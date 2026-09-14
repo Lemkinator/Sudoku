@@ -169,6 +169,15 @@ class MainActivityGamesSignInTest {
         }
 
     @Test
+    fun `achievements_dest signs in when the isAuthenticated check itself fails`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forException(RuntimeException("no network"))
+            every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+
+    @Test
     fun `leaderboards_dest opens leaderboards directly when already authenticated`() =
         launch { activity ->
             every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
@@ -193,5 +202,24 @@ class MainActivityGamesSignInTest {
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
+        }
+
+    @Test
+    fun `leaderboards_dest shows an error toast when the sign-in task itself fails`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            every { fakeClient.signIn() } returns Tasks.forException(RuntimeException("no network"))
+            clickLeaderboards(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
+        }
+
+    @Test
+    fun `leaderboards_dest signs in when the isAuthenticated check itself fails`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forException(RuntimeException("no network"))
+            every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
+            clickLeaderboards(activity)
+            shadowOf(Looper.getMainLooper()).idle()
         }
 }
