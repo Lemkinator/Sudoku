@@ -434,8 +434,8 @@ private fun SudokuActivity.initSudokuButtons() {
     refreshHintButton()
 }
 
-private fun SudokuActivity.toggleOrSetNoteButton(enabled: Boolean? = null) {
-    notesEnabled = enabled ?: !notesEnabled
+private fun SudokuActivity.toggleOrSetNoteButton() {
+    notesEnabled = !notesEnabled
     binding.noteButton.backgroundTintList = if (notesEnabled) colorPrimary else transparent
 }
 

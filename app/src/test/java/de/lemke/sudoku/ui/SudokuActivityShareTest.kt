@@ -104,6 +104,9 @@ class SudokuActivityShareTest {
     lateinit var settings: SettingsRepository
 
     @Inject
+    lateinit var userSettings: de.lemke.sudoku.data.UserSettings
+
+    @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Before
@@ -223,4 +226,36 @@ class SudokuActivityShareTest {
                     ),
                 )
         }
+
+    @Test
+    fun `the title reflects a sudoku level's number`() =
+        launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
+            val expected = "${activity.getString(R.string.sudoku)} (${activity.getString(R.string.level)} 3)"
+            activity.binding.sudokuToolbarLayout.expandedTitle
+                .toString() shouldBe expected
+        }
+
+    @Test
+    fun `the subtitle reflects a sudoku level's fixed error limit`() =
+        launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
+            activity.binding.sudokuToolbarLayout.expandedSubtitle
+                .toString()
+                .shouldContain(
+                    activity.getString(
+                        R.string.current_errors_with_limit,
+                        activity.sudoku.errorsMade,
+                        de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT,
+                    ),
+                )
+        }
+
+    @Test
+    fun `the subtitle omits the error limit for a normal sudoku with an unlimited error setting`() {
+        userSettings.errorLimit = 0
+        launch(formulaicSudoku(4, modeLevel = de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL)) { activity ->
+            activity.binding.sudokuToolbarLayout.expandedSubtitle
+                .toString()
+                .shouldContain(activity.getString(R.string.current_errors, activity.sudoku.errorsMade))
+        }
+    }
 }
