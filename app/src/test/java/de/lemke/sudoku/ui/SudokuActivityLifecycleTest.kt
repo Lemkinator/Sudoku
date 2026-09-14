@@ -59,6 +59,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -346,6 +347,41 @@ class SudokuActivityLifecycleTest {
             activity.select(activity.sudoku.itemCount + 1)
             activity.selected.shouldBeNull()
         }
+
+    // endregion
+
+    // region not-found / not-yet-initialized
+
+    @Test
+    fun `missing the sudoku id extra finishes and destroys the activity`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.state shouldBe Lifecycle.State.DESTROYED
+        }
+    }
+
+    @Test
+    fun `a sudoku id that does not exist finishes and destroys the activity`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, "does-not-exist")
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.state shouldBe Lifecycle.State.DESTROYED
+        }
+    }
+
+    @Test
+    fun `onPrepareOptionsMenu and resumeGame are no-ops before the sudoku ever initializes`() {
+        val activity = Robolectric.buildActivity(SudokuActivity::class.java).get()
+
+        activity.onPrepareOptionsMenu(null).shouldBeFalse()
+        activity.resumeGame()
+    }
+
+    @Test
+    fun `pausing an activity whose sudoku never initialized is a no-op`() {
+        Robolectric.buildActivity(SudokuActivity::class.java).create().pause()
+    }
 
     // endregion
 
