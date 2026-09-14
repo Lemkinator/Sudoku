@@ -48,6 +48,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -175,6 +176,17 @@ class SudokuActivityLifecycleTest {
             activity.sudoku.resumed.shouldBeFalse()
         }
 
+    @Test
+    fun `resumeGame does not add the keep-screen-on flag when the setting is disabled`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            activity.userSettings.keepScreenOn = false
+
+            activity.resumeGame()
+
+            (activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) shouldBe 0
+        }
+
     // endregion
 
     // region pauseGame
@@ -202,6 +214,28 @@ class SudokuActivityLifecycleTest {
             scenario.onActivity { it.userSettings.animationsEnabled = false }
             scenario.moveToState(Lifecycle.State.CREATED)
             scenario.onActivity { activity -> activity.sudoku.resumed.shouldBeFalse() }
+        }
+    }
+
+    @Test
+    fun `pausing does not clear the keep-screen-on flag when the setting is disabled`() {
+        val sudoku = formulaicSudoku()
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity {
+                it.userSettings.animationsEnabled = false
+                it.userSettings.keepScreenOn = false
+                it.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.onActivity { activity ->
+                (
+                    activity.window.attributes.flags and
+                        android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                ) shouldNotBe 0
+            }
         }
     }
 
@@ -270,6 +304,16 @@ class SudokuActivityLifecycleTest {
     fun `an unhandled key code falls through to the default behavior`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_VOLUME_UP).shouldBeFalse()
+        }
+
+    // endregion
+
+    // region onPrepareOptionsMenu
+
+    @Test
+    fun `onPrepareOptionsMenu with a null menu is a safe no-op once the sudoku is initialized`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.onPrepareOptionsMenu(null).shouldBeTrue()
         }
 
     // endregion
