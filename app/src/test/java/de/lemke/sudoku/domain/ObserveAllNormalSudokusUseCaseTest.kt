@@ -17,7 +17,7 @@
 package de.lemke.sudoku.domain
 
 import app.cash.turbine.test
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.SudokuObservationsRepository
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -30,12 +30,12 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObserveAllNormalSudokusUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val useCase = ObserveAllNormalSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        val sudokuObservationsRepository = mockk<SudokuObservationsRepository>()
+        val useCase = ObserveAllNormalSudokusUseCase(sudokuObservationsRepository, UnconfinedTestDispatcher())
 
         should("passes through the repository's observeAllNormalSudokus flow") {
             val sudokus = listOf(mockk<Sudoku>(), mockk<Sudoku>())
-            every { sudokusRepository.observeAllNormalSudokus() } returns flowOf(sudokus)
+            every { sudokuObservationsRepository.observeAllNormalSudokus() } returns flowOf(sudokus)
 
             useCase().test {
                 awaitItem() shouldBe sudokus

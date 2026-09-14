@@ -26,6 +26,7 @@ import dagger.hilt.components.SingletonComponent
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.MIGRATION_1_2
 import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.SudokuObserveDao
 import javax.inject.Singleton
 
 @Module
@@ -44,4 +45,7 @@ object PersistenceModule {
 
     @Provides
     fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()
+
+    @Provides
+    fun provideSudokuObserveDao(database: AppDatabase): SudokuObserveDao = database.sudokuObserveDao()
 }
