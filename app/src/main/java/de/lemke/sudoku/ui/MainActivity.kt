@@ -98,7 +98,7 @@ import dev.oneuiproject.oneui.design.R as designR
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
+    internal lateinit var binding: ActivityMainBinding
     private val fragmentsInstance: List<Fragment> = listOf(TabHistory(), TabSudoku(), TabStatistics())
     private var selectedPosition = 0
     private var isUIReady = false
