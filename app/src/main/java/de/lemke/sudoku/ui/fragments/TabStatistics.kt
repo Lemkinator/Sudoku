@@ -46,6 +46,10 @@ import dev.oneuiproject.oneui.widget.Separator
 import java.util.Locale
 import kotlin.math.roundToInt
 
+private const val PERCENT_SCALE = 100
+private const val SECONDS_PER_MINUTE = 60
+private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+
 @AndroidEntryPoint
 class TabStatistics : Fragment() {
     private lateinit var binding: FragmentTabStatisticsBinding
@@ -58,7 +62,6 @@ class TabStatistics : Fragment() {
         savedInstanceState: Bundle?,
     ): View = FragmentTabStatisticsBinding.inflate(inflater, container, false).also { binding = it }.root
 
-    @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,
@@ -82,7 +85,7 @@ class TabStatistics : Fragment() {
             binding.statisticsProgressBar.isVisible = state.isLoading
             state.statistics?.let {
                 updateStatistics(it)
-                binding.statisticsListRecycler.adapter?.notifyDataSetChanged()
+                binding.statisticsListRecycler.adapter?.notifyItemRangeChanged(0, statisticsList.size)
             }
         }
         collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
@@ -144,9 +147,9 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.let { "$it×$it" } ?: "-"))
         statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.let { "$it×$it" } ?: "-"))
         statisticsList.add(getString(R.string.feature_usage) to null)
-        statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * 100).roundToInt()}%")
-        statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * 100).roundToInt()}%")
-        statisticsList.add(getString(R.string.eraser_usage_rate) to "${(stats.eraserUsageRate * 100).roundToInt()}%")
+        statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * PERCENT_SCALE).roundToInt()}%")
+        statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * PERCENT_SCALE).roundToInt()}%")
+        statisticsList.add(getString(R.string.eraser_usage_rate) to "${(stats.eraserUsageRate * PERCENT_SCALE).roundToInt()}%")
         statisticsList.add(getString(R.string.perfect_games) to stats.perfectGames.toString())
     }
 
@@ -166,9 +169,23 @@ class TabStatistics : Fragment() {
 
     private fun secondsToTimeString(seconds: Int): String =
         when {
-            seconds < 0 -> "--:--"
-            seconds >= 3600 -> String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
-            else -> String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+            seconds < 0 -> {
+                "--:--"
+            }
+
+            seconds >= SECONDS_PER_HOUR -> {
+                String.format(
+                    Locale.getDefault(),
+                    "%02d:%02d:%02d",
+                    seconds / SECONDS_PER_HOUR,
+                    seconds / SECONDS_PER_MINUTE % SECONDS_PER_MINUTE,
+                    seconds % SECONDS_PER_MINUTE,
+                )
+            }
+
+            else -> {
+                String.format(Locale.getDefault(), "%02d:%02d", seconds / SECONDS_PER_MINUTE, seconds % SECONDS_PER_MINUTE)
+            }
         }
 
     inner class StatisticsListAdapter : RecyclerView.Adapter<ViewHolder>() {
@@ -194,7 +211,7 @@ class TabStatistics : Fragment() {
                 }
             }
 
-        @SuppressLint("SetTextI18n", "StringFormatInvalid")
+        @SuppressLint("SetTextI18n")
         override fun onBindViewHolder(
             holder: ViewHolder,
             position: Int,
