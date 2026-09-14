@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain.model
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDateTime
 
 class SudokuTest : ShouldSpec(
     {
@@ -116,6 +117,67 @@ class SudokuTest : ShouldSpec(
             val second = SudokuId.generate()
 
             (first == second) shouldBe false
+        }
+
+        should("format timeString as hh:mm:ss once an hour has elapsed") {
+            val sudoku = fourByFourSudoku().apply { seconds = 3725 }
+
+            sudoku.timeString shouldBe "01:02:05"
+        }
+
+        should("format timeString as mm:ss below one hour") {
+            val sudoku = fourByFourSudoku().apply { seconds = 125 }
+
+            sudoku.timeString shouldBe "02:05"
+        }
+
+        should("contentEquals is true for two sudokus sharing identical content, including the same field list") {
+            // Field has no equals/hashCode override, so contentEquals' `fields == other.fields` list comparison
+            // relies on referential equality per element; two independently constructed field lists (even with
+            // identical values) would never be equal, so the two sudokus intentionally share one fields list here.
+            val id = SudokuId.generate()
+            val now = LocalDateTime.of(2026, 1, 1, 12, 0)
+            val fields = MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) }
+
+            fun sudokuAt(now: LocalDateTime) =
+                Sudoku.create(
+                    sudokuId = id,
+                    size = 4,
+                    difficulty = Difficulty.VERY_EASY,
+                    modeLevel = Sudoku.MODE_NORMAL,
+                    created = now,
+                    updated = now,
+                    fields = fields,
+                )
+            val first = sudokuAt(now)
+            val second = sudokuAt(now)
+
+            first.contentEquals(second) shouldBe true
+        }
+
+        should("contentEquals is false once a tracked field differs") {
+            val id = SudokuId.generate()
+            val first = fourByFourSudoku(sudokuId = id)
+            val second = fourByFourSudoku(sudokuId = id).apply { numberHighlightingUsed = !numberHighlightingUsed }
+
+            first.contentEquals(second) shouldBe false
+        }
+
+        should("reset cancels a running timer") {
+            val sudoku = fourByFourSudoku()
+            sudoku.startTimer()
+
+            sudoku.reset()
+
+            sudoku.timer shouldBe null
+        }
+
+        should("reset is a no-op on the timer when none is running") {
+            val sudoku = fourByFourSudoku()
+
+            sudoku.reset()
+
+            sudoku.timer shouldBe null
         }
     },
 )
