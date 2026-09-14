@@ -19,7 +19,6 @@ package de.lemke.sudoku.data.database
 import javax.inject.Inject
 import kotlinx.coroutines.flow.map
 
-// Split out of SudokusRepository (detekt TooManyFunctions): the Flow-returning observation queries.
 class SudokuObservationsRepository @Inject constructor(
     private val sudokuObserveDao: SudokuObserveDao,
 ) {

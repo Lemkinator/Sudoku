@@ -68,8 +68,6 @@ interface SudokuDao {
     suspend fun delete(vararg sudokus: SudokuDb)
 }
 
-// Split out of SudokuDao (detekt TooManyFunctions): the Flow-returning observation queries,
-// kept on a separate Room DAO backed by the same "sudoku" table.
 @Dao
 interface SudokuObserveDao {
     @Transaction
