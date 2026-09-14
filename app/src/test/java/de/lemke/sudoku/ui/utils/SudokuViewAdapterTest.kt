@@ -54,9 +54,9 @@ class SudokuViewAdapterTest {
         }
     }
 
-    private fun awaitInflated(fieldView: FieldView?) {
+    private fun awaitInflated(fieldView: FieldView) {
         val deadline = System.currentTimeMillis() + 5_000
-        while (fieldView?.fieldViewValue == null && System.currentTimeMillis() < deadline) {
+        while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             Thread.sleep(5)
         }
@@ -74,25 +74,18 @@ class SudokuViewAdapterTest {
         adapter.onBindViewHolder(holder, 7)
 
         adapter.fieldViews[7] shouldBe holder.itemView
-        (adapter.fieldViews[7] as FieldView).position.index shouldBe 7
+        adapter.fieldViews[7].position.index shouldBe 7
     }
 
     @Test
     fun `updateFieldView refreshes the bound field view's display`() {
         val fieldView = adapter.fieldViews[PLAIN_INDEX]
         awaitInflated(fieldView)
-        fieldView!!.field.value = 3
+        fieldView.field.value = 3
 
         adapter.updateFieldView(PLAIN_INDEX)
 
         fieldView.fieldViewValue?.text.toString() shouldBe "3"
-    }
-
-    @Test
-    fun `updateFieldView on a null slot is a no-op`() {
-        adapter.fieldViews[PLAIN_INDEX] = null
-
-        adapter.updateFieldView(PLAIN_INDEX)
     }
 
     @Test
@@ -103,9 +96,9 @@ class SudokuViewAdapterTest {
 
         sudoku.regionalHighlightingUsed shouldBe true
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i]?.isHighlighted shouldBe (i in expectedNeighbors)
+            adapter.fieldViews[i].isHighlighted shouldBe (i in expectedNeighbors)
         }
-        adapter.fieldViews[PLAIN_INDEX]?.isSelected shouldBe true
+        adapter.fieldViews[PLAIN_INDEX].isSelected shouldBe true
     }
 
     @Test
@@ -114,9 +107,9 @@ class SudokuViewAdapterTest {
 
         sudoku.regionalHighlightingUsed shouldBe true
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i]?.isHighlighted shouldBe false
+            adapter.fieldViews[i].isHighlighted shouldBe false
         }
-        adapter.fieldViews[GIVEN_INDEX]?.isSelected shouldBe true
+        adapter.fieldViews[GIVEN_INDEX].isSelected shouldBe true
     }
 
     @Test
@@ -125,22 +118,22 @@ class SudokuViewAdapterTest {
 
         sudoku.regionalHighlightingUsed shouldBe false
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i]?.isHighlighted shouldBe false
+            adapter.fieldViews[i].isHighlighted shouldBe false
         }
-        adapter.fieldViews[PLAIN_INDEX]?.isSelected shouldBe true
+        adapter.fieldViews[PLAIN_INDEX].isSelected shouldBe true
     }
 
     @Test
     fun `selecting null position with highlightNumber true clears region and number highlighting`() {
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
-        adapter.fieldViews[2]?.isHighlightedNumber = true
+        adapter.fieldViews[2].isHighlightedNumber = true
 
         adapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
 
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i]?.isHighlighted shouldBe false
-            adapter.fieldViews[i]?.isSelected shouldBe false
-            adapter.fieldViews[i]?.isHighlightedNumber shouldBe false
+            adapter.fieldViews[i].isHighlighted shouldBe false
+            adapter.fieldViews[i].isSelected shouldBe false
+            adapter.fieldViews[i].isHighlightedNumber shouldBe false
         }
     }
 
@@ -148,11 +141,11 @@ class SudokuViewAdapterTest {
     fun `re-selecting the same position does not recompute neighbor highlighting`() {
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
         val neighborIndex = sudoku.getNeighbors(PLAIN_INDEX).map { it.position.index }.first { it != PLAIN_INDEX }
-        adapter.fieldViews[neighborIndex]?.isHighlighted = false
+        adapter.fieldViews[neighborIndex].isHighlighted = false
 
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
 
-        adapter.fieldViews[neighborIndex]?.isHighlighted shouldBe false
+        adapter.fieldViews[neighborIndex].isHighlighted shouldBe false
     }
 
     @Test
@@ -163,7 +156,7 @@ class SudokuViewAdapterTest {
 
         sudoku.numberHighlightingUsed shouldBe true
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i]?.isHighlightedNumber shouldBe false
+            adapter.fieldViews[i].isHighlightedNumber shouldBe false
         }
     }
 
@@ -176,7 +169,7 @@ class SudokuViewAdapterTest {
 
         sudoku.numberHighlightingUsed shouldBe true
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i]?.isHighlightedNumber shouldBe (i in matching)
+            adapter.fieldViews[i].isHighlightedNumber shouldBe (i in matching)
         }
     }
 }

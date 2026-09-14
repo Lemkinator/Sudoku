@@ -70,9 +70,9 @@ internal fun animate(
             .reversed()
             .forEach {
                 if (animateSudoku) {
-                    animateField(it?.fieldViewValue, sudoku, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
+                    animateField(it.fieldViewValue, sudoku, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
                 } else {
-                    animateField(it?.fieldViewValue, sudoku)
+                    animateField(it.fieldViewValue, sudoku)
                 }
             }
     }
@@ -81,16 +81,16 @@ internal fun animate(
             .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a > b } }
             .forEach {
                 if (animateSudoku) {
-                    animateField(it?.fieldViewValue, sudoku, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
+                    animateField(it.fieldViewValue, sudoku, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
                 } else {
-                    animateField(it?.fieldViewValue, sudoku)
+                    animateField(it.fieldViewValue, sudoku)
                 }
             }
     }
 }
 
 private fun matchesAnimation(
-    fieldView: FieldView?,
+    fieldView: FieldView,
     position: Position,
     animateRow: Boolean,
     animateColumn: Boolean,
@@ -98,10 +98,10 @@ private fun matchesAnimation(
     animateSudoku: Boolean,
     compare: (Int, Int) -> Boolean,
 ): Boolean =
-    (animateRow && fieldView?.position?.row == position.row && compare(fieldView.position.column, position.column)) ||
-        (animateColumn && fieldView?.position?.column == position.column && compare(fieldView.position.row, position.row)) ||
-        (animateBlock && fieldView?.position?.block == position.block && compare(fieldView.position.index, position.index)) ||
-        (animateSudoku && compare(fieldView?.position?.index!!, position.index))
+    (animateRow && fieldView.position.row == position.row && compare(fieldView.position.column, position.column)) ||
+        (animateColumn && fieldView.position.column == position.column && compare(fieldView.position.row, position.row)) ||
+        (animateBlock && fieldView.position.block == position.block && compare(fieldView.position.index, position.index)) ||
+        (animateSudoku && compare(fieldView.position.index, position.index))
 
 private suspend fun animateField(
     fieldTextView: TextView?,
@@ -109,22 +109,24 @@ private suspend fun animateField(
     duration: Long = 250L,
     delay: Long = 120L,
 ) {
-    fieldTextView
-        ?.animate()
-        ?.alpha(FIELD_ANIMATION_FADE_ALPHA)
-        ?.scaleX(FIELD_ANIMATION_SCALE)
-        ?.scaleY(FIELD_ANIMATION_SCALE)
-        ?.rotation(FIELD_ANIMATION_ROTATION_DEGREES)
-        ?.setDuration(duration)
-        ?.withEndAction {
-            fieldTextView
-                .animate()
-                ?.alpha(1f)
-                ?.scaleX(1f)
-                ?.scaleY(1f)
-                ?.rotation(0f)
-                ?.setDuration(duration)
-                ?.start()
-        }?.start()
+    fieldTextView?.let {
+        it
+            .animate()
+            .alpha(FIELD_ANIMATION_FADE_ALPHA)
+            .scaleX(FIELD_ANIMATION_SCALE)
+            .scaleY(FIELD_ANIMATION_SCALE)
+            .rotation(FIELD_ANIMATION_ROTATION_DEGREES)
+            .setDuration(duration)
+            .withEndAction {
+                it
+                    .animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .rotation(0f)
+                    .setDuration(duration)
+                    .start()
+            }.start()
+    }
     delay((delay / sudoku.blockSize).milliseconds)
 }

@@ -74,38 +74,38 @@ private suspend fun animateIntroStepRowColumnBlock(
 ) {
     while (introStepNow() == 0) {
         delay(900.milliseconds)
-        val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
-        val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
-        val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
+        val block = gameAdapter.fieldViews.filter { it.position.block == 0 }
+        val row = gameAdapter.fieldViews.filter { it.position.row == 1 }
+        val column = gameAdapter.fieldViews.filter { it.position.column == 5 }
         column.forEach {
-            it?.isHighlighted = false
-            it?.setBackground()
+            it.isHighlighted = false
+            it.setBackground()
         }
         block.forEach {
-            it?.isHighlighted = true
-            it?.setBackground()
+            it.isHighlighted = true
+            it.setBackground()
         }
-        block.forEach { animateIntroFieldText(it?.fieldViewValue) }
+        block.forEach { animateIntroFieldText(it.fieldViewValue) }
         delay(900.milliseconds)
         block.forEach {
-            it?.isHighlighted = false
-            it?.setBackground()
+            it.isHighlighted = false
+            it.setBackground()
         }
         row.forEach {
-            it?.isHighlighted = true
-            it?.setBackground()
+            it.isHighlighted = true
+            it.setBackground()
         }
-        row.forEach { animateIntroFieldText(it?.fieldViewValue) }
+        row.forEach { animateIntroFieldText(it.fieldViewValue) }
         delay(900.milliseconds)
         row.forEach {
-            it?.isHighlighted = false
-            it?.setBackground()
+            it.isHighlighted = false
+            it.setBackground()
         }
         column.forEach {
-            it?.isHighlighted = true
-            it?.setBackground()
+            it.isHighlighted = true
+            it.setBackground()
         }
-        column.forEach { animateIntroFieldText(it?.fieldViewValue) }
+        column.forEach { animateIntroFieldText(it.fieldViewValue) }
     }
 }
 
@@ -116,9 +116,9 @@ private suspend fun animateIntroStepField(
     introStep: Int,
     introStepNow: () -> Int,
 ) {
-    gameAdapter.fieldViews.filter { it?.position?.row in rows }.forEach {
-        it?.isHighlighted = true
-        it?.setBackground()
+    gameAdapter.fieldViews.filter { it.position.row in rows }.forEach {
+        it.isHighlighted = true
+        it.setBackground()
     }
     while (introStepNow() == introStep) animateIntroFieldView(gameAdapter.fieldViews[fieldIndex])
 }
@@ -127,9 +127,9 @@ private suspend fun animateIntroStepBlock(
     gameAdapter: SudokuViewAdapter,
     introStepNow: () -> Int,
 ) {
-    gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach {
-        it?.isHighlighted = true
-        it?.setBackground()
+    gameAdapter.fieldViews.filter { it.position.block == 2 }.forEach {
+        it.isHighlighted = true
+        it.setBackground()
     }
     while (introStepNow() == INTRO_STEP_6) animateIntroFieldView(gameAdapter.fieldViews[DEMO_CELL_INDEX_24])
 }
@@ -168,8 +168,8 @@ internal fun stopAnimation(
     when (currentIntroStep) {
         0, INTRO_STEP_5, INTRO_STEP_6 -> {
             gameAdapter.fieldViews.forEach {
-                it?.isHighlighted = false
-                it?.setBackground()
+                it.isHighlighted = false
+                it.setBackground()
             }
         }
 
@@ -185,39 +185,41 @@ private suspend fun animateIntroFieldText(
     duration: Long = 450,
     delay: Long = 180L,
 ) {
-    fieldTextView
-        ?.animate()
-        ?.scaleX(2f)
-        ?.scaleY(2f)
-        ?.setDuration(duration)
-        ?.withEndAction {
-            fieldTextView
-                .animate()
-                ?.scaleX(1f)
-                ?.scaleY(1f)
-                ?.setDuration(duration)
-                ?.start()
-        }?.start()
+    fieldTextView?.let {
+        it
+            .animate()
+            .scaleX(2f)
+            .scaleY(2f)
+            .setDuration(duration)
+            .withEndAction {
+                it
+                    .animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(duration)
+                    .start()
+            }.start()
+    }
     delay(delay.milliseconds)
 }
 
 private suspend fun animateIntroFieldView(
-    fieldView: FieldView?,
+    fieldView: FieldView,
     duration: Long = 600,
     delay: Long = 2000,
 ) {
     fieldView
-        ?.animate()
-        ?.scaleX(DEMO_FIELD_HIGHLIGHT_SCALE)
-        ?.scaleY(DEMO_FIELD_HIGHLIGHT_SCALE)
-        ?.setDuration(duration)
-        ?.withEndAction {
+        .animate()
+        .scaleX(DEMO_FIELD_HIGHLIGHT_SCALE)
+        .scaleY(DEMO_FIELD_HIGHLIGHT_SCALE)
+        .setDuration(duration)
+        .withEndAction {
             fieldView
                 .animate()
-                ?.scaleX(1f)
-                ?.scaleY(1f)
-                ?.setDuration(duration)
-                ?.start()
-        }?.start()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(duration)
+                .start()
+        }.start()
     delay(delay.milliseconds)
 }
