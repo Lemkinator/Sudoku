@@ -17,8 +17,11 @@
 package de.lemke.sudoku.ui
 
 import android.Manifest.permission.POST_NOTIFICATIONS
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context.NOTIFICATION_SERVICE
+import android.content.Intent
+import android.net.Uri
 import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.DropDownPreference
@@ -45,7 +48,9 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import java.io.File
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -60,13 +65,16 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
+import org.robolectric.shadows.ShadowToast
 
 /**
  * Covers [SettingsActivity.SettingsFragment]'s preference wiring by finding each preference through the real
  * [PreferenceFragmentCompat] and invoking its `onPreferenceClickListener`/`onPreferenceChangeListener` directly —
  * the same real listeners `.onClick`/`.onNewValue` install, without needing to render or tap actual preference rows.
- * `exportData`/`importData`'s `registerForActivityResult` callbacks are not driven here: simulating a real Activity
- * Result requires either Espresso-Intents or `ShadowActivity.receiveResult`, neither established in this fleet yet.
+ * `exportData`/`importData`'s `registerForActivityResult` callbacks (the exportData/importData region below) are
+ * driven through `ShadowActivity.peekNextStartedActivityForResult()` + `receiveResult(...)`: production code already
+ * routes both launchers through the real `startActivityForResult` path, so `receiveResult` dispatches into the
+ * fragment's actual registered callback exactly as a real picker result would.
  *
  * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
  */
@@ -116,6 +124,25 @@ class SettingsFragmentTest {
     }
 
     private fun <T : Preference> SettingsActivity.SettingsFragment.pref(key: String): T = findPreference<T>(key).shouldNotBeNull()
+
+    /**
+     * `exportData`/`importData` dispatch their real work on real `Dispatchers.IO`/`Dispatchers.Main`
+     * (bound above, unlike the `UnconfinedTestDispatcher` used elsewhere), so the write genuinely
+     * happens on a background thread; polls real wall-clock time (pumping the paused main looper each
+     * iteration) instead of guessing a fixed delay.
+     */
+    private fun awaitMainLooperIdleUntil(
+        timeoutMillis: Long = 5000,
+        condition: () -> Boolean,
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMillis
+        while (System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (condition()) return
+            Thread.sleep(20)
+        }
+        shadowOf(Looper.getMainLooper()).idle()
+    }
 
     // region errorLimit
 
@@ -183,6 +210,97 @@ class SettingsFragmentTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             dialog.isShowing.shouldBeFalse()
+        }
+
+    @Test
+    fun `exportData's result callback ignores a cancelled picker`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("exportData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val shadowActivity = shadowOf(fragment.requireActivity())
+            val started = shadowActivity.peekNextStartedActivityForResult()!!
+            shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+
+    @Test
+    fun `exportData's result callback ignores an OK result without a destination`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("exportData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val shadowActivity = shadowOf(fragment.requireActivity())
+            val started = shadowActivity.peekNextStartedActivityForResult()!!
+            shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent())
+            shadowOf(Looper.getMainLooper()).idle()
+        }
+
+    @Test
+    fun `exportData's result callback exports to the picked destination on RESULT_OK`() =
+        launch { fragment ->
+            val destinationFile = File.createTempFile("settings-fragment-export", ".json")
+            try {
+                val pref = fragment.pref<PreferenceScreen>("exportData")
+                pref.onPreferenceClickListener?.onPreferenceClick(pref)
+                val shadowActivity = shadowOf(fragment.requireActivity())
+                val started = shadowActivity.peekNextStartedActivityForResult()!!
+                shadowActivity.receiveResult(
+                    started.intent,
+                    Activity.RESULT_OK,
+                    Intent().apply { data = Uri.fromFile(destinationFile) },
+                )
+                awaitMainLooperIdleUntil { destinationFile.readText().isNotEmpty() }
+                destinationFile.readText() shouldBe "[]"
+            } finally {
+                destinationFile.delete()
+            }
+        }
+
+    @Test
+    fun `importData's result callback shows an error toast when no file was selected`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("importData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            val shadowActivity = shadowOf(fragment.requireActivity())
+            val started = shadowActivity.peekNextStartedActivityForResult()!!
+            shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
+            shadowOf(Looper.getMainLooper()).idle()
+            ShadowToast.getTextOfLatestToast() shouldBe fragment.getString(R.string.error_no_file_selected)
+        }
+
+    @Test
+    fun `importData's result callback imports the picked file on RESULT_OK`() =
+        launch { fragment ->
+            val sourceFile = File.createTempFile("settings-fragment-import", ".json")
+            sourceFile.writeText("[]")
+            try {
+                val pref = fragment.pref<PreferenceScreen>("importData")
+                pref.onPreferenceClickListener?.onPreferenceClick(pref)
+                val confirmDialog = ShadowDialog.getLatestDialog() as AlertDialog
+                confirmDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+                shadowOf(Looper.getMainLooper()).idle()
+                val shadowActivity = shadowOf(fragment.requireActivity())
+                val started = shadowActivity.peekNextStartedActivityForResult()!!
+                shadowActivity.receiveResult(
+                    started.intent,
+                    Activity.RESULT_OK,
+                    Intent().apply { data = Uri.fromFile(sourceFile) },
+                )
+                // A file:// Uri isn't a real DocumentsContract-backed document, so ImportDataUseCase's own
+                // exists()/canRead()/type checks fail it — this only needs to prove the real `uri != null`
+                // branch reaches ImportDataUseCase for real; its own success/failure branches are covered by
+                // ImportDataUseCaseTest.
+                awaitMainLooperIdleUntil {
+                    val latest = ShadowDialog.getLatestDialog()
+                    latest != null && latest !== confirmDialog && latest.isShowing
+                }
+                val resultDialog = ShadowDialog.getLatestDialog().shouldNotBeNull()
+                resultDialog shouldNotBe confirmDialog
+                resultDialog.isShowing.shouldBeTrue()
+            } finally {
+                sourceFile.delete()
+            }
         }
 
     // endregion
