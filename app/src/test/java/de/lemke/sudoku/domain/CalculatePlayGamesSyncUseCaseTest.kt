@@ -105,5 +105,46 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
             scoreIds shouldContain R.string.leaderboard_time_99_hard
             scoreIds shouldContain R.string.leaderboard_wins_99_hard
         }
+
+        should("unlock the notes and checklist achievements when their flags are set") {
+            val sudoku = testSudoku(notesMade = 3, isChecklist = true, isReverseChecklist = true)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            val unlocks = useCase(sudoku).achievementUnlocks
+
+            unlocks shouldContain R.string.achievement_use_notes
+            unlocks shouldContain R.string.achievement_checklist
+            unlocks shouldContain R.string.achievement_reverse_checklist
+        }
+
+        should("unlock the speed achievement only under its 10-second threshold") {
+            val fast = testSudoku(seconds = 9)
+            val slow = testSudoku(seconds = 10)
+            coEvery { getAllSudokus() } returns listOf(fast, slow)
+
+            useCase(fast).achievementUnlocks shouldContain R.string.achievement_i_am_speed
+            useCase(slow).achievementUnlocks shouldNotContain R.string.achievement_i_am_speed
+        }
+
+        should("submit the 16x16 size-specific leaderboard and stopwatch achievement") {
+            val sudoku = testSudoku(size = 16, seconds = 419)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            val sync = useCase(sudoku)
+
+            sync.leaderboardScores.map { it.first } shouldContain R.string.leaderboard_wins_1616
+            sync.achievementUnlocks shouldContain R.string.achievement_stopwatch_1616
+        }
+
+        should("skip size- and difficulty-specific stats for a size outside the supported set") {
+            val sudoku = testSudoku(size = 6, difficulty = HARD, seconds = 5)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            val sync = useCase(sudoku)
+
+            sync.leaderboardScores.map { it.first } shouldNotContain R.string.leaderboard_wins_44
+            sync.leaderboardScores.map { it.first } shouldNotContain R.string.leaderboard_time_99_hard
+            sync.achievementUnlocks shouldContain R.string.achievement_first_win
+        }
     },
 )
