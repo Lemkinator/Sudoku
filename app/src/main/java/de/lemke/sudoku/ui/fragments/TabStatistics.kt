@@ -52,8 +52,8 @@ private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 
 @AndroidEntryPoint
 class TabStatistics : Fragment() {
-    private lateinit var binding: FragmentTabStatisticsBinding
-    private var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
+    internal lateinit var binding: FragmentTabStatisticsBinding
+    internal var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
     private val viewModel: TabStatisticsViewModel by viewModels()
 
     override fun onCreateView(
@@ -153,7 +153,7 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.perfect_games) to stats.perfectGames.toString())
     }
 
-    private fun totalSecondsToString(seconds: Long): String {
+    internal fun totalSecondsToString(seconds: Long): String {
         if (seconds == 0L) return "-"
         val days = seconds / 86400
         val hours = seconds % 86400 / 3600
@@ -167,7 +167,7 @@ class TabStatistics : Fragment() {
         }
     }
 
-    private fun secondsToTimeString(seconds: Int): String =
+    internal fun secondsToTimeString(seconds: Int): String =
         when {
             seconds < 0 -> {
                 "--:--"

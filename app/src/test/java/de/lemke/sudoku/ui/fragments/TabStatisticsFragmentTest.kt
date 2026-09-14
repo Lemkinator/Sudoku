@@ -1,0 +1,157 @@
+/*
+ * Copyright 2022-2026 Leonard Lemke
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package de.lemke.sudoku.ui.fragments
+
+import android.os.Looper
+import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
+import com.google.android.gms.games.PlayGamesSdk
+import dagger.hilt.android.testing.BindValue
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.HiltTestApplication
+import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.bypassOobe
+import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.commonutils.di.DefaultDispatcher
+import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.ui.MainActivity
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import javax.inject.Inject
+import kotlin.math.sqrt
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
+
+/**
+ * Covers [TabStatistics.updateStatistics] and its `StatisticsListAdapter` against a real
+ * [CalculateStatisticsUseCase][de.lemke.sudoku.domain.CalculateStatisticsUseCase] result — an empty repository (every
+ * "-"/placeholder branch) and one completed sudoku with a two-hour play time (the non-null/hours branches).
+ *
+ * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+@UninstallModules(DispatchersModule::class)
+@HiltAndroidTest
+@RunWith(RobolectricTestRunner::class)
+@Config(application = HiltTestApplication::class, sdk = [36])
+class TabStatisticsFragmentTest {
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+
+    @BindValue
+    @DefaultDispatcher
+    @JvmField
+    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
+
+    @BindValue
+    @IoDispatcher
+    @JvmField
+    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+    @BindValue
+    @MainDispatcher
+    @JvmField
+    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+
+    @Inject
+    lateinit var settings: SettingsRepository
+
+    @Inject
+    lateinit var saveSudoku: SaveSudokuUseCase
+
+    @Before
+    fun setup() {
+        hiltRule.inject()
+        settings.bypassOobe()
+        // MainActivity talks to PlayGames on launch; the SDK is normally auto-initialized by its
+        // manifest-merged ContentProvider, which Robolectric does not run under HiltTestApplication.
+        PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
+    }
+
+    private fun completedSudoku(seconds: Int): Sudoku {
+        val size = 4
+        val blockSize = sqrt(size.toDouble()).toInt()
+        return Sudoku.create(
+            size = size,
+            difficulty = Difficulty.VERY_EASY,
+            modeLevel = MODE_NORMAL,
+            seconds = seconds,
+            fields =
+                MutableList(size * size) { index ->
+                    val row = index / size
+                    val col = index % size
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                    Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
+                },
+        )
+    }
+
+    private fun launch(block: (TabStatistics) -> Unit) {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.onTabItemSelected(2) }
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.onActivity { activity ->
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabStatistics>()
+                        .first()
+                block(fragment)
+            }
+        }
+    }
+
+    @Test
+    fun `an empty history renders every statistic as its placeholder`() =
+        launch { fragment ->
+            fragment.statisticsList.isNotEmpty().shouldBeTrue()
+            fragment.binding.statisticsListRecycler.adapter
+                ?.itemCount shouldBe fragment.statisticsList.size
+            val bestTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.best_time) }
+            bestTime.second.shouldContain("--:--")
+        }
+
+    @Test
+    fun `a completed two-hour sudoku populates the best-time and total-time entries`() {
+        runBlocking { saveSudoku(completedSudoku(seconds = 7200)) }
+        launch { fragment ->
+            val bestTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.best_time) }
+            bestTime.second.shouldContain("02:00:00")
+            val totalTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.total_time_played) }
+            totalTime.second.shouldContain("2h 0m")
+        }
+    }
+}
