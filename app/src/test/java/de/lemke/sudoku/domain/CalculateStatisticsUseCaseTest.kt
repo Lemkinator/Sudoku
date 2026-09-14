@@ -176,5 +176,23 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
             stats.mostGamesWonDifficulty shouldBe EASY
             stats.mostGamesWonSize shouldBe 9
         }
+
+        should("pick a later, larger group or value over an earlier, smaller one") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = false, errorsMade = 1, hintsUsed = 1, notesMade = 1, difficulty = EASY, size = 4),
+                    testSudoku(completed = false, errorsMade = 2, hintsUsed = 2, notesMade = 2, difficulty = EASY, size = 4),
+                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = 9),
+                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = 9),
+                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = 9),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostErrors shouldBe 5
+            stats.mostHints shouldBe 5
+            stats.mostNotes shouldBe 5
+            stats.mostGamesStartedDifficulty shouldBe MEDIUM
+            stats.mostGamesStartedSize shouldBe 9
+        }
     },
 )
