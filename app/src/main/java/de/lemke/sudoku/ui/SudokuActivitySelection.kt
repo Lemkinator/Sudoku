@@ -44,10 +44,11 @@ internal fun SudokuActivity.selectFromNothing(newSelected: Int?) {
 }
 
 internal fun SudokuActivity.selectFromField(newSelected: Int?) {
-    val position = Position.create(selected!!, sudoku.size)
+    val selectedField = selected!!
+    val position = Position.create(selectedField, sudoku.size)
     when (newSelected) {
         // selected nothing / selected same field
-        null, selected -> {
+        null, selectedField -> {
             selected = null
         }
 
@@ -79,16 +80,17 @@ internal fun SudokuActivity.selectFromField(newSelected: Int?) {
 }
 
 internal fun SudokuActivity.selectFromNumberButton(newSelected: Int?) {
+    val selectedButton = selected!!
     when (newSelected) {
         // selected nothing / selected same button
-        null, selected -> {
+        null, selectedButton -> {
             selectButton(null, userSettings.highlightNumber)
         }
 
         // selected field
         in 0 until sudoku.itemCount -> {
-            sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
-            highlightCurrentNumber(selected!! - sudoku.itemCount + 1)
+            sudoku.move(newSelected, selectedButton - sudoku.itemCount + 1, notesEnabled)
+            highlightCurrentNumber(selectedButton - sudoku.itemCount + 1)
         }
 
         // selected button
@@ -105,9 +107,10 @@ internal fun SudokuActivity.selectFromNumberButton(newSelected: Int?) {
 }
 
 internal fun SudokuActivity.selectFromDeleteButton(newSelected: Int?) {
+    val selectedButton = selected!!
     when (newSelected) {
         // selected nothing / selected same button
-        null, selected -> {
+        null, selectedButton -> {
             selectButton(null, userSettings.highlightNumber)
         }
 
@@ -129,9 +132,10 @@ internal fun SudokuActivity.selectFromDeleteButton(newSelected: Int?) {
 }
 
 internal fun SudokuActivity.selectFromHintButton(newSelected: Int?) {
+    val selectedButton = selected!!
     when (newSelected) {
         // selected nothing / selected same button
-        null, selected -> {
+        null, selectedButton -> {
             selectButton(null, userSettings.highlightNumber)
         }
 
