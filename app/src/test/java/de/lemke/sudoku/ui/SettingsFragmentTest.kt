@@ -346,6 +346,24 @@ class SettingsFragmentTest {
         }
 
     @Test
+    fun `the time picker's done button applies the selected time and updates the summary`() =
+        launch { fragment ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
+            val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            shadowOf(Looper.getMainLooper()).idle()
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            // SeslTimePickerDialog ignores BUTTON_POSITIVE clicks while its 283ms show animation is
+            // still running.
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            dialog.isShowing.shouldBeFalse()
+            pref.summary.shouldNotBeNull()
+        }
+
+    @Test
     fun `daily notification toggle requests permission when not yet granted`() =
         launch { fragment ->
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
@@ -353,6 +371,26 @@ class SettingsFragmentTest {
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
             pref.isChecked.shouldBeFalse()
+        }
+
+    @Test
+    fun `the notification permission launcher's callback re-syncs the toggle after a grant`() =
+        launch { fragment ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            shadowOf(context).denyPermissions(POST_NOTIFICATIONS)
+            val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+
+            val request = shadowOf(fragment.requireActivity()).lastRequestedPermission.shouldNotBeNull()
+            shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
+            fragment.requireActivity().onRequestPermissionsResult(
+                request.requestCode,
+                request.requestedPermissions,
+                intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
+            )
+            shadowOf(Looper.getMainLooper()).idle()
+
+            pref.isChecked.shouldBeTrue()
         }
 
     @Test
