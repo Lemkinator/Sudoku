@@ -75,16 +75,16 @@ internal const val DEMO_NUMBER_BUTTON_INDEX_4 = 4
 
 @AndroidEntryPoint
 class IntroActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityIntroBinding
+    internal lateinit var binding: ActivityIntroBinding
     private lateinit var loadingDialog: ProgressDialog
-    private var colorPrimary: Int = 0
+    internal var colorPrimary: Int = 0
     lateinit var gameAdapter: SudokuViewAdapter
-    private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
-    private var selected: Int? = null
-    private var introStep = -1
+    internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
+    internal var selected: Int? = null
+    internal var introStep = -1
     private var animation: Job? = null
-    private var notesEnabled = false
-    private val viewModel: IntroViewModel by viewModels()
+    internal var notesEnabled = false
+    internal val viewModel: IntroViewModel by viewModels()
 
     private val requestPermissionLauncher =
         registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
@@ -137,7 +137,7 @@ class IntroActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
 
-    private fun nextIntroStep() {
+    internal fun nextIntroStep() {
         introStep += 1
         when (introStep) {
             0 -> {
@@ -239,7 +239,7 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
     }
 
-    private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
+    internal fun toggleOrSetNoteButton(enabled: Boolean? = null) {
         if (introStep != INTRO_STEP_10) return
         notesEnabled = enabled ?: !notesEnabled
         binding.noteButton.backgroundTintList =
@@ -252,7 +252,7 @@ class IntroActivity : AppCompatActivity() {
             )
     }
 
-    private fun selectButton(i: Int?) {
+    internal fun selectButton(i: Int?) {
         for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
@@ -283,7 +283,7 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
-    private fun select(newSelected: Int?) {
+    internal fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
             null -> selectFromNothing(newSelected)
