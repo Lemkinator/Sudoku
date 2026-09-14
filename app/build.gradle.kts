@@ -130,6 +130,10 @@ android {
     sourceSets {
         getByName("test") { kotlin.srcDir("src/testShared/kotlin") }
         getByName("androidTest") { kotlin.srcDir("src/testShared/kotlin") }
+        // Room's exported schemas, for Robolectric-based migration tests (MigrationTestHelper reads them via
+        // Context.assets, which only sees the debug variant's merged assets for local unit tests, not a "test"
+        // source set). Debug-only, so release APKs never bundle these.
+        getByName("debug") { assets.srcDirs("$projectDir/schemas") }
     }
     testOptions {
         unitTests {
@@ -211,6 +215,7 @@ dependencies {
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit4)
+    testImplementation(libs.room.testing)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.vintage.engine)
@@ -300,7 +305,7 @@ kover {
         variant("debug") {
             verify {
                 rule {
-                    minBound(90, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
+                    minBound(91, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
                     minBound(74, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
                 }
             }
