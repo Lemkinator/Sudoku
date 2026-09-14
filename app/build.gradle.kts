@@ -305,7 +305,7 @@ kover {
         variant("debug") {
             verify {
                 rule {
-                    minBound(93, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
+                    minBound(94, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
                     minBound(76, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
                 }
             }
