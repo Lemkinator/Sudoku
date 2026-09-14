@@ -167,6 +167,21 @@ class TabStatisticsFragmentTest {
     }
 
     @Test
+    fun `a completed game populates both the started and won difficulty and size stats`() {
+        runBlocking { saveSudoku(completedSudoku(seconds = 60)) }
+        launch { fragment ->
+            listOf(
+                de.lemke.sudoku.R.string.most_games_started,
+                de.lemke.sudoku.R.string.most_games_won,
+            ).forEach { label ->
+                fragment.statisticsList
+                    .filter { it.first == fragment.getString(label) }
+                    .forEach { it.second shouldNotBe "-" }
+            }
+        }
+    }
+
+    @Test
     fun `an unfinished game populates most-started stats but leaves most-won at the placeholder`() {
         runBlocking { saveSudoku(startedSudoku()) }
         launch { fragment ->
