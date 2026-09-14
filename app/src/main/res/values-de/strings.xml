@@ -109,7 +109,6 @@
     <string name="import_data_error_no_valid_json">Fehler: Keine gültige JSON-Datei ausgewählt.</string>
     <string name="import_data_error_no_valid_file">Fehler: Keine gültige Datei ausgewählt.</string>
     <string name="import_data_message">Achtung: Das Importieren kann einige Zeit in Anspruch nehmen. Bereits bestehende Daten werden evtl. überschrieben. Im folgenden Bildschirm bitte die beim Exportieren erstellte JSON-Datei auswählen (z.B.: \"sudoku_export_[Datum].json\").</string>
-    <string name="error_no_folder_selected">Fehler: Kein Ordner ausgewählt</string>
     <string name="error_no_file_selected">Fehler: Keine Datei ausgewählt</string>
 
     <!--Difficulties-->
@@ -222,7 +221,6 @@
     <string name="level">Level</string>
     <string name="next_level">Nächstes Level</string>
 
-    <string name="no_game_played">Noch kein Spiel gespielt</string>
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>
     <string name="error_sudoku_not_found">Sudoku nicht gefunden…</string>
     <string name="error_loading_daily_sudokus_failed">Tägliche Sudokus konnten nicht geladen werden</string>

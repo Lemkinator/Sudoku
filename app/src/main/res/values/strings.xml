@@ -122,7 +122,6 @@
     <string name="import_data_error_no_valid_json">Error: No valid JSON file.</string>
     <string name="import_data_error_no_valid_file">Error: No valid file.</string>
     <string name="import_data_message">Caution: Importing may take some time. Already existing data may be overwritten. In the following screen, please select the JSON file created during export (e.g.: \"sudoku_export_[date].json\").</string>
-    <string name="error_no_folder_selected">Error: No folder selected.</string>
     <string name="error_no_file_selected">Error: No file selected.</string>
 
     <!--Difficulties-->
@@ -235,7 +234,6 @@
     <string name="level">Level</string>
     <string name="next_level">Next level</string>
 
-    <string name="no_game_played">No game played yet</string>
     <string name="error_import_failed">Failed to import Sudoku</string>
     <string name="error_sudoku_not_found">Sudoku not found…</string>
     <string name="error_loading_daily_sudokus_failed">Failed to load daily sudokus</string>
