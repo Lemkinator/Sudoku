@@ -170,6 +170,13 @@ class SudokuActivitySelectionTest {
             activity.selected.shouldBeNull()
         }
 
+    @Test
+    fun `selecting a negative index while nothing is selected is a no-op`() =
+        launch { activity ->
+            activity.select(-1)
+            activity.selected.shouldBeNull()
+        }
+
     // endregion
 
     // region selectFromField
@@ -236,6 +243,15 @@ class SudokuActivitySelectionTest {
                 .shouldBeFalse()
         }
 
+    @Test
+    fun `selecting a negative index while a field is selected leaves the selection unchanged`() =
+        launch { activity ->
+            // no branch in selectFromField matches a negative index, so `selected` is left untouched
+            activity.select(2)
+            activity.select(-1)
+            activity.selected shouldBe 2
+        }
+
     // endregion
 
     // region selectFromNumberButton
@@ -284,6 +300,14 @@ class SudokuActivitySelectionTest {
         launch { activity ->
             activity.select(activity.sudoku.itemCount)
             activity.select(9999)
+            activity.selected.shouldBeNull()
+        }
+
+    @Test
+    fun `selecting a negative index while a number button is selected deselects it`() =
+        launch { activity ->
+            activity.select(activity.sudoku.itemCount)
+            activity.select(-1)
             activity.selected.shouldBeNull()
         }
 
@@ -342,6 +366,14 @@ class SudokuActivitySelectionTest {
             activity.selected.shouldBeNull()
         }
 
+    @Test
+    fun `selecting a negative index while the delete button is selected deselects it`() =
+        launch { activity ->
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size)
+            activity.select(-1)
+            activity.selected.shouldBeNull()
+        }
+
     // endregion
 
     // region selectFromHintButton
@@ -382,6 +414,14 @@ class SudokuActivitySelectionTest {
         }
 
     @Test
+    fun `selecting a negative index while the hint button is selected deselects it`() =
+        launch { activity ->
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size + 1)
+            activity.select(-1)
+            activity.selected.shouldBeNull()
+        }
+
+    @Test
     fun `setting a hint from the hint button keeps it selected while hints remain available`() {
         // size-9 formulaic board has a hint limit of 3, so a single hint doesn't exhaust it
         runBlocking { saveSudoku(formulaicSudoku(size = 9, sudokuId = LARGE_SUDOKU_ID)) }
@@ -398,6 +438,18 @@ class SudokuActivitySelectionTest {
             activity.selected shouldBe hintIndex
         }
     }
+
+    // endregion
+
+    // region selectButton
+
+    @Test
+    fun `selecting a number button without highlighting the number does not mark it as used`() =
+        launch { activity ->
+            userSettings.highlightNumber = false
+            activity.select(activity.sudoku.itemCount) // number button "1"
+            activity.sudoku.numberHighlightingUsed.shouldBeFalse()
+        }
 
     // endregion
 
@@ -418,6 +470,42 @@ class SudokuActivitySelectionTest {
 
             // highlightCurrentNumber found number 1 already complete and selectNextButton wrapped to number 2
             activity.selected shouldBe activity.sudoku.itemCount + 1
+        }
+
+    @Test
+    fun `completing every number wraps the search around and finally clears the selection`() =
+        launch { activity ->
+            val n1 = activity.sudoku.itemCount // number button "1"
+            val n2 = n1 + 1
+            val n3 = n1 + 2
+            val n4 = n1 + 3
+
+            // number 3 (given: 9, 15; empty: 2, 4) completes first, handing the highlight to number 4
+            activity.select(n3)
+            activity.select(2)
+            activity.select(4)
+            activity.selected shouldBe n4
+
+            // number 4 (given: 3, 12; empty: 5, 10) completes next; numbers 1 and 2 are still incomplete,
+            // so the search overflows past number 4 and wraps back around to number 1
+            activity.select(5)
+            activity.select(10)
+            activity.selected shouldBe n1
+
+            // fill number 2 (empty: 1, 7, 8, 14) before finishing number 1, so number 1 finishes last;
+            // completing it hands the highlight back to number 1, the only one still incomplete
+            activity.select(n2)
+            activity.select(1)
+            activity.select(7)
+            activity.select(8)
+            activity.select(14)
+            activity.selected shouldBe n1
+
+            // number 1 (given: 0, 6; empty: 11, 13) completes last: every number is now complete, so the
+            // wrap-around search cycles all the way back to number 1 itself and clears the selection
+            activity.select(11)
+            activity.select(13)
+            activity.selected.shouldBeNull()
         }
 
     // endregion
