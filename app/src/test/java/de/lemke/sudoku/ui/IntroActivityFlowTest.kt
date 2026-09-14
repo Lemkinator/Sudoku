@@ -112,6 +112,13 @@ class IntroActivityFlowTest {
         }
     }
 
+    @Config(application = HiltTestApplication::class, sdk = [33])
+    @Test
+    fun `onCreate does not override the activity transition below API 34`() =
+        launch { activity ->
+            activity.introStep shouldBe 0
+        }
+
     // region step 0
 
     @Test
@@ -242,6 +249,32 @@ class IntroActivityFlowTest {
             activity.select(activity.sudoku.itemCount + 1)
             activity.introStep shouldBe 5
             activity.selected shouldBe activity.sudoku.itemCount + 1
+        }
+
+    @Test
+    fun `a real tap on number button 2 at step 4 routes through its click listener`() =
+        launch { activity ->
+            toStep4(activity)
+            activity.sudokuButtons[1].performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            activity.introStep shouldBe 5
+            activity.selected shouldBe activity.sudoku.itemCount + 1
+        }
+
+    @Test
+    fun `a real tap on the delete button routes through its click listener`() =
+        launch { activity ->
+            activity.binding.deleteButton.performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            activity.introStep shouldBe 0
+        }
+
+    @Test
+    fun `a real tap on the hint button routes through its click listener`() =
+        launch { activity ->
+            activity.binding.hintButton.performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            activity.introStep shouldBe 0
         }
 
     // endregion
@@ -392,6 +425,28 @@ class IntroActivityFlowTest {
 
     // endregion
 
+    // region selectButton
+
+    @Test
+    fun `selectButton highlights the delete button`() =
+        launch { activity ->
+            activity.selectButton(activity.sudoku.size)
+            activity.binding.deleteButton.backgroundTintList
+                ?.defaultColor shouldBe activity.colorPrimary
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size
+        }
+
+    @Test
+    fun `selectButton highlights the hint button`() =
+        launch { activity ->
+            activity.selectButton(activity.sudoku.size + 1)
+            activity.binding.hintButton.backgroundTintList
+                ?.defaultColor shouldBe activity.colorPrimary
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size + 1
+        }
+
+    // endregion
+
     // region SudokuGameListener
 
     @Test
@@ -483,6 +538,48 @@ class IntroActivityFlowTest {
             dialog.getButton(BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             activity.isFinishing.shouldBeFalse()
+        }
+
+    @Test
+    fun `granting the requested permission finishes onboarding`() =
+        launch { activity ->
+            shadowOf(ApplicationProvider.getApplicationContext<HiltTestApplication>())
+                .denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+            activity.binding.introContinueButton.performClick()
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.getButton(BUTTON_POSITIVE).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val request = shadowOf(activity).lastRequestedPermission.shouldNotBeNull()
+            activity.onRequestPermissionsResult(
+                request.requestCode,
+                request.requestedPermissions,
+                intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
+            )
+            shadowOf(Looper.getMainLooper()).idle()
+
+            activity.isFinishing.shouldBeTrue()
+        }
+
+    @Test
+    fun `denying the requested permission still finishes onboarding`() =
+        launch { activity ->
+            shadowOf(ApplicationProvider.getApplicationContext<HiltTestApplication>())
+                .denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
+            activity.binding.introContinueButton.performClick()
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.getButton(BUTTON_POSITIVE).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val request = shadowOf(activity).lastRequestedPermission.shouldNotBeNull()
+            activity.onRequestPermissionsResult(
+                request.requestCode,
+                request.requestedPermissions,
+                intArrayOf(android.content.pm.PackageManager.PERMISSION_DENIED),
+            )
+            shadowOf(Looper.getMainLooper()).idle()
+
+            activity.isFinishing.shouldBeTrue()
         }
 
     // endregion
