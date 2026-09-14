@@ -52,6 +52,8 @@ private const val HINT_INDEX = 4 // row1,col0: bottom border, not colored
 private const val ERROR_INDEX = 5 // row1,col1: bottom-right corner border, not colored, wrong value
 private const val COLORED_INDEX = 8 // row2,col0: no border, colored, empty
 private const val CORNER_NOTES_INDEX = 12 // row3,col0: last-row/first-column notes gravity corner
+private const val COLORED_BY_COLUMN_INDEX = 2 // row0,col2: colored via the column half only
+private const val UNCOLORED_BOTH_HALVES_INDEX = 10 // row2,col2: row and column halves both true, XOR cancels out
 
 private fun solutionFor(index: Int): Int {
     val blockSize = sqrt(SIZE.toDouble()).toInt()
@@ -149,6 +151,20 @@ class FieldViewTest {
         val fieldView = inflatedFieldView(COLORED_INDEX)
 
         (fieldView.background as ColorDrawable).color shouldBe context.getColor(R.color.control_color_normal)
+    }
+
+    @Test
+    fun `a cell colored only via its column half also gets the normal control color`() {
+        val fieldView = inflatedFieldView(COLORED_BY_COLUMN_INDEX)
+
+        (fieldView.background as ColorDrawable).color shouldBe context.getColor(R.color.control_color_normal)
+    }
+
+    @Test
+    fun `a cell where both the row and column halves match is not colored`() {
+        val fieldView = inflatedFieldView(UNCOLORED_BOTH_HALVES_INDEX)
+
+        (fieldView.background as ColorDrawable).color shouldBe Color.TRANSPARENT
     }
 
     @Test
@@ -312,5 +328,37 @@ class FieldViewTest {
         fieldView.isSelected shouldBe true
         fieldView.isHighlightedNumber shouldBe true
         sudoku.timer?.cancel()
+    }
+
+    @Test
+    fun `init before the async inflate completes returns early without touching the view`() {
+        val fieldView = FieldView(context)
+        FrameLayout(context).addView(fieldView)
+
+        fieldView.init(sudoku, PLAIN_INDEX, mockk(relaxed = true))
+
+        // fieldViewContainer is still null, so init() returned before configuring the foreground border.
+        fieldView.foreground.shouldBeNull()
+        fieldView.field.value shouldBe 2
+
+        // The async inflate callback now finds sudoku already initialized and re-invokes init() itself.
+        val deadline = System.currentTimeMillis() + 5_000
+        while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(5)
+        }
+        fieldView.fieldViewValue?.text.toString() shouldBe "2"
+    }
+
+    @Test
+    fun `update called before the async inflate completes is a safe no-op on the text views`() {
+        val fieldView = FieldView(context)
+        FrameLayout(context).addView(fieldView)
+        fieldView.init(sudoku, PLAIN_INDEX, mockk(relaxed = true))
+        fieldView.fieldViewValue.shouldBeNull()
+
+        fieldView.update()
+
+        fieldView.fieldViewValue.shouldBeNull()
     }
 }
