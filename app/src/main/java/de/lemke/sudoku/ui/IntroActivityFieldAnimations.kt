@@ -52,7 +52,7 @@ internal fun checkRowColumnBlockCompleted(
     )
 }
 
-private fun animate(
+internal fun animate(
     position: Position,
     gameAdapter: SudokuViewAdapter,
     sudoku: Sudoku,
