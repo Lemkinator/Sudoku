@@ -34,6 +34,9 @@ import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -52,10 +55,10 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private val SeslSeekBar.sudokuSize: Int
         get() =
             when (this.progress) {
-                0 -> 4
-                1 -> 9
-                2 -> 16
-                else -> 9
+                0 -> SIZE_4X4
+                1 -> SIZE_9X9
+                2 -> SIZE_16X16
+                else -> SIZE_9X9
             }
 
     override fun onCreateView(
@@ -106,9 +109,9 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.difficultySeekbar.progress = viewModel.difficultySliderValue
         binding.difficultySeekbar.setOnSeekBarChangeListener(
             object : SeslSeekBar.OnSeekBarChangeListener {
-                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) { /* no-op */ }
 
-                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) { /* no-op */ }
 
                 override fun onProgressChanged(
                     seekBar: SeslSeekBar?,
@@ -122,9 +125,9 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.sizeSeekbar.progress = viewModel.sizeSliderValue
         binding.sizeSeekbar.setOnSeekBarChangeListener(
             object : SeslSeekBar.OnSeekBarChangeListener {
-                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStartTrackingTouch(seekBar: SeslSeekBar?) { /* no-op */ }
 
-                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeslSeekBar?) { /* no-op */ }
 
                 override fun onProgressChanged(
                     seekBar: SeslSeekBar?,

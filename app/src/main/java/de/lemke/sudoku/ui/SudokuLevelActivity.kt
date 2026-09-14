@@ -29,6 +29,9 @@ import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 
 @AndroidEntryPoint
@@ -63,9 +66,9 @@ class ViewPager2AdapterTabLevelSubtabs(activity: AppCompatActivity) : FragmentSt
 
     override fun createFragment(position: Int): Fragment =
         when (position) {
-            0 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 4) }.extras }
-            1 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 9) }.extras }
-            2 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 16) }.extras }
-            else -> SudokuLevelTab().apply { arguments = intentOf { +("size" to 9) }.extras }
+            0 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SIZE_4X4) }.extras }
+            1 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SIZE_9X9) }.extras }
+            2 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SIZE_16X16) }.extras }
+            else -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SIZE_9X9) }.extras }
         }
 }
