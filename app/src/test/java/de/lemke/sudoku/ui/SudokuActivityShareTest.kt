@@ -173,11 +173,9 @@ class SudokuActivityShareTest {
             started.action shouldBe Intent.ACTION_CHOOSER
         }
 
-    // androidx.core.content.FileProvider.SimplePathStrategy#belongsToRoot hardcodes '/' as the path
-    // separator when comparing canonical paths (verified in the sesl-androidx fork this app actually
-    // uses); on a Windows JVM (Robolectric here) File.getCanonicalPath() uses '\', so the check always
-    // fails locally while a real device/Linux CI (where '/' is native) always succeeds. Same root
-    // cause as ShareSudokuUseCaseTest's assumeUnixPaths.
+    // Stock AndroidX FileProvider.SimplePathStrategy#belongsToRoot hardcodes '/' when comparing
+    // canonical paths, so it always fails on a Windows JVM (File.getCanonicalPath() uses '\') while a
+    // real device/Linux CI succeeds — same root cause as ShareSudokuUseCaseTest's assumeUnixPaths.
     @Test
     fun `sharing the initial board exports and starts a file share chooser`() {
         assumeTrue(File.separatorChar == '/')

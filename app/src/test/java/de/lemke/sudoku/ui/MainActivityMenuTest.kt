@@ -40,6 +40,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
@@ -221,6 +222,44 @@ class MainActivityMenuTest {
             val started = shadowOf(activity).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SettingsActivity::class.java.name
+        }
+
+    // endregion
+
+    // region about links (ClickableSpan)
+
+    /**
+     * `setupCommonUtilsActivities()` stores the real `SpannableString` on
+     * [CommonUtilsAboutActivity]'s companion object as soon as `onCreate` runs — no need to actually
+     * navigate to the about screen. The two `ClickableSpan`s are found on that real, rendered text and
+     * invoked directly, exercising the exact anonymous `onClick` production code.
+     */
+    private fun clickableSpans(): List<android.text.style.ClickableSpan> {
+        val text = CommonUtilsAboutActivity.optionalText.shouldNotBeNull()
+        return text.getSpans(0, text.length, android.text.style.ClickableSpan::class.java).toList()
+    }
+
+    @Test
+    fun `the about text has exactly the library and license links`() = launch { clickableSpans() shouldHaveSize 2 }
+
+    @Test
+    fun `clicking the library link span opens the library's GitHub page`() =
+        launch { activity ->
+            val spans = clickableSpans()
+            spans[0].onClick(activity.binding.root)
+            val started = shadowOf(activity).nextStartedActivity
+            started.shouldNotBeNull()
+            started.data shouldBe Uri.parse(activity.getString(R.string.sudoku_lib_github_link))
+        }
+
+    @Test
+    fun `clicking the license link span opens the license's GitHub page`() =
+        launch { activity ->
+            val spans = clickableSpans()
+            spans[1].onClick(activity.binding.root)
+            val started = shadowOf(activity).nextStartedActivity
+            started.shouldNotBeNull()
+            started.data shouldBe Uri.parse(activity.getString(R.string.sudoku_lib_license_github_link))
         }
 
     // endregion
