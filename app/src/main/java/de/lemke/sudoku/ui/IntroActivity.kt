@@ -300,17 +300,19 @@ class IntroActivity : AppCompatActivity() {
         when (newSelected) {
             // selected field
             in 0 until sudoku.itemCount -> {
-                if (newSelected == DEMO_CELL_INDEX_4 && introStep == 2) {
-                    gameAdapter.selectFieldView(newSelected, highlightNeighbors = true, highlightNumber = true)
-                    selected = newSelected
+                val field = newSelected!!
+                if (field == DEMO_CELL_INDEX_4 && introStep == 2) {
+                    gameAdapter.selectFieldView(field, highlightNeighbors = true, highlightNumber = true)
+                    selected = field
                     nextIntroStep()
                 }
             }
 
             // selected button
             in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                if (introStep == INTRO_STEP_4 && newSelected == sudoku.itemCount + 1) {
-                    selectButton(newSelected - sudoku.itemCount)
+                val button = newSelected!!
+                if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
+                    selectButton(button - sudoku.itemCount)
                     nextIntroStep()
                 }
             }
@@ -330,8 +332,9 @@ class IntroActivity : AppCompatActivity() {
 
             // selected number
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                if (introStep == INTRO_STEP_3 && newSelected == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
-                    sudoku.move(position, newSelected - sudoku.itemCount + 1, false)
+                val number = newSelected!!
+                if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
+                    sudoku.move(position, number - sudoku.itemCount + 1, false)
                     selected = null
                     gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
                     nextIntroStep()
@@ -349,11 +352,12 @@ class IntroActivity : AppCompatActivity() {
 
             // selected field
             in 0 until sudoku.itemCount -> {
+                val field = newSelected!!
                 val number = selected!! - sudoku.itemCount + 1
-                if ((introStep == INTRO_STEP_5 && newSelected == DEMO_CELL_INDEX_49) ||
-                    (introStep == INTRO_STEP_6 && newSelected == DEMO_CELL_INDEX_24)
+                if ((introStep == INTRO_STEP_5 && field == DEMO_CELL_INDEX_49) ||
+                    (introStep == INTRO_STEP_6 && field == DEMO_CELL_INDEX_24)
                 ) {
-                    sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, false)
+                    sudoku.move(field, number, false)
                     gameAdapter.highlightNumber(number)
                     nextIntroStep()
                 }
