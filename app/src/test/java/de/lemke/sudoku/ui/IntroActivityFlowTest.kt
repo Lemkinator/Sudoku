@@ -583,4 +583,106 @@ class IntroActivityFlowTest {
         }
 
     // endregion
+
+    // region branch coverage: step dispatch and selection range edges
+
+    @Test
+    fun `advancing the step dispatch past the final step is a no-op`() =
+        launch { activity ->
+            toStep10(activity)
+            activity.nextIntroStep()
+            activity.introStep shouldBe 11
+        }
+
+    @Test
+    fun `select collapses the toolbar when it is currently expanded`() =
+        launch { activity ->
+            activity.binding.sudokuToolbarLayout.setExpanded(expanded = true, animate = false)
+            shadowOf(Looper.getMainLooper()).idle()
+            activity.binding.sudokuToolbarLayout.isExpanded
+                .shouldBeTrue()
+
+            activity.select(0)
+            shadowOf(Looper.getMainLooper()).idle()
+            activity.binding.sudokuToolbarLayout.isExpanded
+                .shouldBeFalse()
+        }
+
+    @Test
+    fun `select is a no-op when the delete button is currently selected`() =
+        launch { activity ->
+            activity.selectButton(activity.sudoku.size)
+            val selectedBefore = activity.selected
+            activity.select(0)
+            activity.selected shouldBe selectedBefore
+            activity.introStep shouldBe 0
+        }
+
+    @Test
+    fun `tapping the step-2 target field before reaching step 2 does not advance`() =
+        launch { activity ->
+            activity.select(DEMO_CELL_INDEX_4)
+            activity.introStep shouldBe 0
+            activity.selected.shouldBeNull()
+        }
+
+    @Test
+    fun `selecting the step-4 target button outside step 4 does not advance`() =
+        launch { activity ->
+            activity.select(activity.sudoku.itemCount + 1)
+            activity.introStep shouldBe 0
+            activity.selected.shouldBeNull()
+        }
+
+    @Test
+    fun `deselecting a field at step 3 clears the selection without advancing`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(null)
+            activity.selected.shouldBeNull()
+            activity.introStep shouldBe 3
+        }
+
+    @Test
+    fun `selecting the step-3 target number outside step 3 does not place a value`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.introStep = 99
+            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.introStep shouldBe 99
+            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+        }
+
+    @Test
+    fun `deselecting a number button at step 5 clears the selection without advancing`() =
+        launch { activity ->
+            toStep5(activity)
+            activity.select(null)
+            activity.selected.shouldBeNull()
+            activity.introStep shouldBe 5
+        }
+
+    @Test
+    fun `selecting a different number button while one is already selected is a no-op`() =
+        launch { activity ->
+            toStep5(activity)
+            val selectedBefore = activity.selected
+            activity.select(activity.sudoku.itemCount + 2)
+            activity.selected shouldBe selectedBefore
+            activity.introStep shouldBe 5
+        }
+
+    @Test
+    fun `selecting a field while a number button is selected outside steps 5 and 6 does not place a value`() =
+        launch { activity ->
+            toStep5(activity)
+            // toStep5 already placed 5 at DEMO_CELL_INDEX_4 via the step 3->4 script; this asserts that
+            // value is left untouched, not overwritten by the currently-selected number button (2).
+            activity.introStep = 99
+            activity.select(DEMO_CELL_INDEX_4)
+            activity.introStep shouldBe 99
+            activity.sudoku[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
+        }
+
+    // endregion
 }

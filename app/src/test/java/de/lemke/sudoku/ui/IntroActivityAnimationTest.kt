@@ -32,6 +32,8 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.model.Position
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -166,9 +168,7 @@ class IntroActivityAnimationTest {
     @Test
     fun `animate with animateSudoku drives the whole-board branch of matchesAnimation`() =
         launch { activity ->
-            val position =
-                de.lemke.sudoku.domain.model.Position
-                    .create(0, activity.sudoku.size)
+            val position = Position.create(0, activity.sudoku.size)
             val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope, animateSudoku = true)
             job.shouldNotBeNull()
             idle(2000)
@@ -177,9 +177,7 @@ class IntroActivityAnimationTest {
     @Test
     fun `animate with every flag false is a no-op`() =
         launch { activity ->
-            val position =
-                de.lemke.sudoku.domain.model.Position
-                    .create(0, activity.sudoku.size)
+            val position = Position.create(0, activity.sudoku.size)
             val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope)
             job.shouldBeNull()
         }
@@ -199,5 +197,96 @@ class IntroActivityAnimationTest {
             idleRepeated(8, 1200)
             activity.nextIntroStep()
             activity.introStep shouldBe 9
+        }
+
+    @Test
+    fun `step 0's row-column-block loop exits on its own once the step changes underneath it`() =
+        launch { activity ->
+            idleRepeated(3, 900)
+            activity.introStep = 1
+            idleRepeated(3, 900)
+            activity.introStep shouldBe 1
+        }
+
+    @Test
+    fun `step 2's field-highlight loop exits on its own once the step changes underneath it`() =
+        launch { activity ->
+            activity.nextIntroStep()
+            activity.nextIntroStep()
+            activity.introStep shouldBe 2
+            idleRepeated(3, 800)
+            activity.introStep = 3
+            idleRepeated(3, 800)
+            activity.introStep shouldBe 3
+        }
+
+    @Test
+    fun `step 6's block-highlight loop exits on its own once the step changes underneath it`() =
+        launch { activity ->
+            activity.nextIntroStep()
+            activity.nextIntroStep()
+            activity.select(DEMO_CELL_INDEX_4)
+            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(DEMO_CELL_INDEX_49)
+            activity.introStep shouldBe 6
+            idleRepeated(3, 800)
+            activity.introStep = 7
+            idleRepeated(3, 800)
+            activity.introStep shouldBe 7
+        }
+
+    @Test
+    fun `step 8's number-entry loop exits on its own once the step changes underneath it`() =
+        launch { activity ->
+            activity.nextIntroStep()
+            activity.nextIntroStep()
+            activity.select(DEMO_CELL_INDEX_4)
+            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(DEMO_CELL_INDEX_49)
+            activity.select(DEMO_CELL_INDEX_24)
+            activity.nextIntroStep()
+            activity.introStep shouldBe 8
+            idleRepeated(5, 1200)
+            activity.introStep = 9
+            idleRepeated(5, 1200)
+            activity.introStep shouldBe 9
+        }
+
+    @Test
+    fun `startAnimation with an unmatched intro step dispatches to no animation`() =
+        launch { activity ->
+            val job = startAnimation(-1, activity.lifecycleScope, activity.gameAdapter, { activity.introStep }, activity::selectButton)
+            idle(50)
+            job.isCompleted.shouldBeTrue()
+        }
+
+    @Test
+    fun `stopAnimation with no active animation job still resets the highlighted fields`() =
+        launch { activity ->
+            activity.gameAdapter.fieldViews.forEach { it.isHighlighted = true }
+            stopAnimation(0, null, activity.gameAdapter, activity::selectButton)
+            activity.gameAdapter.fieldViews
+                .none { it.isHighlighted }
+                .shouldBeTrue()
+        }
+
+    @Test
+    fun `animate with only animateColumn drives the column-only branch of matchesAnimation`() =
+        launch { activity ->
+            val position = Position.create(0, activity.sudoku.size)
+            val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope, animateColumn = true)
+            job.shouldNotBeNull()
+            idle(2000)
+        }
+
+    @Test
+    fun `animate with only animateBlock drives the block-only branch of matchesAnimation`() =
+        launch { activity ->
+            val position = Position.create(0, activity.sudoku.size)
+            val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope, animateBlock = true)
+            job.shouldNotBeNull()
+            idle(2000)
         }
 }
