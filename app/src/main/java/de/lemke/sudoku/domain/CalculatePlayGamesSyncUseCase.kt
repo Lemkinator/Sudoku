@@ -95,7 +95,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores: MutableList<Pair<Int, Long>>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val (achievement10, achievement50) = difficultyAchievements[sudoku.difficulty] ?: return
+        val (achievement10, achievement50) = difficultyAchievements.getValue(sudoku.difficulty)
         increments += achievement10 to 1
         increments += achievement50 to 1
         val (timeId, winsId) = sizeDifficultyLeaderboard[sudoku.size to sudoku.difficulty] ?: return
@@ -178,6 +178,9 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             val difficultyLeaderboardSizes = sizeDifficultyLeaderboard.keys.map { it.first }.toSet()
             check(difficultyLeaderboardSizes == supportedSizes) {
                 "sizeDifficultyLeaderboard missing entries for sizes: ${supportedSizes - difficultyLeaderboardSizes}"
+            }
+            check(difficultyAchievements.keys == Difficulty.entries.toSet()) {
+                "difficultyAchievements missing entries for: ${Difficulty.entries.toSet() - difficultyAchievements.keys}"
             }
         }
     }
