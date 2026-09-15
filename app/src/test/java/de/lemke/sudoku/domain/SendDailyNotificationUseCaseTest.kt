@@ -28,6 +28,9 @@ import de.lemke.sudoku.data.UserSettings
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import java.util.Calendar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -42,7 +45,12 @@ import org.robolectric.annotation.Config
 class SendDailyNotificationUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-    private val useCase = SendDailyNotificationUseCase(context, userSettings)
+
+    // Fixed instead of the wall clock, so trigger-time assertions can compare exact fields deterministically
+    // instead of racing the real clock across a day/hour/minute boundary.
+    private val fixedNow = Instant.parse("2026-06-15T12:00:00Z")
+    private val clock = Clock.fixed(fixedNow, ZoneId.systemDefault())
+    private val useCase = SendDailyNotificationUseCase(context, userSettings, clock)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val channelId get() = context.getString(R.string.daily_sudoku_notification_channel_id)
@@ -68,12 +76,9 @@ class SendDailyNotificationUseCaseTest {
         notificationManager.getNotificationChannel(channelId).shouldNotBeNull()
     }
 
-    // java.util.Calendar isn't part of Robolectric's instrumented classpath, so SystemClock.setCurrentTimeMillis
-    // can't fake what Calendar.getInstance() sees here; targets are chosen relative to the real clock instead,
-    // and compared field-by-field rather than by exact epoch millis (which would drift by the run's own SECOND/MS).
     @Test
     fun `setDailySudokuNotification true schedules an alarm later today when the configured time has not passed yet`() {
-        val now = Calendar.getInstance()
+        val now = Calendar.getInstance().apply { timeInMillis = clock.millis() }
         userSettings.dailySudokuNotificationHour = 23
         userSettings.dailySudokuNotificationMinute = 59
 
@@ -91,7 +96,11 @@ class SendDailyNotificationUseCaseTest {
 
     @Test
     fun `setDailySudokuNotification true rolls the alarm to tomorrow when the configured time already passed today`() {
-        val tomorrow = Calendar.getInstance().apply { add(Calendar.DATE, 1) }
+        val tomorrow =
+            Calendar.getInstance().apply {
+                timeInMillis = clock.millis()
+                add(Calendar.DATE, 1)
+            }
         userSettings.dailySudokuNotificationHour = 0
         userSettings.dailySudokuNotificationMinute = 0
 
