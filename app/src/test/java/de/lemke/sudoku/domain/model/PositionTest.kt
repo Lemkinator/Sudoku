@@ -116,7 +116,7 @@ class PositionTest : ShouldSpec(
         should("not equal an instance of a different class") {
             val position = Position.create(5, 9)
 
-            (position.equals("not a position")) shouldBe false
+            position.equals("not a position") shouldBe false
         }
 
         should("not equal null") {

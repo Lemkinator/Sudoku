@@ -98,7 +98,7 @@ class FieldView(context: Context) : LinearLayout(context) {
         // rm/cm are modulo (sudoku.blockSize * 2), so they are always < sudoku.blockSize * 2 already.
         val rm = position.row % (sudoku.blockSize * 2)
         val cm = position.column % (sudoku.blockSize * 2)
-        isColored = (rm >= sudoku.blockSize) != (cm >= sudoku.blockSize)
+        isColored = rm >= sudoku.blockSize != cm >= sudoku.blockSize
         update()
     }
 

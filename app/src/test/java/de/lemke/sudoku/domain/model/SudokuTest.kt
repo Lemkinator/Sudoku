@@ -110,7 +110,7 @@ class SudokuTest : ShouldSpec(
         should("never equal an instance of a different class") {
             val sudoku = fourByFourSudoku()
 
-            (sudoku.equals("not a sudoku")) shouldBe false
+            sudoku.equals("not a sudoku") shouldBe false
         }
 
         should("never equal null") {
