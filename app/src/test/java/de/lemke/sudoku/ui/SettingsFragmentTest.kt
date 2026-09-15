@@ -47,6 +47,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -147,6 +148,7 @@ class SettingsFragmentTest {
             Thread.sleep(20)
         }
         shadowOf(Looper.getMainLooper()).idle()
+        check(condition()) { "condition not met within ${timeoutMillis}ms" }
     }
 
     // region errorLimit
@@ -243,6 +245,9 @@ class SettingsFragmentTest {
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
             shadowOf(Looper.getMainLooper()).idle()
+            // ExportDataUseCase always shows a ProgressDialog as its first action, so a null latest dialog proves it
+            // was never invoked.
+            ShadowDialog.getLatestDialog().shouldBeNull()
         }
 
     @Test
@@ -254,6 +259,7 @@ class SettingsFragmentTest {
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent())
             shadowOf(Looper.getMainLooper()).idle()
+            ShadowDialog.getLatestDialog().shouldBeNull()
         }
 
     @Test
@@ -265,6 +271,7 @@ class SettingsFragmentTest {
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, null)
             shadowOf(Looper.getMainLooper()).idle()
+            ShadowDialog.getLatestDialog().shouldBeNull()
         }
 
     @Test
@@ -379,7 +386,9 @@ class SettingsFragmentTest {
         }
 
     @Test
-    fun `the time picker's done button applies the selected time and updates the summary`() =
+    fun `the time picker's done button applies the selected time and updates the summary`() {
+        userSettings.dailySudokuNotificationHour = 14
+        userSettings.dailySudokuNotificationMinute = 37
         launch { fragment ->
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
@@ -393,8 +402,11 @@ class SettingsFragmentTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             dialog.isShowing.shouldBeFalse()
-            pref.summary.shouldNotBeNull()
+            userSettings.dailySudokuNotificationHour shouldBe 14
+            userSettings.dailySudokuNotificationMinute shouldBe 37
+            pref.summary.toString() shouldContain "2:37"
         }
+    }
 
     @Test
     fun `daily notification toggle requests permission when not yet granted`() =
@@ -442,11 +454,15 @@ class SettingsFragmentTest {
         }
 
     @Test
-    fun `daily notification toggle off disables it without further checks`() =
+    fun `daily notification toggle off disables it without further checks`() {
+        userSettings.dailySudokuNotificationEnabled = true
         launch { fragment ->
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceChangeListener?.onPreferenceChange(pref, false)
+            shadowOf(Looper.getMainLooper()).idle()
+            userSettings.dailySudokuNotificationEnabled.shouldBeFalse()
         }
+    }
 
     @Test
     fun `daily notification summary uses a 24-hour time when the system uses 24-hour format`() {
@@ -476,6 +492,7 @@ class SettingsFragmentTest {
         launch { fragment ->
             fragment.removePref<DropDownPreference>("errorLimit")
             fragment.initErrorLimitPreference()
+            fragment.findPreference<DropDownPreference>("errorLimit").shouldBeNull()
         }
 
     @Test
@@ -483,6 +500,7 @@ class SettingsFragmentTest {
         launch { fragment ->
             fragment.removePref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             fragment.initDailyNotificationPreference()
+            fragment.findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled").shouldBeNull()
         }
 
     @Test
@@ -490,6 +508,7 @@ class SettingsFragmentTest {
         launch { fragment ->
             fragment.removePref<PreferenceScreen>("intro")
             fragment.initIntroPreference()
+            fragment.findPreference<PreferenceScreen>("intro").shouldBeNull()
         }
 
     @Test
@@ -497,6 +516,7 @@ class SettingsFragmentTest {
         launch { fragment ->
             fragment.removePref<PreferenceScreen>("exportData")
             fragment.initExportDataPreference()
+            fragment.findPreference<PreferenceScreen>("exportData").shouldBeNull()
         }
 
     @Test
@@ -504,6 +524,7 @@ class SettingsFragmentTest {
         launch { fragment ->
             fragment.removePref<PreferenceScreen>("importData")
             fragment.initImportDataPreference()
+            fragment.findPreference<PreferenceScreen>("importData").shouldBeNull()
         }
 
     @Test
@@ -511,10 +532,11 @@ class SettingsFragmentTest {
         launch { fragment ->
             fragment.removePref<PreferenceScreen>("deleteInvalidSudokus")
             fragment.initDeleteInvalidSudokusPreference()
+            fragment.findPreference<PreferenceScreen>("deleteInvalidSudokus").shouldBeNull()
         }
 
     @Test
-    fun `the notification permission launcher's callback is a no-op when the preference is missing`() =
+    fun `the notification permission launcher's callback still updates settings when the preference is missing`() =
         launch { fragment ->
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             shadowOf(context).denyPermissions(POST_NOTIFICATIONS)
@@ -530,6 +552,10 @@ class SettingsFragmentTest {
                 intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
             )
             shadowOf(Looper.getMainLooper()).idle()
+
+            // the preference re-sync is skipped (it's gone), but the settings write itself is unconditional
+            fragment.findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled").shouldBeNull()
+            userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
         }
 
     // endregion
