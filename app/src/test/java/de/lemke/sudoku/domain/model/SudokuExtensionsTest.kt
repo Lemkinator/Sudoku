@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain.model
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
@@ -56,7 +57,7 @@ class SudokuExtensionsTest : ShouldSpec(
 
         // Field has no equals()/hashCode() override, so List<Field> equality (used by contentEquals) is
         // reference equality per element: two sudokus only compare fields-equal when they share the same
-        // Field instances, not merely equal field values (see report: sudoku.copy() never contentEquals its source).
+        // Field instances, not merely equal field values.
         should("consider sudokus with the same id, matching flags and shared field instances content-equal") {
             val id = SudokuId.generate()
             val created = LocalDateTime.of(2024, 1, 1, 12, 0)
@@ -138,6 +139,8 @@ class SudokuExtensionsTest : ShouldSpec(
                 )
             other[0] = other[0].copy(value = 2)
 
+            other[0].value shouldBe 2
+            sudoku[0].value shouldNotBe other[0].value
             sudoku.contentEquals(other) shouldBe false
         }
 

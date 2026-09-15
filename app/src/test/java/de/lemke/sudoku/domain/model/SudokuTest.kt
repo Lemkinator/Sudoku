@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain.model
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
 
 class SudokuTest : ShouldSpec(
@@ -176,9 +177,11 @@ class SudokuTest : ShouldSpec(
 
         should("contentEquals is false once a tracked field differs") {
             val id = SudokuId.generate()
-            val first = fourByFourSudoku(sudokuId = id)
-            val second = fourByFourSudoku(sudokuId = id).apply { numberHighlightingUsed = !numberHighlightingUsed }
+            val fields = sharedFieldList()
+            val first = contentEqualsBaseSudoku(id, fields)
+            val second = contentEqualsBaseSudoku(id, fields).apply { numberHighlightingUsed = !numberHighlightingUsed }
 
+            first.numberHighlightingUsed shouldNotBe second.numberHighlightingUsed
             first.contentEquals(second) shouldBe false
         }
 
