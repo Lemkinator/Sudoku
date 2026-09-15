@@ -21,6 +21,7 @@ import android.net.Uri
 import android.os.Looper
 import android.os.SystemClock
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -38,12 +39,14 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
 import io.kjson.stringifyJSON
@@ -72,7 +75,8 @@ import org.robolectric.shadows.ShadowDialog
  * Covers [MainActivity]'s menu (`onCreateOptionsMenu`/`onPrepareOptionsMenu`/`onOptionsItemSelected`,
  * `showStatisticsFilterDialog`), the drawer navigation clicks that route to another activity, and
  * `checkImportedSudoku`'s failure path. Play Games sign-in (`achievements_dest`/`leaderboards_dest`) is not driven
- * here — it depends on a real, connected Play Games session that Robolectric cannot provide (see status file).
+ * here — it depends on a real, connected Play Games session that Robolectric cannot provide (see
+ * [MainActivityGamesSignInTest], which fakes that boundary instead).
  *
  * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
  */
@@ -102,6 +106,9 @@ class MainActivityMenuTest {
 
     @Inject
     lateinit var settings: SettingsRepository
+
+    @Inject
+    lateinit var userSettings: UserSettings
 
     @Before
     fun setup() {
@@ -180,12 +187,15 @@ class MainActivityMenuTest {
     @Test
     fun `the filter dialog's cancel button dismisses without changing settings`() =
         launch { activity ->
+            val originalFilterFlags = userSettings.filterFlags
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter))
             shadowOf(Looper.getMainLooper()).idle()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.findViewById<AppCompatCheckBox>(R.id.filterSize4)!!.isChecked = false
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             dialog.isShowing.shouldBeFalse()
+            userSettings.filterFlags shouldBe originalFilterFlags
         }
 
     @Test
@@ -194,9 +204,12 @@ class MainActivityMenuTest {
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter))
             shadowOf(Looper.getMainLooper()).idle()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.findViewById<AppCompatCheckBox>(R.id.filterSize4)!!.isChecked = false
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             dialog.isShowing.shouldBeFalse()
+            (userSettings.filterFlags and SudokuFilterFlags.SIZE_4X4) shouldBe 0
+            (userSettings.filterFlags and SudokuFilterFlags.SIZE_ALL) shouldBe 0
         }
 
     @Test

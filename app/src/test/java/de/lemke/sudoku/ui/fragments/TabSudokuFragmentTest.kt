@@ -35,6 +35,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -105,6 +106,9 @@ class TabSudokuFragmentTest {
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
+
+    @Inject
+    lateinit var userSettings: UserSettings
 
     @Before
     fun setup() {
@@ -211,7 +215,7 @@ class TabSudokuFragmentTest {
                 )
             seekBar.progress = 3
             shadowOf(Looper.getMainLooper()).idle()
-            seekBar.progress shouldBe 3
+            userSettings.difficultySliderValue shouldBe 3
         }
 
     @Test
@@ -220,7 +224,7 @@ class TabSudokuFragmentTest {
             val seekBar = fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar)
             seekBar.progress = 2
             shadowOf(Looper.getMainLooper()).idle()
-            seekBar.progress shouldBe 2
+            userSettings.sizeSliderValue shouldBe 2
         }
 
     @Test
