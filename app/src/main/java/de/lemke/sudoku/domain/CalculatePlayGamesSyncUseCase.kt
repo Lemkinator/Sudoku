@@ -103,14 +103,6 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores += winsId to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
     }
 
-    internal data class SizeStats(
-        val achievement10: Int,
-        val achievement50: Int,
-        val stopwatchAchievement: Int,
-        val stopwatchSeconds: Int,
-        val winsId: Int,
-    )
-
     companion object {
         internal val sizeStats: Map<Int, SizeStats> =
             mapOf(
@@ -171,4 +163,12 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
 
         internal val supportedSizes = setOf(4, 9, 16)
     }
+
+    internal data class SizeStats(
+        val achievement10: Int,
+        val achievement50: Int,
+        val stopwatchAchievement: Int,
+        val stopwatchSeconds: Int,
+        val winsId: Int,
+    )
 }
