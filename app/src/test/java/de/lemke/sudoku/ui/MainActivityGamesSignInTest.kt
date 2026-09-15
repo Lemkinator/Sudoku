@@ -41,6 +41,7 @@ import de.lemke.sudoku.ui.utils.GamesSignInProvider
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -137,6 +138,8 @@ class MainActivityGamesSignInTest {
             every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.isAuthenticated() }
+            verify(exactly = 0) { fakeClient.signIn() }
         }
 
     @Test
@@ -146,6 +149,7 @@ class MainActivityGamesSignInTest {
             every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.signIn() }
         }
 
     @Test
@@ -175,6 +179,7 @@ class MainActivityGamesSignInTest {
             every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.signIn() }
         }
 
     @Test
@@ -183,6 +188,8 @@ class MainActivityGamesSignInTest {
             every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.isAuthenticated() }
+            verify(exactly = 0) { fakeClient.signIn() }
         }
 
     @Test
@@ -192,6 +199,7 @@ class MainActivityGamesSignInTest {
             every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.signIn() }
         }
 
     @Test
@@ -221,5 +229,6 @@ class MainActivityGamesSignInTest {
             every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.signIn() }
         }
 }
