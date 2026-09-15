@@ -61,6 +61,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -89,8 +90,6 @@ import org.robolectric.annotation.Config
  *    effect this drives (dialog, coroutine, repository delete, `endActionMode()`) is real production
  *    code; only the retrieval of the listener reference uses reflection, because the library exposes no
  *    other seam.
- *
- * Recorded in the status file as the reusable pattern for future OneUI action-mode coverage in this fleet.
  *
  * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
  */
@@ -137,6 +136,14 @@ class TabHistoryActionModeTest {
         // MainActivity talks to PlayGames on launch; the SDK is normally auto-initialized by its
         // manifest-merged ContentProvider, which Robolectric does not run under HiltTestApplication.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
+    }
+
+    private var restoreReflectedField: (() -> Unit)? = null
+
+    @After
+    fun tearDown() {
+        restoreReflectedField?.invoke()
+        restoreReflectedField = null
     }
 
     private fun historySudoku(): Sudoku {
@@ -336,6 +343,8 @@ class TabHistoryActionModeTest {
     fun `onSaveInstanceState returns early when only the drawer layout was never assigned`() {
         launch { fragment ->
             val drawerLayoutField = TabHistory::class.java.getDeclaredField("drawerLayout").apply { isAccessible = true }
+            val originalDrawerLayout = drawerLayoutField.get(fragment)
+            restoreReflectedField = { drawerLayoutField.set(fragment, originalDrawerLayout) }
             drawerLayoutField.set(fragment, null)
 
             fragment.onSaveInstanceState(Bundle())
