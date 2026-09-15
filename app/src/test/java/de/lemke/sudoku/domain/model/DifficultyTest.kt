@@ -58,7 +58,7 @@ class DifficultyTest : ShouldSpec(
         }
 
         should("expose max as the index of the last difficulty entry") {
-            Difficulty.max shouldBe Difficulty.entries.size - 1
+            Difficulty.max shouldBe 4
         }
     },
 )

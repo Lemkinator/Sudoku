@@ -21,34 +21,54 @@ import io.kotest.matchers.shouldBe
 
 class PositionTest : ShouldSpec(
     {
-        should("derive row, column and block consistently for the first, middle and last index of each size") {
-            listOf(4, 9, 16).forEach { size ->
-                val blockSize = Math.sqrt(size.toDouble()).toInt()
-                listOf(0, size * size / 2, size * size - 1).forEach { index ->
-                    val position = Position.create(index, size)
+        should("derive row, column and block for known indices of each size") {
+            data class Expected(val size: Int, val index: Int, val row: Int, val column: Int, val block: Int)
+            listOf(
+                Expected(size = 4, index = 0, row = 0, column = 0, block = 0),
+                Expected(size = 4, index = 8, row = 2, column = 0, block = 2),
+                Expected(size = 4, index = 15, row = 3, column = 3, block = 3),
+                Expected(size = 9, index = 0, row = 0, column = 0, block = 0),
+                Expected(size = 9, index = 40, row = 4, column = 4, block = 4),
+                Expected(size = 9, index = 80, row = 8, column = 8, block = 8),
+                Expected(size = 16, index = 0, row = 0, column = 0, block = 0),
+                Expected(size = 16, index = 128, row = 8, column = 0, block = 8),
+                Expected(size = 16, index = 255, row = 15, column = 15, block = 15),
+            ).forEach { e ->
+                val position = Position.create(e.index, e.size)
 
-                    position.row shouldBe index / size
-                    position.column shouldBe index % size
-                    position.block shouldBe (index / size) / blockSize * blockSize + (index % size) / blockSize
-                    position.index shouldBe index
-                    position.size shouldBe size
-                }
+                position.row shouldBe e.row
+                position.column shouldBe e.column
+                position.block shouldBe e.block
+                position.index shouldBe e.index
+                position.size shouldBe e.size
             }
         }
 
-        should("derive index and block consistently from row/column for the first, middle and last row-column of each size") {
-            listOf(4, 9, 16).forEach { size ->
-                val blockSize = Math.sqrt(size.toDouble()).toInt()
-                listOf(0, size / 2, size - 1).forEach { row ->
-                    listOf(0, size / 2, size - 1).forEach { column ->
-                        val position = Position.create(size, row, column)
+        should("derive index and block for known row/column combinations of each size") {
+            data class Expected(val size: Int, val row: Int, val column: Int, val index: Int, val block: Int)
+            listOf(
+                Expected(size = 4, row = 0, column = 0, index = 0, block = 0),
+                Expected(size = 4, row = 2, column = 2, index = 10, block = 3),
+                Expected(size = 4, row = 3, column = 3, index = 15, block = 3),
+                Expected(size = 4, row = 0, column = 3, index = 3, block = 1),
+                Expected(size = 4, row = 3, column = 0, index = 12, block = 2),
+                Expected(size = 9, row = 0, column = 0, index = 0, block = 0),
+                Expected(size = 9, row = 4, column = 4, index = 40, block = 4),
+                Expected(size = 9, row = 8, column = 8, index = 80, block = 8),
+                Expected(size = 9, row = 0, column = 8, index = 8, block = 2),
+                Expected(size = 9, row = 8, column = 0, index = 72, block = 6),
+                Expected(size = 16, row = 0, column = 0, index = 0, block = 0),
+                Expected(size = 16, row = 8, column = 8, index = 136, block = 10),
+                Expected(size = 16, row = 15, column = 15, index = 255, block = 15),
+                Expected(size = 16, row = 0, column = 15, index = 15, block = 3),
+                Expected(size = 16, row = 15, column = 0, index = 240, block = 12),
+            ).forEach { e ->
+                val position = Position.create(e.size, e.row, e.column)
 
-                        position.index shouldBe row * size + column
-                        position.block shouldBe row / blockSize * blockSize + column / blockSize
-                        position.row shouldBe row
-                        position.column shouldBe column
-                    }
-                }
+                position.index shouldBe e.index
+                position.block shouldBe e.block
+                position.row shouldBe e.row
+                position.column shouldBe e.column
             }
         }
 

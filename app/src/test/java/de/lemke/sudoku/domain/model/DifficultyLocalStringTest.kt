@@ -18,7 +18,6 @@ package de.lemke.sudoku.domain.model
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
-import de.lemke.sudoku.R
 import io.kotest.matchers.shouldBe
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,18 +31,16 @@ class DifficultyLocalStringTest {
 
     @Test
     fun `getLocalString returns the resource array entry at the difficulty's ordinal`() {
-        val expected = resources.getStringArray(R.array.difficulty)
-
-        Difficulty.entries.forEach { difficulty ->
-            difficulty.getLocalString(resources) shouldBe expected[difficulty.ordinal]
-        }
+        Difficulty.VERY_EASY.getLocalString(resources) shouldBe "Very easy"
+        Difficulty.EASY.getLocalString(resources) shouldBe "Easy"
+        Difficulty.MEDIUM.getLocalString(resources) shouldBe "Medium"
+        Difficulty.HARD.getLocalString(resources) shouldBe "Hard"
+        Difficulty.EXPERT.getLocalString(resources) shouldBe "Expert"
     }
 
     @Test
     fun `companion getLocalString resolves the ordinal through fromInt before localizing`() {
-        val expected = resources.getStringArray(R.array.difficulty)
-
-        Difficulty.getLocalString(Difficulty.HARD.ordinal, resources) shouldBe expected[Difficulty.HARD.ordinal]
-        Difficulty.getLocalString(-1, resources) shouldBe Difficulty.MEDIUM.getLocalString(resources)
+        Difficulty.getLocalString(Difficulty.HARD.ordinal, resources) shouldBe "Hard"
+        Difficulty.getLocalString(-1, resources) shouldBe "Medium"
     }
 }
