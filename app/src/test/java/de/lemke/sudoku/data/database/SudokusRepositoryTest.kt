@@ -281,6 +281,26 @@ class SudokusRepositoryTest {
         }
 
     @Test
+    fun `deleteInvalidSudokus deletes a row with a correct field count but a null solution and keeps valid rows`() =
+        runTest {
+            val valid = sudoku(size = 4)
+            repository.saveSudoku(valid)
+            val invalid = sudoku(size = 4)
+            val fields =
+                invalid.fields
+                    .map { fieldToDb(it, invalid.id) }
+                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
+            database.sudokuDao().insert(sudokuToDb(invalid), fields)
+            database.sudokuDao().getAll() shouldHaveSize 2
+
+            repository.deleteInvalidSudokus()
+
+            val remaining = database.sudokuDao().getAll()
+            remaining shouldHaveSize 1
+            remaining.single().sudoku.id shouldBe valid.id.value
+        }
+
+    @Test
     fun `sudokuDao insert and getAll round-trip a raw field row with a null solution`() =
         runTest {
             // The domain layer (Field.solution: Int) never writes a null solution, but the field table's column is

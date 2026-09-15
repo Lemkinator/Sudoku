@@ -52,7 +52,7 @@ class SudokusRepository @Inject constructor(
     suspend fun getMaxSudokuLevel(size: Int): Int = sudokuDao.getMaxSudokuLevel(size) ?: 0
 
     suspend fun deleteInvalidSudokus() {
-        val invalidRows = sudokuDao.getAll().filter { it.fields.size != it.sudoku.size * it.sudoku.size }
+        val invalidRows = sudokuDao.getAll().filter { sudokuFromDb(it) == null }
         if (invalidRows.isNotEmpty()) sudokuDao.delete(*invalidRows.map { it.sudoku }.toTypedArray())
     }
 
