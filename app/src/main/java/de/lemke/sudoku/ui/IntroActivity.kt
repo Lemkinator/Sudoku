@@ -82,7 +82,7 @@ class IntroActivity : AppCompatActivity() {
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     internal var selected: Int? = null
     internal var introStep = -1
-    private var animation: Job? = null
+    internal var animation: Job? = null
     internal var notesEnabled = false
     internal val viewModel: IntroViewModel by viewModels()
 
@@ -239,9 +239,9 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
     }
 
-    internal fun toggleOrSetNoteButton(enabled: Boolean? = null) {
+    internal fun toggleOrSetNoteButton() {
         if (introStep != INTRO_STEP_10) return
-        notesEnabled = enabled ?: !notesEnabled
+        notesEnabled = !notesEnabled
         binding.noteButton.backgroundTintList =
             ColorStateList.valueOf(
                 if (notesEnabled) {

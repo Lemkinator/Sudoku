@@ -205,7 +205,10 @@ class IntroActivityAnimationTest {
             idleRepeated(3, 900)
             activity.introStep = 1
             idleRepeated(3, 900)
-            activity.introStep shouldBe 1
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
         }
 
     @Test
@@ -217,7 +220,10 @@ class IntroActivityAnimationTest {
             idleRepeated(3, 800)
             activity.introStep = 3
             idleRepeated(3, 800)
-            activity.introStep shouldBe 3
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
         }
 
     @Test
@@ -233,7 +239,10 @@ class IntroActivityAnimationTest {
             idleRepeated(3, 800)
             activity.introStep = 7
             idleRepeated(3, 800)
-            activity.introStep shouldBe 7
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
         }
 
     @Test
@@ -251,7 +260,10 @@ class IntroActivityAnimationTest {
             idleRepeated(5, 1200)
             activity.introStep = 9
             idleRepeated(5, 1200)
-            activity.introStep shouldBe 9
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
         }
 
     @Test
