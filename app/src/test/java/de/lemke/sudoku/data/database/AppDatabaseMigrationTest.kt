@@ -24,8 +24,9 @@ import androidx.sqlite.execSQL
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -33,8 +34,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-
-private const val TEST_DB = "migration-test"
 
 /**
  * Exercises the real [MIGRATION_1_2] against a v1 database built from the exported schema
@@ -54,11 +53,15 @@ private const val TEST_DB = "migration-test"
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class AppDatabaseMigrationTest {
+    // A JUnit4 test class gets a fresh instance per @Test method, so computing this once per instance (rather than a
+    // shared top-level constant) gives every test its own database file with no cross-test file reuse.
+    private val testDb = "migration-test-${System.nanoTime()}"
+
     @get:Rule
     val helper =
         MigrationTestHelper(
             instrumentation = InstrumentationRegistry.getInstrumentation(),
-            file = File(ApplicationProvider.getApplicationContext<Context>().getDatabasePath(TEST_DB).path),
+            file = File(ApplicationProvider.getApplicationContext<Context>().getDatabasePath(testDb).path),
             driver = AndroidSQLiteDriver(),
             databaseClass = AppDatabase::class,
         )
@@ -105,8 +108,14 @@ class AppDatabaseMigrationTest {
         // Opens the same file through the real production AppDatabase_Impl (not MigrationTestHelper's own
         // schema-bundle-driven delegate), forcing its generated createOpenDelegate/onValidateSchema to run for real.
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, TEST_DB).addMigrations(MIGRATION_1_2).build()
-        runBlocking { realDatabase.sudokuDao().getMaxSudokuLevel(4) }.shouldBeNull()
+        val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, testDb).addMigrations(MIGRATION_1_2).build()
+        val row = runBlocking { realDatabase.sudokuDao().getById("id-2") }.shouldNotBeNull()
+        row.sudoku.size shouldBe 9
+        row.sudoku.regionalHighlightingUsed shouldBe false
+        row.sudoku.eraserUsed shouldBe false
+        row.sudoku.isChecklist shouldBe false
+        row.sudoku.isReverseChecklist shouldBe false
+        row.sudoku.checklistNumber shouldBe 0
         realDatabase.close()
     }
 
@@ -122,10 +131,12 @@ class AppDatabaseMigrationTest {
         }
 
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, TEST_DB).build()
-        shouldThrow<IllegalStateException> {
-            runBlocking { realDatabase.sudokuDao().getMaxSudokuLevel(4) }
-        }
+        val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, testDb).build()
+        val exception =
+            shouldThrow<IllegalStateException> {
+                runBlocking { realDatabase.sudokuDao().getMaxSudokuLevel(4) }
+            }
+        exception.message.shouldNotBeNull() shouldContain "data integrity"
         realDatabase.close()
     }
 }
