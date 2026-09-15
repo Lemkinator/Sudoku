@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Field
@@ -164,6 +165,14 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
             scores[R.string.leaderboard_wins_99] shouldBe 2L
             scores[R.string.leaderboard_wins_99_hard] shouldBe 1L
+        }
+
+        should("keep sizeStats, sizeDifficultyLeaderboard and difficultyAchievements in sync with the sizes/difficulties they support") {
+            CalculatePlayGamesSyncUseCase.sizeStats.keys shouldBe CalculatePlayGamesSyncUseCase.supportedSizes
+            CalculatePlayGamesSyncUseCase.sizeDifficultyLeaderboard.keys
+                .map { it.first }
+                .toSet() shouldBe CalculatePlayGamesSyncUseCase.supportedSizes
+            CalculatePlayGamesSyncUseCase.difficultyAchievements.keys shouldBe Difficulty.entries.toSet()
         }
     },
 )

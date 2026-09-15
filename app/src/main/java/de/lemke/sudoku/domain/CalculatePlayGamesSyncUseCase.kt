@@ -103,7 +103,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores += winsId to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
     }
 
-    private data class SizeStats(
+    internal data class SizeStats(
         val achievement10: Int,
         val achievement50: Int,
         val stopwatchAchievement: Int,
@@ -112,7 +112,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
     )
 
     companion object {
-        private val sizeStats: Map<Int, SizeStats> =
+        internal val sizeStats: Map<Int, SizeStats> =
             mapOf(
                 4 to
                     SizeStats(
@@ -140,7 +140,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                     ),
             )
 
-        private val difficultyAchievements: Map<Difficulty, Pair<Int, Int>> =
+        internal val difficultyAchievements: Map<Difficulty, Pair<Int, Int>> =
             mapOf(
                 VERY_EASY to (R.string.achievement_10_sudokus_very_easy to R.string.achievement_50_sudokus_very_easy),
                 EASY to (R.string.achievement_10_sudokus_easy to R.string.achievement_50_sudokus_easy),
@@ -149,7 +149,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                 EXPERT to (R.string.achievement_10_sudokus_expert to R.string.achievement_50_sudokus_expert),
             )
 
-        private val sizeDifficultyLeaderboard: Map<Pair<Int, Difficulty>, Pair<Int, Int>> =
+        internal val sizeDifficultyLeaderboard: Map<Pair<Int, Difficulty>, Pair<Int, Int>> =
             mapOf(
                 (4 to VERY_EASY) to (R.string.leaderboard_time_44_very_easy to R.string.leaderboard_wins_44_very_easy),
                 (9 to VERY_EASY) to (R.string.leaderboard_time_99_very_easy to R.string.leaderboard_wins_99_very_easy),
@@ -169,19 +169,6 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                 (16 to EXPERT) to (R.string.leaderboard_time_1616_expert to R.string.leaderboard_wins_1616_expert),
             )
 
-        private val supportedSizes = setOf(4, 9, 16)
-
-        init {
-            check(sizeStats.keys == supportedSizes) {
-                "sizeStats missing entries for sizes: ${supportedSizes - sizeStats.keys}"
-            }
-            val difficultyLeaderboardSizes = sizeDifficultyLeaderboard.keys.map { it.first }.toSet()
-            check(difficultyLeaderboardSizes == supportedSizes) {
-                "sizeDifficultyLeaderboard missing entries for sizes: ${supportedSizes - difficultyLeaderboardSizes}"
-            }
-            check(difficultyAchievements.keys == Difficulty.entries.toSet()) {
-                "difficultyAchievements missing entries for: ${Difficulty.entries.toSet() - difficultyAchievements.keys}"
-            }
-        }
+        internal val supportedSizes = setOf(4, 9, 16)
     }
 }
