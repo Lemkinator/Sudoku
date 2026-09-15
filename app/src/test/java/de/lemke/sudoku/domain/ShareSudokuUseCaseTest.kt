@@ -28,6 +28,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.resetFileProviderCache
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -84,9 +85,12 @@ class ShareSudokuUseCaseTest {
 
     // androidx.core.content.FileProvider.SimplePathStrategy#belongsToRoot hardcodes '/' as the path
     // separator when comparing canonical paths; on a Windows JVM (Robolectric here) File.getCanonicalPath()
-    // uses '\', so a real device/Linux CI's root match always succeeds while this always throws locally.
+    // uses '\', so this always throws locally regardless of the cache reset below.
     @Before
     fun assumeUnixPaths() = assumeTrue(File.separatorChar == '/')
+
+    @Before
+    fun resetFileProviderStrategyCache() = resetFileProviderCache()
 
     @Test
     fun `invoke writes the exported sudoku as JSON readable back through the returned uri`() =

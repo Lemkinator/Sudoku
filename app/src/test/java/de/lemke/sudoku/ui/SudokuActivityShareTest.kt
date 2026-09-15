@@ -46,6 +46,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
+import de.lemke.sudoku.resetFileProviderCache
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -114,6 +115,7 @@ class SudokuActivityShareTest {
         hiltRule.inject()
         settings.bypassOobe()
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
+        resetFileProviderCache()
     }
 
     private fun formulaicSudoku(
@@ -177,8 +179,9 @@ class SudokuActivityShareTest {
         }
 
     // Stock AndroidX FileProvider.SimplePathStrategy#belongsToRoot hardcodes '/' when comparing
-    // canonical paths, so it always fails on a Windows JVM (File.getCanonicalPath() uses '\') while a
-    // real device/Linux CI succeeds — same root cause as ShareSudokuUseCaseTest's assumeUnixPaths.
+    // canonical paths, so it always fails on a Windows JVM (File.getCanonicalPath() uses '\') —
+    // same root cause as ShareSudokuUseCaseTest's assumeUnixPaths. Linux only gets past that far
+    // enough to need setup()'s resetFileProviderCache() too.
     @Test
     fun `sharing the initial board exports and starts a file share chooser`() {
         assumeTrue(File.separatorChar == '/')
