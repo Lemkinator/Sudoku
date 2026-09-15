@@ -487,7 +487,7 @@ private suspend fun SudokuActivity.shareGame(sudoku: Sudoku) {
     PlayGames.getAchievementsClient(this).unlock(getString(R.string.achievement_share_sudoku))
     val uri = viewModel.exportSudoku(sudoku)
     val shareIntent = Intent(ACTION_SEND)
-    shareIntent.type = "application/sudoku" // octet-stream"
+    shareIntent.type = "application/sudoku"
     shareIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION)
     shareIntent.putExtra(EXTRA_STREAM, uri)
     startActivity(Intent.createChooser(shareIntent, getString(R.string.share_sudoku)))
