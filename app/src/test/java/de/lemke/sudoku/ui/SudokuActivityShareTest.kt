@@ -167,7 +167,23 @@ class SudokuActivityShareTest {
         val dialog = ShadowDialog.getLatestDialog() as AlertDialog
         dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(radioButtonId)
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        // shareGame's export crosses to the real Dispatchers.IO/Main (bound above), so this needs real
+        // wall-clock polling, not a single idle() - see awaitMainLooperIdleUntil elsewhere in this fleet.
+        awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+    }
+
+    private fun awaitMainLooperIdleUntil(
+        timeoutMillis: Long = 5000,
+        condition: () -> Boolean,
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMillis
+        while (System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (condition()) return
+            Thread.sleep(20)
+        }
         shadowOf(Looper.getMainLooper()).idle()
+        check(condition()) { "share chooser was not started within ${timeoutMillis}ms" }
     }
 
     @Test
