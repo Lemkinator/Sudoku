@@ -16,6 +16,9 @@
 
 package de.lemke.sudoku.receivers
 
+import android.Manifest.permission.POST_NOTIFICATIONS
+import android.app.AlarmManager
+import android.app.Notification
 import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
@@ -29,6 +32,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -37,6 +41,10 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -112,15 +120,23 @@ class AlarmReceiverTest {
 
     @Test
     fun `onReceive sends the daily notification when enabled and today's sudoku is not completed`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
         userSettings.dailySudokuNotificationEnabled = true
         broadcast("de.lemke.sudoku.TEST_ALARM")
-        notificationManager().allNotifications.isNotEmpty().let { it }
+
+        val notifications = notificationManager().allNotifications
+        notifications shouldHaveSize 1
+        val notification = notifications.single()
+        notification.channelId shouldBe context.getString(R.string.daily_sudoku_notification_channel_id)
+        notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString() shouldBe context.getString(R.string.daily_sudoku)
     }
 
     @Test
     fun `onReceive does not send a notification when disabled`() {
         userSettings.dailySudokuNotificationEnabled = false
         broadcast("de.lemke.sudoku.TEST_ALARM")
+        notificationManager().allNotifications.shouldBeEmpty()
     }
 
     @Test
@@ -143,17 +159,27 @@ class AlarmReceiverTest {
             )
         runBlocking { saveSudoku(today) }
         broadcast("de.lemke.sudoku.TEST_ALARM")
+        notificationManager().allNotifications.shouldBeEmpty()
+    }
+
+    private fun alarmManager(): AlarmManager {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        return context.getSystemService(AlarmManager::class.java)
     }
 
     @Test
     fun `onReceive on BOOT_COMPLETED does not send a notification but reschedules`() {
         userSettings.dailySudokuNotificationEnabled = true
         broadcast(Intent.ACTION_BOOT_COMPLETED)
+        notificationManager().allNotifications.shouldBeEmpty()
+        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
     }
 
     @Test
     fun `onReceive on MY_PACKAGE_REPLACED does not send a notification but reschedules`() {
         userSettings.dailySudokuNotificationEnabled = true
         broadcast(Intent.ACTION_MY_PACKAGE_REPLACED)
+        notificationManager().allNotifications.shouldBeEmpty()
+        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
     }
 }
