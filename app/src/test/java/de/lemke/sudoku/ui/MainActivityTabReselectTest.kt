@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -41,6 +42,8 @@ import de.lemke.sudoku.domain.model.Sudoku
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -108,30 +111,37 @@ class MainActivityTabReselectTest {
     private fun reselect(
         activity: MainActivity,
         position: Int,
-    ) {
-        val tab = activity.binding.bottomTab.getTabAt(position)
-        tab?.select()
+    ): TabLayout.Tab {
+        val tab =
+            activity.binding.bottomTab
+                .getTabAt(position)
+                .shouldNotBeNull()
+        tab.select()
         shadowOf(Looper.getMainLooper()).idle()
-        tab?.select()
+        tab.select()
         shadowOf(Looper.getMainLooper()).idle()
+        return tab
     }
 
     @Test
     fun `reselecting the history tab does not crash`() =
         launch { activity ->
-            reselect(activity, 0)
+            val tab = reselect(activity, 0)
+            activity.binding.bottomTab.selectedTabPosition shouldBe tab.position
         }
 
     @Test
     fun `reselecting the sudoku tab does not crash`() =
         launch { activity ->
-            reselect(activity, 1)
+            val tab = reselect(activity, 1)
+            activity.binding.bottomTab.selectedTabPosition shouldBe tab.position
         }
 
     @Test
     fun `reselecting the statistics tab does not crash`() =
         launch { activity ->
-            reselect(activity, 2)
+            val tab = reselect(activity, 2)
+            activity.binding.bottomTab.selectedTabPosition shouldBe tab.position
         }
 
     private fun historySudoku(): Sudoku {
@@ -158,7 +168,8 @@ class MainActivityTabReselectTest {
             historyRecyclerView.canScrollVertically(-1).shouldBeTrue()
 
             tab?.select()
-            shadowOf(Looper.getMainLooper()).idle()
+            repeat(5) { shadowOf(Looper.getMainLooper()).idle() }
+            historyRecyclerView.canScrollVertically(-1).shouldBeFalse()
         }
     }
 
@@ -175,7 +186,8 @@ class MainActivityTabReselectTest {
             drawerLayout.isExpanded.shouldBeTrue()
 
             tab?.select()
-            shadowOf(Looper.getMainLooper()).idle()
+            repeat(5) { shadowOf(Looper.getMainLooper()).idle() }
+            drawerLayout.isExpanded.shouldBeFalse()
         }
 
     @Test
@@ -194,6 +206,7 @@ class MainActivityTabReselectTest {
             statisticsRecyclerView.canScrollVertically(-1).shouldBeTrue()
 
             tab?.select()
-            shadowOf(Looper.getMainLooper()).idle()
+            repeat(5) { shadowOf(Looper.getMainLooper()).idle() }
+            statisticsRecyclerView.canScrollVertically(-1).shouldBeFalse()
         }
 }
