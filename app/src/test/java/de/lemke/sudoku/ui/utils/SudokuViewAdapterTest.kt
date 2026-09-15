@@ -60,6 +60,7 @@ class SudokuViewAdapterTest {
             shadowOf(Looper.getMainLooper()).idle()
             Thread.sleep(5)
         }
+        check(fieldView.fieldViewValue != null) { "FieldView's async inflate did not complete within 5000ms" }
     }
 
     @Test
@@ -127,13 +128,17 @@ class SudokuViewAdapterTest {
 
     @Test
     fun `selecting a field with highlightNeighbors false does not touch highlighting state`() {
-        adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = false, highlightNumber = false)
+        val expectedNeighbors = sudoku.getNeighbors(PLAIN_INDEX).map { it.position.index }.toSet()
+        adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
+        sudoku.regionalHighlightingUsed shouldBe true
 
-        sudoku.regionalHighlightingUsed shouldBe false
+        adapter.selectFieldView(GIVEN_INDEX, highlightNeighbors = false, highlightNumber = false)
+
+        // The highlight state from the prior highlightNeighbors=true call survives untouched.
         for (i in 0 until sudoku.itemCount) {
-            adapter.fieldViews[i].isHighlighted shouldBe false
+            adapter.fieldViews[i].isHighlighted shouldBe (i in expectedNeighbors)
         }
-        adapter.fieldViews[PLAIN_INDEX].isSelected shouldBe true
+        adapter.fieldViews[GIVEN_INDEX].isSelected shouldBe true
     }
 
     @Test

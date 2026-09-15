@@ -301,13 +301,17 @@ class SudokuListAdapterTest {
         val sudoku = sudokuFixture()
         val adapter = buildAdapter()
         adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        // toggleActionMode needs MultiSelectorDelegate's lateinit `adapter` field, only set by configureWith(...) -
+        // the same call production code (TabHistory.onViewCreated) makes after attaching the adapter.
+        adapter.configureWith(layoutRecyclerViewWith(adapter))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
         holder.textView.text = "sentinel"
+        adapter.toggleActionMode(true)
 
         adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
 
         holder.textView.text shouldBe "sentinel"
-        holder.selectableLayout?.isSelectionMode shouldBe false
+        holder.selectableLayout?.isSelectionMode shouldBe true
     }
 
     @Test
@@ -347,6 +351,7 @@ class SudokuListAdapterTest {
             shadowOf(Looper.getMainLooper()).idle()
             Thread.sleep(5)
         }
+        check(currentList == list) { "submitList's background diff did not complete within 5000ms" }
     }
 
     @Test
@@ -474,10 +479,17 @@ class SudokuListAdapterTest {
         val separatorItem = SeparatorItem("Sep")
         val adapter = buildAdapter()
         adapter.submitList(listOf(separatorItem))
+        // toggleActionMode needs MultiSelectorDelegate's lateinit `adapter` field, only set by configureWith(...) -
+        // the same call production code (TabHistory.onViewCreated) makes after attaching the adapter.
+        adapter.configureWith(layoutRecyclerViewWith(adapter))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SeparatorItem.VIEW_TYPE)
+        holder.textView.text = "sentinel"
+        // bindActionModeAnimate's selectableLayout?.apply { ... } must skip cleanly even with action mode on.
+        adapter.toggleActionMode(true)
 
         adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
 
+        holder.textView.text shouldBe "sentinel"
         holder.selectableLayout shouldBe null
     }
 }

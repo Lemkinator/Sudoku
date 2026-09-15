@@ -93,26 +93,39 @@ class FieldViewTest {
         sudoku = fourByFourSudoku()
     }
 
+    private fun awaitInflated(fieldView: FieldView) {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(5)
+        }
+        check(fieldView.fieldViewValue != null) { "FieldView's async inflate did not complete within 5000ms" }
+    }
+
     private fun inflatedFieldView(index: Int): FieldView {
         val fieldView = FieldView(context)
         // A real FieldView is always a RecyclerView child; giving it a parent here (as opposed to leaving it
         // detached) matters for performLongClick() — an unconsumed long click falls through to
         // View.showContextMenu(), which NPEs against a null getParent().
         FrameLayout(context).addView(fieldView)
-        val deadline = System.currentTimeMillis() + 5_000
-        while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            Thread.sleep(5)
-        }
+        awaitInflated(fieldView)
         fieldView.init(sudoku, index, mockk(relaxed = true))
         return fieldView
     }
 
     @Test
     fun `no border is drawn for a cell away from any block boundary`() {
-        val fieldView = inflatedFieldView(GIVEN_INDEX)
+        val fieldView = FieldView(context)
+        FrameLayout(context).addView(fieldView)
+        awaitInflated(fieldView)
+        // A non-null sentinel (instead of the untouched construction default, null) proves init() really leaves
+        // foreground alone for a cell away from any block boundary, rather than merely never having set it.
+        val sentinel = ColorDrawable(Color.MAGENTA)
+        fieldView.foreground = sentinel
 
-        fieldView.foreground.shouldBeNull()
+        fieldView.init(sudoku, GIVEN_INDEX, mockk(relaxed = true))
+
+        fieldView.foreground shouldBe sentinel
     }
 
     @Test
@@ -342,11 +355,7 @@ class FieldViewTest {
         fieldView.field.value shouldBe 2
 
         // The async inflate callback now finds sudoku already initialized and re-invokes init() itself.
-        val deadline = System.currentTimeMillis() + 5_000
-        while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            Thread.sleep(5)
-        }
+        awaitInflated(fieldView)
         fieldView.fieldViewValue?.text.toString() shouldBe "2"
     }
 
