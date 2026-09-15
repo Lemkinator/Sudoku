@@ -84,8 +84,13 @@ class TabStatistics : Fragment() {
         collectState(viewModel.state, minActiveState = RESUMED) { state ->
             binding.statisticsProgressBar.isVisible = state.isLoading
             state.statistics?.let {
+                val previousSize = statisticsList.size
                 updateStatistics(it)
-                binding.statisticsListRecycler.adapter?.notifyItemRangeChanged(0, statisticsList.size)
+                if (previousSize == 0) {
+                    binding.statisticsListRecycler.adapter?.notifyItemRangeInserted(0, statisticsList.size)
+                } else {
+                    binding.statisticsListRecycler.adapter?.notifyItemRangeChanged(0, statisticsList.size)
+                }
             }
         }
         collectEvents(viewModel.events, minActiveState = RESUMED) { event ->

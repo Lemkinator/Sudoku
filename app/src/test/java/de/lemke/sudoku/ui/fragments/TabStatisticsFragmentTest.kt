@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Looper
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -38,7 +39,9 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.ui.MainActivity
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -178,6 +181,52 @@ class TabStatisticsFragmentTest {
                     .filter { it.first == fragment.getString(label) }
                     .forEach { it.second shouldNotBe "-" }
             }
+        }
+    }
+
+    @Test
+    fun `the first statistics load inserts rows instead of changing them`() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            var insertedCount = -1
+            var changedCalled = false
+            // All 3 tabs' fragments (and their adapters) are created up front by MainActivity.initFragments(), well
+            // before any tab is shown/resumed - registering here, before onTabItemSelected(2) ever runs, is
+            // guaranteed to be in place before collectState's minActiveState=RESUMED block starts collecting.
+            scenario.onActivity { activity ->
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabStatistics>()
+                        .first()
+                fragment.binding.statisticsListRecycler.adapter?.registerAdapterDataObserver(
+                    object : RecyclerView.AdapterDataObserver() {
+                        override fun onItemRangeInserted(
+                            positionStart: Int,
+                            itemCount: Int,
+                        ) {
+                            insertedCount = itemCount
+                        }
+
+                        override fun onItemRangeChanged(
+                            positionStart: Int,
+                            itemCount: Int,
+                        ) {
+                            changedCalled = true
+                        }
+                    },
+                )
+            }
+            scenario.onActivity { it.onTabItemSelected(2) }
+            // The state flow's calculation crosses to a real Dispatchers.IO thread (bound above), so this needs
+            // real wall-clock polling, not a single idle() - see awaitMainLooperIdleUntil elsewhere in this fleet.
+            val deadline = System.currentTimeMillis() + 5000
+            while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
+                shadowOf(Looper.getMainLooper()).idle()
+                Thread.sleep(20)
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+
+            insertedCount shouldBeGreaterThan 0
+            changedCalled.shouldBeFalse()
         }
     }
 
