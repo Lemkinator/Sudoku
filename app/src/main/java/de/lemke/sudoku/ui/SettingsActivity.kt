@@ -166,7 +166,7 @@ class SettingsActivity : AppCompatActivity() {
             initDeleteInvalidSudokusPreference()
         }
 
-        private fun initErrorLimitPreference() {
+        internal fun initErrorLimitPreference() {
             findPreference<DropDownPreference>("errorLimit")?.apply {
                 summary = if (userSettings.errorLimit == 0) getString(R.string.no_limit) else userSettings.errorLimit.toString()
                 onNewValue { newValue: String ->
@@ -175,7 +175,7 @@ class SettingsActivity : AppCompatActivity() {
             } ?: Log.e(TAG, "error limit Preference not found")
         }
 
-        private fun initDailyNotificationPreference() {
+        internal fun initDailyNotificationPreference() {
             findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")?.apply {
                 isChecked = viewModel.isDailyNotificationChecked
                 setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
@@ -200,7 +200,7 @@ class SettingsActivity : AppCompatActivity() {
             } ?: Log.e(TAG, "daily notification Preference not found")
         }
 
-        private fun initIntroPreference() {
+        internal fun initIntroPreference() {
             findPreference<PreferenceScreen>("intro")?.onClick {
                 startActivity(
                     Intent(requireContext(), IntroActivity::class.java).putExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, true),
@@ -208,7 +208,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun initExportDataPreference() {
+        internal fun initExportDataPreference() {
             findPreference<PreferenceScreen>("exportData")?.onClick {
                 exportActivityResultLauncher.launch(
                     Intent(ACTION_CREATE_DOCUMENT).apply {
@@ -220,7 +220,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun initImportDataPreference() {
+        internal fun initImportDataPreference() {
             findPreference<PreferenceScreen>("importData")?.onClick {
                 AlertDialog
                     .Builder(requireContext())
@@ -233,7 +233,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        private fun initDeleteInvalidSudokusPreference() {
+        internal fun initDeleteInvalidSudokusPreference() {
             findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onClick {
                 val dialog =
                     AlertDialog

@@ -60,11 +60,11 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
-    private lateinit var binding: FragmentTabHistoryBinding
+    internal lateinit var binding: FragmentTabHistoryBinding
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var bottomTab: BottomTabLayout
     private val allSelectorStateFlow: MutableStateFlow<AllSelectorState> = MutableStateFlow(AllSelectorState())
-    private val sudokuListAdapter: SudokuListAdapter by lazy {
+    internal val sudokuListAdapter: SudokuListAdapter by lazy {
         SudokuListAdapter(
             requireContext(),
             onAllSelectorStateChanged = { allSelectorStateFlow.value = it },
@@ -158,7 +158,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         }
     }
 
-    private fun launchActionMode(initialSelected: Set<Long>? = null) {
+    internal fun launchActionMode(initialSelected: Set<Long>? = null) {
         bottomTab.setTabsEnabled(false)
         sudokuListAdapter.toggleActionMode(true, initialSelected)
         drawerLayout.startActionMode(

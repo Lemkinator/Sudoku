@@ -136,5 +136,78 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
             stats.mostHints shouldBe 4
             stats.mostNotes shouldBe 9
         }
+
+        should("break a tie between equally-started sizes by first appearance") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = false, size = 9),
+                    testSudoku(completed = false, size = 4),
+                    testSudoku(completed = false, size = 9),
+                    testSudoku(completed = false, size = 4),
+                )
+
+            useCase(sudokus).mostGamesStartedSize shouldBe 9
+        }
+
+        should("report null won-difficulty/won-size while still reporting started ones when nothing is completed") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = false, difficulty = EASY, size = 9),
+                    testSudoku(completed = false, difficulty = MEDIUM, size = 16),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostGamesWonDifficulty shouldBe null
+            stats.mostGamesWonSize shouldBe null
+            stats.mostGamesStartedDifficulty shouldBe EASY
+            stats.mostGamesStartedSize shouldBe 9
+        }
+
+        should("break a tie between equally-won difficulties and sizes by first appearance") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = true, difficulty = EASY, size = 9),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 4),
+                    testSudoku(completed = true, difficulty = EASY, size = 9),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 4),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostGamesWonDifficulty shouldBe EASY
+            stats.mostGamesWonSize shouldBe 9
+        }
+
+        should("pick a later, larger group or value over an earlier, smaller one") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = false, errorsMade = 1, hintsUsed = 1, notesMade = 1, difficulty = EASY, size = 4),
+                    testSudoku(completed = false, errorsMade = 2, hintsUsed = 2, notesMade = 2, difficulty = EASY, size = 4),
+                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = 9),
+                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = 9),
+                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = 9),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostErrors shouldBe 5
+            stats.mostHints shouldBe 5
+            stats.mostNotes shouldBe 5
+            stats.mostGamesStartedDifficulty shouldBe MEDIUM
+            stats.mostGamesStartedSize shouldBe 9
+        }
+
+        should("pick a later, larger won group over an earlier, smaller one") {
+            val sudokus =
+                listOf(
+                    testSudoku(completed = true, difficulty = EASY, size = 4),
+                    testSudoku(completed = true, difficulty = EASY, size = 4),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 9),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 9),
+                    testSudoku(completed = true, difficulty = MEDIUM, size = 9),
+                )
+
+            val stats = useCase(sudokus)
+            stats.mostGamesWonDifficulty shouldBe MEDIUM
+            stats.mostGamesWonSize shouldBe 9
+        }
     },
 )

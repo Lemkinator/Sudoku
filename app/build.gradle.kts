@@ -38,12 +38,25 @@ fun getProperty(key: String): String? = rootProject.findProperty(key)?.toString(
 android {
     namespace = "de.lemke.sudoku"
     compileSdk {
-        version = release(37) { minorApiLevel = 1 }
+        version =
+            release(
+                libs.versions.compileSdk
+                    .get()
+                    .toInt(),
+            ) {
+                minorApiLevel =
+                    libs.versions.compileSdkMinor
+                        .get()
+                        .toInt()
+            }
     }
     defaultConfig {
         applicationId = "de.lemke.sudoku"
         minSdk = 26
-        targetSdk = 37
+        targetSdk =
+            libs.versions.targetSdk
+                .get()
+                .toInt()
         versionCode = 62
         versionName = "3.5.6"
         testInstrumentationRunner = "de.lemke.sudoku.HiltTestRunner"
@@ -117,6 +130,10 @@ android {
     sourceSets {
         getByName("test") { kotlin.srcDir("src/testShared/kotlin") }
         getByName("androidTest") { kotlin.srcDir("src/testShared/kotlin") }
+        // Room's exported schemas, for Robolectric-based migration tests (MigrationTestHelper reads them via
+        // Context.assets, which only sees the debug variant's merged assets for local unit tests, not a "test"
+        // source set). Debug-only, so release APKs never bundle these.
+        getByName("debug") { assets.srcDirs("$projectDir/schemas") }
     }
     testOptions {
         unitTests {
@@ -198,6 +215,7 @@ dependencies {
     testImplementation(libs.hilt.android.testing)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit4)
+    testImplementation(libs.room.testing)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.vintage.engine)
@@ -281,14 +299,16 @@ kover {
                     "*_MembersInjector",
                     "dagger.hilt.*",
                     "hilt_aggregated_deps.*",
+                    "*_Impl",
+                    "*_Impl\$*",
                 )
             }
         }
         variant("debug") {
             verify {
                 rule {
-                    minBound(53, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
-                    minBound(28, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
+                    minBound(98, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
+                    minBound(93, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
                 }
             }
         }

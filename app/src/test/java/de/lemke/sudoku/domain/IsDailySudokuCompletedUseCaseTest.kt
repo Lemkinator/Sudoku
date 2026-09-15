@@ -70,5 +70,20 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
 
             useCase(date).shouldBeFalse()
         }
+
+        should("returns false when a completed daily sudoku exists but on a different date") {
+            val completedField = Field(Position.create(0, 4), solution = 1, value = 1)
+            val completedOnOtherDate =
+                Sudoku.create(
+                    size = 4,
+                    difficulty = Difficulty.EASY,
+                    modeLevel = Sudoku.MODE_DAILY,
+                    created = date.plusDays(1).atStartOfDay(),
+                    fields = mutableListOf(completedField),
+                )
+            coEvery { getAllSudokus(flags) } returns listOf(completedOnOtherDate)
+
+            useCase(date).shouldBeFalse()
+        }
     },
 )

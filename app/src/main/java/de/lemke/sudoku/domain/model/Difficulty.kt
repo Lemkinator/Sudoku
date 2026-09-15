@@ -19,33 +19,30 @@ package de.lemke.sudoku.domain.model
 import android.content.res.Resources
 import de.lemke.sudoku.R
 
-enum class Difficulty(val value: Int) {
-    VERY_EASY(0),
-    EASY(1),
-    MEDIUM(2),
-    HARD(3),
-    EXPERT(4),
+enum class Difficulty {
+    VERY_EASY,
+    EASY,
+    MEDIUM,
+    HARD,
+    EXPERT,
     ;
+
+    // Persisted/serialized as this ordinal (see fromInt/getLocalString(ordinal, ...)); entry order is the contract.
+    val value: Int get() = ordinal
 
     fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficulty)[this.ordinal]
 
     // total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
     // minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
     // more than 50, 36-49, 32-35, 28-31, 22-27
-    private fun givenNumbers(size: Int): Int = givenNumbersTable[size to this] ?: givenNumbersTable.getValue(9 to this)
+    private fun givenNumbers(size: Int): Int = givenNumbersTable[size to this] ?: givenNumbersTable.getValue(DEFAULT_SIZE to this)
 
     fun numbersToRemove(size: Int): Int = size * size - givenNumbers(size)
 
     companion object {
-        fun fromInt(value: Int?): Difficulty =
-            when (value) {
-                0 -> VERY_EASY
-                1 -> EASY
-                2 -> MEDIUM
-                3 -> HARD
-                4 -> EXPERT
-                else -> MEDIUM
-            }
+        private const val DEFAULT_SIZE = 9
+
+        fun fromInt(value: Int?): Difficulty = entries.getOrNull(value ?: -1) ?: MEDIUM
 
         fun getLocalString(
             ordinal: Int,

@@ -19,7 +19,7 @@ package de.lemke.sudoku.domain
 import app.cash.turbine.test
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.SudokuObservationsRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
@@ -35,13 +35,14 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
+        val sudokuObservationsRepository = mockk<SudokuObservationsRepository>()
         lateinit var userSettings: UserSettings
         lateinit var useCase: ObserveSudokusAndStatisticsFilterFlagsUseCase
 
         beforeEach {
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            useCase = ObserveSudokusAndStatisticsFilterFlagsUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
+            useCase =
+                ObserveSudokusAndStatisticsFilterFlagsUseCase(sudokuObservationsRepository, userSettings, UnconfinedTestDispatcher())
         }
 
         should("re-filters the repository's sudokus when userSettings.filterFlags changes") {
@@ -49,7 +50,7 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
                 Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf())
             val normal9x9 =
                 Sudoku.create(size = 9, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf())
-            every { sudokusRepository.observeAllSudokus() } returns flowOf(listOf(normal4x4, normal9x9))
+            every { sudokuObservationsRepository.observeAllSudokus() } returns flowOf(listOf(normal4x4, normal9x9))
             userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_4X4 or SudokuFilterFlags.DIFFICULTY_ALL
 
             useCase().test {

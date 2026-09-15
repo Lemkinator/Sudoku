@@ -20,19 +20,10 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import java.time.LocalDate
 import javax.inject.Inject
-import kotlinx.coroutines.flow.map
 
 class SudokusRepository @Inject constructor(
     private val sudokuDao: SudokuDao,
 ) {
-    fun observeAllSudokus() = sudokuDao.observeAll().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
-
-    fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
-
-    fun observeSudokuLevel(size: Int) = sudokuDao.observeSudokuLevel(size).map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
-
-    fun observeDailySudokus() = sudokuDao.observeDailySudokus().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
-
     suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
 
     suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(sudokuDao.getRecentlyUpdatedNormalSudoku())
@@ -60,7 +51,10 @@ class SudokusRepository @Inject constructor(
 
     suspend fun getMaxSudokuLevel(size: Int): Int = sudokuDao.getMaxSudokuLevel(size) ?: 0
 
-    suspend fun deleteInvalidSudokus() = getAllSudokus().filter { it.fields.size != it.size * it.size }.forEach { deleteSudoku(it) }
+    suspend fun deleteInvalidSudokus() {
+        val invalidRows = sudokuDao.getAll().filter { sudokuFromDb(it) == null }
+        if (invalidRows.isNotEmpty()) sudokuDao.delete(*invalidRows.map { it.sudoku }.toTypedArray())
+    }
 
     private suspend fun getSudokuLevel(
         size: Int,

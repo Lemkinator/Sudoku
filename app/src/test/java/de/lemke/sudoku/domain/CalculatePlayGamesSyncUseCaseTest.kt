@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Field
@@ -104,6 +105,74 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
             scoreIds shouldContain R.string.leaderboard_time_99_hard
             scoreIds shouldContain R.string.leaderboard_wins_99_hard
+        }
+
+        should("unlock the notes and checklist achievements when their flags are set") {
+            val sudoku = testSudoku(notesMade = 3, isChecklist = true, isReverseChecklist = true)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            val unlocks = useCase(sudoku).achievementUnlocks
+
+            unlocks shouldContain R.string.achievement_use_notes
+            unlocks shouldContain R.string.achievement_checklist
+            unlocks shouldContain R.string.achievement_reverse_checklist
+        }
+
+        should("unlock the speed achievement only under its 10-second threshold") {
+            val fast = testSudoku(seconds = 9)
+            val slow = testSudoku(seconds = 10)
+            coEvery { getAllSudokus() } returns listOf(fast, slow)
+
+            useCase(fast).achievementUnlocks shouldContain R.string.achievement_i_am_speed
+            useCase(slow).achievementUnlocks shouldNotContain R.string.achievement_i_am_speed
+        }
+
+        should("submit the 16x16 size-specific leaderboard and stopwatch achievement") {
+            val sudoku = testSudoku(size = 16, seconds = 419)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            val sync = useCase(sudoku)
+
+            sync.leaderboardScores.map { it.first } shouldContain R.string.leaderboard_wins_1616
+            sync.achievementUnlocks shouldContain R.string.achievement_stopwatch_1616
+        }
+
+        should("skip size- and difficulty-specific stats for a size outside the supported set") {
+            val sudoku = testSudoku(size = 6, difficulty = HARD, seconds = 5)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            val sync = useCase(sudoku)
+
+            sync.leaderboardScores.map { it.first } shouldNotContain R.string.leaderboard_wins_44
+            sync.leaderboardScores.map { it.first } shouldNotContain R.string.leaderboard_time_99_hard
+            sync.achievementUnlocks shouldContain R.string.achievement_first_win
+        }
+
+        should("not unlock the no-hints achievement when a hint was used") {
+            val sudoku = testSudoku(hintsUsed = 1)
+            coEvery { getAllSudokus() } returns listOf(sudoku)
+
+            useCase(sudoku).achievementUnlocks shouldNotContain R.string.achievement_no_hints
+        }
+
+        should("count only sudokus matching size, and matching both size and difficulty, for their respective win totals") {
+            val sudoku = testSudoku(size = 9, difficulty = HARD, seconds = 42)
+            val sameSizeDifferentDifficulty = testSudoku(size = 9, difficulty = VERY_EASY)
+            val differentSize = testSudoku(size = 4)
+            coEvery { getAllSudokus() } returns listOf(sudoku, sameSizeDifferentDifficulty, differentSize)
+
+            val scores = useCase(sudoku).leaderboardScores.toMap()
+
+            scores[R.string.leaderboard_wins_99] shouldBe 2L
+            scores[R.string.leaderboard_wins_99_hard] shouldBe 1L
+        }
+
+        should("keep sizeStats, sizeDifficultyLeaderboard and difficultyAchievements in sync with the sizes/difficulties they support") {
+            CalculatePlayGamesSyncUseCase.sizeStats.keys shouldBe CalculatePlayGamesSyncUseCase.supportedSizes
+            CalculatePlayGamesSyncUseCase.sizeDifficultyLeaderboard.keys
+                .map { it.first }
+                .toSet() shouldBe CalculatePlayGamesSyncUseCase.supportedSizes
+            CalculatePlayGamesSyncUseCase.difficultyAchievements.keys shouldBe Difficulty.entries.toSet()
         }
     },
 )

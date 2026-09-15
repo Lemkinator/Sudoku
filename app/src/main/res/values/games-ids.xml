@@ -17,8 +17,6 @@
 <resources>
     <!--app_id-->
     <string name="app_id" translatable="false">890372406825</string>
-    <!--package_name-->
-    <string name="package_name" translatable="false">de.lemke.sudoku</string>
     <!--achievement Eraser-->
     <string name="achievement_eraser" translatable="false">CgkIqfzS8vQZEAIQAg</string>
     <!--achievement Use Notes-->

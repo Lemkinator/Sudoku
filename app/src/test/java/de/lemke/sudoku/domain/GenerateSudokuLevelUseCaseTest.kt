@@ -41,6 +41,7 @@ class GenerateSudokuLevelUseCaseTest : ShouldSpec(
         should("map every level-threshold boundary to its difficulty") {
             val cases =
                 mapOf(
+                    0 to EXPERT,
                     1 to VERY_EASY,
                     30 to VERY_EASY,
                     31 to EASY,

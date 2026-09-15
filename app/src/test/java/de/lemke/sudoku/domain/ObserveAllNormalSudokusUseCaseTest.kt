@@ -16,31 +16,97 @@
 
 package de.lemke.sudoku.domain
 
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
+import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.SudokuObservationsRepository
 import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.every
-import io.mockk.mockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
+import java.util.concurrent.Executor
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalCoroutinesApi::class)
-class ObserveAllNormalSudokusUseCaseTest : ShouldSpec(
-    {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val useCase = ObserveAllNormalSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
+/**
+ * A real in-memory Room DB backs [SudokuObservationsRepository] here (rather than mocking it and a `Sudoku`
+ * instance), so the assertion is against a genuine saved-and-observed row, not just whatever a mock was told
+ * to return.
+ *
+ * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
+class ObserveAllNormalSudokusUseCaseTest {
+    private lateinit var database: AppDatabase
+    private lateinit var sudokusRepository: SudokusRepository
+    private lateinit var useCase: ObserveAllNormalSudokusUseCase
 
-        should("passes through the repository's observeAllNormalSudokus flow") {
-            val sudokus = listOf(mockk<Sudoku>(), mockk<Sudoku>())
-            every { sudokusRepository.observeAllNormalSudokus() } returns flowOf(sudokus)
+    @Before
+    fun setUp() {
+        val directExecutor = Executor { it.run() }
+        database =
+            Room
+                .inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java)
+                .allowMainThreadQueries()
+                .setQueryExecutor(directExecutor)
+                .setTransactionExecutor(directExecutor)
+                .build()
+        sudokusRepository = SudokusRepository(database.sudokuDao())
+        val observationsRepository = SudokuObservationsRepository(database.sudokuObserveDao())
+        useCase = ObserveAllNormalSudokusUseCase(observationsRepository, UnconfinedTestDispatcher())
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
+    }
+
+    private fun normalSudoku(
+        size: Int = 4,
+        modeLevel: Int = Sudoku.MODE_NORMAL,
+    ): Sudoku =
+        Sudoku.create(
+            size = size,
+            difficulty = Difficulty.EASY,
+            modeLevel = modeLevel,
+            fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = index % size + 1) },
+        )
+
+    @Test
+    fun `passes through the repository's observeAllNormalSudokus flow`() =
+        runTest {
+            val sudoku = normalSudoku()
+            sudokusRepository.saveSudoku(sudoku)
 
             useCase().test {
-                awaitItem() shouldBe sudokus
-                awaitComplete()
+                val emitted = awaitItem()
+                emitted.map { it.id } shouldBe listOf(sudoku.id)
+                cancelAndIgnoreRemainingEvents()
             }
         }
-    },
-)
+
+    @Test
+    fun `only normal-mode sudokus reach the flow`() =
+        runTest {
+            val normal = normalSudoku()
+            val level = normalSudoku(modeLevel = 1)
+            sudokusRepository.saveSudoku(normal)
+            sudokusRepository.saveSudoku(level)
+
+            useCase().test {
+                val emitted = awaitItem()
+                emitted.map { it.id } shouldBe listOf(normal.id)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+}

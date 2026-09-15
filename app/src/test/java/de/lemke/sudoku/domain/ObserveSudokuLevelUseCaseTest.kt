@@ -17,7 +17,7 @@
 package de.lemke.sudoku.domain
 
 import app.cash.turbine.test
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.SudokuObservationsRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
@@ -32,12 +32,12 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObserveSudokuLevelUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val useCase = ObserveSudokuLevelUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        val sudokuObservationsRepository = mockk<SudokuObservationsRepository>()
+        val useCase = ObserveSudokuLevelUseCase(sudokuObservationsRepository, UnconfinedTestDispatcher())
 
         should("maps each sudoku to a SudokuItem labeled with its modeLevel") {
             val sudoku = Sudoku.create(size = 9, difficulty = Difficulty.EASY, modeLevel = 5, fields = mutableListOf())
-            every { sudokusRepository.observeSudokuLevel(9) } returns flowOf(listOf(sudoku))
+            every { sudokuObservationsRepository.observeSudokuLevel(9) } returns flowOf(listOf(sudoku))
 
             useCase(9).test {
                 awaitItem() shouldBe listOf(SudokuListItem.SudokuItem(sudoku, "5"))

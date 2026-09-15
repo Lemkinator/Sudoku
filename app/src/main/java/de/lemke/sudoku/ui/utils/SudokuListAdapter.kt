@@ -34,6 +34,8 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.contentEquals
+import de.lemke.sudoku.domain.model.errorLimitReached
 import de.lemke.sudoku.domain.model.formatFull
 import dev.oneuiproject.oneui.layout.ToolbarLayout.AllSelectorState
 import dev.oneuiproject.oneui.recyclerview.adapter.IndexedSelectableListAdapter
@@ -197,7 +199,8 @@ class SudokuListAdapter(
             }
         }
 
-        @SuppressLint("SetTextI18n", "StringFormatInvalid")
+        // Only ever called for a SudokuItem holder (never a separator), so imageView/textViewSmall are set.
+        @SuppressLint("SetTextI18n")
         fun bindSudoku(sudoku: Sudoku) {
             textView.text =
                 when (mode) {
@@ -205,7 +208,7 @@ class SudokuListAdapter(
                     Mode.LEVEL -> "${context.getString(R.string.level)} ${sudoku.modeLevel}"
                     else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
                 }
-            imageView?.setImageDrawable(
+            imageView!!.setImageDrawable(
                 ContextCompat.getDrawable(
                     context,
                     if (sudoku.completed) {
@@ -216,11 +219,11 @@ class SudokuListAdapter(
                 ),
             )
             if (sudoku.errorLimitReached(errorLimit)) {
-                imageView?.setImageDrawable(
+                imageView!!.setImageDrawable(
                     ContextCompat.getDrawable(context, dev.oneuiproject.oneui.R.drawable.ic_oui_error),
                 )
             }
-            textViewSmall?.text =
+            textViewSmall!!.text =
                 buildString {
                     append(context.getString(R.string.current_time, sudoku.timeString))
                     if (!sudoku.completed) {
@@ -240,7 +243,9 @@ class SudokuListAdapter(
         }
 
         fun bindActionMode(itemId: Long) {
-            selectableLayout?.apply {
+            // Unlike bindActionModeAnimate (also reachable for a separator holder via the SELECTION_MODE
+            // payload path), this is only ever called for a SudokuItem holder, so selectableLayout is set.
+            selectableLayout!!.apply {
                 isSelectionMode = isActionMode
                 setSelected(isSelected(itemId))
             }

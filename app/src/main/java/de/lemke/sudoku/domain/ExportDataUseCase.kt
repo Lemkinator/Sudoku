@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.domain
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import androidx.appcompat.app.AlertDialog
@@ -39,7 +38,6 @@ class ExportDataUseCase @Inject constructor(
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) {
-    @SuppressLint("Recycle")
     suspend operator fun invoke(destination: Uri): Unit =
         withContext(mainDispatcher) {
             val dialog = ProgressDialog(context)
