@@ -22,45 +22,43 @@ import io.kotest.matchers.shouldBe
 /** Pure-JVM coverage of [TabStatistics]'s time-formatting helpers; no Android framework state is touched. */
 class TabStatisticsTest : ShouldSpec(
     {
-        val fragment = TabStatistics()
-
         context("secondsToTimeString") {
             should("returns a placeholder for a negative value") {
-                fragment.secondsToTimeString(-1) shouldBe "--:--"
+                TabStatistics().secondsToTimeString(-1) shouldBe "--:--"
             }
 
             should("formats minutes and seconds below one hour") {
-                fragment.secondsToTimeString(125) shouldBe "02:05"
+                TabStatistics().secondsToTimeString(125) shouldBe "02:05"
             }
 
             should("formats hours, minutes and seconds at exactly one hour") {
-                fragment.secondsToTimeString(3600) shouldBe "01:00:00"
+                TabStatistics().secondsToTimeString(3600) shouldBe "01:00:00"
             }
 
             should("formats hours, minutes and seconds above one hour") {
-                fragment.secondsToTimeString(7325) shouldBe "02:02:05"
+                TabStatistics().secondsToTimeString(7325) shouldBe "02:02:05"
             }
         }
 
         context("totalSecondsToString") {
             should("returns a placeholder for zero seconds") {
-                fragment.totalSecondsToString(0L) shouldBe "-"
+                TabStatistics().totalSecondsToString(0L) shouldBe "-"
             }
 
             should("formats seconds only below one minute") {
-                fragment.totalSecondsToString(45L) shouldBe "45s"
+                TabStatistics().totalSecondsToString(45L) shouldBe "45s"
             }
 
             should("formats minutes and seconds below one hour") {
-                fragment.totalSecondsToString(125L) shouldBe "2m 5s"
+                TabStatistics().totalSecondsToString(125L) shouldBe "2m 5s"
             }
 
             should("formats hours and minutes below one day") {
-                fragment.totalSecondsToString(7325L) shouldBe "2h 2m"
+                TabStatistics().totalSecondsToString(7325L) shouldBe "2h 2m"
             }
 
             should("formats days, hours and minutes at or above one day") {
-                fragment.totalSecondsToString(90065L) shouldBe "1d 1h 1m"
+                TabStatistics().totalSecondsToString(90065L) shouldBe "1d 1h 1m"
             }
         }
     },
