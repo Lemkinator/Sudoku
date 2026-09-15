@@ -301,6 +301,25 @@ class SudokusRepositoryTest {
         }
 
     @Test
+    fun `deleteInvalidSudokus deletes a zero-sized corrupted row instead of throwing`() =
+        runTest {
+            val valid = sudoku(size = 4)
+            repository.saveSudoku(valid)
+            val invalid = sudoku(size = 4)
+            database.sudokuDao().insert(
+                sudokuToDb(invalid).copy(size = 0),
+                listOf(fieldToDb(invalid.fields.first(), invalid.id).copy(gameSize = 0)),
+            )
+            database.sudokuDao().getAll() shouldHaveSize 2
+
+            repository.deleteInvalidSudokus()
+
+            val remaining = database.sudokuDao().getAll()
+            remaining shouldHaveSize 1
+            remaining.single().sudoku.id shouldBe valid.id.value
+        }
+
+    @Test
     fun `sudokuDao insert and getAll round-trip a raw field row with a null solution`() =
         runTest {
             // The domain layer (Field.solution: Int) never writes a null solution, but the field table's column is
