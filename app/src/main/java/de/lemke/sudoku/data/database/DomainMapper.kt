@@ -23,7 +23,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
-    sudokuWithFields ?: return null
+    if (sudokuWithFields == null || sudokuWithFields.sudoku.size <= 0) return null
     val fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList()
     val expectedFieldCount = sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size
     return fields.takeIf { it.size == expectedFieldCount }?.let {
@@ -72,7 +72,7 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
     )
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? =
-    if (fieldDb?.solution == null) {
+    if (fieldDb?.solution == null || fieldDb.gameSize <= 0) {
         null
     } else {
         Field(
