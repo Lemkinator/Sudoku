@@ -141,6 +141,8 @@ class AlarmReceiverTest {
 
     @Test
     fun `onReceive does not send a notification when today's daily sudoku is already completed`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
         userSettings.dailySudokuNotificationEnabled = true
         val size = 4
         val blockSize = 2
@@ -160,6 +162,7 @@ class AlarmReceiverTest {
         runBlocking { saveSudoku(today) }
         broadcast("de.lemke.sudoku.TEST_ALARM")
         notificationManager().allNotifications.shouldBeEmpty()
+        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
     }
 
     private fun alarmManager(): AlarmManager {
