@@ -99,6 +99,7 @@ private fun awaitUntil(
         if (condition()) return
         Thread.sleep(10)
     }
+    check(condition()) { "condition not met within ${timeoutMillis}ms" }
 }
 
 class SudokuMovesTest : ShouldSpec(

@@ -21,7 +21,8 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 
 // A valid, fully solved 4x4 grid (rows, columns and 2x2 blocks each contain 1..4 exactly once).
-private val solutions = intArrayOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
+// An immutable List (not an IntArray, whose elements are settable) rules out cross-test state leakage by construction.
+private val solutions = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
 
 private fun solvedFields(
     incorrect: Set<Int> = emptySet(),
