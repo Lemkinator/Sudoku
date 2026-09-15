@@ -42,6 +42,7 @@ import de.lemke.sudoku.ui.MainActivity
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -56,6 +57,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -186,48 +188,54 @@ class TabStatisticsFragmentTest {
 
     @Test
     fun `the first statistics load inserts rows instead of changing them`() {
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            var insertedCount = -1
-            var changedCalled = false
-            // All 3 tabs' fragments (and their adapters) are created up front by MainActivity.initFragments(), well
-            // before any tab is shown/resumed - registering here, before onTabItemSelected(2) ever runs, is
-            // guaranteed to be in place before collectState's minActiveState=RESUMED block starts collecting.
-            scenario.onActivity { activity ->
-                val fragment =
-                    activity.supportFragmentManager.fragments
-                        .filterIsInstance<TabStatistics>()
-                        .first()
-                fragment.binding.statisticsListRecycler.adapter?.registerAdapterDataObserver(
-                    object : RecyclerView.AdapterDataObserver() {
-                        override fun onItemRangeInserted(
-                            positionStart: Int,
-                            itemCount: Int,
-                        ) {
-                            insertedCount = itemCount
-                        }
+        var insertedCount = -1
+        var changedCalled = false
+        // MainActivity.initFragments() adds all 3 tab fragments in onCreate(); their views (and bindings) exist by
+        // the time the host reaches STARTED, but none of them use setMaxLifecycle, so they only reach RESUMED - and
+        // collectState's minActiveState=RESUMED starts collecting - once the host itself does. Stopping at start()
+        // registers the observer in that window, unlike a fully-launched ActivityScenario (already RESUMED by the
+        // time it hands back control, so the first emission has already happened).
+        val controller = Robolectric.buildActivity(MainActivity::class.java).create().start()
+        val fragment =
+            controller
+                .get()
+                .supportFragmentManager.fragments
+                .filterIsInstance<TabStatistics>()
+                .first()
+        fragment.binding.statisticsListRecycler.adapter
+            .shouldNotBeNull()
+            .registerAdapterDataObserver(
+                object : RecyclerView.AdapterDataObserver() {
+                    override fun onItemRangeInserted(
+                        positionStart: Int,
+                        itemCount: Int,
+                    ) {
+                        insertedCount = itemCount
+                    }
 
-                        override fun onItemRangeChanged(
-                            positionStart: Int,
-                            itemCount: Int,
-                        ) {
-                            changedCalled = true
-                        }
-                    },
-                )
-            }
-            scenario.onActivity { it.onTabItemSelected(2) }
-            // The state flow's calculation crosses to a real Dispatchers.IO thread (bound above), so this needs
-            // real wall-clock polling, not a single idle() - see awaitMainLooperIdleUntil elsewhere in this fleet.
-            val deadline = System.currentTimeMillis() + 5000
-            while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
-                shadowOf(Looper.getMainLooper()).idle()
-                Thread.sleep(20)
-            }
+                    override fun onItemRangeChanged(
+                        positionStart: Int,
+                        itemCount: Int,
+                    ) {
+                        changedCalled = true
+                    }
+                },
+            )
+
+        controller.resume()
+        // The state flow's calculation crosses to a real Dispatchers.IO thread (bound above), so this needs real
+        // wall-clock polling, not a single idle() - see awaitMainLooperIdleUntil elsewhere in this fleet.
+        val deadline = System.currentTimeMillis() + 5000
+        while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
-
-            insertedCount shouldBeGreaterThan 0
-            changedCalled.shouldBeFalse()
+            Thread.sleep(20)
         }
+        shadowOf(Looper.getMainLooper()).idle()
+        check(insertedCount != -1 || changedCalled) { "TabStatistics's first load did not notify within 5000ms" }
+
+        insertedCount shouldBeGreaterThan 0
+        changedCalled.shouldBeFalse()
+        controller.pause().stop().destroy()
     }
 
     @Test
