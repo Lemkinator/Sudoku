@@ -72,7 +72,15 @@ jobs:
 
   local-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Why: this branch grew the suite from ~10 to ~740 tests (Robolectric activity tests, 16
+    # Roborazzi screenshots, Room migration tests). On run 34998324382/job 104480133215,
+    # testDebugUnitTest alone ran 11m11s (17:02:31-17:13:42) without finishing before the old
+    # 15-minute budget killed the job, and verifyRoborazziDebug/koverVerifyDebug never even
+    # started. Workflow shape (checkout/setup-gradle/gradle.properties) matches OneUrl and
+    # GetIcon's local-tests jobs exactly, so this isn't a caching gap - a single Test JVM fork
+    # running this many Robolectric/Roborazzi cases is just slower than 15 minutes on a
+    # GitHub-hosted runner. Matches the existing instrumented-tests budget below.
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v7
