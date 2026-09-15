@@ -29,8 +29,10 @@ import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Difficulty
@@ -40,15 +42,19 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.File
 import java.time.LocalDateTime
+import java.util.concurrent.Executor
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -73,9 +79,28 @@ class ImportDataUseCaseTest {
     // applied automatically - AppCompat dialogs need it set explicitly or they refuse to inflate.
     private val context: Context =
         ApplicationProvider.getApplicationContext<Context>().apply { setTheme(commonutilsR.style.CommonUtils_AppTheme) }
-    private val sudokusRepository = mockk<SudokusRepository>(relaxUnitFun = true)
-    private val useCase =
-        ImportDataUseCase(context, sudokusRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+    private lateinit var database: AppDatabase
+    private lateinit var sudokusRepository: SudokusRepository
+    private lateinit var useCase: ImportDataUseCase
+
+    @Before
+    fun setUp() {
+        val directExecutor = Executor { it.run() }
+        database =
+            Room
+                .inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+                .allowMainThreadQueries()
+                .setQueryExecutor(directExecutor)
+                .setTransactionExecutor(directExecutor)
+                .build()
+        sudokusRepository = SudokusRepository(database.sudokuDao())
+        useCase = ImportDataUseCase(context, sudokusRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
+    }
 
     private fun testSudoku(
         id: String = SudokuId.generate().value,
@@ -122,12 +147,11 @@ class ImportDataUseCaseTest {
         val sudoku2 = testSudoku(size = 9, difficulty = Difficulty.EXPERT)
         val json = listOf(sudokuToExport(sudoku1), sudokuToExport(sudoku2)).stringifyJSON()
         val uri = registerDocument("import.valid", json)
-        val saved = mutableListOf<Sudoku>()
-        coEvery { sudokusRepository.saveSudoku(any(), any()) } answers { saved.add(firstArg()) }
 
         runTest { useCase(uri) }
 
-        saved.map { it.id.value } shouldBe listOf(sudoku1.id.value, sudoku2.id.value)
+        val saved = runBlocking { sudokusRepository.getAllSudokus() }
+        saved.map { it.id.value }.toSet() shouldBe setOf(sudoku1.id.value, sudoku2.id.value)
         val imported1 = saved.single { it.id == sudoku1.id }
         imported1.size shouldBe sudoku1.size
         imported1.difficulty shouldBe sudoku1.difficulty
@@ -145,7 +169,7 @@ class ImportDataUseCaseTest {
 
         runTest { useCase(uri) }
 
-        coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_success)
     }
 
@@ -155,7 +179,7 @@ class ImportDataUseCaseTest {
 
         runTest { useCase(uri) }
 
-        coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
     }
 
@@ -166,7 +190,7 @@ class ImportDataUseCaseTest {
 
         runTest { useCase(uri) }
 
-        coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_file)
     }
 
@@ -180,17 +204,21 @@ class ImportDataUseCaseTest {
 
         runTest { useCase(uri) }
 
-        coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_file)
     }
 
     @Test
     fun `logs and reports failure instead of crashing when saving an imported sudoku throws`() {
+        // A real repository has no natural way to make saveSudoku() throw, so this one case keeps a mock
+        // repository purely to force the catch branch in ImportDataUseCase.importJson.
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
-        coEvery { sudokusRepository.saveSudoku(any(), any()) } throws RuntimeException("boom")
+        val throwingRepository = mockk<SudokusRepository>()
+        coEvery { throwingRepository.saveSudoku(any(), any()) } throws RuntimeException("boom")
+        val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
 
-        runTest { useCase(uri) }
+        runTest { throwingUseCase(uri) }
 
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
     }
@@ -199,9 +227,11 @@ class ImportDataUseCaseTest {
     fun `rethrows a CancellationException from saving instead of reporting it as a failed import`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.cancelled", json)
-        coEvery { sudokusRepository.saveSudoku(any(), any()) } throws CancellationException()
+        val throwingRepository = mockk<SudokusRepository>()
+        coEvery { throwingRepository.saveSudoku(any(), any()) } throws CancellationException()
+        val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
 
-        shouldThrow<CancellationException> { runTest { useCase(uri) } }
+        shouldThrow<CancellationException> { runTest { throwingUseCase(uri) } }
     }
 
     @Test
@@ -211,7 +241,7 @@ class ImportDataUseCaseTest {
 
         runTest { useCase(uri) }
 
-        coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_file)
     }
 }
