@@ -27,6 +27,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
+import java.util.concurrent.Executor
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -43,10 +44,13 @@ class SudokusRepositoryTest {
 
     @Before
     fun setUp() {
+        val directExecutor = Executor { it.run() }
         database =
             Room
                 .inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java)
                 .allowMainThreadQueries()
+                .setQueryExecutor(directExecutor)
+                .setTransactionExecutor(directExecutor)
                 .build()
         repository = SudokusRepository(database.sudokuDao())
     }
@@ -258,11 +262,8 @@ class SudokusRepositoryTest {
         }
 
     @Test
-    fun `deleteInvalidSudokus does not touch a row that sudokuFromDb already excludes from getAllSudokus`() =
+    fun `deleteInvalidSudokus deletes a row whose stored field count does not match size squared and keeps valid rows`() =
         runTest {
-            // sudokuFromDb maps a raw field-count mismatch to null, so mapNotNull drops it from getAllSudokus() before
-            // deleteInvalidSudokus's own `it.fields.size != it.size * it.size` filter ever sees it: the filter can never
-            // be true for anything the list contains, so no row a mismatch like this produces is ever actually deleted.
             val valid = sudoku(size = 4)
             repository.saveSudoku(valid)
             val invalid = sudoku(size = 4)
@@ -274,7 +275,9 @@ class SudokusRepositoryTest {
 
             repository.deleteInvalidSudokus()
 
-            database.sudokuDao().getAll() shouldHaveSize 2
+            val remaining = database.sudokuDao().getAll()
+            remaining shouldHaveSize 1
+            remaining.single().sudoku.id shouldBe valid.id.value
         }
 
     @Test
