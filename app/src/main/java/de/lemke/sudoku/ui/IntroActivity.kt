@@ -63,10 +63,10 @@ import dev.oneuiproject.oneui.design.R as designR
 
 private const val INTRO_STEP_3 = 3
 private const val INTRO_STEP_4 = 4
-internal const val INTRO_STEP_5 = 5
-internal const val INTRO_STEP_6 = 6
+private const val INTRO_STEP_5 = 5
+private const val INTRO_STEP_6 = 6
 private const val INTRO_STEP_7 = 7
-internal const val INTRO_STEP_8 = 8
+private const val INTRO_STEP_8 = 8
 private const val INTRO_STEP_9 = 9
 private const val INTRO_STEP_10 = 10
 
