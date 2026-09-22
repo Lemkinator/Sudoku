@@ -96,6 +96,7 @@ class SudokuActivity : AppCompatActivity() {
     internal var selected: Int? = null
     private var menuPausePlayVisible = false
     private var menuResetVisible = false
+    private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
     internal val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
     internal val transparent get() = ColorStateList.valueOf(getColor(android.R.color.transparent))
@@ -268,7 +269,7 @@ class SudokuActivity : AppCompatActivity() {
         val value = if (visible) 1f else 0f
         binding.gameButtons
             .animate()
-            .setInterpolator(AccelerateDecelerateInterpolator())
+            .setInterpolator(accelerateDecelerateInterpolator)
             .alpha(value)
             .scaleX(value)
             .scaleY(value)
