@@ -59,7 +59,7 @@ import org.robolectric.annotation.Config
 import de.lemke.commonutils.R as commonutilsR
 
 /**
- * Drives [SudokuActivity.select] (and the `selectFrom*` delegates in `SudokuActivitySelection.kt`) through the real
+ * Drives [SudokuActivity.select] (and its private `selectFrom*` members) through the real
  * dispatcher, the way [SudokuActivity.SudokuGameListener.onFieldClicked] and the button click listeners
  * (`initSudokuButtons()`) do in production. A size-4 board keeps field/button indices small enough to reason about:
  * `itemCount` = 16, number buttons = 16..19, delete = 20, hint = 21.
