@@ -653,14 +653,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun highlightCurrentNumber(currentNumber: Int) {
-        val completedNumbers = sudoku.getCompletedNumbers()
-        if (completedNumbers.find { it.first == currentNumber } != null) {
-            if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) {
-                selectNextButton(currentNumber, completedNumbers)
-            }
-        } else {
-            if (userSettings.highlightNumber) gameAdapter.highlightNumber(currentNumber)
-        }
+        selectNextButton(currentNumber, sudoku.getCompletedNumbers())
     }
 
     private fun toggleOrSetNoteButton() {
