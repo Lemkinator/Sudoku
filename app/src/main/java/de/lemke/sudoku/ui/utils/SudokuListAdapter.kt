@@ -34,8 +34,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
-import de.lemke.sudoku.domain.model.contentEquals
-import de.lemke.sudoku.domain.model.errorLimitReached
 import de.lemke.sudoku.domain.model.formatFull
 import dev.oneuiproject.oneui.layout.ToolbarLayout.AllSelectorState
 import dev.oneuiproject.oneui.recyclerview.adapter.IndexedSelectableListAdapter

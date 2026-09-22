@@ -58,16 +58,10 @@ class SudokuQueriesTest : ShouldSpec(
         should("return the union of row, column and block fields as neighbors of a position") {
             val sudoku = querySudoku()
 
-            val neighbors = sudoku.getNeighbors(Position.create(0, 4))
+            val neighbors = sudoku.getNeighbors(0)
 
             // row0 + column0 + block0, concatenated (not deduplicated) -> idx0 itself appears in all three.
             neighbors.map { it.position.index } shouldContainExactlyInAnyOrder listOf(0, 1, 2, 3, 0, 4, 8, 12, 0, 1, 4, 5)
-        }
-
-        should("return the same neighbors when queried by index as by position") {
-            val sudoku = querySudoku()
-
-            sudoku.getNeighbors(5).map { it.position.index } shouldBe sudoku.getNeighbors(Position.create(5, 4)).map { it.position.index }
         }
 
         should("report a row completed when every field in it is correct") {

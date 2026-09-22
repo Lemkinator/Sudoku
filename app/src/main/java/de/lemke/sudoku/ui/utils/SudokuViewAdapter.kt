@@ -21,7 +21,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.getNeighbors
 
 class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
     val fieldViews: MutableList<FieldView> = MutableList(itemCount) { FieldView(context) }

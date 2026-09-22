@@ -31,7 +31,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.move
 import de.lemke.sudoku.domain.model.toSudokuString
 
 class FieldView(context: Context) : LinearLayout(context) {

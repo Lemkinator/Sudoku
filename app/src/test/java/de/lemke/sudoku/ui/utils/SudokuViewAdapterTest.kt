@@ -20,7 +20,6 @@ import android.os.Looper
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.getNeighbors
 import de.lemke.sudoku.testLevelSudoku
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
