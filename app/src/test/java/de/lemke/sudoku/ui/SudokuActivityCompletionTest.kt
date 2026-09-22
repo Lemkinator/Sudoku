@@ -63,8 +63,8 @@ import org.robolectric.shadows.ShadowDialog
 
 /**
  * Completes a real board with animations left enabled (the default) to drive
- * [SudokuActivity.SudokuGameListener.onCompleted] through `animate(..., animateSudoku = true)` in
- * `SudokuActivityAnimations.kt` and into `onSudokuCompleted` — a path every other `SudokuActivity` test disables via
+ * [SudokuActivity.SudokuGameListener.onCompleted] through `animate(..., animateSudoku = true)` and into
+ * `onSudokuCompleted` — a path every other `SudokuActivity` test disables via
  * `userSettings.animationsEnabled = false` to keep unrelated assertions simple.
  *
  * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.

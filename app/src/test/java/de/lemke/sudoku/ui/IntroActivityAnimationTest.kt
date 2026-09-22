@@ -52,7 +52,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Drives the real `while (introStepNow() == X) { delay(...); ... }` loops in `IntroActivityStepAnimations.kt` to
+ * Drives the real `while (introStep == X) { delay(...); ... }` loops in [IntroActivity]'s animation members to
  * completion by advancing Robolectric's paused main-looper clock past their `delay()` calls with
  * `shadowOf(Looper.getMainLooper()).idleFor(Duration)`, rather than driving the state machine alone (see
  * [IntroActivityFlowTest]) — that only reaches the `when` dispatch in `startAnimation`, never the loop bodies
@@ -169,7 +169,7 @@ class IntroActivityAnimationTest {
     fun `animate with animateSudoku drives the whole-board branch of matchesAnimation`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.size)
-            val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope, animateSudoku = true)
+            val job = activity.animate(position, animateSudoku = true)
             job.shouldNotBeNull()
             idle(2000)
         }
@@ -178,7 +178,7 @@ class IntroActivityAnimationTest {
     fun `animate with every flag false is a no-op`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.size)
-            val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope)
+            val job = activity.animate(position)
             job.shouldBeNull()
         }
 
@@ -269,16 +269,19 @@ class IntroActivityAnimationTest {
     @Test
     fun `startAnimation with an unmatched intro step dispatches to no animation`() =
         launch { activity ->
-            val job = startAnimation(-1, activity.lifecycleScope, activity.gameAdapter, { activity.introStep }, activity::selectButton)
+            activity.startAnimation(-1)
             idle(50)
-            job.isCompleted.shouldBeTrue()
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
         }
 
     @Test
     fun `stopAnimation with no active animation job still resets the highlighted fields`() =
         launch { activity ->
             activity.gameAdapter.fieldViews.forEach { it.isHighlighted = true }
-            stopAnimation(0, null, activity.gameAdapter, activity::selectButton)
+            activity.stopAnimation(0)
             activity.gameAdapter.fieldViews
                 .none { it.isHighlighted }
                 .shouldBeTrue()
@@ -288,7 +291,7 @@ class IntroActivityAnimationTest {
     fun `animate with only animateColumn drives the column-only branch of matchesAnimation`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.size)
-            val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope, animateColumn = true)
+            val job = activity.animate(position, animateColumn = true)
             job.shouldNotBeNull()
             idle(2000)
         }
@@ -297,7 +300,7 @@ class IntroActivityAnimationTest {
     fun `animate with only animateBlock drives the block-only branch of matchesAnimation`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.size)
-            val job = animate(position, activity.gameAdapter, activity.sudoku, activity.lifecycleScope, animateBlock = true)
+            val job = activity.animate(position, animateBlock = true)
             job.shouldNotBeNull()
             idle(2000)
         }

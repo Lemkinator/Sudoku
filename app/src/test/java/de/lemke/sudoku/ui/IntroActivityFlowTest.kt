@@ -58,8 +58,8 @@ import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
 /**
- * Drives [IntroActivity]'s scripted tutorial state machine (`nextIntroStep`/`select`/`selectButton` in this file and
- * `IntroActivityStepAnimations.kt`) the way a real tap on the tutorial board or number pad would, following the exact
+ * Drives [IntroActivity]'s scripted tutorial state machine (`nextIntroStep`/`select`/`selectButton`) the way a real
+ * tap on the tutorial board or number pad would, following the exact
  * script described by `intro_text0`..`intro_text10`. Real `.animate()`-driven loops inside `startAnimation` are not
  * driven to completion here (see [IntroActivityAnimationTest]); this covers the state machine, menu, note button and
  * notifications-dialog paths around them.
