@@ -18,6 +18,7 @@ package de.lemke.sudoku.data.database
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import app.cash.turbine.test
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
@@ -44,6 +45,9 @@ class SudokusRepositoryTest {
 
     @Before
     fun setUp() {
+        // A same-thread executor makes Room's invalidation-tracker re-query (and thus each Flow emission) finish
+        // synchronously with the write that triggered it, matching TestPersistenceModule's production test setup —
+        // without it, a save's re-emission can land on a background thread after this test's assertions already ran.
         val directExecutor = Executor { it.run() }
         database =
             Room
@@ -335,5 +339,87 @@ class SudokusRepositoryTest {
             val fetched = database.sudokuDao().getAll().single()
 
             fetched.fields.single { it.index == 0 }.solution shouldBe null
+        }
+
+    @Test
+    fun `observeAllSudokus starts empty and emits after a sudoku is saved`() =
+        runTest {
+            repository.observeAllSudokus().test {
+                awaitItem().shouldBeEmpty()
+
+                val saved = sudoku()
+                repository.saveSudoku(saved)
+
+                awaitItem().single().id shouldBe saved.id
+            }
+        }
+
+    @Test
+    fun `observeAllNormalSudokus only emits normal-mode sudokus`() =
+        runTest {
+            repository.observeAllNormalSudokus().test {
+                awaitItem().shouldBeEmpty()
+
+                // Room's invalidation tracker fires on any write to the "sudoku" table, so a non-matching save still
+                // re-runs (and re-emits) this filtered query — with the same, still-empty result.
+                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
+                awaitItem().shouldBeEmpty()
+
+                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
+                awaitItem().single().isNormalSudoku shouldBe true
+            }
+        }
+
+    @Test
+    fun `observeSudokuLevel only emits level sudokus for the requested size`() =
+        runTest {
+            repository.observeSudokuLevel(4).test {
+                awaitItem().shouldBeEmpty()
+
+                repository.saveSudoku(sudoku(size = 9, modeLevel = 1))
+                awaitItem().shouldBeEmpty()
+
+                repository.saveSudoku(sudoku(size = 4, modeLevel = 1))
+                awaitItem().single().size shouldBe 4
+            }
+        }
+
+    @Test
+    fun `observeDailySudokus only emits daily sudokus`() =
+        runTest {
+            repository.observeDailySudokus().test {
+                awaitItem().shouldBeEmpty()
+
+                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
+                awaitItem().shouldBeEmpty()
+
+                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
+                awaitItem().single().isDailySudoku shouldBe true
+            }
+        }
+
+    @Test
+    fun `sudokuDao observeAll round-trips a raw field row with a null solution`() =
+        runTest {
+            // sudokuFromDb would drop a sudoku with a null-solution field entirely (field-count mismatch), so this
+            // goes through SudokuDao directly to reach the generated relation-fetch code that reads the raw
+            // (nullable) solution column, rather than through the repository's domain-mapped Flow.
+            val sudoku = sudoku(size = 4)
+            val fields =
+                sudoku.fields
+                    .map { fieldToDb(it, sudoku.id) }
+                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
+
+            database.sudokuDao().observeAll().test {
+                awaitItem().shouldBeEmpty()
+
+                database.sudokuDao().insert(sudokuToDb(sudoku), fields)
+
+                awaitItem()
+                    .single()
+                    .fields
+                    .single { it.index == 0 }
+                    .solution shouldBe null
+            }
         }
 }

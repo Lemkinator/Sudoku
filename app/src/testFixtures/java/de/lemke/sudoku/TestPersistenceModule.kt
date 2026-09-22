@@ -25,7 +25,6 @@ import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuObserveDao
 import de.lemke.sudoku.di.PersistenceModule
 import java.util.concurrent.Executor
 import javax.inject.Singleton
@@ -57,7 +56,4 @@ object TestPersistenceModule {
 
     @Provides
     fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()
-
-    @Provides
-    fun provideSudokuObserveDao(database: AppDatabase): SudokuObserveDao = database.sudokuObserveDao()
 }

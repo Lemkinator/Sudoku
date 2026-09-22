@@ -18,7 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.SudokuObservationsRepository
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.monthAndYear
 import java.time.LocalDate
@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 class ObserveDailySudokusUseCase @Inject constructor(
-    private val sudokuObservationsRepository: SudokuObservationsRepository,
+    private val sudokusRepository: SudokusRepository,
     private val userSettings: UserSettings,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
@@ -39,7 +39,7 @@ class ObserveDailySudokusUseCase @Inject constructor(
         userSettings
             .dailyShowUncompletedFlow
             .flatMapLatest { includeUncompleted ->
-                sudokuObservationsRepository
+                sudokusRepository
                     .observeDailySudokus()
                     .map { sudokus ->
                         // apply filter

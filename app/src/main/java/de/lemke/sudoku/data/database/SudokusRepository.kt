@@ -20,11 +20,20 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.flow.map
 
 class SudokusRepository @Inject constructor(
     private val sudokuDao: SudokuDao,
 ) {
     suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
+
+    fun observeAllSudokus() = sudokuDao.observeAll().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+
+    fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+
+    fun observeSudokuLevel(size: Int) = sudokuDao.observeSudokuLevel(size).map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+
+    fun observeDailySudokus() = sudokuDao.observeDailySudokus().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
     suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(sudokuDao.getRecentlyUpdatedNormalSudoku())
 

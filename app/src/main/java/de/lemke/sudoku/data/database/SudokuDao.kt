@@ -66,10 +66,7 @@ interface SudokuDao {
     @Transaction
     @Delete
     suspend fun delete(vararg sudokus: SudokuDb)
-}
 
-@Dao
-interface SudokuObserveDao {
     @Transaction
     @Query("SELECT * FROM sudoku ORDER BY updated DESC")
     fun observeAll(): Flow<List<SudokuWithFields>>

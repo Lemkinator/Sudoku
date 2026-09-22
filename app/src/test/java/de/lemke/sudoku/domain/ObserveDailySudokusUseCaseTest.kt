@@ -19,7 +19,7 @@ package de.lemke.sudoku.domain
 import app.cash.turbine.test
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.SudokuObservationsRepository
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
@@ -59,7 +59,7 @@ private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObserveDailySudokusUseCaseTest : ShouldSpec(
     {
-        val sudokuObservationsRepository = mockk<SudokuObservationsRepository>()
+        val sudokusRepository = mockk<SudokusRepository>()
         lateinit var userSettings: UserSettings
         lateinit var useCase: ObserveDailySudokusUseCase
 
@@ -71,8 +71,8 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
 
         beforeEach {
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            useCase = ObserveDailySudokusUseCase(sudokuObservationsRepository, userSettings, UnconfinedTestDispatcher())
-            every { sudokuObservationsRepository.observeDailySudokus() } returns
+            useCase = ObserveDailySudokusUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
+            every { sudokusRepository.observeDailySudokus() } returns
                 flowOf(listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth))
         }
 

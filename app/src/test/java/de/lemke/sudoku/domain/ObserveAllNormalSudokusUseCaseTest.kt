@@ -20,7 +20,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.data.database.SudokuObservationsRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -38,7 +37,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * A real in-memory Room DB backs [SudokuObservationsRepository] here (rather than mocking it and a `Sudoku`
+ * A real in-memory Room DB backs [SudokusRepository] here (rather than mocking it and a `Sudoku`
  * instance), so the assertion is against a genuine saved-and-observed row, not just whatever a mock was told
  * to return.
  *
@@ -62,8 +61,7 @@ class ObserveAllNormalSudokusUseCaseTest {
                 .setTransactionExecutor(directExecutor)
                 .build()
         sudokusRepository = SudokusRepository(database.sudokuDao())
-        val observationsRepository = SudokuObservationsRepository(database.sudokuObserveDao())
-        useCase = ObserveAllNormalSudokusUseCase(observationsRepository, UnconfinedTestDispatcher())
+        useCase = ObserveAllNormalSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
     }
 
     @After

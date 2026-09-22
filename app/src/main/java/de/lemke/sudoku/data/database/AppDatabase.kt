@@ -33,8 +33,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun sudokuDao(): SudokuDao
-
-    abstract fun sudokuObserveDao(): SudokuObserveDao
 }
 
 val MIGRATION_1_2 =

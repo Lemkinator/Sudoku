@@ -17,14 +17,14 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.sudoku.data.database.SudokuObservationsRepository
+import de.lemke.sudoku.data.database.SudokusRepository
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.flowOn
 
 class ObserveAllNormalSudokusUseCase @Inject constructor(
-    private val sudokuObservationsRepository: SudokuObservationsRepository,
+    private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    operator fun invoke() = sudokuObservationsRepository.observeAllNormalSudokus().flowOn(defaultDispatcher)
+    operator fun invoke() = sudokusRepository.observeAllNormalSudokus().flowOn(defaultDispatcher)
 }
