@@ -36,6 +36,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
@@ -43,6 +44,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
@@ -101,6 +103,9 @@ class AlarmReceiverTest {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
+    @Inject
+    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+
     @Before
     fun setup() {
         hiltRule.inject()
@@ -133,10 +138,15 @@ class AlarmReceiverTest {
     }
 
     @Test
-    fun `onReceive does not send a notification when disabled`() {
+    fun `onReceive does not send a notification and cancels the alarm when disabled`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
+        sendDailyNotification.setDailySudokuNotification(enable = true)
+        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
         userSettings.dailySudokuNotificationEnabled = false
         broadcast("de.lemke.sudoku.TEST_ALARM")
         notificationManager().allNotifications.shouldBeEmpty()
+        shadowOf(alarmManager()).nextScheduledAlarm.shouldBeNull()
     }
 
     @Test
@@ -172,6 +182,8 @@ class AlarmReceiverTest {
 
     @Test
     fun `onReceive on BOOT_COMPLETED does not send a notification but reschedules`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
         userSettings.dailySudokuNotificationEnabled = true
         broadcast(Intent.ACTION_BOOT_COMPLETED)
         notificationManager().allNotifications.shouldBeEmpty()
@@ -180,6 +192,8 @@ class AlarmReceiverTest {
 
     @Test
     fun `onReceive on MY_PACKAGE_REPLACED does not send a notification but reschedules`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
         userSettings.dailySudokuNotificationEnabled = true
         broadcast(Intent.ACTION_MY_PACKAGE_REPLACED)
         notificationManager().allNotifications.shouldBeEmpty()
