@@ -289,11 +289,17 @@ class SudokuTest : ShouldSpec(
             sudoku.timer shouldBe null
         }
 
-        should("reset is a no-op on the timer when none is running") {
-            val sudoku = fourByFourSudoku()
+        should("reset still clears progress when no timer is running") {
+            val sudoku =
+                fourByFourSudoku().apply {
+                    seconds = 42
+                    errorsMade = 2
+                }
 
             sudoku.reset()
 
+            sudoku.seconds shouldBe 0
+            sudoku.errorsMade shouldBe 0
             sudoku.timer shouldBe null
         }
 
