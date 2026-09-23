@@ -28,7 +28,7 @@ import kotlinx.coroutines.withContext
 
 class GenerateFieldsUseCase @Inject constructor(
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-    private val generateSolvedBoard: SolvedBoardGenerator,
+    private val solvedBoardGenerator: SolvedBoardGenerator,
 ) {
     suspend operator fun invoke(
         size: Int,
@@ -42,7 +42,7 @@ class GenerateFieldsUseCase @Inject constructor(
                     16 -> GameSchemas.SCHEMA_16X16
                     else -> GameSchemas.SCHEMA_9X9
                 }
-            val gameMatrix = generateSolvedBoard.generate(schema)
+            val gameMatrix = solvedBoardGenerator.generate(schema)
             val matrix = gameMatrix.array
             val riddle = Creator.createRiddle(gameMatrix, difficulty.numbersToRemove(size)).array
             return@withContext MutableList(size * size) { index ->
