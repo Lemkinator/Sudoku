@@ -37,7 +37,6 @@ private const val SECONDS_PER_MINUTE = 60
 private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 private const val PERCENT_SCALE = 100
 
-// Sizes this app supports; a 16x16 board's digits 10-16 render as letters A-G (see toSudokuString/toSudokuChar).
 private const val MAX_STANDARD_DIGIT = 9
 private const val MAX_LARGE_DIGIT = 16
 private const val LARGE_DIGIT_OFFSET = 10
@@ -451,7 +450,6 @@ class Sudoku(
         const val MODE_LEVEL_ERROR_LIMIT = 3
         const val MODE_DAILY_ERROR_LIMIT = 3
 
-        // Board sizes this app supports.
         const val SIZE_4X4 = 4
         const val SIZE_9X9 = 9
         const val SIZE_16X16 = 16

@@ -21,7 +21,6 @@ import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGames
 import javax.inject.Inject
 
-/** Testing seam around [PlayGames.getGamesSignInClient] — the real client has no fake/local mode under Robolectric. */
 interface GamesSignInProvider {
     fun getClient(activity: Activity): GamesSignInClient
 }

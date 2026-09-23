@@ -70,7 +70,6 @@ private const val INTRO_STEP_8 = 8
 private const val INTRO_STEP_9 = 9
 private const val INTRO_STEP_10 = 10
 
-// Fixed cell/button indices on the tutorialSudoku() board that this scripted walkthrough highlights.
 internal const val DEMO_CELL_INDEX_4 = 4
 internal const val DEMO_CELL_INDEX_24 = 24
 internal const val DEMO_CELL_INDEX_49 = 49
@@ -657,7 +656,6 @@ class IntroActivity : AppCompatActivity() {
     }
 
     inner class SudokuGameListener : GameListener {
-        // Onboarding board has no timer/error/completion UI to update.
         override fun onTimeChanged() { /* no-op */ }
 
         override fun onError() { /* no-op */ }

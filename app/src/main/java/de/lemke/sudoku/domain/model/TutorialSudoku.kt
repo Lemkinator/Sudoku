@@ -23,7 +23,6 @@ private const val TUTORIAL_CELL_COUNT = TUTORIAL_SIZE * TUTORIAL_SIZE
 private const val TUTORIAL_SOLUTION =
     "314259687" + "825467193" + "796813254" + "152384976" + "963571842" + "478926531" + "287635419" + "641798325" + "539142768"
 
-// Same length/order as TUTORIAL_SOLUTION: '1' = given, '0' = left blank for the player to fill in.
 private const val TUTORIAL_GIVEN_MASK =
     "111101111" + "111111111" + "111001011" + "101101100" + "111101011" + "110101111" + "010001001" + "001001101" + "001111111"
 

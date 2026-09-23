@@ -197,7 +197,6 @@ class SudokuListAdapter(
             }
         }
 
-        // Only ever called for a SudokuItem holder (never a separator), so imageView/textViewSmall are set.
         @SuppressLint("SetTextI18n")
         fun bindSudoku(sudoku: Sudoku) {
             textView.text =
@@ -241,8 +240,6 @@ class SudokuListAdapter(
         }
 
         fun bindActionMode(itemId: Long) {
-            // Unlike bindActionModeAnimate (also reachable for a separator holder via the SELECTION_MODE
-            // payload path), this is only ever called for a SudokuItem holder, so selectableLayout is set.
             selectableLayout!!.apply {
                 isSelectionMode = isActionMode
                 setSelected(isSelected(itemId))
