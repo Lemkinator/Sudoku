@@ -252,132 +252,6 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
     }
 
-    internal fun toggleOrSetNoteButton() {
-        if (introStep != INTRO_STEP_10) return
-        notesEnabled = !notesEnabled
-        binding.noteButton.backgroundTintList =
-            ColorStateList.valueOf(
-                if (notesEnabled) {
-                    colorPrimary
-                } else {
-                    resources.getColor(android.R.color.transparent, theme)
-                },
-            )
-    }
-
-    internal fun selectButton(i: Int?) {
-        for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
-        binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
-        binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
-        if (i != null) {
-            when (i) {
-                sudoku.size -> {
-                    binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
-                }
-
-                sudoku.size + 1 -> {
-                    binding.hintButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
-                }
-
-                else -> {
-                    sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(colorPrimary)
-                    gameAdapter.highlightNumber(i + 1)
-                }
-            }
-            selected = sudoku.itemCount + i
-        } else {
-            selected = null
-            gameAdapter.highlightNumber(null)
-        }
-    }
-
-    private fun refreshHintButton() {
-        binding.hintButton.isVisible = sudoku.isHintAvailable
-        binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
-    }
-
-    internal fun select(newSelected: Int?) {
-        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
-        when (selected) {
-            null -> selectFromNothing(newSelected)
-
-            // nothing is selected
-            in 0 until sudoku.itemCount -> selectFromField(newSelected)
-
-            // field is selected
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected) // number button is selected
-        }
-    }
-
-    private fun selectFromNothing(newSelected: Int?) {
-        when (newSelected) {
-            // selected field
-            in 0 until sudoku.itemCount -> {
-                val field = newSelected!!
-                if (field == DEMO_CELL_INDEX_4 && introStep == 2) {
-                    gameAdapter.selectFieldView(field, highlightNeighbors = true, highlightNumber = true)
-                    selected = field
-                    nextIntroStep()
-                }
-            }
-
-            // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                val button = newSelected!!
-                if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
-                    selectButton(button - sudoku.itemCount)
-                    nextIntroStep()
-                }
-            }
-
-            // selected nothing
-            else -> {}
-        }
-    }
-
-    private fun selectFromField(newSelected: Int?) {
-        val position = Position.create(selected!!, sudoku.size)
-        when (newSelected) {
-            // selected nothing
-            null -> {
-                selected = null
-            }
-
-            // selected number
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                val number = newSelected!!
-                if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
-                    sudoku.move(position, number - sudoku.itemCount + 1, false)
-                    selected = null
-                    gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
-                    nextIntroStep()
-                }
-            }
-        }
-    }
-
-    private fun selectFromNumberButton(newSelected: Int?) {
-        when (newSelected) {
-            // selected nothing
-            null -> {
-                selectButton(null)
-            }
-
-            // selected field
-            in 0 until sudoku.itemCount -> {
-                val field = newSelected!!
-                val number = selected!! - sudoku.itemCount + 1
-                if ((introStep == INTRO_STEP_5 && field == DEMO_CELL_INDEX_49) ||
-                    (introStep == INTRO_STEP_6 && field == DEMO_CELL_INDEX_24)
-                ) {
-                    sudoku.move(field, number, false)
-                    gameAdapter.highlightNumber(number)
-                    nextIntroStep()
-                }
-            }
-        }
-    }
-
     internal fun checkRowColumnBlockCompleted(position: Position) {
         animate(
             position,
@@ -630,6 +504,132 @@ class IntroActivity : AppCompatActivity() {
                     .start()
             }.start()
         delay(delay.milliseconds)
+    }
+
+    internal fun toggleOrSetNoteButton() {
+        if (introStep != INTRO_STEP_10) return
+        notesEnabled = !notesEnabled
+        binding.noteButton.backgroundTintList =
+            ColorStateList.valueOf(
+                if (notesEnabled) {
+                    colorPrimary
+                } else {
+                    resources.getColor(android.R.color.transparent, theme)
+                },
+            )
+    }
+
+    internal fun selectButton(i: Int?) {
+        for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
+        binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
+        binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
+        if (i != null) {
+            when (i) {
+                sudoku.size -> {
+                    binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
+                }
+
+                sudoku.size + 1 -> {
+                    binding.hintButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
+                }
+
+                else -> {
+                    sudokuButtons[i].backgroundTintList = ColorStateList.valueOf(colorPrimary)
+                    gameAdapter.highlightNumber(i + 1)
+                }
+            }
+            selected = sudoku.itemCount + i
+        } else {
+            selected = null
+            gameAdapter.highlightNumber(null)
+        }
+    }
+
+    private fun refreshHintButton() {
+        binding.hintButton.isVisible = sudoku.isHintAvailable
+        binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
+    }
+
+    internal fun select(newSelected: Int?) {
+        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
+        when (selected) {
+            null -> selectFromNothing(newSelected)
+
+            // nothing is selected
+            in 0 until sudoku.itemCount -> selectFromField(newSelected)
+
+            // field is selected
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected) // number button is selected
+        }
+    }
+
+    private fun selectFromNothing(newSelected: Int?) {
+        when (newSelected) {
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                val field = newSelected!!
+                if (field == DEMO_CELL_INDEX_4 && introStep == 2) {
+                    gameAdapter.selectFieldView(field, highlightNeighbors = true, highlightNumber = true)
+                    selected = field
+                    nextIntroStep()
+                }
+            }
+
+            // selected button
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+                val button = newSelected!!
+                if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
+                    selectButton(button - sudoku.itemCount)
+                    nextIntroStep()
+                }
+            }
+
+            // selected nothing
+            else -> {}
+        }
+    }
+
+    private fun selectFromField(newSelected: Int?) {
+        val position = Position.create(selected!!, sudoku.size)
+        when (newSelected) {
+            // selected nothing
+            null -> {
+                selected = null
+            }
+
+            // selected number
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+                val number = newSelected!!
+                if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
+                    sudoku.move(position, number - sudoku.itemCount + 1, false)
+                    selected = null
+                    gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
+                    nextIntroStep()
+                }
+            }
+        }
+    }
+
+    private fun selectFromNumberButton(newSelected: Int?) {
+        when (newSelected) {
+            // selected nothing
+            null -> {
+                selectButton(null)
+            }
+
+            // selected field
+            in 0 until sudoku.itemCount -> {
+                val field = newSelected!!
+                val number = selected!! - sudoku.itemCount + 1
+                if ((introStep == INTRO_STEP_5 && field == DEMO_CELL_INDEX_49) ||
+                    (introStep == INTRO_STEP_6 && field == DEMO_CELL_INDEX_24)
+                ) {
+                    sudoku.move(field, number, false)
+                    gameAdapter.highlightNumber(number)
+                    nextIntroStep()
+                }
+            }
+        }
     }
 
     private fun showNotificationsDialogOrFinish() {

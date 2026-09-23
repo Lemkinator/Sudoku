@@ -38,6 +38,22 @@ interface SudokuDao {
     suspend fun getAll(): List<SudokuWithFields>
 
     @Transaction
+    @Query("SELECT * FROM sudoku ORDER BY updated DESC")
+    fun observeAll(): Flow<List<SudokuWithFields>>
+
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE modeLevel = 0 ORDER BY updated DESC")
+    fun observeAllNormal(): Flow<List<SudokuWithFields>>
+
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel > 0 ORDER BY modeLevel DESC")
+    fun observeSudokuLevel(size: Int): Flow<List<SudokuWithFields>>
+
+    @Transaction
+    @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")
+    fun observeDailySudokus(): Flow<List<SudokuWithFields>>
+
+    @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")
     suspend fun getDailySudokus(): List<SudokuWithFields>
 
@@ -66,20 +82,4 @@ interface SudokuDao {
     @Transaction
     @Delete
     suspend fun delete(vararg sudokus: SudokuDb)
-
-    @Transaction
-    @Query("SELECT * FROM sudoku ORDER BY updated DESC")
-    fun observeAll(): Flow<List<SudokuWithFields>>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE modeLevel = 0 ORDER BY updated DESC")
-    fun observeAllNormal(): Flow<List<SudokuWithFields>>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel > 0 ORDER BY modeLevel DESC")
-    fun observeSudokuLevel(size: Int): Flow<List<SudokuWithFields>>
-
-    @Transaction
-    @Query("SELECT * FROM sudoku WHERE modeLevel = -1 ORDER BY created DESC")
-    fun observeDailySudokus(): Flow<List<SudokuWithFields>>
 }
