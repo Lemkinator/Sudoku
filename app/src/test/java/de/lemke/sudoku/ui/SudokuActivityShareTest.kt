@@ -42,14 +42,12 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.resetFileProviderCache
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
@@ -233,18 +231,12 @@ class SudokuActivityShareTest {
         }
 
     @Test
-    fun `the subtitle reflects a daily sudoku's fixed error limit`() =
+    fun `the subtitle shows a daily sudoku's fixed error limit instead of the user's`() {
+        userSettings.errorLimit = 5
         launch(formulaicSudoku(4, modeLevel = MODE_DAILY)) { activity ->
-            activity.binding.sudokuToolbarLayout.expandedSubtitle
-                .toString()
-                .shouldContain(
-                    activity.getString(
-                        R.string.current_errors_with_limit,
-                        activity.sudoku.errorsMade,
-                        MODE_DAILY_ERROR_LIMIT,
-                    ),
-                )
+            activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
+    }
 
     @Test
     fun `the title reflects a sudoku level's number`() =
@@ -255,26 +247,23 @@ class SudokuActivityShareTest {
         }
 
     @Test
-    fun `the subtitle reflects a sudoku level's fixed error limit`() =
+    fun `the subtitle shows a sudoku level's fixed error limit instead of the user's`() {
+        userSettings.errorLimit = 5
         launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
-            activity.binding.sudokuToolbarLayout.expandedSubtitle
-                .toString()
-                .shouldContain(
-                    activity.getString(
-                        R.string.current_errors_with_limit,
-                        activity.sudoku.errorsMade,
-                        de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT,
-                    ),
-                )
+            activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
+    }
 
     @Test
     fun `the subtitle omits the error limit for a normal sudoku with an unlimited error setting`() {
         userSettings.errorLimit = 0
-        launch(formulaicSudoku(4, modeLevel = de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL)) { activity ->
-            activity.binding.sudokuToolbarLayout.expandedSubtitle
-                .toString()
-                .shouldContain(activity.getString(R.string.current_errors, activity.sudoku.errorsMade))
+        launch(formulaicSudoku(4, modeLevel = MODE_NORMAL)) { activity ->
+            activity.subtitleErrorsSegment() shouldBe "Errors: 0"
         }
     }
+
+    private fun SudokuActivity.subtitleErrorsSegment(): String =
+        binding.sudokuToolbarLayout.expandedSubtitle
+            .toString()
+            .split(" | ")[2]
 }
