@@ -27,7 +27,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalCoroutinesApi::class)
 class GenerateFieldsUseCaseTest : ShouldSpec(
     {
-        val useCase = GenerateFieldsUseCase(UnconfinedTestDispatcher())
+        val useCase = GenerateFieldsUseCase(UnconfinedTestDispatcher(), CreatorSolvedBoardGenerator())
+        val patternUseCase = GenerateFieldsUseCase(UnconfinedTestDispatcher(), PatternSolvedBoardGenerator())
 
         should("generate size*size fields for a 4x4 grid") {
             val fields = useCase(4, Difficulty.MEDIUM)
@@ -40,8 +41,16 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
         }
 
         should("generate size*size fields for a 16x16 grid") {
-            val fields = useCase(16, Difficulty.MEDIUM)
+            val fields = patternUseCase(16, Difficulty.MEDIUM)
             fields shouldHaveSize 256
+        }
+
+        should("take a 16x16 grid's solutions from the solved board and clear numbersToRemove of them") {
+            val fields = patternUseCase(16, Difficulty.MEDIUM)
+            fields.forEach { field ->
+                field.solution shouldBe PatternSolvedBoardGenerator.patternValue(field.position.row, field.position.column, 16, 4)
+            }
+            fields.count { !it.given } shouldBe 100
         }
 
         should("give every field a position matching its list index") {
