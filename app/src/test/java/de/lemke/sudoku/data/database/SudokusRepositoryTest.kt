@@ -45,9 +45,7 @@ class SudokusRepositoryTest {
 
     @Before
     fun setUp() {
-        // A same-thread executor makes Room's invalidation-tracker re-query (and thus each Flow emission) finish
-        // synchronously with the write that triggered it, matching TestPersistenceModule's production test setup —
-        // without it, a save's re-emission can land on a background thread after this test's assertions already ran.
+        // A same-thread executor keeps Room's invalidation re-query synchronous with the triggering write.
         val directExecutor = Executor { it.run() }
         database =
             Room
@@ -326,9 +324,6 @@ class SudokusRepositoryTest {
     @Test
     fun `sudokuDao insert and getAll round-trip a raw field row with a null solution`() =
         runTest {
-            // The domain layer (Field.solution: Int) never writes a null solution, but the field table's column is
-            // nullable at the DAO/DB layer, and the generated DAO reads it back via an explicit null check, so this
-            // goes through SudokuDao directly rather than through the repository/domain mapping.
             val sudoku = sudoku(size = 4)
             val fields =
                 sudoku.fields
@@ -360,8 +355,7 @@ class SudokusRepositoryTest {
             repository.observeAllNormalSudokus().test {
                 awaitItem().shouldBeEmpty()
 
-                // Room's invalidation tracker fires on any write to the "sudoku" table, so a non-matching save still
-                // re-runs (and re-emits) this filtered query — with the same, still-empty result.
+                // Room's invalidation tracker re-emits on any write to the table.
                 repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
                 awaitItem().shouldBeEmpty()
 
@@ -401,9 +395,6 @@ class SudokusRepositoryTest {
     @Test
     fun `sudokuDao observeAll round-trips a raw field row with a null solution`() =
         runTest {
-            // sudokuFromDb would drop a sudoku with a null-solution field entirely (field-count mismatch), so this
-            // goes through SudokuDao directly to reach the generated relation-fetch code that reads the raw
-            // (nullable) solution column, rather than through the repository's domain-mapped Flow.
             val sudoku = sudoku(size = 4)
             val fields =
                 sudoku.fields

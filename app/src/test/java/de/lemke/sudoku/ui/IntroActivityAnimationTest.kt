@@ -51,16 +51,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * Drives the real `while (introStep == X) { delay(...); ... }` loops in [IntroActivity]'s animation members to
- * completion by advancing Robolectric's paused main-looper clock past their `delay()` calls with
- * `shadowOf(Looper.getMainLooper()).idleFor(Duration)`, rather than driving the state machine alone (see
- * [IntroActivityFlowTest]) — that only reaches the `when` dispatch in `startAnimation`, never the loop bodies
- * themselves. Each loop is entered at least once, including its real `View.animate()` calls, before advancing to the
- * next step (which cancels the animation via `stopAnimation`).
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -104,13 +95,7 @@ class IntroActivityAnimationTest {
 
     private fun idle(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
 
-    /**
-     * Advancing the paused main looper's clock in several smaller steps (instead of one big
-     * `idleFor`) is what actually drains a chain of sequential `delay()` calls inside a single loop
-     * iteration (`delay(); work; delay(); work; ...`) — a single large `idleFor` call only ever
-     * resolves the *first* pending delay, leaving the rest of that iteration's body never entered,
-     * even though the total duration comfortably covers all of them.
-     */
+    /** A single large `idleFor` resolves only the first pending `delay()`, so advance in smaller steps. */
     private fun idleRepeated(
         times: Int,
         millisEach: Long,

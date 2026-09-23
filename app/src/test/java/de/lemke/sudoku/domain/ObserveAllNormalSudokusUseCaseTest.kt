@@ -36,13 +36,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * A real in-memory Room DB backs [SudokusRepository] here (rather than mocking it and a `Sudoku`
- * instance), so the assertion is against a genuine saved-and-observed row, not just whatever a mock was told
- * to return.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class ObserveAllNormalSudokusUseCaseTest {

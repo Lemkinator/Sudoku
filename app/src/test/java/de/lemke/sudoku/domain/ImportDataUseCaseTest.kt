@@ -64,19 +64,11 @@ import org.robolectric.shadows.ShadowContentResolver
 import org.robolectric.shadows.ShadowDialog
 import de.lemke.commonutils.R as commonutilsR
 
-/**
- * [DocumentFile.fromSingleUri][androidx.documentfile.provider.DocumentFile.fromSingleUri] only resolves
- * `exists()`/`canRead()`/`type` through a real [android.content.ContentProvider] registered for the
- * uri's authority (verified against the androidx.documentfile 1.1.0 sources) - a bare `file://` uri from
- * `Uri.fromFile` never satisfies those checks under Robolectric (no provider backs the "file" scheme), so
- * every fixture here is served by [FakeDocumentProvider], registered per-test via
- * [ShadowContentResolver.registerProviderInternal].
- */
+/** `DocumentFile.fromSingleUri` resolves its checks only through a registered ContentProvider, not `file://`. */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class ImportDataUseCaseTest {
-    // a bare Application context, unlike an Activity, never gets the manifest's android:theme
-    // applied automatically - AppCompat dialogs need it set explicitly or they refuse to inflate.
+    // An Application context never gets the manifest theme, and AppCompat dialogs refuse to inflate without it.
     private val context: Context =
         ApplicationProvider.getApplicationContext<Context>().apply { setTheme(commonutilsR.style.CommonUtils_AppTheme) }
     private lateinit var database: AppDatabase
@@ -196,9 +188,7 @@ class ImportDataUseCaseTest {
 
     @Test
     fun `shows the invalid-file error when the resolved document has no readable mime type`() {
-        // DocumentsContractApi19.canRead() (androidx.documentfile 1.1.0) returns false once the raw MIME type is
-        // empty, before the compound condition ever reaches the "application/json" comparison - a null mime type
-        // from the provider is the only fixture that reaches canRead()'s false branch instead of the type mismatch.
+        // DocumentsContractApi19.canRead() returns false for an empty MIME type before any type comparison.
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.nomime", json, mimeType = null)
 
@@ -210,8 +200,6 @@ class ImportDataUseCaseTest {
 
     @Test
     fun `logs and reports failure instead of crashing when saving an imported sudoku throws`() {
-        // A real repository has no natural way to make saveSudoku() throw, so this one case keeps a mock
-        // repository purely to force the catch branch in ImportDataUseCase.importJson.
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
         val throwingRepository = mockk<SudokusRepository>()

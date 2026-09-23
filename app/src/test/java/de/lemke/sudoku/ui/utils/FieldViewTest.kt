@@ -46,14 +46,14 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 private const val SIZE = 4
-private const val GIVEN_INDEX = 0 // row0,col0: no block-boundary border, not colored
-private const val PLAIN_INDEX = 1 // row0,col1: right border, not colored, filled with the correct value
-private const val HINT_INDEX = 4 // row1,col0: bottom border, not colored
-private const val ERROR_INDEX = 5 // row1,col1: bottom-right corner border, not colored, wrong value
-private const val COLORED_INDEX = 8 // row2,col0: no border, colored, empty
-private const val CORNER_NOTES_INDEX = 12 // row3,col0: last-row/first-column notes gravity corner
-private const val COLORED_BY_COLUMN_INDEX = 2 // row0,col2: colored via the column half only
-private const val UNCOLORED_BOTH_HALVES_INDEX = 10 // row2,col2: row and column halves both true, XOR cancels out
+private const val GIVEN_INDEX = 0
+private const val PLAIN_INDEX = 1
+private const val HINT_INDEX = 4
+private const val ERROR_INDEX = 5
+private const val COLORED_INDEX = 8
+private const val CORNER_NOTES_INDEX = 12
+private const val COLORED_BY_COLUMN_INDEX = 2
+private const val UNCOLORED_BOTH_HALVES_INDEX = 10
 
 private fun solutionFor(index: Int): Int {
     val blockSize = sqrt(SIZE.toDouble()).toInt()
@@ -104,9 +104,7 @@ class FieldViewTest {
 
     private fun inflatedFieldView(index: Int): FieldView {
         val fieldView = FieldView(context)
-        // A real FieldView is always a RecyclerView child; giving it a parent here (as opposed to leaving it
-        // detached) matters for performLongClick() — an unconsumed long click falls through to
-        // View.showContextMenu(), which NPEs against a null getParent().
+        // performLongClick() falls through to View.showContextMenu(), which NPEs without a parent.
         FrameLayout(context).addView(fieldView)
         awaitInflated(fieldView)
         fieldView.init(sudoku, index, mockk(relaxed = true))
@@ -118,8 +116,6 @@ class FieldViewTest {
         val fieldView = FieldView(context)
         FrameLayout(context).addView(fieldView)
         awaitInflated(fieldView)
-        // A non-null sentinel (instead of the untouched construction default, null) proves init() really leaves
-        // foreground alone for a cell away from any block boundary, rather than merely never having set it.
         val sentinel = ColorDrawable(Color.MAGENTA)
         fieldView.foreground = sentinel
 
@@ -350,11 +346,9 @@ class FieldViewTest {
 
         fieldView.init(sudoku, PLAIN_INDEX, mockk(relaxed = true))
 
-        // fieldViewContainer is still null, so init() returned before configuring the foreground border.
         fieldView.foreground.shouldBeNull()
         fieldView.field.value shouldBe 2
 
-        // The async inflate callback now finds sudoku already initialized and re-invokes init() itself.
         awaitInflated(fieldView)
         fieldView.fieldViewValue?.text.toString() shouldBe "2"
     }

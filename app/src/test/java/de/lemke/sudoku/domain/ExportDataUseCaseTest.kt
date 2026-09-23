@@ -40,10 +40,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * A bare Application context satisfies neither of the two things the dialogs [ExportDataUseCase] shows
- * need: an AppCompat-themed context and a real Activity matching production's [dagger.hilt.android.qualifiers.ActivityContext].
- */
+/** The AppCompat dialogs [ExportDataUseCase] shows need an AppCompat-themed Activity context. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])

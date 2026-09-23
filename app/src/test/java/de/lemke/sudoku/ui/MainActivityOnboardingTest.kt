@@ -32,14 +32,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * Covers [MainActivity.onCreate]'s `onboardIfNeeded(...) ?: return` early-return path — every other
- * `MainActivity` test calls `settings.bypassOobe()` in its own setup, which always keeps this on the
- * non-null side. A fresh, un-bypassed settings store here is first-time by construction, so
- * `onboardIfNeeded` redirects to the real OOBE activity and returns `null` for real.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -50,8 +43,7 @@ class MainActivityOnboardingTest {
     @Test
     fun `onCreate redirects to onboarding and returns early on first launch`() {
         hiltRule.inject()
-        // ActivityScenario refuses onActivity() once isFinishing triggers a real destroy, so build the
-        // activity directly to keep a live reference to inspect after onCreate() redirects to OOBE.
+        // ActivityScenario refuses onActivity() once the activity finishes and is destroyed.
         val activity = Robolectric.buildActivity(MainActivity::class.java).create().get()
         shadowOf(Looper.getMainLooper()).idle()
 

@@ -71,27 +71,9 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /**
- * Covers [TabHistory]'s action-mode/delete flow. Two library seams neither established in this fleet:
+ * `seslStartLongPressMultiSelection()` NPEs under Robolectric, and `ToolbarLayout` hides its `actionModeListener`.
  *
- * 1. Entering action mode through the real `onLongClickItem` wrapper drags in
- *    `RecyclerView.seslStartLongPressMultiSelection()`, which NPEs under Robolectric
- *    (`mPenDragSelectedItemArray` is only initialized by a real touch-driven long-press dispatch, which
- *    Robolectric never performs here) — a SESL/Robolectric interaction issue, not a bug in this test or
- *    in [TabHistory]. [TabHistory.launchActionMode] itself doesn't touch that call, so it's widened to
- *    `internal` and invoked directly, exercising 100% real logic minus that one unrelated statement.
- * 2. OneUI's `ToolbarLayout.startActionMode` wraps the fragment's lambdas in an anonymous
- *    `ActionModeListener` with no public getter, so there is no way to invoke
- *    `onMenuItemClicked`/`onSelectAll` through a public API once `launchActionMode()` has registered it.
- *    The pattern here: let production code run for real up to that registration
- *    (`drawerLayout.startActionMode(...)` really executes, inflating the real menu via the fragment's
- *    real `onInflateMenu` lambda), then reflectively read `ToolbarLayout`'s private `actionModeListener`
- *    field to get *that exact real listener instance* — not a test double — and call its interface
- *    methods directly with a real `MenuItem` built from the app's own `R.menu.delete_menu`. Every side
- *    effect this drives (dialog, coroutine, repository delete, `endActionMode()`) is real production
- *    code; only the retrieval of the listener reference uses reflection, because the library exposes no
- *    other seam.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
+ * sdk = 36: Robolectric's max supported SDK.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
@@ -133,8 +115,7 @@ class TabHistoryActionModeTest {
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
-        // MainActivity talks to PlayGames on launch; the SDK is normally auto-initialized by its
-        // manifest-merged ContentProvider, which Robolectric does not run under HiltTestApplication.
+        // Robolectric skips the Play Games SDK's auto-init ContentProvider under HiltTestApplication.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
@@ -170,7 +151,6 @@ class TabHistoryActionModeTest {
         }
     }
 
-    /** Retrieves the real [ToolbarLayout.ActionModeListener] registered by [TabHistory.launchActionMode]. */
     private fun actionModeListenerOf(drawerLayout: DrawerLayout): ToolbarLayout.ActionModeListener {
         val field = ToolbarLayout::class.java.getDeclaredField("actionModeListener").apply { isAccessible = true }
         return field.get(drawerLayout) as ToolbarLayout.ActionModeListener

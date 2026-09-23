@@ -127,12 +127,7 @@ class SudokuListAdapterTest {
             }
         }
 
-    // VectorDrawable's ConstantState isn't shared between separately-inflated instances of the same resource under
-    // Robolectric, so comparing constantState (or the Drawable instances themselves, which have no equals()) always
-    // reports "different" even for the same icon — render both to a Bitmap and compare pixels instead. The
-    // reference drawable is set on a second, freshly-inflated ImageView (not a bare ContextCompat.getDrawable
-    // result) so it picks up any XML-declared tint on R.id.item_icon the same way production's bound ImageView
-    // does; comparing against an untinted reference left ~4% of pixels (the icon's anti-aliased edges) mismatched.
+    // Under Robolectric, separately inflated VectorDrawables never compare equal, so compare rendered pixels.
     private fun Drawable.toComparableBitmap(): Bitmap {
         val width = intrinsicWidth.coerceAtLeast(1)
         val height = intrinsicHeight.coerceAtLeast(1)
@@ -301,8 +296,7 @@ class SudokuListAdapterTest {
         val sudoku = sudokuFixture()
         val adapter = buildAdapter()
         adapter.submitList(listOf(SudokuItem(sudoku, "A")))
-        // toggleActionMode needs MultiSelectorDelegate's lateinit `adapter` field, only set by configureWith(...) -
-        // the same call production code (TabHistory.onViewCreated) makes after attaching the adapter.
+        // MultiSelectorDelegate's lateinit `adapter` is set only by configureWith().
         adapter.configureWith(layoutRecyclerViewWith(adapter))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
         holder.textView.text = "sentinel"
@@ -341,9 +335,7 @@ class SudokuListAdapterTest {
         holder.textView.text shouldBe "sentinel"
     }
 
-    // ListAdapter's first submitList (against a null internal list) applies synchronously, but every submitList
-    // after that diffs on a real background thread and delivers the result via a Handler posted to the main
-    // looper — InstantTaskExecutorRule doesn't cover that path, so it needs its own idle-and-poll wait.
+    // ListAdapter diffs every submitList after the first on a background thread.
     private fun SudokuListAdapter.submitListAndAwait(list: List<SudokuListItem>) {
         submitList(list)
         val deadline = System.currentTimeMillis() + 5_000
@@ -364,37 +356,26 @@ class SudokuListAdapterTest {
 
         adapter.currentList shouldBe listOf(itemA, separator)
 
-        // Same sudoku id, changed content: areItemsTheSame -> true, areContentsTheSame -> false.
         sudokuA.errorsMade = 5
         val itemAChanged = SudokuItem(sudokuA, "A")
         adapter.submitListAndAwait(listOf(itemAChanged, separator))
 
         adapter.currentList shouldBe listOf(itemAChanged, separator)
 
-        // Different sudoku id, and a sudoku item replacing a separator: areItemsTheSame -> false.
         val itemB = SudokuItem(sudokuFixture(), "B")
         adapter.submitListAndAwait(listOf(itemB))
 
         adapter.currentList shouldBe listOf(itemB)
 
-        // Separator with a different stable id: areItemsTheSame -> false.
         val otherSeparator = SeparatorItem("Other")
         adapter.submitListAndAwait(listOf(otherSeparator))
 
         adapter.currentList shouldBe listOf(otherSeparator)
     }
 
-    /**
-     * Reflectively retrieves the private `diffCallback` held by [SudokuListAdapter]'s companion object.
-     * `submitList`'s real `DiffUtil` pass only ever calls `areContentsTheSame` for pairs `areItemsTheSame` already
-     * matched, so a same-type/different-type or separator/separator combination that should fall to `else` is
-     * otherwise unreachable through the public API.
-     */
     @Suppress("UNCHECKED_CAST")
     private fun diffCallback(): DiffUtil.ItemCallback<SudokuListItem> {
-        // A private companion `val` referenced from the enclosing class's own superclass constructor call
-        // (`diffCallback = diffCallback` above) gets its backing field placed as a static field directly on
-        // SudokuListAdapter itself, not on the nested Companion class.
+        // Kotlin stores this private companion val's backing field as a static on SudokuListAdapter itself.
         val field = SudokuListAdapter::class.java.getDeclaredField("diffCallback").apply { isAccessible = true }
         return field.get(null) as DiffUtil.ItemCallback<SudokuListItem>
     }
@@ -424,7 +405,6 @@ class SudokuListAdapterTest {
         callback.areContentsTheSame(separator, sudokuItem) shouldBe false
     }
 
-    /** Attaches [adapter] to a real, laid-out [RecyclerView] so its bound `ViewHolder`s have a resolved adapter position. */
     private fun layoutRecyclerViewWith(adapter: SudokuListAdapter): RecyclerView {
         val recyclerView =
             RecyclerView(context).apply {
@@ -479,12 +459,10 @@ class SudokuListAdapterTest {
         val separatorItem = SeparatorItem("Sep")
         val adapter = buildAdapter()
         adapter.submitList(listOf(separatorItem))
-        // toggleActionMode needs MultiSelectorDelegate's lateinit `adapter` field, only set by configureWith(...) -
-        // the same call production code (TabHistory.onViewCreated) makes after attaching the adapter.
+        // MultiSelectorDelegate's lateinit `adapter` is set only by configureWith().
         adapter.configureWith(layoutRecyclerViewWith(adapter))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SeparatorItem.VIEW_TYPE)
         holder.textView.text = "sentinel"
-        // bindActionModeAnimate's selectableLayout?.apply { ... } must skip cleanly even with action mode on.
         adapter.toggleActionMode(true)
 
         adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))

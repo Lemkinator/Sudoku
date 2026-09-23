@@ -65,13 +65,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 
-/**
- * Covers [DailySudokuActivity.onOptionsItemSelected]/`onPrepareOptionsMenu` and the `SudokuListAdapter` click wiring
- * set up in `setupOnClickListeners()`, against a real daily sudoku seeded through [SaveSudokuUseCase] and a fixed
- * [Clock] (matching [DailySudokuActivityScreenshotTest]'s pattern) rather than a mocked list.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class, ClockModule::class)
 @HiltAndroidTest

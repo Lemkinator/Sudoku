@@ -30,14 +30,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Guards against Hilt's KSP module aggregation silently dropping a @TestInstallIn module
- * declared in src/testFixtures for the instrumented (src/androidTest) side, leaving the
- * production settings module active undetected on a real device. Keep this test even
- * though it currently passes - a silent regression here produces no other failing test, and
- * would leak test settings into the real device's production SharedPreferences on a reused
- * GMD device.
- */
 @HiltAndroidTest
 @LargeTest
 @RunWith(AndroidJUnit4::class)

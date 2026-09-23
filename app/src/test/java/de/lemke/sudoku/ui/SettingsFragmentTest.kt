@@ -26,7 +26,6 @@ import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import androidx.preference.SeslSwitchPreferenceScreen
 import androidx.test.core.app.ActivityScenario
@@ -70,17 +69,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
-/**
- * Covers [SettingsActivity.SettingsFragment]'s preference wiring by finding each preference through the real
- * [PreferenceFragmentCompat] and invoking its `onPreferenceClickListener`/`onPreferenceChangeListener` directly —
- * the same real listeners `.onClick`/`.onNewValue` install, without needing to render or tap actual preference rows.
- * `exportData`/`importData`'s `registerForActivityResult` callbacks (the exportData/importData region below) are
- * driven through `ShadowActivity.peekNextStartedActivityForResult()` + `receiveResult(...)`: production code already
- * routes both launchers through the real `startActivityForResult` path, so `receiveResult` dispatches into the
- * fragment's actual registered callback exactly as a real picker result would.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -131,12 +120,6 @@ class SettingsFragmentTest {
 
     private fun <T : Preference> SettingsActivity.SettingsFragment.pref(key: String): T = findPreference<T>(key).shouldNotBeNull()
 
-    /**
-     * `exportData`/`importData` dispatch their real work on real `Dispatchers.IO`/`Dispatchers.Main`
-     * (bound above, unlike the `UnconfinedTestDispatcher` used elsewhere), so the write genuinely
-     * happens on a background thread; polls real wall-clock time (pumping the paused main looper each
-     * iteration) instead of guessing a fixed delay.
-     */
     private fun awaitMainLooperIdleUntil(
         timeoutMillis: Long = 5000,
         condition: () -> Boolean,
@@ -203,7 +186,7 @@ class SettingsFragmentTest {
 
     // endregion
 
-    // region exportData / importData (click only, see class doc)
+    // region exportData / importData
 
     @Test
     fun `exportData preference launches a create-document picker`() =
@@ -245,8 +228,6 @@ class SettingsFragmentTest {
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
             shadowOf(Looper.getMainLooper()).idle()
-            // ExportDataUseCase always shows a ProgressDialog as its first action, so a null latest dialog proves it
-            // was never invoked.
             ShadowDialog.getLatestDialog().shouldBeNull()
         }
 
@@ -327,10 +308,6 @@ class SettingsFragmentTest {
                     Activity.RESULT_OK,
                     Intent().apply { data = Uri.fromFile(sourceFile) },
                 )
-                // A file:// Uri isn't a real DocumentsContract-backed document, so ImportDataUseCase's own
-                // exists()/canRead()/type checks fail it — this only needs to prove the real `uri != null`
-                // branch reaches ImportDataUseCase for real; its own success/failure branches are covered by
-                // ImportDataUseCaseTest.
                 awaitMainLooperIdleUntil {
                     val latest = ShadowDialog.getLatestDialog()
                     latest != null && latest !== confirmDialog && latest.isShowing
@@ -396,8 +373,7 @@ class SettingsFragmentTest {
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
             shadowOf(Looper.getMainLooper()).idle()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
-            // SeslTimePickerDialog ignores BUTTON_POSITIVE clicks while its 283ms show animation is
-            // still running.
+            // SeslTimePickerDialog ignores BUTTON_POSITIVE clicks during its 283ms show animation.
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
@@ -471,8 +447,6 @@ class SettingsFragmentTest {
             .putString(context.contentResolver, android.provider.Settings.System.TIME_12_24, "24")
         launch { fragment ->
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
-            // production picks "HH:mm" (no AM/PM marker) once is24HourFormat() is true; the 12-hour
-            // "h:mm a" pattern used by every other test in this file always includes one.
             pref.summary.toString() shouldNotContain "AM"
             pref.summary.toString() shouldNotContain "PM"
         }
@@ -480,7 +454,7 @@ class SettingsFragmentTest {
 
     // endregion
 
-    // region preference not found (production removes the preference before re-running init)
+    // region preference not found
 
     private fun <T : Preference> SettingsActivity.SettingsFragment.removePref(key: String) {
         val pref = pref<T>(key)
@@ -553,7 +527,6 @@ class SettingsFragmentTest {
             )
             shadowOf(Looper.getMainLooper()).idle()
 
-            // the preference re-sync is skipped (it's gone), but the settings write itself is unconditional
             fragment.findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled").shouldBeNull()
             userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
         }

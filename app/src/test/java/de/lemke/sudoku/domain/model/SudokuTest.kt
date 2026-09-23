@@ -155,9 +155,7 @@ class SudokuTest : ShouldSpec(
         }
 
         should("contentEquals is true for two sudokus sharing identical content, including the same field list") {
-            // Field has no equals/hashCode override, so contentEquals' `fields == other.fields` list comparison
-            // relies on referential equality per element; two independently constructed field lists (even with
-            // identical values) would never be equal, so the two sudokus intentionally share one fields list here.
+            // Field has no equals(), so contentEquals compares fields by reference.
             val id = SudokuId.generate()
             val now = LocalDateTime.of(2026, 1, 1, 12, 0)
             val fields = MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) }
@@ -461,19 +459,19 @@ class SudokuTest : ShouldSpec(
             should("progress and then break the forward checklist, tracking the last value afterwards") {
                 val sudoku = runningSudoku()
 
-                sudoku.move(0, 1) // idx0 solution 1: starts the forward checklist
+                sudoku.move(0, 1)
                 sudoku.isChecklist shouldBe true
                 sudoku.checklistNumber shouldBe 1
 
-                sudoku.move(1, 2) // idx1 solution 2: continues it
+                sudoku.move(1, 2)
                 sudoku.isChecklist shouldBe true
                 sudoku.checklistNumber shouldBe 2
 
-                sudoku.move(6, 1) // idx6 solution 1, lower than checklistNumber: breaks it
+                sudoku.move(6, 1)
                 sudoku.isChecklist shouldBe false
                 sudoku.checklistNumber shouldBe 1
 
-                sudoku.move(2, 3) // idx2 solution 3: no checklist active, just tracks the value
+                sudoku.move(2, 3)
                 sudoku.isChecklist shouldBe false
                 sudoku.isReverseChecklist shouldBe false
                 sudoku.checklistNumber shouldBe 3
@@ -484,8 +482,8 @@ class SudokuTest : ShouldSpec(
             should("ignore a repeated value while a forward checklist is active") {
                 val sudoku = runningSudoku()
 
-                sudoku.move(0, 1) // idx0 solution 1
-                sudoku.move(6, 1) // idx6 also solution 1: same as checklistNumber, no-op
+                sudoku.move(0, 1)
+                sudoku.move(6, 1)
 
                 sudoku.isChecklist shouldBe true
                 sudoku.checklistNumber shouldBe 1
@@ -495,7 +493,7 @@ class SudokuTest : ShouldSpec(
             should("not start any checklist when the first placed value is neither 1 nor size") {
                 val sudoku = runningSudoku()
 
-                sudoku.move(1, 2) // idx1 solution 2, first move ever
+                sudoku.move(1, 2)
 
                 sudoku.isChecklist shouldBe false
                 sudoku.isReverseChecklist shouldBe false
@@ -506,15 +504,15 @@ class SudokuTest : ShouldSpec(
             should("progress and then break the reverse checklist") {
                 val sudoku = runningSudoku()
 
-                sudoku.move(3, 4) // idx3 solution 4 == size: starts the reverse checklist
+                sudoku.move(3, 4)
                 sudoku.isReverseChecklist shouldBe true
                 sudoku.checklistNumber shouldBe 4
 
-                sudoku.move(1, 2) // idx1 solution 2, lower than checklistNumber: continues it
+                sudoku.move(1, 2)
                 sudoku.isReverseChecklist shouldBe true
                 sudoku.checklistNumber shouldBe 2
 
-                sudoku.move(2, 3) // idx2 solution 3, higher than checklistNumber: breaks it
+                sudoku.move(2, 3)
                 sudoku.isReverseChecklist shouldBe false
                 sudoku.checklistNumber shouldBe 3
 
@@ -524,8 +522,8 @@ class SudokuTest : ShouldSpec(
             should("ignore a repeated value while a reverse checklist is active") {
                 val sudoku = runningSudoku()
 
-                sudoku.move(3, 4) // idx3 solution 4
-                sudoku.move(12, 4) // idx12 also solution 4: same as checklistNumber, no-op
+                sudoku.move(3, 4)
+                sudoku.move(12, 4)
 
                 sudoku.isReverseChecklist shouldBe true
                 sudoku.checklistNumber shouldBe 4
@@ -573,7 +571,6 @@ class SudokuTest : ShouldSpec(
             }
 
             should("do nothing when no hint is available") {
-                // size 4's hint limit is 1 (see Sudoku.hintLimitBySize), so hintsUsed == 1 exhausts it.
                 val sudoku = runningSudoku(hintsUsed = 1)
 
                 sudoku.setHint(0)
@@ -724,7 +721,6 @@ class SudokuTest : ShouldSpec(
 
                 val neighbors = sudoku.getNeighbors(0)
 
-                // row0 + column0 + block0, concatenated (not deduplicated) -> idx0 itself appears in all three.
                 neighbors.map { it.position.index } shouldContainExactlyInAnyOrder listOf(0, 1, 2, 3, 0, 4, 8, 12, 0, 1, 4, 5)
             }
 
@@ -749,8 +745,8 @@ class SudokuTest : ShouldSpec(
             }
 
             should("report a column not completed when a field in it is wrong or unfilled") {
-                val wrong = querySudoku(incorrect = setOf(4)) // idx4 is column 0
-                val unfilled = querySudoku(unfilled = setOf(8)) // idx8 is column 0
+                val wrong = querySudoku(incorrect = setOf(4))
+                val unfilled = querySudoku(unfilled = setOf(8))
 
                 wrong.isColumnCompleted(0) shouldBe false
                 unfilled.isColumnCompleted(0) shouldBe false
@@ -763,15 +759,14 @@ class SudokuTest : ShouldSpec(
             }
 
             should("report a block not completed when a field in it is wrong or unfilled") {
-                val wrong = querySudoku(incorrect = setOf(1)) // idx1 is block 0
-                val unfilled = querySudoku(unfilled = setOf(5)) // idx5 is block 0
+                val wrong = querySudoku(incorrect = setOf(1))
+                val unfilled = querySudoku(unfilled = setOf(5))
 
                 wrong.isBlockCompleted(0) shouldBe false
                 unfilled.isBlockCompleted(0) shouldBe false
             }
 
             should("report each number complete only once it appears size times correctly") {
-                // Fully solved board: every number 1..4 appears exactly 4 times, all correct.
                 val sudoku = querySudoku()
 
                 val completedNumbers = sudoku.getCompletedNumbers()
@@ -780,7 +775,6 @@ class SudokuTest : ShouldSpec(
             }
 
             should("report a number as not complete while some of its placements are wrong or unfilled") {
-                // idx0's solution is 1; making it wrong and idx6 (also solution 1) unfilled leaves zero correct 1s.
                 val sudoku = querySudoku(incorrect = setOf(0), unfilled = setOf(6))
 
                 val completedNumbers = sudoku.getCompletedNumbers()
@@ -792,8 +786,6 @@ class SudokuTest : ShouldSpec(
     },
 )
 
-// A valid, fully solved 4x4 grid (rows, columns and 2x2 blocks each contain 1..4 exactly once).
-// An immutable List (not an IntArray, whose elements are settable) rules out cross-test state leakage by construction.
 private val solutions = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
 
 private fun testFields(

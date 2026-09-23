@@ -67,14 +67,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
-/**
- * Covers [SudokuActivity.resumeGame]/`pauseGame`, [SudokuActivity.onKeyUp], [SudokuActivity.onOptionsItemSelected],
- * `checkErrorLimit`'s daily/level branches and the [SudokuActivity.SudokuGameListener] glue — everything around the
- * `select()` state machine tested in `SudokuActivitySelectionTest`. Uses the same size-4 formulaic board shape as
- * [de.lemke.sudoku.testLevelSudoku] (built locally so `created`/`modeLevel`/pre-filled values can vary per test).
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
@@ -258,7 +251,6 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `a digit key above the board size is ignored`() =
         launch(formulaicSudoku()) { activity ->
-            // size-4 board: KEYCODE_5 requires size > 4, which is false
             keyUp(activity, KeyEvent.KEYCODE_5).shouldBeFalse()
             activity.selected.shouldBeNull()
         }
@@ -276,7 +268,7 @@ class SudokuActivityLifecycleTest {
             keyUp(activity, KeyEvent.KEYCODE_H).shouldBeTrue()
             activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size + 1
 
-            activity.select(4) // uses the size-4 board's single hint
+            activity.select(4)
             activity.sudoku.isHintAvailable.shouldBeFalse()
 
             keyUp(activity, KeyEvent.KEYCODE_H).shouldBeFalse()
@@ -334,7 +326,7 @@ class SudokuActivityLifecycleTest {
     fun `menu_reset restarts the game and clears progress`() =
         launch(formulaicSudoku()) { activity ->
             activity.select(1)
-            activity.select(activity.sudoku.itemCount) // wrong move (solution at index 1 is 2)
+            activity.select(activity.sudoku.itemCount)
             activity.sudoku.errorsMade shouldBe 1
 
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
@@ -361,11 +353,7 @@ class SudokuActivityLifecycleTest {
 
     // endregion
 
-    // region checkErrorLimit daily/level branches
-
     private fun placeThreeWrongMoves(activity: SudokuActivity) {
-        // indices 1, 2 and 4 are empty (not given) with solutions 2, 3 and 3 on the size-4 formulaic board;
-        // placing "1" (the first number button) into each is an error every time.
         listOf(1, 2, 4).forEach { fieldIndex ->
             activity.select(fieldIndex)
             activity.select(activity.sudoku.itemCount)
@@ -391,8 +379,6 @@ class SudokuActivityLifecycleTest {
             activity.select(activity.sudoku.itemCount + 1)
             activity.selected.shouldBeNull()
         }
-
-    // endregion
 
     // region not-found / not-yet-initialized
 
@@ -443,7 +429,6 @@ class SudokuActivityLifecycleTest {
         launch(formulaicSudoku()) { activity ->
             activity.sudoku.seconds = 65
             activity.sudoku.gameListener?.onTimeChanged()
-            // onTimeChanged posts setSubtitle() via lifecycleScope on the (paused, under Robolectric) main dispatcher
             shadowOf(Looper.getMainLooper()).idle()
             activity.binding.sudokuToolbarLayout.expandedSubtitle
                 .toString() shouldBe

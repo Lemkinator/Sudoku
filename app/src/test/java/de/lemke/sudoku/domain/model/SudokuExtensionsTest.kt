@@ -25,7 +25,6 @@ import java.time.LocalDateTime
 import java.util.Locale
 import java.util.Timer
 
-// A size-2 board so fields.size (4) matches itemCount, as copy()/getInitialSudoku() index by itemCount.
 private fun testFields(): MutableList<Field> =
     mutableListOf(
         Field(position = Position.create(0, 2), solution = 1, value = 1, given = true),
@@ -55,9 +54,7 @@ class SudokuExtensionsTest : ShouldSpec(
         beforeSpec { Locale.setDefault(Locale.US) }
         afterSpec { Locale.setDefault(originalLocale) }
 
-        // Field has no equals()/hashCode() override, so List<Field> equality (used by contentEquals) is
-        // reference equality per element: two sudokus only compare fields-equal when they share the same
-        // Field instances, not merely equal field values.
+        // Field has no equals(), so contentEquals compares fields by reference.
         should("consider sudokus with the same id, matching flags and shared field instances content-equal") {
             val id = SudokuId.generate()
             val created = LocalDateTime.of(2024, 1, 1, 12, 0)
@@ -186,7 +183,6 @@ class SudokuExtensionsTest : ShouldSpec(
             }
             (copy.fields === sudoku.fields) shouldBe false
             (copy.fields[0] === sudoku.fields[0]) shouldBe false
-            // Despite equal values, contentEquals is false here because of the Field equals gap noted above.
             sudoku.contentEquals(copy) shouldBe false
         }
 
@@ -286,7 +282,6 @@ class SudokuExtensionsTest : ShouldSpec(
             initial.gameListener shouldBe null
             initial.created shouldBe created
             initial.updated shouldBe created
-            // given field keeps its value, non-given fields are cleared, matching Field.getInitialField.
             initial[0].value shouldBe 1
             initial[1].value shouldBe null
             initial[1].hint shouldBe false
@@ -328,7 +323,6 @@ class SudokuExtensionsTest : ShouldSpec(
             sudoku.timer shouldBe null
             sudoku.gameListener shouldBe null
             trackingTimer.cancelled shouldBe true
-            // field 0 is given, keeps its value; field 1 is not given, had a hint and a note, both cleared.
             sudoku[0].value shouldBe 1
             sudoku[1].value shouldBe null
             sudoku[1].hint shouldBe false

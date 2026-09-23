@@ -20,11 +20,7 @@ import de.sfuhrm.sudoku.GameMatrix
 import de.sfuhrm.sudoku.GameMatrixFactory
 import de.sfuhrm.sudoku.GameSchema
 
-/**
- * Returns the same valid solved board for a schema on every call. `Creator.createFull` seeds its diagonal
- * blocks from an unseeded `Random`, and some 16x16 seeds backtrack for minutes, so tests that only need a
- * valid board use this instead.
- */
+/** `Creator.createFull` seeds from an unseeded `Random`, and some 16x16 seeds backtrack for minutes. */
 class PatternSolvedBoardGenerator : SolvedBoardGenerator {
     override fun generate(schema: GameSchema): GameMatrix {
         val size = schema.width

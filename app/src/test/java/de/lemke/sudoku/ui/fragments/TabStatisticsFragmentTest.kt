@@ -62,13 +62,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * Covers [TabStatistics.updateStatistics] and its `StatisticsListAdapter` against a real
- * [CalculateStatisticsUseCase][de.lemke.sudoku.domain.CalculateStatisticsUseCase] result — an empty repository (every
- * "-"/placeholder branch) and one completed sudoku with a two-hour play time (the non-null/hours branches).
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -103,8 +97,7 @@ class TabStatisticsFragmentTest {
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
-        // MainActivity talks to PlayGames on launch; the SDK is normally auto-initialized by its
-        // manifest-merged ContentProvider, which Robolectric does not run under HiltTestApplication.
+        // Robolectric skips the Play Games SDK's auto-init ContentProvider under HiltTestApplication.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
@@ -190,11 +183,6 @@ class TabStatisticsFragmentTest {
     fun `the first statistics load inserts rows instead of changing them`() {
         var insertedCount = -1
         var changedCalled = false
-        // MainActivity.initFragments() adds all 3 tab fragments in onCreate(); their views (and bindings) exist by
-        // the time the host reaches STARTED, but none of them use setMaxLifecycle, so they only reach RESUMED - and
-        // collectState's minActiveState=RESUMED starts collecting - once the host itself does. Stopping at start()
-        // registers the observer in that window, unlike a fully-launched ActivityScenario (already RESUMED by the
-        // time it hands back control, so the first emission has already happened).
         val controller = Robolectric.buildActivity(MainActivity::class.java).create().start()
         val fragment =
             controller
@@ -223,8 +211,6 @@ class TabStatisticsFragmentTest {
             )
 
         controller.resume()
-        // The state flow's calculation crosses to a real Dispatchers.IO thread (bound above), so this needs real
-        // wall-clock polling, not a single idle() - see awaitMainLooperIdleUntil elsewhere in this fleet.
         val deadline = System.currentTimeMillis() + 5000
         while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()

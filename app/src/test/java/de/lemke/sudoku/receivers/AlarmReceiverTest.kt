@@ -63,12 +63,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowNotificationManager
 
 /**
- * Drives [AlarmReceiver.onReceive] through a real explicit-component broadcast (`Context.sendBroadcast`), the way
- * `AlarmManager` delivers it in production — not a plain `AlarmReceiver()` construction, since Hilt's
- * `@AndroidEntryPoint` bytecode transform injects fields inside the real `onReceive` override, which only runs
- * through the actual receiver dispatch path (no test precedent elsewhere in this fleet).
+ * Hilt's `@AndroidEntryPoint` transform injects inside `onReceive`, so only a real broadcast dispatch runs it.
  *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
+ * sdk = 36: Robolectric's max supported SDK.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)

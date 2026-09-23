@@ -83,9 +83,7 @@ class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val useCase = ShareSudokuUseCase(context, UnconfinedTestDispatcher())
 
-    // androidx.core.content.FileProvider.SimplePathStrategy#belongsToRoot hardcodes '/' as the path
-    // separator when comparing canonical paths; on a Windows JVM (Robolectric here) File.getCanonicalPath()
-    // uses '\', so this always throws locally regardless of the cache reset below.
+    // FileProvider's SimplePathStrategy hardcodes '/' as separator, so this fails on a Windows JVM.
     @Before
     fun assumeUnixPaths() = assumeTrue(File.separatorChar == '/')
 

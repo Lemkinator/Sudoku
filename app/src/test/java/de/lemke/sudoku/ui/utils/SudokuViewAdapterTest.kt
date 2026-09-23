@@ -31,7 +31,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-// Every 3rd field (index % 3 == 0) is given, per testLevelSudoku; index 1 is neither given nor a hint.
 private const val GIVEN_INDEX = 0
 private const val PLAIN_INDEX = 1
 
@@ -133,7 +132,6 @@ class SudokuViewAdapterTest {
 
         adapter.selectFieldView(GIVEN_INDEX, highlightNeighbors = false, highlightNumber = false)
 
-        // The highlight state from the prior highlightNeighbors=true call survives untouched.
         for (i in 0 until sudoku.itemCount) {
             adapter.fieldViews[i].isHighlighted shouldBe (i in expectedNeighbors)
         }
@@ -159,8 +157,6 @@ class SudokuViewAdapterTest {
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
         adapter.fieldViews[2].isHighlightedNumber = true
 
-        // highlightNeighbors false this time skips the block that would otherwise reset isHighlightedNumber
-        // for every field, isolating the else-if (highlightNumber)'s own false arm.
         adapter.selectFieldView(null, highlightNeighbors = false, highlightNumber = false)
 
         adapter.fieldViews[2].isHighlightedNumber shouldBe true

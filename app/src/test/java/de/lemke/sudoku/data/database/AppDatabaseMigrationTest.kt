@@ -36,25 +36,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Exercises the real [MIGRATION_1_2] against a v1 database built from the exported schema
- * (`app/schemas/de.lemke.sudoku.data.database.AppDatabase/1.json`), rather than only ever creating a fresh v2
- * database in-memory — that path never runs Room's generated schema-validation code
- * (`AppDatabase_Impl`'s open-helper delegate) against an actual migration.
+ * The name-based MigrationTestHelper overload fails with `room.generateKotlin`'s absolute database path.
  *
- * Uses the [File]/[androidx.sqlite.SQLiteDriver] constructor (not the deprecated name-based one): `AppDatabase` is
- * generated with `room.generateKotlin = true`, whose connection manager always resolves an absolute database path;
- * the name-based `MigrationTestHelper(instrumentation, databaseClass, ..., SupportSQLiteOpenHelper.Factory)`
- * overload throws `IllegalArgumentException: This driver is configured to open a database named 'X' but
- * '<resolved path>\X' was requested` because its `SupportSQLiteOpenHelper` is bound to the bare name while Room's
- * generated impl requests the resolved absolute path.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
+ * sdk = 36: Robolectric's max supported SDK.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class AppDatabaseMigrationTest {
-    // A JUnit4 test class gets a fresh instance per @Test method, so computing this once per instance (rather than a
-    // shared top-level constant) gives every test its own database file with no cross-test file reuse.
     private val testDb = "migration-test-${System.nanoTime()}"
 
     @get:Rule
@@ -105,8 +93,6 @@ class AppDatabaseMigrationTest {
             close()
         }
 
-        // Opens the same file through the real production AppDatabase_Impl (not MigrationTestHelper's own
-        // schema-bundle-driven delegate), forcing its generated createOpenDelegate/onValidateSchema to run for real.
         val context = ApplicationProvider.getApplicationContext<Context>()
         val realDatabase = Room.databaseBuilder(context, AppDatabase::class.java, testDb).addMigrations(MIGRATION_1_2).build()
         val row = runBlocking { realDatabase.sudokuDao().getById("id-2") }.shouldNotBeNull()
@@ -121,10 +107,6 @@ class AppDatabaseMigrationTest {
 
     @Test
     fun `opening a v1 database file stamped as v2 without migrating fails real schema validation`() {
-        // Bumps the on-disk user_version to 2 without ever running MIGRATION_1_2, so the real generated
-        // onValidateSchema (AppDatabase_Impl$createOpenDelegate$_openDelegate$1) runs against the untouched v1
-        // schema, finds a genuine column mismatch, and returns an invalid ValidationResult for real (rather than
-        // the always-matching schema every other test in this suite produces via a correct migration).
         helper.createDatabase(1).apply {
             execSQL("PRAGMA user_version = 2")
             close()

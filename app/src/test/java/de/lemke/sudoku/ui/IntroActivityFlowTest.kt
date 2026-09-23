@@ -57,15 +57,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
-/**
- * Drives [IntroActivity]'s scripted tutorial state machine (`nextIntroStep`/`select`/`selectButton`) the way a real
- * tap on the tutorial board or number pad would, following the exact
- * script described by `intro_text0`..`intro_text10`. Real `.animate()`-driven loops inside `startAnimation` are not
- * driven to completion here (see [IntroActivityAnimationTest]); this covers the state machine, menu, note button and
- * notifications-dialog paths around them.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -574,8 +566,6 @@ class IntroActivityFlowTest {
 
     // endregion
 
-    // region branch coverage: step dispatch and selection range edges
-
     @Test
     fun `advancing the step dispatch past the final step is a no-op`() =
         launch { activity ->
@@ -666,13 +656,9 @@ class IntroActivityFlowTest {
     fun `selecting a field while a number button is selected outside steps 5 and 6 does not place a value`() =
         launch { activity ->
             toStep5(activity)
-            // toStep5 already placed 5 at DEMO_CELL_INDEX_4 via the step 3->4 script; this asserts that
-            // value is left untouched, not overwritten by the currently-selected number button (2).
             activity.introStep = 99
             activity.select(DEMO_CELL_INDEX_4)
             activity.introStep shouldBe 99
             activity.sudoku[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
         }
-
-    // endregion
 }

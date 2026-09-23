@@ -19,7 +19,6 @@ package de.lemke.sudoku.ui.fragments
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 
-/** Pure-JVM coverage of [TabStatistics]'s time-formatting helpers; no Android framework state is touched. */
 class TabStatisticsTest : ShouldSpec(
     {
         context("secondsToTimeString") {

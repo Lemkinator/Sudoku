@@ -46,8 +46,6 @@ class SendDailyNotificationUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
 
-    // Fixed instead of the wall clock, so trigger-time assertions can compare exact fields deterministically
-    // instead of racing the real clock across a day/hour/minute boundary.
     private val fixedNow = Instant.parse("2026-06-15T12:00:00Z")
     private val clock = Clock.fixed(fixedNow, ZoneId.systemDefault())
     private val useCase = SendDailyNotificationUseCase(context, userSettings, clock)

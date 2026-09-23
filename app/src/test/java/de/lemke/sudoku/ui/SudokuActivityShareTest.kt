@@ -68,13 +68,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
-/**
- * Covers [SudokuActivity]'s `shareDialog`'s three radio-button share paths (`shareStats`/`shareGame` in
- * `SudokuActivityKt`), a 16x16 board's `initSudokuButtons` branch, and `setTitle`/`setSubtitle`'s daily-mode
- * branches — none of which the existing selection/lifecycle tests reach (they stick to size-4/9 normal boards).
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -165,8 +159,6 @@ class SudokuActivityShareTest {
         val dialog = ShadowDialog.getLatestDialog() as AlertDialog
         dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(radioButtonId)
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-        // shareGame's export crosses to the real Dispatchers.IO/Main (bound above), so this needs real
-        // wall-clock polling, not a single idle() - see awaitMainLooperIdleUntil elsewhere in this fleet.
         awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
     }
 
@@ -192,10 +184,7 @@ class SudokuActivityShareTest {
             started.action shouldBe Intent.ACTION_CHOOSER
         }
 
-    // Stock AndroidX FileProvider.SimplePathStrategy#belongsToRoot hardcodes '/' when comparing
-    // canonical paths, so it always fails on a Windows JVM (File.getCanonicalPath() uses '\') —
-    // same root cause as ShareSudokuUseCaseTest's assumeUnixPaths. Linux only gets past that far
-    // enough to need setup()'s resetFileProviderCache() too.
+    // FileProvider's SimplePathStrategy hardcodes '/' as separator, so this fails on a Windows JVM.
     @Test
     fun `sharing the initial board exports and starts a file share chooser`() {
         assumeTrue(File.separatorChar == '/')

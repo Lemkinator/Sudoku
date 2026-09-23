@@ -29,13 +29,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Room only runs its generated `onValidateSchema` (comparing the live schema against every entity's expected
- * [androidx.room.util.TableInfo]) when opening a persisted, file-backed database — never for
- * [Room.inMemoryDatabaseBuilder], which every other test in this suite uses via `TestPersistenceModule` (in-memory
- * databases are always freshly created, so Room skips validation as redundant). Reopening a real file-backed
- * database, the way the production `PersistenceModule` builds one, is the only way to exercise that generated code.
+ * Room validates the schema only when reopening a file-backed database, never for in-memory ones.
  *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
+ * sdk = 36: Robolectric's max supported SDK.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
@@ -77,8 +73,6 @@ class AppDatabaseValidationTest {
                 close()
             }
 
-        // Reopening an already-created database file forces Room to validate the live schema against every
-        // entity's expected TableInfo (AppDatabase_Impl's generated onValidateSchema), not just create it.
         val reopened = Room.databaseBuilder(context, AppDatabase::class.java, dbName).build()
         val row = runBlocking { reopened.sudokuDao().getById(sudokuId) }.shouldNotBeNull()
         row.sudoku.id shouldBe sudokuId

@@ -106,8 +106,6 @@ class MainActivityScreenshotTest {
         captureMainScreenshot("src/test/screenshots/main_default_dark.png")
     }
 
-    // fragmentsInstance order is TabHistory(0), TabSudoku(1, the default tab above), TabStatistics(2).
-
     @Test
     fun mainActivity_history() {
         captureMainScreenshot("src/test/screenshots/main_history.png", tabPosition = 0)

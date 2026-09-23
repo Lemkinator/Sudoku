@@ -61,14 +61,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 
-/**
- * Completes a real board with animations left enabled (the default) to drive
- * [SudokuActivity.SudokuGameListener.onCompleted] through `animate(..., animateSudoku = true)` and into
- * `onSudokuCompleted` — a path every other `SudokuActivity` test disables via
- * `userSettings.animationsEnabled = false` to keep unrelated assertions simple.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -103,12 +96,10 @@ class SudokuActivityCompletionTest {
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
-        // SudokuActivity's completion flow syncs Play Games achievements; the SDK is normally
-        // auto-initialized by its manifest-merged ContentProvider, which Robolectric does not run.
+        // Robolectric skips the Play Games SDK's auto-init ContentProvider.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
-    /** A size-4 board with every field given except index 0 (solution 1), one move away from completion. */
     private fun almostSolvedSudoku(
         sudokuId: SudokuId,
         modeLevel: Int = MODE_NORMAL,
@@ -145,7 +136,7 @@ class SudokuActivityCompletionTest {
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount) // solution at index 0 is 1 -> number button "1"
+                activity.select(activity.sudoku.itemCount)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             shadowOf(Looper.getMainLooper()).idle()

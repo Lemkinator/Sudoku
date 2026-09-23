@@ -58,12 +58,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * Covers [MainActivity]'s `initTabs`'s `onTabReselected` for all three bottom-tab positions (history, sudoku,
- * statistics) — none of the other `MainActivity` tests reselect an already-active tab.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest

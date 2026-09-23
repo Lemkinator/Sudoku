@@ -71,12 +71,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * Covers [TabSudoku] through [MainActivity] (its default tab): the new-game/daily/levels click handlers, the
- * difficulty/size seekbar listeners, and `onResume`'s continuable-sudoku and daily-completed branches.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class, SolvedBoardGeneratorModule::class)
 @HiltAndroidTest
@@ -169,7 +164,6 @@ class TabSudokuFragmentTest {
         shadowOf(Looper.getMainLooper()).idle()
     }
 
-    /** Two clicks with no gap in between: the second falls inside `onSingleClick`'s debounce window and is dropped. */
     private fun doubleClick(view: View) {
         SystemClock.sleep(601L)
         view.performClick()

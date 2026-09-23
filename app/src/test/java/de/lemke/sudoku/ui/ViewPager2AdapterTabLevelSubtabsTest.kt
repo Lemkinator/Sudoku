@@ -32,13 +32,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * Covers every branch of [ViewPager2AdapterTabLevelSubtabs.createFragment], including its unreachable-in-practice
- * `else` (`getItemCount()` is fixed at 3, so [androidx.viewpager2.widget.ViewPager2] never requests a position
- * outside 0..2) — called directly since driving a real 4th ViewPager2 page isn't possible.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])

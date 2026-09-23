@@ -58,14 +58,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/**
- * Covers [SudokuLevelTab] through [SudokuLevelActivity]'s size-4 subtab (position 0 of its `ViewPager2`): the
- * "confirm and start the newly generated next level" click branch (`position == 0 &&
- * viewModel.state.value.hasNextLevelToStart`) against an empty level list (so the view model auto-generates level
- * 1), and the plain "start an existing level" click branch against a pre-existing, incomplete level.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -106,8 +99,6 @@ class SudokuLevelTabTest {
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             shadowOf(Looper.getMainLooper()).idle()
             scenario.onActivity { activity ->
-                // offscreenPageLimit = 2 makes ViewPager2 eagerly create all 3 size tabs' fragments, so
-                // .first() alone doesn't reliably mean "the 4x4 tab" - match it by its own declared size.
                 val fragment =
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<SudokuLevelTab>()
@@ -182,9 +173,6 @@ class SudokuLevelTabTest {
                         .first() as SudokuItem
                 ).sudoku
 
-            // The onClickItem handler only confirms/generates the next level when position == 0; a non-zero
-            // position (a real click always targets an actual list position, but the branch itself only checks
-            // this literal comparison) skips straight to starting the game.
             clickItem(fragment, 1, level)
 
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity

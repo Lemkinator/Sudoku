@@ -71,15 +71,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
-/**
- * Covers [MainActivity]'s menu (`onCreateOptionsMenu`/`onPrepareOptionsMenu`/`onOptionsItemSelected`,
- * `showStatisticsFilterDialog`), the drawer navigation clicks that route to another activity, and
- * `checkImportedSudoku`'s failure path. Play Games sign-in (`achievements_dest`/`leaderboards_dest`) is not driven
- * here — it depends on a real, connected Play Games session that Robolectric cannot provide (see
- * [MainActivityGamesSignInTest], which fakes that boundary instead).
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
@@ -114,8 +106,7 @@ class MainActivityMenuTest {
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
-        // MainActivity talks to PlayGames on launch; the SDK is normally auto-initialized by its
-        // manifest-merged ContentProvider, which Robolectric does not run under HiltTestApplication.
+        // Robolectric skips the Play Games SDK's auto-init ContentProvider under HiltTestApplication.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
@@ -265,14 +256,6 @@ class MainActivityMenuTest {
             shadowOf(activity).nextStartedActivity.shouldNotBeNull()
         }
 
-    /**
-     * `DrawerNavigationView`'s fixed `menu_navigation.xml` resource has no item id left unhandled by
-     * `initDrawer`'s `when`, so the `else` fallthrough can't be reached through a real click on an
-     * actual menu item. Reflectively retrieves the real, already-registered
-     * `NavigationView.OnNavigationItemSelectedListener` (same technique as
-     * `TabHistoryActionModeTest.actionModeListenerOf`) and invokes it with a real but unrecognized id —
-     * every side effect from there on is real production code.
-     */
     private fun navigationListenerOf(navigationView: DrawerNavigationView): NavigationView.OnNavigationItemSelectedListener {
         val field = DrawerNavigationView::class.java.getDeclaredField("navigationItemSelectedListener").apply { isAccessible = true }
         return field.get(navigationView) as NavigationView.OnNavigationItemSelectedListener
@@ -290,12 +273,6 @@ class MainActivityMenuTest {
 
     // region about links (ClickableSpan)
 
-    /**
-     * `setupCommonUtilsActivities()` stores the real `SpannableString` on
-     * [CommonUtilsAboutActivity]'s companion object as soon as `onCreate` runs — no need to actually
-     * navigate to the about screen. The two `ClickableSpan`s are found on that real, rendered text and
-     * invoked directly, exercising the exact anonymous `onClick` production code.
-     */
     private fun clickableSpans(): List<android.text.style.ClickableSpan> {
         val text = CommonUtilsAboutActivity.optionalText.shouldNotBeNull()
         return text.getSpans(0, text.length, android.text.style.ClickableSpan::class.java).toList()

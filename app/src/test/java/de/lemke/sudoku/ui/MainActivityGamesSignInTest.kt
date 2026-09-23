@@ -60,14 +60,7 @@ private val AUTHENTICATED: AuthenticationResult = listOf(AuthenticationResult.zz
 private val NOT_AUTHENTICATED: AuthenticationResult =
     listOf(AuthenticationResult.zza, AuthenticationResult.zzb).first { !it.isAuthenticated }
 
-/**
- * Covers [MainActivity]'s `achievements_dest`/`leaderboards_dest` navigation and `signInPlayGames`, faking the
- * [GamesSignInClient] boundary through [GamesSignInProvider] — Robolectric has no real, connected Play Games
- * session, so `isAuthenticated()`/`signIn()` can't be driven through the real SDK the way [MainActivityMenuTest]
- * drives the other drawer items.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
- */
+/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(DispatchersModule::class, GamesSignInModule::class)
 @HiltAndroidTest
