@@ -38,12 +38,10 @@ class PatternSolvedBoardGenerator : SolvedBoardGenerator {
         }
     }
 
-    companion object {
-        fun patternValue(
-            row: Int,
-            col: Int,
-            size: Int,
-            blockSize: Int,
-        ): Int = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
-    }
+    private fun patternValue(
+        row: Int,
+        col: Int,
+        size: Int,
+        blockSize: Int,
+    ): Int = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
 }

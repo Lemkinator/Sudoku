@@ -47,8 +47,16 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
 
         should("take a 16x16 grid's solutions from the solved board and clear numbersToRemove of them") {
             val fields = patternUseCase(16, Difficulty.MEDIUM)
-            fields.forEach { field ->
-                field.solution shouldBe PatternSolvedBoardGenerator.patternValue(field.position.row, field.position.column, 16, 4)
+            val rows = fields.map { it.solution }.chunked(16)
+            rows[0] shouldBe (1..16).toList()
+            rows[1] shouldBe (5..16).toList() + (1..4).toList()
+            val digits = (1..16).toSet()
+            rows.forEach { row -> row.toSet() shouldBe digits }
+            (0 until 16).forEach { col -> rows.map { it[col] }.toSet() shouldBe digits }
+            (0 until 16).forEach { block ->
+                val blockRow = block / 4 * 4
+                val blockCol = block % 4 * 4
+                (blockRow until blockRow + 4).flatMap { row -> rows[row].subList(blockCol, blockCol + 4) }.toSet() shouldBe digits
             }
             fields.count { !it.given } shouldBe 100
         }
