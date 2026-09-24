@@ -100,7 +100,7 @@ subprojects {
                 targetCompatibility = JavaVersion.VERSION_21
             }
 
-            lint.informational += setOf("GradleDependency", "NewerVersionAvailable")
+            lint.informational += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
             // Centralized here (not per-module) so a future :benchmarks module inherits it with no migration.
             @Suppress("UnstableApiUsage")
             testOptions.managedDevices.localDevices {
