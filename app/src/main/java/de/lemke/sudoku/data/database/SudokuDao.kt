@@ -68,7 +68,7 @@ interface SudokuDao {
         level: Int,
     ): SudokuWithFields?
 
-    @Query("SELECT MAX(modeLevel) FROM sudoku WHERE size = :size")
+    @Query("SELECT MAX(modeLevel) FROM sudoku WHERE size = :size AND modeLevel > 0")
     suspend fun getMaxSudokuLevel(size: Int): Int?
 
     @Transaction

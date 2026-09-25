@@ -28,6 +28,15 @@ sealed class SudokuListItem {
 
         override fun hashCode(): Int = 31 * sudoku.hashCode() + label.hashCode()
 
+        override fun toString() =
+            with(sudoku) {
+                "SudokuItem(id=${id.value}, modeLevel=$modeLevel, regionalHighlightingUsed=$regionalHighlightingUsed, " +
+                    "numberHighlightingUsed=$numberHighlightingUsed, eraserUsed=$eraserUsed, isChecklist=$isChecklist, " +
+                    "isReverseChecklist=$isReverseChecklist, checklistNumber=$checklistNumber, hintsUsed=$hintsUsed, " +
+                    "notesMade=$notesMade, errorsMade=$errorsMade, created=$created, updated=$updated, seconds=$seconds, " +
+                    "fieldValues=${fields.map { it.value }}, label=$label)"
+            }
+
         companion object {
             const val VIEW_TYPE = 0
         }
