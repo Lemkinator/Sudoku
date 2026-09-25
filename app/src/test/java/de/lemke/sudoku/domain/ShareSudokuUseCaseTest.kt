@@ -21,6 +21,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.commonutils.ShadowFileProvider
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Difficulty
@@ -36,7 +37,6 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,14 +78,10 @@ private fun testSudoku(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [36])
+@Config(application = Application::class, sdk = [36], shadows = [ShadowFileProvider::class])
 class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val useCase = ShareSudokuUseCase(context, UnconfinedTestDispatcher())
-
-    // FileProvider's SimplePathStrategy hardcodes '/' as separator, so this fails on a Windows JVM.
-    @Before
-    fun assumeUnixPaths() = assumeTrue(File.separatorChar == '/')
 
     @Before
     fun resetFileProviderStrategyCache() = resetFileProviderCache()
@@ -97,6 +93,7 @@ class ShareSudokuUseCaseTest {
 
             val uri = useCase(sudoku)
 
+            uri.toString() shouldBe "content://de.lemke.sudoku.debug.fileprovider/cache/Sudoku%20(4%C3%974%20Hard).sudoku"
             val json =
                 context.contentResolver
                     .openInputStream(uri)!!
@@ -109,7 +106,7 @@ class ShareSudokuUseCaseTest {
     @Test
     fun `invoke names the file after the sudoku's size and localized difficulty`() {
         val sudoku = testSudoku(size = 9, difficulty = Difficulty.EASY)
-        val expectedName = "Sudoku (${sudoku.sizeString} ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"
+        val expectedName = "Sudoku (9×9 Easy).sudoku"
 
         lateinit var uri: Uri
         runTest { uri = useCase(sudoku) }
