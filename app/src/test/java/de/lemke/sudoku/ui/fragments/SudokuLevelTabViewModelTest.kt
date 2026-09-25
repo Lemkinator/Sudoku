@@ -36,11 +36,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -436,6 +438,28 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
             viewModel.events.test {
                 awaitItem() shouldBe SudokuLevelTabEvent.ShowLoadError
+            }
+        }
+
+        should("an observeSudokuLevel failure stops loading and emits ShowLoadError once per collection after the stop timeout") {
+            runTest {
+                every { observeSudokuLevel(4) } returns flow { throw IllegalStateException("observe failed") }
+                val viewModel = newViewModel()
+
+                viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false) }
+                viewModel.events.test {
+                    awaitItem() shouldBe SudokuLevelTabEvent.ShowLoadError
+                    expectNoEvents()
+                }
+                advanceTimeBy(5_001)
+                runCurrent()
+                viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false) }
+
+                verify(exactly = 2) { observeSudokuLevel(4) }
+                viewModel.events.test {
+                    awaitItem() shouldBe SudokuLevelTabEvent.ShowLoadError
+                    expectNoEvents()
+                }
             }
         }
 

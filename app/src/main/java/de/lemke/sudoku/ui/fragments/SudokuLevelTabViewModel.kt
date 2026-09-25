@@ -41,6 +41,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -75,6 +76,10 @@ class SudokuLevelTabViewModel @Inject constructor(
     val state: StateFlow<SudokuLevelTabUiState> =
         flow {
             if (levelInitialized.await()) emitAll(levelStates()) else emit(SudokuLevelTabUiState(isLoading = false))
+        }.catch { e ->
+            if (e is CancellationException) throw e
+            emit(state.value.copy(isLoading = false, isGeneratingNextLevel = false))
+            _events.send(SudokuLevelTabEvent.ShowLoadError)
         }.stateInViewModel(viewModelScope, SudokuLevelTabUiState())
 
     private val _events = Channel<SudokuLevelTabEvent>(BUFFERED)
