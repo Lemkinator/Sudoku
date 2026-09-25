@@ -67,10 +67,32 @@ class SudokuListItemTest : ShouldSpec(
             SudokuItem(sudoku(), "15.01.26") shouldNotBeEqual SudokuItem(sudoku(), "16.01.26")
         }
 
-        should("print its sudoku and label") {
-            val sudoku = sudoku()
+        should("print the sudoku's id, mode level, the fields equality compares, and its label") {
+            val sudoku =
+                Sudoku.create(
+                    sudokuId = id,
+                    size = 2,
+                    difficulty = Difficulty.VERY_EASY,
+                    modeLevel = 3,
+                    eraserUsed = true,
+                    checklistNumber = 2,
+                    hintsUsed = 1,
+                    notesMade = 4,
+                    errorsMade = 2,
+                    created = LocalDateTime.of(2026, 1, 15, 9, 0),
+                    updated = LocalDateTime.of(2026, 1, 15, 9, 30),
+                    seconds = 75,
+                    fields =
+                        MutableList(4) { index ->
+                            Field(Position.create(index, 2), solution = index + 1, value = if (index < 2) index + 1 else null)
+                        },
+                )
 
-            SudokuItem(sudoku, "7").toString() shouldBe "SudokuItem(sudoku=$sudoku, label=7)"
+            SudokuItem(sudoku, "7").toString() shouldBe
+                "SudokuItem(id=list-item, modeLevel=3, regionalHighlightingUsed=false, numberHighlightingUsed=false, " +
+                "eraserUsed=true, isChecklist=false, isReverseChecklist=false, checklistNumber=2, hintsUsed=1, notesMade=4, " +
+                "errorsMade=2, created=2026-01-15T09:00, updated=2026-01-15T09:30, seconds=75, fieldValues=[1, 2, null, null], " +
+                "label=7)"
         }
 
         should("not equal a separator with the same label") {
