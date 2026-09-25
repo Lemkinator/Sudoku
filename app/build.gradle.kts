@@ -193,6 +193,8 @@ dependencies {
     implementation(libs.oneui.design)
     implementation(libs.oneui.icons)
     implementation(libs.common.utils)
+    // Pins kotlinx-coroutines-core for main/androidTest classpath parity - do not remove without
+    // re-checking dependencyInsight on both debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.
     implementation(libs.coroutines.android)
     implementation(libs.async.layout.inflater)
     implementation(libs.bundler)
