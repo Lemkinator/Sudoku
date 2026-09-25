@@ -193,6 +193,7 @@ dependencies {
     implementation(libs.oneui.design)
     implementation(libs.oneui.icons)
     implementation(libs.common.utils)
+    implementation(libs.coroutines.android)
     implementation(libs.async.layout.inflater)
     implementation(libs.bundler)
     implementation(libs.documentfile)
