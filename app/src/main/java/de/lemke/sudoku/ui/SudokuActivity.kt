@@ -58,6 +58,9 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldView
@@ -76,26 +79,32 @@ import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.R as oneuiR
 import dev.oneuiproject.oneui.design.R as designR
 
+private const val GAME_BUTTONS_FADE_DURATION_MILLIS = 300L
+private const val SUDOKU_COMPLETED_ANIMATION_DURATION_MILLIS = 200L
+private const val FIELD_ANIMATION_FADE_ALPHA = 0.4f
+private const val FIELD_ANIMATION_SCALE = 1.6f
+private const val FIELD_ANIMATION_ROTATION_DEGREES = 100f
+
 @AndroidEntryPoint
 class SudokuActivity : AppCompatActivity() {
-    private lateinit var binding: ActivitySudokuBinding
+    internal lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
-    private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
-    private var notesEnabled = false
-    private var selected: Int? = null
+    internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
+    internal var notesEnabled = false
+    internal var selected: Int? = null
     private var menuPausePlayVisible = false
     private var menuResetVisible = false
     private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
-    private val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
-    private val transparent get() = ColorStateList.valueOf(getColor(android.R.color.transparent))
+    internal val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
+    internal val transparent get() = ColorStateList.valueOf(getColor(android.R.color.transparent))
 
     @Inject
     lateinit var userSettings: UserSettings
 
-    private val viewModel: SudokuViewModel by viewModels()
+    internal val viewModel: SudokuViewModel by viewModels()
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -192,20 +201,20 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun initSudokuButtons() {
         sudokuButtons.clear()
-        if (sudoku.size >= 4) {
+        if (sudoku.size >= SIZE_4X4) {
             sudokuButtons.add(binding.numberButton1)
             sudokuButtons.add(binding.numberButton2)
             sudokuButtons.add(binding.numberButton3)
             sudokuButtons.add(binding.numberButton4)
         }
-        if (sudoku.size >= 9) {
+        if (sudoku.size >= SIZE_9X9) {
             sudokuButtons.add(binding.numberButton5)
             sudokuButtons.add(binding.numberButton6)
             sudokuButtons.add(binding.numberButton7)
             sudokuButtons.add(binding.numberButton8)
             sudokuButtons.add(binding.numberButton9)
         }
-        if (sudoku.size >= 16) {
+        if (sudoku.size >= SIZE_16X16) {
             sudokuButtons.add(binding.numberButtonA)
             sudokuButtons.add(binding.numberButtonB)
             sudokuButtons.add(binding.numberButtonC)
@@ -264,7 +273,7 @@ class SudokuActivity : AppCompatActivity() {
             .alpha(value)
             .scaleX(value)
             .scaleY(value)
-            .setDuration(300L)
+            .setDuration(GAME_BUTTONS_FADE_DURATION_MILLIS)
             .start()
     }
 
@@ -344,7 +353,7 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private fun select(newSelected: Int?) {
+    internal fun select(newSelected: Int?) {
         if (checkErrorLimit()) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
@@ -387,10 +396,11 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectFromField(newSelected: Int?) {
-        val position = Position.create(selected!!, sudoku.size)
+        val selectedField = selected!!
+        val position = Position.create(selectedField, sudoku.size)
         when (newSelected) {
             // selected nothing / selected same field
-            null, selected -> {
+            null, selectedField -> {
                 selected = null
             }
 
@@ -422,16 +432,17 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectFromNumberButton(newSelected: Int?) {
+        val selectedButton = selected!!
         when (newSelected) {
             // selected nothing / selected same button
-            null, selected -> {
+            null, selectedButton -> {
                 selectButton(null, userSettings.highlightNumber)
             }
 
             // selected field
             in 0 until sudoku.itemCount -> {
-                sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, notesEnabled)
-                highlightCurrentNumber(selected!! - sudoku.itemCount + 1)
+                sudoku.move(newSelected, selectedButton - sudoku.itemCount + 1, notesEnabled)
+                highlightCurrentNumber(selectedButton - sudoku.itemCount + 1)
             }
 
             // selected button
@@ -448,9 +459,10 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectFromDeleteButton(newSelected: Int?) {
+        val selectedButton = selected!!
         when (newSelected) {
             // selected nothing / selected same button
-            null, selected -> {
+            null, selectedButton -> {
                 selectButton(null, userSettings.highlightNumber)
             }
 
@@ -472,9 +484,10 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun selectFromHintButton(newSelected: Int?) {
+        val selectedButton = selected!!
         when (newSelected) {
             // selected nothing / selected same button
-            null, selected -> {
+            null, selectedButton -> {
                 selectButton(null, userSettings.highlightNumber)
             }
 
@@ -521,17 +534,29 @@ class SudokuActivity : AppCompatActivity() {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
                 .reversed()
-                .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
+                .forEach {
+                    if (animateSudoku) {
+                        animateField(it.fieldViewValue, SUDOKU_COMPLETED_ANIMATION_DURATION_MILLIS, delay)
+                    } else {
+                        animateField(it.fieldViewValue)
+                    }
+                }
         }
         return lifecycleScope.launch {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a > b } }
-                .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
+                .forEach {
+                    if (animateSudoku) {
+                        animateField(it.fieldViewValue, SUDOKU_COMPLETED_ANIMATION_DURATION_MILLIS, delay)
+                    } else {
+                        animateField(it.fieldViewValue)
+                    }
+                }
         }
     }
 
     private fun matchesAnimation(
-        fieldView: FieldView?,
+        fieldView: FieldView,
         position: Position,
         animateRow: Boolean,
         animateColumn: Boolean,
@@ -539,33 +564,35 @@ class SudokuActivity : AppCompatActivity() {
         animateSudoku: Boolean,
         compare: (Int, Int) -> Boolean,
     ): Boolean =
-        (animateRow && fieldView?.position?.row == position.row && compare(fieldView.position.column, position.column)) ||
-            (animateColumn && fieldView?.position?.column == position.column && compare(fieldView.position.row, position.row)) ||
-            (animateBlock && fieldView?.position?.block == position.block && compare(fieldView.position.index, position.index)) ||
-            (animateSudoku && fieldView != null && compare(fieldView.position.index, position.index))
+        (animateRow && fieldView.position.row == position.row && compare(fieldView.position.column, position.column)) ||
+            (animateColumn && fieldView.position.column == position.column && compare(fieldView.position.row, position.row)) ||
+            (animateBlock && fieldView.position.block == position.block && compare(fieldView.position.index, position.index)) ||
+            (animateSudoku && compare(fieldView.position.index, position.index))
 
     private suspend fun animateField(
         fieldTextView: TextView?,
         duration: Long = 250L,
         delay: Long = 120L,
     ) {
-        fieldTextView
-            ?.animate()
-            ?.alpha(0.4f)
-            ?.scaleX(1.6f)
-            ?.scaleY(1.6f)
-            ?.rotation(100f)
-            ?.setDuration(duration)
-            ?.withEndAction {
-                fieldTextView
-                    .animate()
-                    ?.alpha(1f)
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.rotation(0f)
-                    ?.setDuration(duration)
-                    ?.start()
-            }?.start()
+        fieldTextView?.let {
+            it
+                .animate()
+                .alpha(FIELD_ANIMATION_FADE_ALPHA)
+                .scaleX(FIELD_ANIMATION_SCALE)
+                .scaleY(FIELD_ANIMATION_SCALE)
+                .rotation(FIELD_ANIMATION_ROTATION_DEGREES)
+                .setDuration(duration)
+                .withEndAction {
+                    it
+                        .animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .rotation(0f)
+                        .setDuration(duration)
+                        .start()
+                }.start()
+        }
         delay((delay / sudoku.blockSize).milliseconds)
     }
 
@@ -627,18 +654,11 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun highlightCurrentNumber(currentNumber: Int) {
-        val completedNumbers = sudoku.getCompletedNumbers()
-        if (completedNumbers.find { it.first == currentNumber } != null) {
-            if (selected in sudoku.itemCount until sudoku.itemCount + sudoku.size) {
-                selectNextButton(currentNumber, completedNumbers)
-            }
-        } else {
-            if (userSettings.highlightNumber) gameAdapter.highlightNumber(currentNumber)
-        }
+        selectNextButton(currentNumber, sudoku.getCompletedNumbers())
     }
 
-    private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
-        notesEnabled = enabled ?: !notesEnabled
+    private fun toggleOrSetNoteButton() {
+        notesEnabled = !notesEnabled
         binding.noteButton.backgroundTintList = if (notesEnabled) colorPrimary else transparent
     }
 
@@ -659,7 +679,6 @@ class SudokuActivity : AppCompatActivity() {
         )
     }
 
-    @SuppressLint("StringFormatInvalid")
     private fun setSubtitle() {
         val errorLimit = userSettings.errorLimit
         val subtitle =
@@ -715,7 +734,7 @@ class SudokuActivity : AppCompatActivity() {
         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
         val uri = viewModel.exportSudoku(sudoku)
         val shareIntent = Intent(ACTION_SEND)
-        shareIntent.type = "application/sudoku" // octet-stream"
+        shareIntent.type = "application/sudoku"
         shareIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION)
         shareIntent.putExtra(EXTRA_STREAM, uri)
         startActivity(Intent.createChooser(shareIntent, getString(R.string.share_sudoku)))

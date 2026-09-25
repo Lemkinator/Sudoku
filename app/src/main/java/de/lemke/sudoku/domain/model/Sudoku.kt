@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.domain.model
 
-import android.annotation.SuppressLint
 import android.content.res.Resources
 import de.lemke.sudoku.R
 import java.time.LocalDate
@@ -33,6 +32,14 @@ import java.util.Timer
 import java.util.UUID
 import kotlin.concurrent.timer
 import kotlin.math.sqrt
+
+private const val SECONDS_PER_MINUTE = 60
+private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
+private const val PERCENT_SCALE = 100
+
+private const val MAX_STANDARD_DIGIT = 9
+private const val MAX_LARGE_DIGIT = 16
+private const val LARGE_DIGIT_OFFSET = 10
 
 @JvmInline
 value class SudokuId(val value: String) {
@@ -63,13 +70,7 @@ class Sudoku(
     val fields: MutableList<Field>,
 ) {
     private val hintLimit: Int
-        get() =
-            when (size) {
-                4 -> 1
-                9 -> 3
-                16 -> 8
-                else -> 3
-            }
+        get() = hintLimitBySize[size] ?: DEFAULT_HINT_LIMIT
 
     val availableHints: Int
         get() = hintLimit - hintsUsed
@@ -95,15 +96,21 @@ class Sudoku(
     val progress: Int
         get() {
             val total = fields.count { !it.given }
-            return if (total == 0) 100 else fields.count { !it.given && it.correct } * 100 / total
+            return if (total == 0) PERCENT_SCALE else fields.count { !it.given && it.correct } * PERCENT_SCALE / total
         }
 
     val timeString: String
         get() =
-            if (seconds >= 3600) {
-                String.format(Locale.getDefault(), "%02d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+            if (seconds >= SECONDS_PER_HOUR) {
+                String.format(
+                    Locale.getDefault(),
+                    "%02d:%02d:%02d",
+                    seconds / SECONDS_PER_HOUR,
+                    seconds / SECONDS_PER_MINUTE % SECONDS_PER_MINUTE,
+                    seconds % SECONDS_PER_MINUTE,
+                )
             } else {
-                String.format(Locale.getDefault(), "%02d:%02d", seconds / 60, seconds % 60)
+                String.format(Locale.getDefault(), "%02d:%02d", seconds / SECONDS_PER_MINUTE, seconds % SECONDS_PER_MINUTE)
             }
 
     override fun equals(other: Any?): Boolean {
@@ -430,7 +437,6 @@ class Sudoku(
             updated.formatFull,
         )
 
-    @SuppressLint("StringFormatInvalid")
     fun getLocalStatisticsStringShare(resources: Resources): String =
         if (completed) {
             resources.getString(R.string.sudoku_completed)
@@ -443,6 +449,13 @@ class Sudoku(
         const val MODE_DAILY = -1
         const val MODE_LEVEL_ERROR_LIMIT = 3
         const val MODE_DAILY_ERROR_LIMIT = 3
+
+        const val SIZE_4X4 = 4
+        const val SIZE_9X9 = 9
+        const val SIZE_16X16 = 16
+
+        private const val DEFAULT_HINT_LIMIT = 3
+        private val hintLimitBySize: Map<Int, Int> = mapOf(SIZE_4X4 to 1, SIZE_9X9 to 3, SIZE_16X16 to 8)
 
         fun create(
             sudokuId: SudokuId = SudokuId.generate(),
@@ -504,16 +517,16 @@ interface GameListener {
 fun Int?.toSudokuString(): CharSequence? =
     when (this) {
         null -> null
-        in 1..9 -> this.toString()
-        in 10..16 -> ('A' + (this - 10)).toString()
+        in 1..MAX_STANDARD_DIGIT -> this.toString()
+        in LARGE_DIGIT_OFFSET..MAX_LARGE_DIGIT -> ('A' + (this - LARGE_DIGIT_OFFSET)).toString()
         else -> null
     }
 
 fun Int?.toSudokuChar(): Char? =
     when (this) {
         null -> null
-        in 1..9 -> '0' + this
-        in 10..16 -> 'A' + (this - 10)
+        in 1..MAX_STANDARD_DIGIT -> '0' + this
+        in LARGE_DIGIT_OFFSET..MAX_LARGE_DIGIT -> 'A' + (this - LARGE_DIGIT_OFFSET)
         else -> null
     }
 

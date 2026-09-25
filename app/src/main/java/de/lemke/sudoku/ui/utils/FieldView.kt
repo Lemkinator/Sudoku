@@ -37,7 +37,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     var fieldViewValue: TextView? = null
     private var fieldViewNotes: TextView? = null
     private var fieldViewContainer: View? = null
-    private var sudoku: Sudoku? = null
+    private lateinit var sudoku: Sudoku
     private lateinit var adapter: SudokuViewAdapter
     lateinit var field: Field
     lateinit var position: Position
@@ -47,14 +47,14 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     init {
         val asyncLayoutInflater = AsyncLayoutInflater(context)
-        asyncLayoutInflater.inflate(R.layout.field_view, this) { view, _, parent ->
-            parent?.layoutTransition = LayoutTransition()
-            parent?.addView(view)
+        asyncLayoutInflater.inflate(R.layout.field_view, this) { view, _, _ ->
+            layoutTransition = LayoutTransition()
+            addView(view)
             fieldViewValue = findViewById(R.id.itemNumber)
             fieldViewNotes = findViewById(R.id.itemNotes)
             fieldViewContainer = findViewById(R.id.itemContainer)
 
-            sudoku?.let { init(it, position.index, adapter) }
+            if (::sudoku.isInitialized) init(sudoku, position.index, adapter)
         }
     }
 
@@ -96,7 +96,7 @@ class FieldView(context: Context) : LinearLayout(context) {
         }
         val rm = position.row % (sudoku.blockSize * 2)
         val cm = position.column % (sudoku.blockSize * 2)
-        isColored = (rm >= sudoku.blockSize && rm < sudoku.blockSize * 2) != (cm >= sudoku.blockSize && cm < sudoku.blockSize * 2)
+        isColored = rm >= sudoku.blockSize != cm >= sudoku.blockSize
         update()
     }
 
@@ -116,10 +116,10 @@ class FieldView(context: Context) : LinearLayout(context) {
         )
         updateNotes()
         setBackground()
-        if (sudoku?.completed != true) {
-            setOnClickListener { sudoku?.gameListener?.onFieldClicked(position) }
+        if (!sudoku.completed) {
+            setOnClickListener { sudoku.gameListener?.onFieldClicked(position) }
             setOnLongClickListener {
-                if (sudoku?.move(position, null) == true) {
+                if (sudoku.move(position, null) == true) {
                     isSelected = false
                     isHighlightedNumber = false
                     setBackground()
@@ -134,7 +134,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     private fun updateNotes() {
         fieldViewNotes?.isVisible = field.notes.isNotEmpty()
         fieldViewNotes?.text = field.notes.joinToString("")
-        if (position.row == (sudoku?.size ?: return) - 1 && (position.column == 0 || position.column == sudoku!!.size - 1)) {
+        if (position.row == sudoku.size - 1 && (position.column == 0 || position.column == sudoku.size - 1)) {
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
         }
     }

@@ -109,7 +109,6 @@
     <string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
     <string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>
     <string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, \"sudoku_export_[Fecha].json\").</string>
-    <string name="error_no_folder_selected">Error: No se seleccionó ninguna carpeta</string>
     <string name="error_no_file_selected">Error: No se seleccionó ningún archivo</string>
 
     <!--Difficulties-->
@@ -222,7 +221,6 @@
     <string name="level">Nivel</string>
     <string name="next_level">Siguiente nivel</string>
 
-    <string name="no_game_played">No se ha jugado ningún juego aún</string>
     <string name="error_import_failed">Fallo al importar el sudoku</string>
     <string name="error_sudoku_not_found">Sudoku no encontrado…</string>
     <string name="error_loading_daily_sudokus_failed">No se pudieron cargar los sudokus diarios</string>

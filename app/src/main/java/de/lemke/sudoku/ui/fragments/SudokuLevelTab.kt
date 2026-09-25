@@ -49,9 +49,9 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SudokuLevelTab : Fragment() {
-    private lateinit var binding: FragmentTabLevelBinding
-    private val viewModel: SudokuLevelTabViewModel by viewModels()
-    private val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(requireContext(), MODE_LEVEL_ERROR_LIMIT, LEVEL) }
+    internal lateinit var binding: FragmentTabLevelBinding
+    internal val viewModel: SudokuLevelTabViewModel by viewModels()
+    internal val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(requireContext(), MODE_LEVEL_ERROR_LIMIT, LEVEL) }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,7 +65,7 @@ class SudokuLevelTab : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
         initRecycler()
-        collectState(viewModel.state, minActiveState = RESUMED) { state ->
+        collectState(viewModel.state) { state ->
             sudokuListAdapter.submitList(state.sudokuLevel)
             binding.sudokuLevelsRecycler.isVisible = !state.isLoading
             binding.tabLevelProgressBar.isVisible = state.isLoading || state.isGeneratingNextLevel

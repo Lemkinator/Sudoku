@@ -24,6 +24,19 @@ git config core.hooksPath .githooks
 
 Missing this opt-in is a top build-failure cause for new contributors — CI enforces the same checks the hook runs locally.
 
+## Private Dependencies (Required for Build)
+
+Two private GitHub Maven repos are used:
+
+- `https://maven.pkg.github.com/tribalfs/oneui-design`
+- `https://maven.pkg.github.com/lemkinator/common-utils`
+
+Provide credentials via **one** of these (checked in order):
+
+1. `github.properties` in project root: `ghUsername=...` / `ghAccessToken=...`
+2. `~/.gradle/gradle.properties`: `ghUsername=...` / `ghAccessToken=...`
+3. Env vars: `GH_USERNAME` / `GH_ACCESS_TOKEN`
+
 ### Baseline Profile & Benchmarks
 
 The baseline profile is generated automatically as part of every `assembleRelease` — no manual step
@@ -97,3 +110,60 @@ Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events a
 - `androidx.room` — Persistence
 - `com.google.android.gms:play-services-games-v2` — Play Games achievements/leaderboards
 - `io.kjson:kjson` — JSON serialization for import/export
+
+## Static Analysis
+
+Four tools run as part of `./gradlew build`:
+
+- **Spotless** — enforces formatting via ktlint (sole ktlint driver;
+  Detekt has no ktlint wrapper). Fix violations with
+  `./gradlew spotlessApply`.
+- **Detekt** — static analysis; config at `config/detekt/detekt.yml`.
+  `autoCorrect = false` — fixes are manual.
+- **Kover** — coverage floor enforced via `minBound` in `app/build.gradle.kts`'s
+  `kover { reports { variant("debug") { verify { rule { ... } } } } }`.
+  Verify: `./gradlew koverVerifyDebug`.
+- **Konsist** — architecture rules in
+  `app/src/test/java/de/lemke/sudoku/ArchitectureTest.kt`. Enforces
+  `data/domain/ui` layering. Runs as part of `./gradlew test`.
+
+**ktlint rule overrides** — two rules disabled in `.editorconfig` to match
+community practice (NowInAndroid, Pokedex both use the inline form):
+
+- `ktlint_standard_annotation = disabled` — ktlint 1.7+ moves `@Inject`
+  before `constructor` onto its own continuation line, doubly-indenting
+  the class body (8 sp instead of 4 sp).
+- `ktlint_standard_class-signature = disabled` — in ktlint 1.7+, both
+  rules together enforce the split form; disabling only `annotation` is
+  insufficient.
+
+## Robolectric + JUnit 5
+
+See the shared Robolectric/JUnit 5 policy in `A:\repo\android\CLAUDE.md`. This repo defaults to
+JUnit 5 (Kotest runs on the JUnit 5 platform — see `ArchitectureTest.kt`); JUnit 4 +
+`junit-vintage-engine` is used only for tests that need Robolectric (screenshot tests, Hilt
+activities, Context-backed settings/use cases).
+
+## Settings in Tests
+
+Tests never mock settings: every test uses the real `UserSettings` over an isolated, empty
+store, so defaults come from `UserSettings`'s own production delegates — no duplicated default
+values, no manual reset helpers, no per-field mock stubs.
+
+The only canonical way to get a fresh store in a test is `freshTestPreferences()` — published by
+common-utils from `lib/src/testFixtures` (`testImplementation(testFixtures(libs.common.utils))` /
+`androidTestImplementation(testFixtures(libs.common.utils))`). It returns a UUID-named
+`SharedPreferences` file, fresh by construction. Test code never calls
+`getSharedPreferences(...)` or `PreferenceManager.getDefaultSharedPreferences(...)` directly.
+
+- **`TestSettingsModule`** — `app/src/testFixtures/java/de/lemke/sudoku/TestSettingsModule.kt` —
+  `@TestInstallIn`-replaces the production settings module with `UserSettings` over
+  `freshTestPreferences(context)`, visible to both `src/test` and `src/androidTest` via AGP's
+  testFixtures source set.
+- **`TestPersistenceModule`** — `app/src/testFixtures/java/de/lemke/sudoku/TestPersistenceModule.kt`
+  — replaces the production Room module with an in-memory database for the same reason.
+- **`TestFixturesModuleInstallationTest`** exists on both sides
+  (`app/src/test/java/de/lemke/sudoku/` and `app/src/androidTest/java/de/lemke/sudoku/`) as a
+  permanent regression guard: each asserts an injected settings write never lands in production
+  `SharedPreferences`, so if Hilt's KSP aggregation ever silently drops these modules for either
+  consumer, that test turns red instead of failing silently.

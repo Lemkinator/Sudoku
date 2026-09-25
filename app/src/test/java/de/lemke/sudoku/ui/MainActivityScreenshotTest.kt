@@ -84,8 +84,12 @@ class MainActivityScreenshotTest {
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
-    private fun captureMainScreenshot(fileName: String) {
-        ActivityScenario.launch(MainActivity::class.java).use {
+    private fun captureMainScreenshot(
+        fileName: String,
+        tabPosition: Int? = null,
+    ) {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            if (tabPosition != null) scenario.onActivity { it.onTabItemSelected(tabPosition) }
             shadowOf(Looper.getMainLooper()).idle()
             onView(isRoot()).captureRoboImage(fileName)
         }
@@ -100,5 +104,27 @@ class MainActivityScreenshotTest {
     @Config(qualifiers = "+night")
     fun mainActivity_default_dark() {
         captureMainScreenshot("src/test/screenshots/main_default_dark.png")
+    }
+
+    @Test
+    fun mainActivity_history() {
+        captureMainScreenshot("src/test/screenshots/main_history.png", tabPosition = 0)
+    }
+
+    @Test
+    @Config(qualifiers = "+night")
+    fun mainActivity_history_dark() {
+        captureMainScreenshot("src/test/screenshots/main_history_dark.png", tabPosition = 0)
+    }
+
+    @Test
+    fun mainActivity_statistics() {
+        captureMainScreenshot("src/test/screenshots/main_statistics.png", tabPosition = 2)
+    }
+
+    @Test
+    @Config(qualifiers = "+night")
+    fun mainActivity_statistics_dark() {
+        captureMainScreenshot("src/test/screenshots/main_statistics_dark.png", tabPosition = 2)
     }
 }

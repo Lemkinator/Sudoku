@@ -16,13 +16,15 @@
 
 package de.lemke.sudoku.domain.model
 
+private const val TUTORIAL_SIZE = 9
+private const val TUTORIAL_CELL_COUNT = TUTORIAL_SIZE * TUTORIAL_SIZE
+
 // Row-major, one digit per cell.
 private const val TUTORIAL_SOLUTION =
     "314259687" + "825467193" + "796813254" + "152384976" + "963571842" + "478926531" + "287635419" + "641798325" + "539142768"
 
-// Indices (into TUTORIAL_SOLUTION) left blank; every other cell is given.
-private val TUTORIAL_BLANKS =
-    setOf(4, 21, 22, 24, 28, 31, 34, 35, 40, 42, 47, 49, 54, 56, 57, 58, 60, 61, 63, 64, 66, 67, 70, 72, 73)
+private const val TUTORIAL_GIVEN_MASK =
+    "111101111" + "111111111" + "111001011" + "101101100" + "111101011" + "110101111" + "010001001" + "001001101" + "001111111"
 
 /**
  * A fixed, hand-authored 9×9 "very easy" puzzle used as [IntroActivity][de.lemke.sudoku.ui.IntroActivity]'s
@@ -35,13 +37,18 @@ fun tutorialSudoku(
 ): Sudoku =
     Sudoku.create(
         sudokuId = sudokuId,
-        size = 9,
+        size = TUTORIAL_SIZE,
         difficulty = Difficulty.VERY_EASY,
         modeLevel = modeLevel,
         fields =
-            MutableList(81) { index ->
+            MutableList(TUTORIAL_CELL_COUNT) { index ->
                 val solution = TUTORIAL_SOLUTION[index] - '0'
-                val given = index !in TUTORIAL_BLANKS
-                Field(position = Position.create(index, 9), value = if (given) solution else null, solution = solution, given = given)
+                val given = TUTORIAL_GIVEN_MASK[index] == '1'
+                Field(
+                    position = Position.create(index, TUTORIAL_SIZE),
+                    value = if (given) solution else null,
+                    solution = solution,
+                    given = given,
+                )
             },
     )

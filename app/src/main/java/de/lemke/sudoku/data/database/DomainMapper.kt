@@ -23,31 +23,32 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
-    val fields = sudokuWithFields?.fields?.mapNotNull { fieldFromDb(it) }?.toMutableList()
-    if (sudokuWithFields == null || fields == null || fields.size != sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size) {
-        return null
+    if (sudokuWithFields == null || sudokuWithFields.sudoku.size <= 0) return null
+    val fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList()
+    val expectedFieldCount = sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size
+    return fields.takeIf { it.size == expectedFieldCount }?.let {
+        Sudoku(
+            id = SudokuId(sudokuWithFields.sudoku.id),
+            size = sudokuWithFields.sudoku.size,
+            difficulty = Difficulty.fromInt(sudokuWithFields.sudoku.difficulty),
+            modeLevel = sudokuWithFields.sudoku.modeLevel,
+            created = sudokuWithFields.sudoku.created,
+            updated = sudokuWithFields.sudoku.updated,
+            seconds = sudokuWithFields.sudoku.seconds,
+            regionalHighlightingUsed = sudokuWithFields.sudoku.regionalHighlightingUsed,
+            numberHighlightingUsed = sudokuWithFields.sudoku.numberHighlightingUsed,
+            eraserUsed = sudokuWithFields.sudoku.eraserUsed,
+            isChecklist = sudokuWithFields.sudoku.isChecklist,
+            isReverseChecklist = sudokuWithFields.sudoku.isReverseChecklist,
+            checklistNumber = sudokuWithFields.sudoku.checklistNumber,
+            hintsUsed = sudokuWithFields.sudoku.hintsUsed,
+            notesMade = sudokuWithFields.sudoku.notesMade,
+            errorsMade = sudokuWithFields.sudoku.errorsMade,
+            timer = null,
+            gameListener = null,
+            fields = it,
+        )
     }
-    return Sudoku(
-        id = SudokuId(sudokuWithFields.sudoku.id),
-        size = sudokuWithFields.sudoku.size,
-        difficulty = Difficulty.fromInt(sudokuWithFields.sudoku.difficulty),
-        modeLevel = sudokuWithFields.sudoku.modeLevel,
-        created = sudokuWithFields.sudoku.created,
-        updated = sudokuWithFields.sudoku.updated,
-        seconds = sudokuWithFields.sudoku.seconds,
-        regionalHighlightingUsed = sudokuWithFields.sudoku.regionalHighlightingUsed,
-        numberHighlightingUsed = sudokuWithFields.sudoku.numberHighlightingUsed,
-        eraserUsed = sudokuWithFields.sudoku.eraserUsed,
-        isChecklist = sudokuWithFields.sudoku.isChecklist,
-        isReverseChecklist = sudokuWithFields.sudoku.isReverseChecklist,
-        checklistNumber = sudokuWithFields.sudoku.checklistNumber,
-        hintsUsed = sudokuWithFields.sudoku.hintsUsed,
-        notesMade = sudokuWithFields.sudoku.notesMade,
-        errorsMade = sudokuWithFields.sudoku.errorsMade,
-        timer = null,
-        gameListener = null,
-        fields = fields,
-    )
 }
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -71,7 +72,7 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
     )
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? =
-    if (fieldDb?.solution == null) {
+    if (fieldDb?.solution == null || fieldDb.gameSize <= 0) {
         null
     } else {
         Field(

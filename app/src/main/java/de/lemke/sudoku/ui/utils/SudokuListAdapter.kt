@@ -197,7 +197,7 @@ class SudokuListAdapter(
             }
         }
 
-        @SuppressLint("SetTextI18n", "StringFormatInvalid")
+        @SuppressLint("SetTextI18n")
         fun bindSudoku(sudoku: Sudoku) {
             textView.text =
                 when (mode) {
@@ -205,7 +205,7 @@ class SudokuListAdapter(
                     Mode.LEVEL -> "${context.getString(R.string.level)} ${sudoku.modeLevel}"
                     else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
                 }
-            imageView?.setImageDrawable(
+            imageView!!.setImageDrawable(
                 ContextCompat.getDrawable(
                     context,
                     if (sudoku.completed) {
@@ -216,11 +216,11 @@ class SudokuListAdapter(
                 ),
             )
             if (sudoku.errorLimitReached(errorLimit)) {
-                imageView?.setImageDrawable(
+                imageView!!.setImageDrawable(
                     ContextCompat.getDrawable(context, dev.oneuiproject.oneui.R.drawable.ic_oui_error),
                 )
             }
-            textViewSmall?.text =
+            textViewSmall!!.text =
                 buildString {
                     append(context.getString(R.string.current_time, sudoku.timeString))
                     if (!sudoku.completed) {
@@ -240,7 +240,7 @@ class SudokuListAdapter(
         }
 
         fun bindActionMode(itemId: Long) {
-            selectableLayout?.apply {
+            selectableLayout!!.apply {
                 isSelectionMode = isActionMode
                 setSelected(isSelected(itemId))
             }

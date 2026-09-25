@@ -19,30 +19,32 @@ package de.lemke.sudoku.receivers
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EarlyEntryPoint
+import dagger.hilt.android.EarlyEntryPoints
+import dagger.hilt.components.SingletonComponent
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@AndroidEntryPoint
-class AlarmReceiver : BroadcastReceiver() {
-    @Inject
-    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+// Android 15 sends BOOT_COMPLETED when an instrumented run un-stops the app, before a Hilt test has created its component.
+@EarlyEntryPoint
+@InstallIn(SingletonComponent::class)
+interface AlarmReceiverEntryPoint {
+    fun sendDailyNotification(): SendDailyNotificationUseCase
 
-    @Inject
-    lateinit var isDailySudokuCompleted: IsDailySudokuCompletedUseCase
+    fun isDailySudokuCompleted(): IsDailySudokuCompletedUseCase
 
-    @Inject
-    lateinit var userSettings: UserSettings
+    fun userSettings(): UserSettings
 
-    @Inject
     @ApplicationScope
-    lateinit var applicationScope: CoroutineScope
+    fun applicationScope(): CoroutineScope
+}
 
+class AlarmReceiver : BroadcastReceiver() {
     /**
      * sends notification when receives alarm
      * and then reschedule the reminder again
@@ -51,8 +53,12 @@ class AlarmReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
+        val entryPoint = EarlyEntryPoints.get(context.applicationContext, AlarmReceiverEntryPoint::class.java)
+        val sendDailyNotification = entryPoint.sendDailyNotification()
+        val isDailySudokuCompleted = entryPoint.isDailySudokuCompleted()
+        val userSettings = entryPoint.userSettings()
         val pendingResult = goAsync()
-        applicationScope.launch {
+        entryPoint.applicationScope().launch {
             try {
                 val notificationEnabled = userSettings.dailySudokuNotificationEnabled
                 if (

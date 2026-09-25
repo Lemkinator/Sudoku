@@ -50,9 +50,9 @@ import dev.oneuiproject.oneui.utils.SemItemDecoration
 
 @AndroidEntryPoint
 class DailySudokuActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityDailySudokuBinding
-    private val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(this, MODE_DAILY_ERROR_LIMIT, DAILY) }
-    private val viewModel: DailySudokuViewModel by viewModels()
+    internal lateinit var binding: ActivityDailySudokuBinding
+    internal val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(this, MODE_DAILY_ERROR_LIMIT, DAILY) }
+    internal val viewModel: DailySudokuViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prepareActivityTransformationBetween()

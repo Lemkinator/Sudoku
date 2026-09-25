@@ -65,7 +65,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     private val saveSudoku: SaveSudokuUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val size: Int = savedStateHandle["size"] ?: 4
+    private val size: Int = savedStateHandle["size"] ?: Sudoku.SIZE_4X4
 
     val state: StateFlow<SudokuLevelTabUiState>
         field = MutableStateFlow(SudokuLevelTabUiState())

@@ -41,7 +41,8 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
 
         beforeEach {
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            useCase = ObserveSudokusAndStatisticsFilterFlagsUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
+            useCase =
+                ObserveSudokusAndStatisticsFilterFlagsUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
         }
 
         should("re-filters the repository's sudokus when userSettings.filterFlags changes") {

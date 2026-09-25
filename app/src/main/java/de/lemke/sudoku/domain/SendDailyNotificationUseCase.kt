@@ -31,21 +31,21 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.receivers.AlarmReceiver
+import java.time.Clock
 import java.util.Calendar
 import javax.inject.Inject
 
 class SendDailyNotificationUseCase @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val userSettings: UserSettings,
+    private val clock: Clock,
 ) {
     private val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
-    private val notificationId = 5
-    private val dailySudokuNotificationRequestCode = 55
 
     operator fun invoke() {
         createNotificationChannel()
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            NotificationManagerCompat.from(context).notify(notificationId, createNotificationBuilder().build())
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, createNotificationBuilder().build())
         }
     }
 
@@ -85,18 +85,20 @@ class SendDailyNotificationUseCase @Inject constructor(
 
     fun setDailySudokuNotification(enable: Boolean) = if (enable) enableDailySudokuNotification() else disableDailySudokuNotification()
 
+    private fun nowCalendar(): Calendar = Calendar.getInstance().apply { timeInMillis = clock.millis() }
+
     private fun enableDailySudokuNotification() {
         createNotificationChannel()
         val alarmIntent = createAlarmIntent()
         val calendar: Calendar =
-            Calendar.getInstance().apply {
+            nowCalendar().apply {
                 set(Calendar.HOUR_OF_DAY, userSettings.dailySudokuNotificationHour)
                 set(Calendar.MINUTE, userSettings.dailySudokuNotificationMinute)
             }
         // If the trigger time you specify is in the past, the alarm triggers immediately. if soo just add one day to required calendar
         // Note: also adding 1 min cuz if user clicks on notification as soon as received it will reschedule the alarm to
         // fire another notification immediately
-        if (Calendar.getInstance().apply { add(Calendar.MINUTE, 1) }.timeInMillis - calendar.timeInMillis > 0) {
+        if (nowCalendar().apply { add(Calendar.MINUTE, 1) }.timeInMillis - calendar.timeInMillis > 0) {
             calendar.add(Calendar.DATE, 1)
         }
         (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).set(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, alarmIntent)
@@ -109,8 +111,13 @@ class SendDailyNotificationUseCase @Inject constructor(
     private fun createAlarmIntent(): PendingIntent =
         PendingIntent.getBroadcast(
             context.applicationContext,
-            dailySudokuNotificationRequestCode,
+            DAILY_SUDOKU_NOTIFICATION_REQUEST_CODE,
             Intent(context.applicationContext, AlarmReceiver::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+    private companion object {
+        const val NOTIFICATION_ID = 5
+        const val DAILY_SUDOKU_NOTIFICATION_REQUEST_CODE = 55
+    }
 }

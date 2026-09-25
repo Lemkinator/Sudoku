@@ -30,6 +30,12 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
+private const val MILLIS_PER_SECOND = 1000L
+private const val SPEED_ACHIEVEMENT_SECONDS = 10
+private const val SIZE_4X4 = 4
+private const val SIZE_9X9 = 9
+private const val SIZE_16X16 = 16
+
 class CalculatePlayGamesSyncUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
@@ -42,7 +48,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             val increments = mutableListOf<Pair<Int, Int>>()
             if (sudoku != null) {
                 unlocks += winUnlocks(sudoku)
-                scores += R.string.leaderboard_best_time to sudoku.seconds * 1000L
+                scores += R.string.leaderboard_best_time to sudoku.seconds * MILLIS_PER_SECOND
                 addSizeStats(sudoku, sudokus, scores, unlocks, increments)
                 addDifficultyStats(sudoku, sudokus, scores, increments)
             }
@@ -53,9 +59,9 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         listOf(
             R.string.leaderboard_total_wins to sudokus.size.toLong(),
             R.string.leaderboard_daily_sudokus to sudokus.count { it.isDailySudoku }.toLong(),
-            R.string.leaderboard_level_44 to sudokus.count { it.size == 4 && it.isSudokuLevel }.toLong(),
-            R.string.leaderboard_level_99 to sudokus.count { it.size == 9 && it.isSudokuLevel }.toLong(),
-            R.string.leaderboard_level_1616 to sudokus.count { it.size == 16 && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_44 to sudokus.count { it.size == SIZE_4X4 && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_99 to sudokus.count { it.size == SIZE_9X9 && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_1616 to sudokus.count { it.size == SIZE_16X16 && it.isSudokuLevel }.toLong(),
         )
 
     private fun winUnlocks(sudoku: Sudoku): List<Int> =
@@ -66,7 +72,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             if (sudoku.notesMade > 0) add(R.string.achievement_use_notes)
             if (sudoku.isChecklist) add(R.string.achievement_checklist)
             if (sudoku.isReverseChecklist) add(R.string.achievement_reverse_checklist)
-            if (sudoku.seconds < 10) add(R.string.achievement_i_am_speed)
+            if (sudoku.seconds < SPEED_ACHIEVEMENT_SECONDS) add(R.string.achievement_i_am_speed)
         }
 
     private fun addSizeStats(
@@ -89,24 +95,16 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores: MutableList<Pair<Int, Long>>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val (achievement10, achievement50) = difficultyAchievements[sudoku.difficulty] ?: return
+        val (achievement10, achievement50) = difficultyAchievements.getValue(sudoku.difficulty)
         increments += achievement10 to 1
         increments += achievement50 to 1
         val (timeId, winsId) = sizeDifficultyLeaderboard[sudoku.size to sudoku.difficulty] ?: return
-        scores += timeId to sudoku.seconds * 1000L
+        scores += timeId to sudoku.seconds * MILLIS_PER_SECOND
         scores += winsId to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
     }
 
-    private data class SizeStats(
-        val achievement10: Int,
-        val achievement50: Int,
-        val stopwatchAchievement: Int,
-        val stopwatchSeconds: Int,
-        val winsId: Int,
-    )
-
     companion object {
-        private val sizeStats: Map<Int, SizeStats> =
+        internal val sizeStats: Map<Int, SizeStats> =
             mapOf(
                 4 to
                     SizeStats(
@@ -134,7 +132,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                     ),
             )
 
-        private val difficultyAchievements: Map<Difficulty, Pair<Int, Int>> =
+        internal val difficultyAchievements: Map<Difficulty, Pair<Int, Int>> =
             mapOf(
                 VERY_EASY to (R.string.achievement_10_sudokus_very_easy to R.string.achievement_50_sudokus_very_easy),
                 EASY to (R.string.achievement_10_sudokus_easy to R.string.achievement_50_sudokus_easy),
@@ -143,7 +141,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                 EXPERT to (R.string.achievement_10_sudokus_expert to R.string.achievement_50_sudokus_expert),
             )
 
-        private val sizeDifficultyLeaderboard: Map<Pair<Int, Difficulty>, Pair<Int, Int>> =
+        internal val sizeDifficultyLeaderboard: Map<Pair<Int, Difficulty>, Pair<Int, Int>> =
             mapOf(
                 (4 to VERY_EASY) to (R.string.leaderboard_time_44_very_easy to R.string.leaderboard_wins_44_very_easy),
                 (9 to VERY_EASY) to (R.string.leaderboard_time_99_very_easy to R.string.leaderboard_wins_99_very_easy),
@@ -163,16 +161,14 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                 (16 to EXPERT) to (R.string.leaderboard_time_1616_expert to R.string.leaderboard_wins_1616_expert),
             )
 
-        private val supportedSizes = setOf(4, 9, 16)
-
-        init {
-            check(sizeStats.keys == supportedSizes) {
-                "sizeStats missing entries for sizes: ${supportedSizes - sizeStats.keys}"
-            }
-            val difficultyLeaderboardSizes = sizeDifficultyLeaderboard.keys.map { it.first }.toSet()
-            check(difficultyLeaderboardSizes == supportedSizes) {
-                "sizeDifficultyLeaderboard missing entries for sizes: ${supportedSizes - difficultyLeaderboardSizes}"
-            }
-        }
+        internal val supportedSizes = setOf(4, 9, 16)
     }
+
+    internal data class SizeStats(
+        val achievement10: Int,
+        val achievement50: Int,
+        val stopwatchAchievement: Int,
+        val stopwatchSeconds: Int,
+        val winsId: Int,
+    )
 }

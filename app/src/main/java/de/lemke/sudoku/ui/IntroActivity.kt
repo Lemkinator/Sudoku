@@ -61,18 +61,42 @@ import kotlinx.coroutines.launch
 import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.design.R as designR
 
+private const val INTRO_STEP_3 = 3
+private const val INTRO_STEP_4 = 4
+private const val INTRO_STEP_5 = 5
+private const val INTRO_STEP_6 = 6
+private const val INTRO_STEP_7 = 7
+private const val INTRO_STEP_8 = 8
+private const val INTRO_STEP_9 = 9
+private const val INTRO_STEP_10 = 10
+
+internal const val DEMO_CELL_INDEX_4 = 4
+internal const val DEMO_CELL_INDEX_24 = 24
+internal const val DEMO_CELL_INDEX_49 = 49
+internal const val DEMO_NUMBER_BUTTON_INDEX_4 = 4
+private const val DEMO_CELL_INDEX_21 = 21
+private const val DEMO_NUMBER_BUTTON_INDEX_7 = 7
+private const val DEMO_ROW_INDEX_3 = 3
+private const val DEMO_ROW_INDEX_4 = 4
+private const val DEMO_FIELD_HIGHLIGHT_SCALE = 1.5f
+
+private const val ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS = 200L
+private const val FIELD_ANIMATION_FADE_ALPHA = 0.4f
+private const val FIELD_ANIMATION_SCALE = 1.6f
+private const val FIELD_ANIMATION_ROTATION_DEGREES = 100f
+
 @AndroidEntryPoint
 class IntroActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityIntroBinding
+    internal lateinit var binding: ActivityIntroBinding
     private lateinit var loadingDialog: ProgressDialog
-    private var colorPrimary: Int = 0
+    internal var colorPrimary: Int = 0
     lateinit var gameAdapter: SudokuViewAdapter
-    private val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
-    private var selected: Int? = null
-    private var introStep = -1
-    private var animation: Job? = null
-    private var notesEnabled = false
-    private val viewModel: IntroViewModel by viewModels()
+    internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
+    internal var selected: Int? = null
+    internal var introStep = -1
+    internal var animation: Job? = null
+    internal var notesEnabled = false
+    internal val viewModel: IntroViewModel by viewModels()
 
     private val requestPermissionLauncher =
         registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
@@ -84,7 +108,7 @@ class IntroActivity : AppCompatActivity() {
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
+        if (SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, fade_in, fade_out)
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
@@ -125,7 +149,7 @@ class IntroActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
 
-    private fun nextIntroStep() {
+    internal fun nextIntroStep() {
         introStep += 1
         when (introStep) {
             0 -> {
@@ -145,50 +169,50 @@ class IntroActivity : AppCompatActivity() {
                 startAnimation(2)
             }
 
-            3 -> {
+            INTRO_STEP_3 -> {
                 binding.introTextText.text = getString(R.string.intro_text3)
                 binding.otherButtons.isVisible = false
                 binding.gameButtons.isVisible = true
                 stopAnimation(2)
             }
 
-            4 -> {
+            INTRO_STEP_4 -> {
                 binding.introTextText.text = getString(R.string.intro_text4)
             }
 
-            5 -> {
+            INTRO_STEP_5 -> {
                 binding.introTextText.text = getString(R.string.intro_text5)
-                startAnimation(5)
+                startAnimation(INTRO_STEP_5)
             }
 
-            6 -> {
+            INTRO_STEP_6 -> {
                 binding.introTextText.text = getString(R.string.intro_text6)
-                stopAnimation(5)
-                startAnimation(6)
+                stopAnimation(INTRO_STEP_5)
+                startAnimation(INTRO_STEP_6)
             }
 
-            7 -> {
+            INTRO_STEP_7 -> {
                 binding.introTitleText.text = getString(R.string.intro_title7)
                 binding.introTitle.isVisible = true
                 binding.introTextText.text = getString(R.string.intro_text7)
-                stopAnimation(6)
+                stopAnimation(INTRO_STEP_6)
             }
 
-            8 -> {
+            INTRO_STEP_8 -> {
                 binding.introTitleText.text = getString(R.string.intro_title8)
                 binding.introTextText.text = getString(R.string.intro_text8)
-                startAnimation(8)
+                startAnimation(INTRO_STEP_8)
             }
 
-            9 -> {
+            INTRO_STEP_9 -> {
                 binding.introTitleText.text = getString(R.string.intro_title9)
                 binding.introTextText.text = getString(R.string.intro_text9)
                 binding.otherButtons.isVisible = true
                 binding.numberButtons.isVisible = false
-                stopAnimation(8)
+                stopAnimation(INTRO_STEP_8)
             }
 
-            10 -> {
+            INTRO_STEP_10 -> {
                 binding.introTitle.isVisible = false
                 binding.introTextText.text = getString(R.string.intro_text10)
                 binding.introContinueLayout.isVisible = true
@@ -227,7 +251,7 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
     }
 
-    private fun checkRowColumnBlockCompleted(position: Position) {
+    internal fun checkRowColumnBlockCompleted(position: Position) {
         animate(
             position,
             animateRow = sudoku.isRowCompleted(position.row),
@@ -236,7 +260,7 @@ class IntroActivity : AppCompatActivity() {
         )
     }
 
-    private fun animate(
+    internal fun animate(
         position: Position,
         animateRow: Boolean = false,
         animateColumn: Boolean = false,
@@ -249,17 +273,29 @@ class IntroActivity : AppCompatActivity() {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
                 .reversed()
-                .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
+                .forEach {
+                    if (animateSudoku) {
+                        animateField(it.fieldViewValue, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
+                    } else {
+                        animateField(it.fieldViewValue)
+                    }
+                }
         }
         return lifecycleScope.launch {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a > b } }
-                .forEach { if (animateSudoku) animateField(it?.fieldViewValue, 200L, delay) else animateField(it?.fieldViewValue) }
+                .forEach {
+                    if (animateSudoku) {
+                        animateField(it.fieldViewValue, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
+                    } else {
+                        animateField(it.fieldViewValue)
+                    }
+                }
         }
     }
 
     private fun matchesAnimation(
-        fieldView: FieldView?,
+        fieldView: FieldView,
         position: Position,
         animateRow: Boolean,
         animateColumn: Boolean,
@@ -267,45 +303,65 @@ class IntroActivity : AppCompatActivity() {
         animateSudoku: Boolean,
         compare: (Int, Int) -> Boolean,
     ): Boolean =
-        (animateRow && fieldView?.position?.row == position.row && compare(fieldView.position.column, position.column)) ||
-            (animateColumn && fieldView?.position?.column == position.column && compare(fieldView.position.row, position.row)) ||
-            (animateBlock && fieldView?.position?.block == position.block && compare(fieldView.position.index, position.index)) ||
-            (animateSudoku && compare(fieldView?.position?.index!!, position.index))
+        (animateRow && fieldView.position.row == position.row && compare(fieldView.position.column, position.column)) ||
+            (animateColumn && fieldView.position.column == position.column && compare(fieldView.position.row, position.row)) ||
+            (animateBlock && fieldView.position.block == position.block && compare(fieldView.position.index, position.index)) ||
+            (animateSudoku && compare(fieldView.position.index, position.index))
 
     private suspend fun animateField(
         fieldTextView: TextView?,
         duration: Long = 250L,
         delay: Long = 120L,
     ) {
-        fieldTextView
-            ?.animate()
-            ?.alpha(0.4f)
-            ?.scaleX(1.6f)
-            ?.scaleY(1.6f)
-            ?.rotation(100f)
-            ?.setDuration(duration)
-            ?.withEndAction {
-                fieldTextView
-                    .animate()
-                    ?.alpha(1f)
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.rotation(0f)
-                    ?.setDuration(duration)
-                    ?.start()
-            }?.start()
+        fieldTextView?.let {
+            it
+                .animate()
+                .alpha(FIELD_ANIMATION_FADE_ALPHA)
+                .scaleX(FIELD_ANIMATION_SCALE)
+                .scaleY(FIELD_ANIMATION_SCALE)
+                .rotation(FIELD_ANIMATION_ROTATION_DEGREES)
+                .setDuration(duration)
+                .withEndAction {
+                    it
+                        .animate()
+                        .alpha(1f)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .rotation(0f)
+                        .setDuration(duration)
+                        .start()
+                }.start()
+        }
         delay((delay / sudoku.blockSize).milliseconds)
     }
 
-    private fun startAnimation(currentIntroStep: Int) {
+    internal fun startAnimation(currentIntroStep: Int) {
         animation =
             lifecycleScope.launch {
                 when (currentIntroStep) {
-                    0 -> animateIntroStepRowColumnBlock()
-                    2 -> animateIntroStepField(rows = listOf(0), fieldIndex = 4, introStep = 2)
-                    5 -> animateIntroStepField(rows = listOf(3, 4), fieldIndex = 49, introStep = 5)
-                    6 -> animateIntroStepBlock()
-                    8 -> animateIntroStepNumberEntry()
+                    0 -> {
+                        animateIntroStepRowColumnBlock()
+                    }
+
+                    2 -> {
+                        animateIntroStepField(rows = listOf(0), fieldIndex = DEMO_CELL_INDEX_4, introStep = 2)
+                    }
+
+                    INTRO_STEP_5 -> {
+                        animateIntroStepField(
+                            rows = listOf(DEMO_ROW_INDEX_3, DEMO_ROW_INDEX_4),
+                            fieldIndex = DEMO_CELL_INDEX_49,
+                            introStep = INTRO_STEP_5,
+                        )
+                    }
+
+                    INTRO_STEP_6 -> {
+                        animateIntroStepBlock()
+                    }
+
+                    INTRO_STEP_8 -> {
+                        animateIntroStepNumberEntry()
+                    }
                 }
             }
     }
@@ -313,38 +369,38 @@ class IntroActivity : AppCompatActivity() {
     private suspend fun animateIntroStepRowColumnBlock() {
         while (introStep == 0) {
             delay(900.milliseconds)
-            val block = gameAdapter.fieldViews.filter { it?.position?.block == 0 }
-            val row = gameAdapter.fieldViews.filter { it?.position?.row == 1 }
-            val column = gameAdapter.fieldViews.filter { it?.position?.column == 5 }
+            val block = gameAdapter.fieldViews.filter { it.position.block == 0 }
+            val row = gameAdapter.fieldViews.filter { it.position.row == 1 }
+            val column = gameAdapter.fieldViews.filter { it.position.column == 5 }
             column.forEach {
-                it?.isHighlighted = false
-                it?.setBackground()
+                it.isHighlighted = false
+                it.setBackground()
             }
             block.forEach {
-                it?.isHighlighted = true
-                it?.setBackground()
+                it.isHighlighted = true
+                it.setBackground()
             }
-            block.forEach { animateIntroFieldText(it?.fieldViewValue) }
+            block.forEach { animateIntroFieldText(it.fieldViewValue) }
             delay(900.milliseconds)
             block.forEach {
-                it?.isHighlighted = false
-                it?.setBackground()
+                it.isHighlighted = false
+                it.setBackground()
             }
             row.forEach {
-                it?.isHighlighted = true
-                it?.setBackground()
+                it.isHighlighted = true
+                it.setBackground()
             }
-            row.forEach { animateIntroFieldText(it?.fieldViewValue) }
+            row.forEach { animateIntroFieldText(it.fieldViewValue) }
             delay(900.milliseconds)
             row.forEach {
-                it?.isHighlighted = false
-                it?.setBackground()
+                it.isHighlighted = false
+                it.setBackground()
             }
             column.forEach {
-                it?.isHighlighted = true
-                it?.setBackground()
+                it.isHighlighted = true
+                it.setBackground()
             }
-            column.forEach { animateIntroFieldText(it?.fieldViewValue) }
+            column.forEach { animateIntroFieldText(it.fieldViewValue) }
         }
     }
 
@@ -353,52 +409,52 @@ class IntroActivity : AppCompatActivity() {
         fieldIndex: Int,
         introStep: Int,
     ) {
-        gameAdapter.fieldViews.filter { it?.position?.row in rows }.forEach {
-            it?.isHighlighted = true
-            it?.setBackground()
+        gameAdapter.fieldViews.filter { it.position.row in rows }.forEach {
+            it.isHighlighted = true
+            it.setBackground()
         }
         while (this.introStep == introStep) animateIntroFieldView(gameAdapter.fieldViews[fieldIndex])
     }
 
     private suspend fun animateIntroStepBlock() {
-        gameAdapter.fieldViews.filter { it?.position?.block == 2 }.forEach {
-            it?.isHighlighted = true
-            it?.setBackground()
+        gameAdapter.fieldViews.filter { it.position.block == 2 }.forEach {
+            it.isHighlighted = true
+            it.setBackground()
         }
-        while (introStep == 6) animateIntroFieldView(gameAdapter.fieldViews[24])
+        while (introStep == INTRO_STEP_6) animateIntroFieldView(gameAdapter.fieldViews[DEMO_CELL_INDEX_24])
     }
 
     private suspend fun animateIntroStepNumberEntry() {
         val delayMillis = 1200L
-        while (introStep == 8) {
+        while (introStep == INTRO_STEP_8) {
             delay(delayMillis.milliseconds)
             selectButton(null)
-            gameAdapter.selectFieldView(4, highlightNeighbors = true, highlightNumber = true)
+            gameAdapter.selectFieldView(DEMO_CELL_INDEX_4, highlightNeighbors = true, highlightNumber = true)
             delay(delayMillis.milliseconds)
             gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
-            selectButton(7)
+            selectButton(DEMO_NUMBER_BUTTON_INDEX_7)
             delay(delayMillis.milliseconds)
-            selectButton(4)
+            selectButton(DEMO_NUMBER_BUTTON_INDEX_4)
             delay(delayMillis.milliseconds)
             selectButton(null)
-            gameAdapter.selectFieldView(21, highlightNeighbors = true, highlightNumber = true)
+            gameAdapter.selectFieldView(DEMO_CELL_INDEX_21, highlightNeighbors = true, highlightNumber = true)
             delay(delayMillis.milliseconds)
             gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
             selectButton(1)
         }
     }
 
-    private fun stopAnimation(currentIntroStep: Int) {
+    internal fun stopAnimation(currentIntroStep: Int) {
         animation?.cancel()
         when (currentIntroStep) {
-            0, 5, 6 -> {
+            0, INTRO_STEP_5, INTRO_STEP_6 -> {
                 gameAdapter.fieldViews.forEach {
-                    it?.isHighlighted = false
-                    it?.setBackground()
+                    it.isHighlighted = false
+                    it.setBackground()
                 }
             }
 
-            8 -> {
+            INTRO_STEP_8 -> {
                 selectButton(null)
                 gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
             }
@@ -410,46 +466,48 @@ class IntroActivity : AppCompatActivity() {
         duration: Long = 450,
         delay: Long = 180L,
     ) {
-        fieldTextView
-            ?.animate()
-            ?.scaleX(2f)
-            ?.scaleY(2f)
-            ?.setDuration(duration)
-            ?.withEndAction {
-                fieldTextView
-                    .animate()
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.setDuration(duration)
-                    ?.start()
-            }?.start()
+        fieldTextView?.let {
+            it
+                .animate()
+                .scaleX(2f)
+                .scaleY(2f)
+                .setDuration(duration)
+                .withEndAction {
+                    it
+                        .animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(duration)
+                        .start()
+                }.start()
+        }
         delay(delay.milliseconds)
     }
 
     private suspend fun animateIntroFieldView(
-        fieldView: FieldView?,
+        fieldView: FieldView,
         duration: Long = 600,
         delay: Long = 2000,
     ) {
         fieldView
-            ?.animate()
-            ?.scaleX(1.5f)
-            ?.scaleY(1.5f)
-            ?.setDuration(duration)
-            ?.withEndAction {
+            .animate()
+            .scaleX(DEMO_FIELD_HIGHLIGHT_SCALE)
+            .scaleY(DEMO_FIELD_HIGHLIGHT_SCALE)
+            .setDuration(duration)
+            .withEndAction {
                 fieldView
                     .animate()
-                    ?.scaleX(1f)
-                    ?.scaleY(1f)
-                    ?.setDuration(duration)
-                    ?.start()
-            }?.start()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(duration)
+                    .start()
+            }.start()
         delay(delay.milliseconds)
     }
 
-    private fun toggleOrSetNoteButton(enabled: Boolean? = null) {
-        if (introStep != 10) return
-        notesEnabled = enabled ?: !notesEnabled
+    internal fun toggleOrSetNoteButton() {
+        if (introStep != INTRO_STEP_10) return
+        notesEnabled = !notesEnabled
         binding.noteButton.backgroundTintList =
             ColorStateList.valueOf(
                 if (notesEnabled) {
@@ -460,7 +518,7 @@ class IntroActivity : AppCompatActivity() {
             )
     }
 
-    private fun selectButton(i: Int?) {
+    internal fun selectButton(i: Int?) {
         for (button in sudokuButtons) button.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.deleteButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
@@ -491,7 +549,7 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
     }
 
-    private fun select(newSelected: Int?) {
+    internal fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
             null -> selectFromNothing(newSelected)
@@ -508,17 +566,19 @@ class IntroActivity : AppCompatActivity() {
         when (newSelected) {
             // selected field
             in 0 until sudoku.itemCount -> {
-                if (newSelected == 4 && introStep == 2) {
-                    gameAdapter.selectFieldView(newSelected, highlightNeighbors = true, highlightNumber = true)
-                    selected = newSelected
+                val field = newSelected!!
+                if (field == DEMO_CELL_INDEX_4 && introStep == 2) {
+                    gameAdapter.selectFieldView(field, highlightNeighbors = true, highlightNumber = true)
+                    selected = field
                     nextIntroStep()
                 }
             }
 
             // selected button
             in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
-                if (introStep == 4 && newSelected == sudoku.itemCount + 1) {
-                    selectButton(newSelected - sudoku.itemCount)
+                val button = newSelected!!
+                if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
+                    selectButton(button - sudoku.itemCount)
                     nextIntroStep()
                 }
             }
@@ -538,8 +598,9 @@ class IntroActivity : AppCompatActivity() {
 
             // selected number
             in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
-                if (introStep == 3 && newSelected == sudoku.itemCount + 4) {
-                    sudoku.move(position, newSelected - sudoku.itemCount + 1, false)
+                val number = newSelected!!
+                if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
+                    sudoku.move(position, number - sudoku.itemCount + 1, false)
                     selected = null
                     gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
                     nextIntroStep()
@@ -557,9 +618,12 @@ class IntroActivity : AppCompatActivity() {
 
             // selected field
             in 0 until sudoku.itemCount -> {
+                val field = newSelected!!
                 val number = selected!! - sudoku.itemCount + 1
-                if ((introStep == 5 && newSelected == 49) || (introStep == 6 && newSelected == 24)) {
-                    sudoku.move(newSelected, selected!! - sudoku.itemCount + 1, false)
+                if ((introStep == INTRO_STEP_5 && field == DEMO_CELL_INDEX_49) ||
+                    (introStep == INTRO_STEP_6 && field == DEMO_CELL_INDEX_24)
+                ) {
+                    sudoku.move(field, number, false)
                     gameAdapter.highlightNumber(number)
                     nextIntroStep()
                 }
@@ -592,11 +656,11 @@ class IntroActivity : AppCompatActivity() {
     }
 
     inner class SudokuGameListener : GameListener {
-        override fun onTimeChanged() {}
+        override fun onTimeChanged() { /* no-op */ }
 
-        override fun onError() {}
+        override fun onError() { /* no-op */ }
 
-        override fun onCompleted(position: Position) {}
+        override fun onCompleted(position: Position) { /* no-op */ }
 
         override fun onFieldClicked(position: Position) {
             lifecycleScope.launch { select(position.index) }
