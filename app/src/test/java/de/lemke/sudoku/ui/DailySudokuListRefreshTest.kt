@@ -137,21 +137,24 @@ class DailySudokuListRefreshTest {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         val viewModel = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus, testClock)
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
-        idle()
+        try {
+            idle()
 
-        save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
-        idle()
+            save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
+            idle()
 
-        val sudoku =
-            viewModel.state.value.sudokus
-                .filterIsInstance<SudokuItem>()
-                .single()
-                .sudoku
-        sudoku.errorsMade shouldBe 2
-        sudoku.seconds shouldBe 75
-        sudoku.progress shouldBe 100
-        sudoku.completed shouldBe true
-        collection.cancel()
+            val sudoku =
+                viewModel.state.value.sudokus
+                    .filterIsInstance<SudokuItem>()
+                    .single()
+                    .sudoku
+            sudoku.errorsMade shouldBe 2
+            sudoku.seconds shouldBe 75
+            sudoku.progress shouldBe 100
+            sudoku.completed shouldBe true
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test

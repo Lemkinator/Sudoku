@@ -147,22 +147,25 @@ class TabHistoryListRefreshTest {
         save(playedSudoku(filled = 0, errorsMade = 0, seconds = 0, updated = LocalDateTime.of(2026, 1, 15, 10, 0)))
         val viewModel = TabHistoryViewModel(userSettings, observeSudokuHistory, deleteSudokus)
         val collection = viewModel.sudokuHistory.launchIn(CoroutineScope(Dispatchers.Main))
-        idle()
+        try {
+            idle()
 
-        save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
-        idle()
+            save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
+            idle()
 
-        val sudoku =
-            viewModel.sudokuHistory.value
-                .filterIsInstance<SudokuItem>()
-                .first()
-                .sudoku
-        sudoku.id shouldBe playedId
-        sudoku.errorsMade shouldBe 2
-        sudoku.seconds shouldBe 75
-        sudoku.progress shouldBe 100
-        sudoku.completed shouldBe true
-        collection.cancel()
+            val sudoku =
+                viewModel.sudokuHistory.value
+                    .filterIsInstance<SudokuItem>()
+                    .first()
+                    .sudoku
+            sudoku.id shouldBe playedId
+            sudoku.errorsMade shouldBe 2
+            sudoku.seconds shouldBe 75
+            sudoku.progress shouldBe 100
+            sudoku.completed shouldBe true
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test

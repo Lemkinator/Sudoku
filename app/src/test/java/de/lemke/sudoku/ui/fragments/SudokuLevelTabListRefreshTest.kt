@@ -165,22 +165,25 @@ class SudokuLevelTabListRefreshTest {
                 SavedStateHandle(mapOf("size" to SIZE_4X4)),
             )
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
-        idle()
+        try {
+            idle()
 
-        save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
-        idle()
+            save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
+            idle()
 
-        val sudoku =
-            viewModel.state.value.sudokuLevel
-                .filterIsInstance<SudokuItem>()
-                .first()
-                .sudoku
-        sudoku.id shouldBe currentLevelId
-        sudoku.errorsMade shouldBe 2
-        sudoku.seconds shouldBe 75
-        sudoku.progress shouldBe 50
-        sudoku.completed shouldBe false
-        collection.cancel()
+            val sudoku =
+                viewModel.state.value.sudokuLevel
+                    .filterIsInstance<SudokuItem>()
+                    .first()
+                    .sudoku
+            sudoku.id shouldBe currentLevelId
+            sudoku.errorsMade shouldBe 2
+            sudoku.seconds shouldBe 75
+            sudoku.progress shouldBe 50
+            sudoku.completed shouldBe false
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test
