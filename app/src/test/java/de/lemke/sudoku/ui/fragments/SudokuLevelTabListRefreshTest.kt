@@ -35,6 +35,7 @@ import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
+import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.InitSudokuLevelUseCase
 import de.lemke.sudoku.domain.ObserveSudokuLevelUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -47,6 +48,7 @@ import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
 import java.time.LocalDateTime
@@ -116,6 +118,9 @@ class SudokuLevelTabListRefreshTest {
     @Inject
     lateinit var generateSudokuLevel: GenerateSudokuLevelUseCase
 
+    @Inject
+    lateinit var getSudoku: GetSudokuUseCase
+
     private val currentLevelId = SudokuId.generate()
 
     @Before
@@ -173,6 +178,29 @@ class SudokuLevelTabListRefreshTest {
         } finally {
             collection.cancel()
         }
+    }
+
+    @Test
+    fun `confirming a next level whose level is already saved keeps the saved progress`() {
+        save(completedLevelOne())
+        save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
+
+        runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
+
+        val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()
+        saved.errorsMade shouldBe 2
+        saved.seconds shouldBe 75
+        saved.progress shouldBe 50
+    }
+
+    @Test
+    fun `confirming a next level above the saved max level saves it`() {
+        save(completedLevelOne())
+
+        runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
+
+        runBlocking { getMaxSudokuLevel(SIZE_4X4) } shouldBe 2
+        runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull().modeLevel shouldBe 2
     }
 
     @Test

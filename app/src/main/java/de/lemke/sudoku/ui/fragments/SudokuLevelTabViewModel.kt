@@ -141,6 +141,6 @@ class SudokuLevelTabViewModel @Inject constructor(
     }
 
     suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
-        saveSudoku(sudoku)
+        if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku)
     }
 }

@@ -476,13 +476,23 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("onNextLevelSudokuConfirmed delegates to saveSudoku") {
-            val sudoku = testSudoku()
+        should("onNextLevelSudokuConfirmed saves a next level above the saved max level") {
+            coEvery { getMaxSudokuLevel(4) } returns 1
+            val sudoku = testSudoku(modeLevel = 2)
             val viewModel = newViewModel()
 
             viewModel.onNextLevelSudokuConfirmed(sudoku)
 
             coVerify(exactly = 1) { saveSudoku(sudoku) }
+        }
+
+        should("onNextLevelSudokuConfirmed does not save a next level whose level is already saved") {
+            coEvery { getMaxSudokuLevel(4) } returns 2
+            val viewModel = newViewModel()
+
+            viewModel.onNextLevelSudokuConfirmed(testSudoku(modeLevel = 2))
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
         }
     },
 )
