@@ -17,7 +17,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="AppCompatResource,HardcodedText,AlwaysShowAction">
+    tools:ignore="AppCompatResource,AlwaysShowAction">
 
     <group android:id="@+id/navigation_play_games_group">
 
