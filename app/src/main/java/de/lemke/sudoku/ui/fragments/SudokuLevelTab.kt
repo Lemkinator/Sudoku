@@ -65,7 +65,7 @@ class SudokuLevelTab : Fragment() {
     ) {
         super.onViewCreated(view, savedInstanceState)
         initRecycler()
-        collectState(viewModel.state, minActiveState = RESUMED) { state ->
+        collectState(viewModel.state) { state ->
             sudokuListAdapter.submitList(state.sudokuLevel)
             binding.sudokuLevelsRecycler.isVisible = !state.isLoading
             binding.tabLevelProgressBar.isVisible = state.isLoading || state.isGeneratingNextLevel

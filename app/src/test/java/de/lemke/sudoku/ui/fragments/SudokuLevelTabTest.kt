@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Looper
+import androidx.core.view.isVisible
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.BindValue
@@ -149,6 +150,18 @@ class SudokuLevelTabTest {
                 },
         )
     }
+
+    @Test
+    fun `an offscreen tab shows its loaded level list instead of the progress bar`() =
+        launch { fragment ->
+            fragment.isResumed.shouldBeFalse()
+
+            fragment.binding.tabLevelProgressBar.isVisible
+                .shouldBeFalse()
+            fragment.binding.sudokuLevelsRecycler.isVisible
+                .shouldBeTrue()
+            fragment.sudokuListAdapter.itemCount shouldBe 1
+        }
 
     @Test
     fun `clicking the auto-generated next level at position 0 confirms it and starts the game`() =
