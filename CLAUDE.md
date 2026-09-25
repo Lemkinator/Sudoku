@@ -99,8 +99,12 @@ CLAUDE.md convention).
 `common-utils` library, constructor-injected into ViewModels. `di/SettingsModule.kt` provides it via Hilt. Daily sudoku notifications
 scheduled via `AlarmReceiver`.
 
-**ViewModels:** One `@HiltViewModel`-annotated ViewModel per Activity/Fragment. Screen state (where present) as `StateFlow<UiState>` using
-Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events as `Channel<Event>(BUFFERED).receiveAsFlow()`.
+**ViewModels:** One `@HiltViewModel`-annotated ViewModel per Activity/Fragment. Room-derived list state is a `StateFlow<UiState>` built
+with common-utils' `stateInViewModel(viewModelScope, initialValue)`. It shares via `SharingStarted.WhileSubscribed` with a 5 s stop
+timeout, so Room queries run only while the screen collects. The upstream restarts on every return after that timeout. One-time init
+steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a `viewModelScope.async` that the upstream awaits. A
+`catch` ahead of `stateInViewModel` sends the screen's load-error event once per failed run; the next return retries. One-shot
+navigation/toast/finish events use `Channel<Event>(BUFFERED).receiveAsFlow()`.
 
 ## Notable Dependencies
 
