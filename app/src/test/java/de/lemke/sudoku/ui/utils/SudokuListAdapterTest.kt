@@ -37,6 +37,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -335,42 +336,23 @@ class SudokuListAdapterTest {
         holder.textView.text shouldBe "sentinel"
     }
 
-    // ListAdapter diffs every submitList after the first on a background thread.
-    private fun SudokuListAdapter.submitListAndAwait(list: List<SudokuListItem>) {
-        submitList(list)
-        val deadline = System.currentTimeMillis() + 5_000
-        while (currentList != list && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            Thread.sleep(5)
-        }
-        check(currentList == list) { "submitList's background diff did not complete within 5000ms" }
-    }
-
     @Test
     fun `submitList diffs sudoku and separator items across updates`() {
-        val sudokuA = sudokuFixture()
-        val itemA = SudokuItem(sudokuA, "A")
+        val idA = SudokuId.generate()
+        val created = LocalDateTime.of(2024, 3, 15, 10, 30)
         val separator = SeparatorItem("Sep")
         val adapter = buildAdapter()
-        adapter.submitListAndAwait(listOf(itemA, separator))
+        val recyclerView = layoutRecyclerViewWith(adapter)
 
-        adapter.currentList shouldBe listOf(itemA, separator)
+        adapter.submitList(listOf(SudokuItem(listSudoku(idA, Sudoku.MODE_NORMAL, 0, 0, 0, created), "A"), separator))
+        recyclerView.awaitSmallText(0, "00:00 | 0% | Errors: 0 | Hints: 0") shouldBe "00:00 | 0% | Errors: 0 | Hints: 0"
 
-        sudokuA.errorsMade = 5
-        val itemAChanged = SudokuItem(sudokuA, "A")
-        adapter.submitListAndAwait(listOf(itemAChanged, separator))
+        adapter.submitList(listOf(SudokuItem(listSudoku(idA, Sudoku.MODE_NORMAL, 16, 2, 75, created), "A"), separator))
+        recyclerView.awaitSmallText(0, "01:15 | Errors: 2 | Hints: 0") shouldBe "01:15 | Errors: 2 | Hints: 0"
 
-        adapter.currentList shouldBe listOf(itemAChanged, separator)
-
-        val itemB = SudokuItem(sudokuFixture(), "B")
-        adapter.submitListAndAwait(listOf(itemB))
-
-        adapter.currentList shouldBe listOf(itemB)
-
-        val otherSeparator = SeparatorItem("Other")
-        adapter.submitListAndAwait(listOf(otherSeparator))
-
-        adapter.currentList shouldBe listOf(otherSeparator)
+        adapter.submitList(listOf(SudokuItem(listSudoku(SudokuId.generate(), Sudoku.MODE_NORMAL, 4, 1, 30, created), "B")))
+        recyclerView.awaitSmallText(0, "00:30 | 25% | Errors: 1 | Hints: 0") shouldBe "00:30 | 25% | Errors: 1 | Hints: 0"
+        adapter.itemCount shouldBe 1
     }
 
     @Suppress("UNCHECKED_CAST")
