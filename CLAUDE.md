@@ -111,6 +111,8 @@ Kotlin's explicit-backing-field style; one-shot navigation/toast/finish events a
 - `com.google.android.gms:play-services-games-v2` — Play Games achievements/leaderboards
 - `io.kjson:kjson` — JSON serialization for import/export
 
+`app/src/main/res/values/games-ids.xml` is the verbatim Play Console export; never edit it.
+
 ## Static Analysis
 
 Four tools run as part of `./gradlew build`:
