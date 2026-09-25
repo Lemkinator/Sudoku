@@ -88,7 +88,11 @@ class DailySudokuViewModelTest : ShouldSpec(
                 advanceTimeBy(5_001)
                 runCurrent()
                 dailySudokus.subscriptionCount.value shouldBe 0
-                viewModel.state.test { cancelAndIgnoreRemainingEvents() }
+                viewModel.state.test {
+                    runCurrent()
+                    dailySudokus.subscriptionCount.value shouldBe 1
+                    cancelAndIgnoreRemainingEvents()
+                }
 
                 coVerify(exactly = 1) { initDailySudokus(LocalDate.of(2026, 1, 15)) }
             }

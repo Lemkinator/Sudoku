@@ -37,6 +37,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -176,7 +177,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 every { observeSudokuLevel(4) } returns levelFlow
                 coEvery { getMaxSudokuLevel(4) } returns 1
                 val nextLevelSudoku = testSudoku(modeLevel = 2)
-                coEvery { generateSudokuLevel(4, 2) } returns nextLevelSudoku
+                coEvery { generateSudokuLevel(4, 2) } returnsMany listOf(nextLevelSudoku, testSudoku(modeLevel = 2))
                 levelFlow.emit(listOf(SudokuItem(testSudoku(completed = true), "1")))
                 val viewModel = newViewModel()
                 viewModel.state.test {
@@ -189,6 +190,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     advanceUntilIdle()
+                    levelFlow.subscriptionCount.value shouldBe 1
                     val shownNextLevel = expectMostRecentItem().sudokuLevel.first() as SudokuItem
                     shownNextLevel.sudoku shouldBeSameInstanceAs nextLevelSudoku
                 }
@@ -245,15 +247,22 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("an initSudokuLevel failure emits ShowLoadError once, also when state is collected again after the stop timeout") {
+        should("an initSudokuLevel failure emits ShowLoadError once, and a collection after the stop timeout re-runs the upstream") {
             runTest {
-                coEvery { initSudokuLevel(4) } throws RuntimeException("init failed")
+                val initResult = CompletableDeferred<Unit>()
+                coEvery { initSudokuLevel(4) } coAnswers { initResult.await() }
                 val viewModel = newViewModel()
 
-                viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false) }
+                viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState() }
                 advanceTimeBy(5_001)
                 runCurrent()
-                viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false) }
+                initResult.completeExceptionally(RuntimeException("init failed"))
+                runCurrent()
+                viewModel.state.value shouldBe SudokuLevelTabUiState()
+                viewModel.state.test {
+                    runCurrent()
+                    expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false)
+                }
 
                 coVerify(exactly = 1) { initSudokuLevel(4) }
                 viewModel.events.test {
