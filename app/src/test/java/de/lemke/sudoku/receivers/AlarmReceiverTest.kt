@@ -19,22 +19,16 @@ package de.lemke.sudoku.receivers
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.app.AlarmManager
 import android.app.Notification
+import android.app.NotificationManager
 import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
-import dagger.hilt.android.testing.BindValue
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EarlyEntryPoint
+import dagger.hilt.android.EarlyEntryPoints
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
-import de.lemke.commonutils.bypassOobe
-import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.R
+import dagger.hilt.components.SingletonComponent
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -47,106 +41,94 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowNotificationManager
+
+@EarlyEntryPoint
+@InstallIn(SingletonComponent::class)
+interface AlarmReceiverTestEntryPoint {
+    fun userSettings(): UserSettings
+
+    fun saveSudoku(): SaveSudokuUseCase
+
+    fun sendDailyNotification(): SendDailyNotificationUseCase
+}
 
 /**
- * Hilt's `@AndroidEntryPoint` transform injects inside `onReceive`, so only a real broadcast dispatch runs it.
+ * No HiltAndroidRule: the receiver must work before any test component exists. The early component it reads ignores
+ * @BindValue and @UninstallModules, so the tests seed through that graph and await the receiver's goAsync result.
  *
  * sdk = 36: Robolectric's max supported SDK.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
-@HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class AlarmReceiverTest {
-    @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
-
-    @Inject
-    lateinit var settings: SettingsRepository
-
-    @Inject
-    lateinit var userSettings: UserSettings
-
-    @Inject
-    lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
-    lateinit var sendDailyNotification: SendDailyNotificationUseCase
+    private val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+    private val graph = EarlyEntryPoints.get(context, AlarmReceiverTestEntryPoint::class.java)
+    private val notificationManager = shadowOf(context.getSystemService(NotificationManager::class.java))
+    private val alarmManager = shadowOf(context.getSystemService(AlarmManager::class.java))
 
     @Before
     fun setup() {
-        hiltRule.inject()
-        settings.bypassOobe()
-        shadowOf(ApplicationProvider.getApplicationContext<HiltTestApplication>()).grantPermissions(POST_NOTIFICATIONS)
+        shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
     }
 
     private fun broadcast(action: String) {
-        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         context.sendBroadcast(Intent(context, AlarmReceiver::class.java).setAction(action))
         shadowOf(Looper.getMainLooper()).idle()
+        val receiver =
+            shadowOf(context)
+                .registeredReceivers
+                .map { it.broadcastReceiver }
+                .filterIsInstance<AlarmReceiver>()
+                .single()
+        shadowOf(shadowOf(receiver).originalPendingResult).future.get(10, TimeUnit.SECONDS)
     }
 
-    private fun notificationManager(): ShadowNotificationManager {
-        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        return shadowOf(context.getSystemService(android.app.NotificationManager::class.java))
+    private fun scheduledHourAndMinute(): Pair<Int, Int> {
+        val alarm = alarmManager.peekNextScheduledAlarm().shouldNotBeNull()
+        alarm.getType() shouldBe AlarmManager.RTC_WAKEUP
+        val trigger = Calendar.getInstance().apply { timeInMillis = alarm.triggerAtMs }
+        return trigger.get(Calendar.HOUR_OF_DAY) to trigger.get(Calendar.MINUTE)
     }
 
     @Test
     fun `onReceive sends the daily notification when enabled and today's sudoku is not completed`() {
-        userSettings.dailySudokuNotificationEnabled = true
+        graph.userSettings().dailySudokuNotificationEnabled = true
+
         broadcast("de.lemke.sudoku.TEST_ALARM")
 
-        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val notifications = notificationManager().allNotifications
+        val notifications = notificationManager.allNotifications
         notifications shouldHaveSize 1
         val notification = notifications.single()
-        notification.channelId shouldBe context.getString(R.string.daily_sudoku_notification_channel_id)
-        notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString() shouldBe context.getString(R.string.daily_sudoku)
+        notification.channelId shouldBe "Daily_Sudoku_Notification_Channel"
+        notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString() shouldBe "Daily Sudoku"
+        notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString() shouldBe "Hey, it is time for your daily Sudoku!"
+        scheduledHourAndMinute() shouldBe (9 to 0)
     }
 
     @Test
     fun `onReceive does not send a notification and cancels the alarm when disabled`() {
-        sendDailyNotification.setDailySudokuNotification(enable = true)
-        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
-        userSettings.dailySudokuNotificationEnabled = false
+        graph.sendDailyNotification().setDailySudokuNotification(enable = true)
+        alarmManager.peekNextScheduledAlarm().shouldNotBeNull()
+        graph.userSettings().dailySudokuNotificationEnabled = false
+
         broadcast("de.lemke.sudoku.TEST_ALARM")
-        notificationManager().allNotifications.shouldBeEmpty()
-        shadowOf(alarmManager()).nextScheduledAlarm.shouldBeNull()
+
+        notificationManager.allNotifications.shouldBeEmpty()
+        alarmManager.peekNextScheduledAlarm().shouldBeNull()
     }
 
     @Test
     fun `onReceive does not send a notification when today's daily sudoku is already completed`() {
-        userSettings.dailySudokuNotificationEnabled = true
+        graph.userSettings().dailySudokuNotificationEnabled = true
         val size = 4
         val blockSize = 2
         val today =
@@ -162,30 +144,33 @@ class AlarmReceiverTest {
                         Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
                     },
             )
-        runBlocking { saveSudoku(today) }
-        broadcast("de.lemke.sudoku.TEST_ALARM")
-        notificationManager().allNotifications.shouldBeEmpty()
-        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
-    }
+        runBlocking { graph.saveSudoku()(today) }
 
-    private fun alarmManager(): AlarmManager {
-        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        return context.getSystemService(AlarmManager::class.java)
+        broadcast("de.lemke.sudoku.TEST_ALARM")
+
+        notificationManager.allNotifications.shouldBeEmpty()
+        scheduledHourAndMinute() shouldBe (9 to 0)
     }
 
     @Test
     fun `onReceive on BOOT_COMPLETED does not send a notification but reschedules`() {
-        userSettings.dailySudokuNotificationEnabled = true
+        graph.userSettings().dailySudokuNotificationEnabled = true
+        graph.userSettings().dailySudokuNotificationHour = 18
+        graph.userSettings().dailySudokuNotificationMinute = 30
+
         broadcast(Intent.ACTION_BOOT_COMPLETED)
-        notificationManager().allNotifications.shouldBeEmpty()
-        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
+
+        notificationManager.allNotifications.shouldBeEmpty()
+        scheduledHourAndMinute() shouldBe (18 to 30)
     }
 
     @Test
     fun `onReceive on MY_PACKAGE_REPLACED does not send a notification but reschedules`() {
-        userSettings.dailySudokuNotificationEnabled = true
+        graph.userSettings().dailySudokuNotificationEnabled = true
+
         broadcast(Intent.ACTION_MY_PACKAGE_REPLACED)
-        notificationManager().allNotifications.shouldBeEmpty()
-        shadowOf(alarmManager()).nextScheduledAlarm.shouldNotBeNull()
+
+        notificationManager.allNotifications.shouldBeEmpty()
+        scheduledHourAndMinute() shouldBe (9 to 0)
     }
 }
