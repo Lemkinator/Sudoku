@@ -424,7 +424,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("inner failure sets isGeneratingNextLevel false and emits ShowLoadError when generateSudokuLevel throws") {
+        should("a generateSudokuLevel failure on the first emission stops loading and generating and emits ShowLoadError") {
             every { observeSudokuLevel(4) } returns flowOf(emptyList())
             coEvery { getMaxSudokuLevel(4) } returns 5
             coEvery { generateSudokuLevel(4, 6) } throws RuntimeException("generate failed")
@@ -432,7 +432,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.state.test {
-                expectMostRecentItem() shouldBe SudokuLevelTabUiState(isGeneratingNextLevel = false)
+                expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false, isGeneratingNextLevel = false)
             }
             viewModel.events.test {
                 awaitItem() shouldBe SudokuLevelTabEvent.ShowLoadError

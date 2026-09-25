@@ -113,7 +113,7 @@ class SudokuLevelTabViewModel @Inject constructor(
                         }
                     }.onFailure { e ->
                         if (e is CancellationException) throw e
-                        emit(state.value.copy(isGeneratingNextLevel = false))
+                        emit(state.value.copy(isLoading = false, isGeneratingNextLevel = false))
                         _events.send(SudokuLevelTabEvent.ShowLoadError)
                     }
             } else {
