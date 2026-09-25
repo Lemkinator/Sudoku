@@ -23,6 +23,11 @@ sealed class SudokuListItem {
     data class SudokuItem(val sudoku: Sudoku, override val label: String) : SudokuListItem() {
         override val stableId: Long get() = sudoku.hashCode().toLong()
 
+        // Sudoku.equals compares only the id, and a StateFlow drops a list that equals its current one.
+        override fun equals(other: Any?): Boolean = other is SudokuItem && label == other.label && sudoku.contentEquals(other.sudoku)
+
+        override fun hashCode(): Int = 31 * sudoku.hashCode() + label.hashCode()
+
         companion object {
             const val VIEW_TYPE = 0
         }
