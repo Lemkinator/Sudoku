@@ -49,7 +49,6 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
-import de.lemke.sudoku.resetFileProviderCache
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
@@ -110,7 +109,6 @@ class SudokuActivityShareTest {
         hiltRule.inject()
         settings.bypassOobe()
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
-        resetFileProviderCache()
     }
 
     private fun formulaicSudoku(

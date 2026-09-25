@@ -29,7 +29,6 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.resetFileProviderCache
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -37,7 +36,6 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -82,9 +80,6 @@ private fun testSudoku(
 class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val useCase = ShareSudokuUseCase(context, UnconfinedTestDispatcher())
-
-    @Before
-    fun resetFileProviderStrategyCache() = resetFileProviderCache()
 
     @Test
     fun `invoke writes the exported sudoku as JSON readable back through the returned uri`() =
