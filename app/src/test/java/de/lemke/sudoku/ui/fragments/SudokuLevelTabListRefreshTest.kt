@@ -41,8 +41,12 @@ import de.lemke.sudoku.domain.ObserveSudokuLevelUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
+import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuLevelActivity
@@ -153,6 +157,14 @@ class SudokuLevelTabListRefreshTest {
             created = LocalDateTime.of(2026, 1, 15, 9, 0),
         )
 
+    private fun dailySudoku(): Sudoku =
+        Sudoku.create(
+            size = SIZE_9X9,
+            difficulty = Difficulty.EASY,
+            modeLevel = Sudoku.MODE_DAILY,
+            fields = MutableList(SIZE_9X9 * SIZE_9X9) { Field(Position.create(it, SIZE_9X9), solution = it % SIZE_9X9 + 1) },
+        )
+
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()
@@ -175,6 +187,22 @@ class SudokuLevelTabListRefreshTest {
             sudoku.seconds shouldBe 75
             sudoku.progress shouldBe 50
             sudoku.completed shouldBe false
+        } finally {
+            collection.cancel()
+        }
+    }
+
+    @Test
+    fun `the next level after a daily-only 9x9 history is level 1`() {
+        save(dailySudoku())
+        val viewModel = newViewModel(SIZE_9X9)
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
+        try {
+            idle()
+
+            viewModel.state.value.sudokuLevel
+                .first()
+                .label shouldBe "1"
         } finally {
             collection.cancel()
         }
@@ -253,14 +281,14 @@ class SudokuLevelTabListRefreshTest {
         }
     }
 
-    private fun newViewModel() =
+    private fun newViewModel(size: Int = SIZE_4X4) =
         SudokuLevelTabViewModel(
             initSudokuLevel,
             observeSudokuLevel,
             getMaxSudokuLevel,
             generateSudokuLevel,
             saveSudoku,
-            SavedStateHandle(mapOf("size" to SIZE_4X4)),
+            SavedStateHandle(mapOf("size" to size)),
         )
 
     private fun topSudoku(viewModel: SudokuLevelTabViewModel): Sudoku =
