@@ -337,7 +337,7 @@ class SudokuListAdapterTest {
     }
 
     @Test
-    fun `submitList diffs sudoku and separator items across updates`() {
+    fun `submitList rebinds a row whose sudoku keeps its id but changes stats`() {
         val idA = SudokuId.generate()
         val created = LocalDateTime.of(2024, 3, 15, 10, 30)
         val separator = SeparatorItem("Sep")

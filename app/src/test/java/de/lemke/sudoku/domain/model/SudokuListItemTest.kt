@@ -19,6 +19,8 @@ package de.lemke.sudoku.domain.model
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.equals.shouldNotBeEqual
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 
@@ -27,38 +29,48 @@ class SudokuListItemTest : ShouldSpec(
         val id = SudokuId("list-item")
         val fields = MutableList(4) { index -> Field(Position.create(index, 2), solution = index + 1) }
 
-        fun sudoku(errorsMade: Int = 0): Sudoku =
+        fun sudoku(
+            errorsMade: Int = 0,
+            seconds: Int = 0,
+            hintsUsed: Int = 0,
+        ): Sudoku =
             Sudoku.create(
                 sudokuId = id,
                 size = 2,
                 difficulty = Difficulty.VERY_EASY,
                 modeLevel = Sudoku.MODE_NORMAL,
+                hintsUsed = hintsUsed,
                 errorsMade = errorsMade,
                 created = LocalDateTime.of(2026, 1, 15, 9, 0),
                 updated = LocalDateTime.of(2026, 1, 15, 9, 0),
+                seconds = seconds,
                 fields = fields,
             )
 
-        should("equal an item over another instance with the same content, with the same hash code") {
-            val item = SudokuItem(sudoku(), "15.01.26")
-            val same = SudokuItem(sudoku(), "15.01.26")
+        should("equal an item over another instance with the same fields, with the same hash code") {
+            val item = SudokuItem(sudoku(errorsMade = 2, seconds = 75, hintsUsed = 1), "15.01.26")
+            val same = SudokuItem(sudoku(errorsMade = 2, seconds = 75, hintsUsed = 1), "15.01.26")
 
-            (item == same) shouldBe true
+            item shouldBeEqual same
             item.hashCode() shouldBe same.hashCode()
         }
 
-        should("not equal an item whose sudoku has the same id but other stats") {
-            (SudokuItem(sudoku(errorsMade = 0), "15.01.26") == SudokuItem(sudoku(errorsMade = 2), "15.01.26")) shouldBe false
+        should("not equal an item whose sudoku has the same id but other errors, seconds or hints") {
+            val item = SudokuItem(sudoku(), "15.01.26")
+
+            item shouldNotBeEqual SudokuItem(sudoku(errorsMade = 2), "15.01.26")
+            item shouldNotBeEqual SudokuItem(sudoku(seconds = 75), "15.01.26")
+            item shouldNotBeEqual SudokuItem(sudoku(hintsUsed = 1), "15.01.26")
         }
 
         should("not equal an item over the same sudoku with another label") {
-            (SudokuItem(sudoku(), "15.01.26") == SudokuItem(sudoku(), "16.01.26")) shouldBe false
+            SudokuItem(sudoku(), "15.01.26") shouldNotBeEqual SudokuItem(sudoku(), "16.01.26")
         }
 
         should("not equal a separator with the same label") {
             val item: SudokuListItem = SudokuItem(sudoku(), "15.01.26")
 
-            (item == SeparatorItem("15.01.26")) shouldBe false
+            item shouldNotBeEqual SeparatorItem("15.01.26")
         }
     },
 )
