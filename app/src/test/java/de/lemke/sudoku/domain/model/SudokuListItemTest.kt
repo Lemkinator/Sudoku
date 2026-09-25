@@ -67,6 +67,12 @@ class SudokuListItemTest : ShouldSpec(
             SudokuItem(sudoku(), "15.01.26") shouldNotBeEqual SudokuItem(sudoku(), "16.01.26")
         }
 
+        should("print its sudoku and label") {
+            val sudoku = sudoku()
+
+            SudokuItem(sudoku, "7").toString() shouldBe "SudokuItem(sudoku=$sudoku, label=7)"
+        }
+
         should("not equal a separator with the same label") {
             val item: SudokuListItem = SudokuItem(sudoku(), "15.01.26")
 

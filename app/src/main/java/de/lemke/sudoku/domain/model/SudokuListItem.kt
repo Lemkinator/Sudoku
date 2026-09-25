@@ -28,6 +28,8 @@ sealed class SudokuListItem {
 
         override fun hashCode(): Int = 31 * sudoku.hashCode() + label.hashCode()
 
+        override fun toString() = "SudokuItem(sudoku=$sudoku, label=$label)"
+
         companion object {
             const val VIEW_TYPE = 0
         }
