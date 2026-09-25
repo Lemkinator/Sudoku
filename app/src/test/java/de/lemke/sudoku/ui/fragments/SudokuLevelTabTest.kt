@@ -30,7 +30,10 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.di.SolvedBoardGeneratorModule
+import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
@@ -60,7 +63,7 @@ import org.robolectric.annotation.Config
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
+@UninstallModules(DispatchersModule::class, SolvedBoardGeneratorModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -82,6 +85,10 @@ class SudokuLevelTabTest {
     @MainDispatcher
     @JvmField
     val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+
+    @BindValue
+    @JvmField
+    val solvedBoardGenerator: SolvedBoardGenerator = PatternSolvedBoardGenerator()
 
     @Inject
     lateinit var settings: SettingsRepository

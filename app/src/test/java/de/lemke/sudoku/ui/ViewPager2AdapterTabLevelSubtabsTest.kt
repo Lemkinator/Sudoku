@@ -17,13 +17,18 @@
 package de.lemke.sudoku.ui
 
 import androidx.test.core.app.ActivityScenario
+import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.sudoku.di.SolvedBoardGeneratorModule
+import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
+import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
-import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import org.junit.Before
 import org.junit.Rule
@@ -33,12 +38,17 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /** sdk = 36: Robolectric's max supported SDK. */
+@UninstallModules(SolvedBoardGeneratorModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class ViewPager2AdapterTabLevelSubtabsTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
+
+    @BindValue
+    @JvmField
+    val solvedBoardGenerator: SolvedBoardGenerator = PatternSolvedBoardGenerator()
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -54,11 +64,8 @@ class ViewPager2AdapterTabLevelSubtabsTest {
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val adapter = ViewPager2AdapterTabLevelSubtabs(activity)
-                listOf(0, 1, 2, 3).forEach { position ->
-                    val fragment = adapter.createFragment(position)
-                    val size = (fragment as SudokuLevelTab).arguments?.getInt("size")
-                    size.shouldNotBeNull()
-                }
+                val sizes = listOf(0, 1, 2, 3).map { (adapter.createFragment(it) as SudokuLevelTab).arguments?.getInt("size") }
+                sizes shouldBe listOf(4, 9, 16, 9)
             }
         }
     }
