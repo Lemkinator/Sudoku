@@ -51,8 +51,10 @@ import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
@@ -162,6 +164,7 @@ class SudokuLevelTabListRefreshTest {
                 saveSudoku,
                 SavedStateHandle(mapOf("size" to SIZE_4X4)),
             )
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         idle()
 
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
@@ -177,6 +180,7 @@ class SudokuLevelTabListRefreshTest {
         sudoku.seconds shouldBe 75
         sudoku.progress shouldBe 50
         sudoku.completed shouldBe false
+        collection.cancel()
     }
 
     @Test

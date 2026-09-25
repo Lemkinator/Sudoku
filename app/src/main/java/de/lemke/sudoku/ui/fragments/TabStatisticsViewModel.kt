@@ -19,19 +19,20 @@ package de.lemke.sudoku.ui.fragments
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.lemke.commonutils.ui.utils.stateInViewModel
 import de.lemke.sudoku.domain.CalculateStatisticsUseCase
 import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
 import de.lemke.sudoku.domain.model.SudokuStatistics
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.transformLatest
 
 data class TabStatisticsUiState(
     val statistics: SudokuStatistics? = null,
@@ -47,25 +48,19 @@ class TabStatisticsViewModel @Inject constructor(
     private val observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase,
     private val calculateStatistics: CalculateStatisticsUseCase,
 ) : ViewModel() {
-    val state: StateFlow<TabStatisticsUiState>
-        field = MutableStateFlow(TabStatisticsUiState())
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val state: StateFlow<TabStatisticsUiState> =
+        observeSudokusAndStatisticsFilterFlags()
+            .transformLatest { filterFlags ->
+                emit(state.value.copy(isLoading = true))
+                val statistics = calculateStatistics(filterFlags)
+                emit(TabStatisticsUiState(statistics = statistics, isLoading = false))
+            }.catch { e ->
+                if (e is CancellationException) throw e
+                emit(state.value.copy(isLoading = false))
+                _events.send(TabStatisticsEvent.ShowLoadError)
+            }.stateInViewModel(viewModelScope, TabStatisticsUiState())
 
     private val _events = Channel<TabStatisticsEvent>(BUFFERED)
     val events: Flow<TabStatisticsEvent> = _events.receiveAsFlow()
-
-    init {
-        viewModelScope.launch {
-            runCatching {
-                observeSudokusAndStatisticsFilterFlags().collectLatest { filterFlags ->
-                    state.value = state.value.copy(isLoading = true)
-                    val statistics = calculateStatistics(filterFlags)
-                    state.value = TabStatisticsUiState(statistics = statistics, isLoading = false)
-                }
-            }.onFailure { e ->
-                if (e is CancellationException) throw e
-                state.value = state.value.copy(isLoading = false)
-                _events.send(TabStatisticsEvent.ShowLoadError)
-            }
-        }
-    }
 }

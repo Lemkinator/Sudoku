@@ -25,11 +25,13 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 
 class TabStatisticsViewModelTest : ShouldSpec(
@@ -43,6 +45,24 @@ class TabStatisticsViewModelTest : ShouldSpec(
 
         fun newViewModel() = TabStatisticsViewModel(observeSudokusAndStatisticsFilterFlags, calculateStatistics)
 
+        should("observe the sudokus and calculate statistics only while state is collected") {
+            val sudokusFlow = MutableSharedFlow<List<Sudoku>>(replay = 1)
+            every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
+            val statistics = mockk<SudokuStatistics>()
+            coEvery { calculateStatistics(emptyList()) } returns statistics
+
+            val viewModel = newViewModel()
+            sudokusFlow.emit(emptyList())
+
+            sudokusFlow.subscriptionCount.value shouldBe 0
+            viewModel.state.value shouldBe TabStatisticsUiState()
+            coVerify(exactly = 0) { calculateStatistics(any()) }
+            viewModel.state.test {
+                expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = statistics, isLoading = false)
+                sudokusFlow.subscriptionCount.value shouldBe 1
+            }
+        }
+
         should("stays loading while computing, then settles with the computed statistics per emission") {
             val sudokusFlow = MutableSharedFlow<List<Sudoku>>(extraBufferCapacity = 1)
             every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
@@ -53,6 +73,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
 
             viewModel.state.test {
                 awaitItem() shouldBe TabStatisticsUiState()
+                sudokusFlow.subscriptionCount.value shouldBe 1
 
                 sudokusFlow.emit(emptyList())
                 val firstStats = mockk<SudokuStatistics>()
@@ -74,11 +95,13 @@ class TabStatisticsViewModelTest : ShouldSpec(
         }
 
         should("init sets isLoading false and emits ShowLoadError when observeSudokusAndStatisticsFilterFlags throws") {
-            every { observeSudokusAndStatisticsFilterFlags() } throws RuntimeException("observe failed")
+            every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw IllegalStateException("observe failed") }
 
             val viewModel = newViewModel()
 
-            viewModel.state.value shouldBe TabStatisticsUiState(isLoading = false)
+            viewModel.state.test {
+                expectMostRecentItem() shouldBe TabStatisticsUiState(isLoading = false)
+            }
             viewModel.events.test {
                 awaitItem() shouldBe TabStatisticsEvent.ShowLoadError
             }
@@ -90,18 +113,22 @@ class TabStatisticsViewModelTest : ShouldSpec(
 
             val viewModel = newViewModel()
 
-            viewModel.state.value shouldBe TabStatisticsUiState(isLoading = false)
+            viewModel.state.test {
+                expectMostRecentItem() shouldBe TabStatisticsUiState(isLoading = false)
+            }
             viewModel.events.test {
                 awaitItem() shouldBe TabStatisticsEvent.ShowLoadError
             }
         }
 
         should("init does not treat CancellationException as a load failure") {
-            every { observeSudokusAndStatisticsFilterFlags() } throws CancellationException("cancelled")
+            every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw CancellationException("cancelled") }
 
             val viewModel = newViewModel()
 
-            viewModel.state.value shouldBe TabStatisticsUiState()
+            viewModel.state.test {
+                expectMostRecentItem() shouldBe TabStatisticsUiState()
+            }
             viewModel.events.test { expectNoEvents() }
         }
     },

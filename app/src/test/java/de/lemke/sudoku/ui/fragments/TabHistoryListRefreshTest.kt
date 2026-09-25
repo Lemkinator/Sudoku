@@ -47,8 +47,10 @@ import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
@@ -144,6 +146,7 @@ class TabHistoryListRefreshTest {
         save(olderSudoku())
         save(playedSudoku(filled = 0, errorsMade = 0, seconds = 0, updated = LocalDateTime.of(2026, 1, 15, 10, 0)))
         val viewModel = TabHistoryViewModel(userSettings, observeSudokuHistory, deleteSudokus)
+        val collection = viewModel.sudokuHistory.launchIn(CoroutineScope(Dispatchers.Main))
         idle()
 
         save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
@@ -159,6 +162,7 @@ class TabHistoryListRefreshTest {
         sudoku.seconds shouldBe 75
         sudoku.progress shouldBe 100
         sudoku.completed shouldBe true
+        collection.cancel()
     }
 
     @Test

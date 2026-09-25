@@ -48,8 +48,10 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
@@ -134,6 +136,7 @@ class DailySudokuListRefreshTest {
     fun `the state carries the new stats when the daily sudoku is saved again under the same id`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         val viewModel = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus, testClock)
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         idle()
 
         save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
@@ -148,6 +151,7 @@ class DailySudokuListRefreshTest {
         sudoku.seconds shouldBe 75
         sudoku.progress shouldBe 100
         sudoku.completed shouldBe true
+        collection.cancel()
     }
 
     @Test

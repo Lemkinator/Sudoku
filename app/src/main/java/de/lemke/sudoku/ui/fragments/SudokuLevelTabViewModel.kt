@@ -20,6 +20,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.lemke.commonutils.ui.utils.stateInViewModel
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.InitSudokuLevelUseCase
@@ -31,15 +32,18 @@ import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.transformLatest
 
 private const val SCROLL_TO_TOP_DELAY_MS = 200L
 
@@ -67,53 +71,67 @@ class SudokuLevelTabViewModel @Inject constructor(
 ) : ViewModel() {
     private val size: Int = savedStateHandle["size"] ?: Sudoku.SIZE_4X4
 
-    val state: StateFlow<SudokuLevelTabUiState>
-        field = MutableStateFlow(SudokuLevelTabUiState())
+    val state: StateFlow<SudokuLevelTabUiState> =
+        flow {
+            if (levelInitialized.await()) emitAll(levelStates()) else emit(SudokuLevelTabUiState(isLoading = false))
+        }.stateInViewModel(viewModelScope, SudokuLevelTabUiState())
 
     private val _events = Channel<SudokuLevelTabEvent>(BUFFERED)
     val events: Flow<SudokuLevelTabEvent> = _events.receiveAsFlow()
 
-    init {
-        viewModelScope.launch {
+    private val levelInitialized: Deferred<Boolean> =
+        viewModelScope.async {
             runCatching { initSudokuLevel(size) }
                 .onFailure { e ->
                     if (e is CancellationException) throw e
-                    state.value = state.value.copy(isLoading = false)
                     _events.send(SudokuLevelTabEvent.ShowLoadError)
-                }.onSuccess {
-                    observeSudokuLevel(size).collectLatest { sudokuLevel ->
-                        runCatching {
-                            if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
-                                state.value = state.value.copy(isGeneratingNextLevel = true)
-                                val nextLevelSudoku = generateSudokuLevel(size, level = getMaxSudokuLevel(size) + 1)
-                                val levelWithNext =
-                                    listOf(SudokuItem(nextLevelSudoku, nextLevelSudoku.modeLevel.toString())) + sudokuLevel
-                                state.value =
-                                    SudokuLevelTabUiState(
-                                        sudokuLevel = levelWithNext,
-                                        isLoading = false,
-                                        isGeneratingNextLevel = false,
-                                        hasNextLevelToStart = true,
-                                    )
-                                delay(SCROLL_TO_TOP_DELAY_MS.milliseconds)
-                                _events.send(SudokuLevelTabEvent.ScrollToTop)
-                            } else {
-                                state.value =
-                                    SudokuLevelTabUiState(
-                                        sudokuLevel = sudokuLevel,
-                                        isLoading = false,
-                                        isGeneratingNextLevel = false,
-                                        hasNextLevelToStart = false,
-                                    )
-                            }
-                        }.onFailure { e ->
-                            if (e is CancellationException) throw e
-                            state.value = state.value.copy(isGeneratingNextLevel = false)
-                            _events.send(SudokuLevelTabEvent.ShowLoadError)
-                        }
-                    }
-                }
+                }.isSuccess
         }
+
+    private var nextLevelSudoku: Sudoku? = null
+    private var scrolledToNextLevelSudoku: Sudoku? = null
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun levelStates(): Flow<SudokuLevelTabUiState> =
+        observeSudokuLevel(size).transformLatest { sudokuLevel ->
+            if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
+                emit(state.value.copy(isGeneratingNextLevel = true))
+                runCatching { findOrGenerateNextLevelSudoku() }
+                    .onSuccess { nextLevel ->
+                        emit(
+                            SudokuLevelTabUiState(
+                                sudokuLevel = listOf(SudokuItem(nextLevel, nextLevel.modeLevel.toString())) + sudokuLevel,
+                                isLoading = false,
+                                isGeneratingNextLevel = false,
+                                hasNextLevelToStart = true,
+                            ),
+                        )
+                        if (nextLevel !== scrolledToNextLevelSudoku) {
+                            delay(SCROLL_TO_TOP_DELAY_MS.milliseconds)
+                            scrolledToNextLevelSudoku = nextLevel
+                            _events.send(SudokuLevelTabEvent.ScrollToTop)
+                        }
+                    }.onFailure { e ->
+                        if (e is CancellationException) throw e
+                        emit(state.value.copy(isGeneratingNextLevel = false))
+                        _events.send(SudokuLevelTabEvent.ShowLoadError)
+                    }
+            } else {
+                emit(
+                    SudokuLevelTabUiState(
+                        sudokuLevel = sudokuLevel,
+                        isLoading = false,
+                        isGeneratingNextLevel = false,
+                        hasNextLevelToStart = false,
+                    ),
+                )
+            }
+        }
+
+    private suspend fun findOrGenerateNextLevelSudoku(): Sudoku {
+        val level = getMaxSudokuLevel(size) + 1
+        return nextLevelSudoku?.takeIf { it.modeLevel == level }
+            ?: generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
     suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
