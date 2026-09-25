@@ -17,9 +17,11 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Looper
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.IntentCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -28,6 +30,7 @@ import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.ShadowFileProvider
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
@@ -35,6 +38,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -47,8 +51,8 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.resetFileProviderCache
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
-import java.io.File
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.math.sqrt
@@ -57,7 +61,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -73,7 +76,7 @@ import org.robolectric.shadows.ShadowDialog
 @UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
-@Config(application = HiltTestApplication::class, sdk = [36])
+@Config(application = HiltTestApplication::class, sdk = [36], shadows = [ShadowFileProvider::class])
 class SudokuActivityShareTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
@@ -176,6 +179,21 @@ class SudokuActivityShareTest {
         check(condition()) { "share chooser was not started within ${timeoutMillis}ms" }
     }
 
+    private fun levelSudokuWithAnEntry(): Sudoku = formulaicSudoku(4, modeLevel = 3).apply { fields[1].value = 2 }
+
+    private fun sharedSudoku(activity: SudokuActivity): SudokuExport {
+        val chooser = shadowOf(activity).nextStartedActivity
+        chooser.action shouldBe Intent.ACTION_CHOOSER
+        val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
+        send.type shouldBe "application/sudoku"
+        val uri = IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java)!!
+        return activity.contentResolver
+            .openInputStream(uri)!!
+            .bufferedReader()
+            .use { it.readText() }
+            .parseJSON<SudokuExport>()
+    }
+
     @Test
     fun `sharing as text starts a plain-text share chooser`() =
         launch(formulaicSudoku(4)) { activity ->
@@ -184,26 +202,25 @@ class SudokuActivityShareTest {
             started.action shouldBe Intent.ACTION_CHOOSER
         }
 
-    // FileProvider's SimplePathStrategy hardcodes '/' as separator, so this fails on a Windows JVM.
     @Test
-    fun `sharing the initial board exports and starts a file share chooser`() {
-        assumeTrue(File.separatorChar == '/')
-        launch(formulaicSudoku(4)) { activity ->
+    fun `sharing the initial board shares a normal sudoku file without the player's entries`() =
+        launch(levelSudokuWithAnEntry()) { activity ->
             shareVia(activity, R.id.radioButtonInitial)
-            val started = shadowOf(activity).nextStartedActivity
-            started.action shouldBe Intent.ACTION_CHOOSER
+            val shared = sharedSudoku(activity)
+            shared.modeLevel shouldBe 0
+            shared.fields[0].value shouldBe 1
+            shared.fields[1].value shouldBe null
         }
-    }
 
     @Test
-    fun `sharing the current board exports and starts a file share chooser`() {
-        assumeTrue(File.separatorChar == '/')
-        launch(formulaicSudoku(4)) { activity ->
+    fun `sharing the current board shares a normal sudoku file with the player's entries`() =
+        launch(levelSudokuWithAnEntry()) { activity ->
             shareVia(activity, R.id.radioButtonCurrent)
-            val started = shadowOf(activity).nextStartedActivity
-            started.action shouldBe Intent.ACTION_CHOOSER
+            val shared = sharedSudoku(activity)
+            shared.modeLevel shouldBe 0
+            shared.fields[0].value shouldBe 1
+            shared.fields[1].value shouldBe 2
         }
-    }
 
     @Test
     fun `a 16x16 board wires up every extended number button`() =
