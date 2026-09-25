@@ -48,6 +48,7 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.shouldBe
+import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -155,15 +156,7 @@ class SudokuLevelTabListRefreshTest {
     fun `the level list carries the new stats when the current level is saved again under the same id`() {
         save(completedLevelOne())
         save(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0))
-        val viewModel =
-            SudokuLevelTabViewModel(
-                initSudokuLevel,
-                observeSudokuLevel,
-                getMaxSudokuLevel,
-                generateSudokuLevel,
-                saveSudoku,
-                SavedStateHandle(mapOf("size" to SIZE_4X4)),
-            )
+        val viewModel = newViewModel()
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
             idle()
@@ -171,11 +164,7 @@ class SudokuLevelTabListRefreshTest {
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
             idle()
 
-            val sudoku =
-                viewModel.state.value.sudokuLevel
-                    .filterIsInstance<SudokuItem>()
-                    .first()
-                    .sudoku
+            val sudoku = topSudoku(viewModel)
             sudoku.id shouldBe currentLevelId
             sudoku.errorsMade shouldBe 2
             sudoku.seconds shouldBe 75
@@ -200,6 +189,7 @@ class SudokuLevelTabListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
             idle()
+            scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idle()
 
@@ -209,9 +199,52 @@ class SudokuLevelTabListRefreshTest {
         }
     }
 
-    private fun levelList(activity: SudokuLevelActivity) =
+    @Test
+    fun `resuming the level tab after the stop timeout queries the stats saved while it was stopped`() {
+        userSettings.currentLevelTab = 0
+        save(completedLevelOne())
+        save(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0))
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
+            idle()
+            scenario.onActivity { activity ->
+                levelList(activity).awaitSmallText(0, "00:00 | 0% | Errors: 0/3") shouldBe "00:00 | 0% | Errors: 0/3"
+            }
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
+            save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
+            idle()
+            scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).seconds shouldBe 0 }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            idle()
+
+            scenario.onActivity { activity ->
+                levelList(activity).awaitSmallText(0, "01:15 | 50% | Errors: 2/3") shouldBe "01:15 | 50% | Errors: 2/3"
+                topSudoku(levelTab(activity).viewModel).seconds shouldBe 75
+            }
+        }
+    }
+
+    private fun newViewModel() =
+        SudokuLevelTabViewModel(
+            initSudokuLevel,
+            observeSudokuLevel,
+            getMaxSudokuLevel,
+            generateSudokuLevel,
+            saveSudoku,
+            SavedStateHandle(mapOf("size" to SIZE_4X4)),
+        )
+
+    private fun topSudoku(viewModel: SudokuLevelTabViewModel): Sudoku =
+        viewModel.state.value.sudokuLevel
+            .filterIsInstance<SudokuItem>()
+            .first()
+            .sudoku
+
+    private fun levelTab(activity: SudokuLevelActivity) =
         activity.supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
             .first { it.arguments?.getInt("size") == SIZE_4X4 }
-            .binding.sudokuLevelsRecycler
+
+    private fun levelList(activity: SudokuLevelActivity) = levelTab(activity).binding.sudokuLevelsRecycler
 }
