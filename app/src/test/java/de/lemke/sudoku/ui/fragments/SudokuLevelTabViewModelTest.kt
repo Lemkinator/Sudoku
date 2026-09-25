@@ -198,6 +198,74 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
+        should("returning after the stop timeout with the next level cached never shows the generating state") {
+            runTest {
+                val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
+                every { observeSudokuLevel(4) } returns levelFlow
+                coEvery { getMaxSudokuLevel(4) } returns 1
+                val nextLevelSudoku = testSudoku(modeLevel = 2)
+                coEvery { generateSudokuLevel(4, 2) } returns nextLevelSudoku
+                val completedItem = SudokuItem(testSudoku(completed = true), "1")
+                levelFlow.emit(listOf(completedItem))
+                val viewModel = newViewModel()
+                viewModel.state.test {
+                    advanceUntilIdle()
+                    cancelAndIgnoreRemainingEvents()
+                }
+                advanceTimeBy(5_001)
+                runCurrent()
+                val maxLevel = CompletableDeferred<Int>()
+                coEvery { getMaxSudokuLevel(4) } coAnswers { maxLevel.await() }
+                val levelWithNext =
+                    SudokuLevelTabUiState(
+                        sudokuLevel = listOf(SudokuItem(nextLevelSudoku, "2"), completedItem),
+                        isLoading = false,
+                        isGeneratingNextLevel = false,
+                        hasNextLevelToStart = true,
+                    )
+
+                viewModel.state.test {
+                    runCurrent()
+                    levelFlow.subscriptionCount.value shouldBe 1
+                    viewModel.state.value shouldBe levelWithNext
+                    maxLevel.complete(1)
+                    advanceUntilIdle()
+                    expectMostRecentItem() shouldBe levelWithNext
+                    expectNoEvents()
+                }
+                coVerify(exactly = 1) { generateSudokuLevel(4, 2) }
+            }
+        }
+
+        should("a missing next level shows the generating state only while it is generated") {
+            runTest {
+                every { observeSudokuLevel(4) } returns flowOf(emptyList())
+                val maxLevel = CompletableDeferred<Int>()
+                coEvery { getMaxSudokuLevel(4) } coAnswers { maxLevel.await() }
+                val generatedSudoku = CompletableDeferred<Sudoku>()
+                coEvery { generateSudokuLevel(4, 6) } coAnswers { generatedSudoku.await() }
+                val nextLevelSudoku = testSudoku(modeLevel = 6)
+                val viewModel = newViewModel()
+
+                viewModel.state.test {
+                    runCurrent()
+                    viewModel.state.value shouldBe SudokuLevelTabUiState()
+                    maxLevel.complete(5)
+                    runCurrent()
+                    viewModel.state.value shouldBe SudokuLevelTabUiState(isGeneratingNextLevel = true)
+                    generatedSudoku.complete(nextLevelSudoku)
+                    advanceUntilIdle()
+                    expectMostRecentItem() shouldBe
+                        SudokuLevelTabUiState(
+                            sudokuLevel = listOf(SudokuItem(nextLevelSudoku, "6")),
+                            isLoading = false,
+                            isGeneratingNextLevel = false,
+                            hasNextLevelToStart = true,
+                        )
+                }
+            }
+        }
+
         should("a top level completed while state is not collected shows a new next level once collected again") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)

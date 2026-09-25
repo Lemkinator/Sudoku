@@ -39,6 +39,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -95,7 +96,6 @@ class SudokuLevelTabViewModel @Inject constructor(
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
         observeSudokuLevel(size).transformLatest { sudokuLevel ->
             if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
-                emit(state.value.copy(isGeneratingNextLevel = true))
                 runCatching { findOrGenerateNextLevelSudoku() }
                     .onSuccess { nextLevel ->
                         emit(
@@ -128,10 +128,11 @@ class SudokuLevelTabViewModel @Inject constructor(
             }
         }
 
-    private suspend fun findOrGenerateNextLevelSudoku(): Sudoku {
+    private suspend fun FlowCollector<SudokuLevelTabUiState>.findOrGenerateNextLevelSudoku(): Sudoku {
         val level = getMaxSudokuLevel(size) + 1
-        return nextLevelSudoku?.takeIf { it.modeLevel == level }
-            ?: generateSudokuLevel(size, level).also { nextLevelSudoku = it }
+        nextLevelSudoku?.takeIf { it.modeLevel == level }?.let { return it }
+        emit(state.value.copy(isGeneratingNextLevel = true))
+        return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
     suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
