@@ -52,7 +52,7 @@ class TabStatisticsViewModel @Inject constructor(
     val state: StateFlow<TabStatisticsUiState> =
         observeSudokusAndStatisticsFilterFlags()
             .transformLatest { filterFlags ->
-                emit(state.value.copy(isLoading = true))
+                if (state.value.statistics == null) emit(state.value.copy(isLoading = true))
                 val statistics = calculateStatistics(filterFlags)
                 emit(TabStatisticsUiState(statistics = statistics, isLoading = false))
             }.catch { e ->

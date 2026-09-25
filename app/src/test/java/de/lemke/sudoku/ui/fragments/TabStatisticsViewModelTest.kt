@@ -30,10 +30,15 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TabStatisticsViewModelTest : ShouldSpec(
     {
         val observeSudokusAndStatisticsFilterFlags = mockk<ObserveSudokusAndStatisticsFilterFlagsUseCase>()
@@ -63,7 +68,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
             }
         }
 
-        should("stays loading while computing, then settles with the computed statistics per emission") {
+        should("stays loading until the first statistics, then keeps them shown without loading while recomputing") {
             val sudokusFlow = MutableSharedFlow<List<Sudoku>>(extraBufferCapacity = 1)
             every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
             val firstDeferred = CompletableDeferred<SudokuStatistics>()
@@ -84,13 +89,42 @@ class TabStatisticsViewModelTest : ShouldSpec(
                 val secondDeferred = CompletableDeferred<SudokuStatistics>()
                 coEvery { calculateStatistics(sudokuList) } coAnswers { secondDeferred.await() }
                 sudokusFlow.emit(sudokuList)
-                awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = true)
+                expectNoEvents()
+                viewModel.state.value shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false)
 
                 val secondStats = mockk<SudokuStatistics>()
                 secondDeferred.complete(secondStats)
                 awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats, isLoading = false)
 
                 cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        should("collecting again after the stop timeout recomputes the shown statistics without loading") {
+            runTest {
+                val sudokusFlow = MutableSharedFlow<List<Sudoku>>(replay = 1)
+                every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
+                val firstStats = mockk<SudokuStatistics>()
+                coEvery { calculateStatistics(emptyList()) } returns firstStats
+                sudokusFlow.emit(emptyList())
+                val viewModel = newViewModel()
+                viewModel.state.test { expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false) }
+                advanceTimeBy(5_001)
+                runCurrent()
+                sudokusFlow.subscriptionCount.value shouldBe 0
+                val recomputed = CompletableDeferred<SudokuStatistics>()
+                coEvery { calculateStatistics(emptyList()) } coAnswers { recomputed.await() }
+
+                viewModel.state.test {
+                    awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false)
+                    runCurrent()
+                    sudokusFlow.subscriptionCount.value shouldBe 1
+                    expectNoEvents()
+                    val secondStats = mockk<SudokuStatistics>()
+                    recomputed.complete(secondStats)
+                    runCurrent()
+                    awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats, isLoading = false)
+                }
             }
         }
 
