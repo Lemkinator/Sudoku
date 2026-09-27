@@ -187,6 +187,37 @@ class SudokuListAdapterTest {
     }
 
     @Test
+    fun `revealPositionOf returns the separator heading a sudoku, else the sudoku row, and NO_POSITION when absent`() {
+        val headingSudoku = sudokuFixture()
+        val secondSudoku = sudokuFixture()
+        val olderSudoku = sudokuFixture()
+        val adapter = buildAdapter()
+        adapter.submitList(
+            listOf(
+                SeparatorItem("16.01.26"),
+                SudokuItem(headingSudoku, "16.01.26"),
+                SudokuItem(secondSudoku, "16.01.26"),
+                SeparatorItem("15.01.26"),
+                SudokuItem(olderSudoku, "15.01.26"),
+            ),
+        )
+
+        adapter.revealPositionOf(headingSudoku.id) shouldBe 0
+        adapter.revealPositionOf(secondSudoku.id) shouldBe 2
+        adapter.revealPositionOf(olderSudoku.id) shouldBe 3
+        adapter.revealPositionOf(SudokuId("absent")) shouldBe RecyclerView.NO_POSITION
+    }
+
+    @Test
+    fun `revealPositionOf returns row 0 for a sudoku in the first row`() {
+        val sudoku = sudokuFixture()
+        val adapter = buildAdapter()
+        adapter.submitList(listOf(SudokuItem(sudoku, "16.01.26"), SeparatorItem("15.01.26")))
+
+        adapter.revealPositionOf(sudoku.id) shouldBe 0
+    }
+
+    @Test
     fun `onCreateViewHolder for a sudoku item view type builds a non-separator holder`() {
         val holder = buildAdapter().onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 

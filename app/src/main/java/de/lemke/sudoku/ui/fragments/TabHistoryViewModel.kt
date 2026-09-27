@@ -24,7 +24,10 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -36,7 +39,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transform
 
 sealed interface TabHistoryEvent {
-    data object ScrollToTop : TabHistoryEvent
+    data class RevealSudoku(val sudokuId: SudokuId) : TabHistoryEvent
 
     data object ShowLoadError : TabHistoryEvent
 }
@@ -49,15 +52,18 @@ class TabHistoryViewModel @Inject constructor(
 ) : ViewModel() {
     val errorLimit: StateFlow<Int> = userSettings.errorLimitFlow
 
-    private var loadedHistorySize: Int? = null
+    private var previousUpdates: Map<SudokuId, LocalDateTime>? = null
 
     val sudokuHistory: StateFlow<List<SudokuListItem>> =
         observeSudokuHistory()
             .transform { newHistory ->
-                val previousSize = loadedHistorySize
-                loadedHistorySize = newHistory.size
+                val sudokus = newHistory.filterIsInstance<SudokuItem>().map { it.sudoku }
+                val previous = previousUpdates
+                previousUpdates = sudokus.associate { it.id to it.updated }
                 emit(newHistory)
-                if (previousSize != null && newHistory.size > previousSize) _events.send(TabHistoryEvent.ScrollToTop)
+                if (previous != null) {
+                    sudokus.firstOrNull { previous[it.id] != it.updated }?.let { _events.send(TabHistoryEvent.RevealSudoku(it.id)) }
+                }
             }.catch { e ->
                 if (e is CancellationException) throw e
                 _events.send(TabHistoryEvent.ShowLoadError)
