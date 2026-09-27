@@ -115,7 +115,7 @@ class SudokuLevelTabRevealTest {
     }
 
     @Test
-    fun `a next level generated while the game was open shows at the top after returning`() {
+    fun `a level solved while the level flow still ran shows its next level at the top after returning`() {
         launchLevels { scenario ->
             scenario.read { it.levelList().firstVisiblePosition() } shouldBe 0
             scenario.moveToState(Lifecycle.State.CREATED)
@@ -125,6 +125,33 @@ class SudokuLevelTabRevealTest {
             scenario.onActivity { activity ->
                 activity.levelList().firstVisiblePosition() shouldBe 0
                 activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
+                activity.progressBarShown(SIZE_4X4) shouldBe false
+            }
+        }
+    }
+
+    @Test
+    fun `a level solved after the level flow stopped shows its next level at the top after returning`() {
+        launchLevels { scenario ->
+            val solvedId = scenario.read { it.topLevelId() }
+            scenario.moveToState(Lifecycle.State.CREATED)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
+            save(completedLevel(solvedId, COMPLETED_LEVELS + 1))
+            idle()
+            scenario.read { it.topLevelLabel() } shouldBe "${COMPLETED_LEVELS + 1}"
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            awaitUntil {
+                scenario.read {
+                    it.topLevelLabel() == "${COMPLETED_LEVELS + 2}" && it.adapterHoldsViewModelLevels() && it.levelList().isSettled()
+                }
+            }
+            val nextLevelId = scenario.read { it.topLevelId() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+            scenario.onActivity { activity ->
+                activity.levelList().firstVisiblePosition() shouldBe 0
+                activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
+                activity.topLevelId() shouldBe nextLevelId
+                activity.committedLevelId(1) shouldBe solvedId
                 activity.progressBarShown(SIZE_4X4) shouldBe false
             }
         }
@@ -276,6 +303,9 @@ class SudokuLevelTabRevealTest {
     private fun SudokuLevelActivity.progressBarShown(size: Int): Boolean = levelTab(size).binding.tabLevelProgressBar.isVisible
 
     private fun SudokuLevelActivity.levelList(): RecyclerView = levelTab(SIZE_4X4).binding.sudokuLevelsRecycler
+
+    private fun SudokuLevelActivity.committedLevelId(position: Int): SudokuId =
+        (levelTab(SIZE_4X4).sudokuListAdapter.currentList[position] as SudokuItem).sudoku.id
 
     private fun SudokuLevelActivity.topLevelItem(): SudokuItem =
         levelTab(SIZE_4X4)

@@ -95,7 +95,7 @@ class SudokuLevelActivityTest {
     }
 
     @Test
-    fun nextLevelGeneratedWhileInTheGameShowsAtTheTopAfterReturning() {
+    fun levelSolvedWhileTheLevelFlowStillRanShowsItsNextLevelAtTheTopAfterReturning() {
         userSettings.currentLevelTab = 0
         runBlocking { (1..COMPLETED_LEVELS).forEach { saveSudoku(completedLevel(it, SudokuId.generate())) } }
         ActivityScenario
