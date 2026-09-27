@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -147,6 +148,11 @@ class SudokuListAdapter(
                 holder.bindActionMode(getItemId(position))
             }
         }
+    }
+
+    fun revealPositionOf(sudokuId: SudokuId): Int {
+        val position = currentList.indexOfFirst { it is SudokuItem && it.sudoku.id == sudokuId }
+        return if (position > 0 && currentList[position - 1] is SeparatorItem) position - 1 else position
     }
 
     companion object {

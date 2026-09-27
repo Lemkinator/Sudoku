@@ -27,6 +27,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
@@ -35,6 +36,7 @@ import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabLevelBinding
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -52,6 +54,7 @@ class SudokuLevelTab : Fragment() {
     internal lateinit var binding: FragmentTabLevelBinding
     internal val viewModel: SudokuLevelTabViewModel by viewModels()
     internal val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(requireContext(), MODE_LEVEL_ERROR_LIMIT, LEVEL) }
+    private var pendingReveal: SudokuId? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -66,16 +69,30 @@ class SudokuLevelTab : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initRecycler()
         collectState(viewModel.state) { state ->
-            sudokuListAdapter.submitList(state.sudokuLevel)
+            sudokuListAdapter.submitList(state.sudokuLevel) { revealPending() }
             binding.sudokuLevelsRecycler.isVisible = !state.isLoading
             binding.tabLevelProgressBar.isVisible = state.isLoading || state.isGeneratingNextLevel
         }
         collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
             when (event) {
-                SudokuLevelTabEvent.ScrollToTop -> binding.sudokuLevelsRecycler.smoothScrollToPosition(0)
-                SudokuLevelTabEvent.ShowLoadError -> toast(R.string.error_loading_sudoku_level_failed)
+                is SudokuLevelTabEvent.RevealSudoku -> {
+                    pendingReveal = event.sudokuId
+                    revealPending()
+                }
+
+                SudokuLevelTabEvent.ShowLoadError -> {
+                    toast(R.string.error_loading_sudoku_level_failed)
+                }
             }
         }
+    }
+
+    private fun revealPending() {
+        val sudokuId = pendingReveal ?: return
+        if (sudokuListAdapter.currentList != viewModel.state.value.sudokuLevel) return
+        pendingReveal = null
+        val position = sudokuListAdapter.revealPositionOf(sudokuId)
+        if (position != NO_POSITION) binding.sudokuLevelsRecycler.smoothScrollToPosition(position)
     }
 
     private fun initRecycler() {

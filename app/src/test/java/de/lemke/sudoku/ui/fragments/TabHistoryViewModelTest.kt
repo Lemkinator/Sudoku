@@ -22,14 +22,19 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import java.time.LocalDateTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,6 +60,27 @@ class TabHistoryViewModelTest : ShouldSpec(
         }
 
         fun newViewModel() = TabHistoryViewModel(userSettings, observeSudokuHistory, deleteSudoku)
+
+        val sudokuA = SudokuId("sudoku-a")
+        val sudokuB = SudokuId("sudoku-b")
+        val sudokuC = SudokuId("sudoku-c")
+
+        fun sudokuItem(
+            sudokuId: SudokuId,
+            updated: LocalDateTime,
+            seconds: Int = 0,
+        ) = SudokuItem(
+            listSudoku(
+                sudokuId = sudokuId,
+                modeLevel = MODE_NORMAL,
+                filled = 0,
+                errorsMade = 0,
+                seconds = seconds,
+                created = NINE_O_CLOCK,
+                updated = updated,
+            ),
+            "Jan 2026",
+        )
 
         should("errorLimit reflects the real UserSettings.errorLimitFlow") {
             val viewModel = newViewModel()
@@ -100,12 +126,13 @@ class TabHistoryViewModelTest : ShouldSpec(
             }
         }
 
-        should("a history that grew while it was not observed emits ScrollToTop once it is collected again") {
+        should("a sudoku added while the history was not observed is revealed once the history is collected again") {
             runTest {
                 val history = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
                 every { observeSudokuHistory() } returns history
-                val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
-                val grownHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"), SeparatorItem("Feb 2026"))
+                val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
+                val grownHistory =
+                    mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuB, TEN_O_CLOCK), sudokuItem(sudokuA, NINE_O_CLOCK))
                 val viewModel = newViewModel()
                 history.emit(firstHistory)
                 viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe firstHistory }
@@ -116,14 +143,37 @@ class TabHistoryViewModelTest : ShouldSpec(
                 viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe grownHistory }
 
                 viewModel.events.test {
-                    awaitItem() shouldBe TabHistoryEvent.ScrollToTop
+                    awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuB)
                     expectNoEvents()
                 }
             }
         }
 
-        should("the first emission sets sudokuHistory without emitting ScrollToTop") {
-            val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
+        should("an upstream restart with an unchanged history emits no event") {
+            runTest {
+                val history = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
+                every { observeSudokuHistory() } returns history
+                val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
+                val requeriedHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
+                val viewModel = newViewModel()
+                history.emit(firstHistory)
+                viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe firstHistory }
+                advanceTimeBy(5_001)
+                runCurrent()
+                history.subscriptionCount.value shouldBe 0
+
+                history.emit(requeriedHistory)
+                viewModel.sudokuHistory.test {
+                    expectMostRecentItem() shouldBe requeriedHistory
+                    history.subscriptionCount.value shouldBe 1
+                }
+
+                viewModel.events.test { expectNoEvents() }
+            }
+        }
+
+        should("the first emission sets sudokuHistory without an event") {
+            val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
             every { observeSudokuHistory() } returns flowOf(firstHistory)
 
             val viewModel = newViewModel()
@@ -132,22 +182,65 @@ class TabHistoryViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("a second emission with a larger list emits ScrollToTop") {
-            val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
-            val secondHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"), SeparatorItem("Feb 2026"))
+        should("a second emission with a new sudoku reveals it") {
+            val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
+            val secondHistory =
+                mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuB, TEN_O_CLOCK), sudokuItem(sudokuA, NINE_O_CLOCK))
             every { observeSudokuHistory() } returns flowOf(firstHistory, secondHistory)
 
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
             viewModel.events.test {
-                awaitItem() shouldBe TabHistoryEvent.ScrollToTop
+                awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuB)
+                expectNoEvents()
             }
         }
 
-        should("a second emission with an equal-or-smaller list does not emit ScrollToTop") {
-            val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"), SeparatorItem("Feb 2026"))
-            val secondHistory = mutableListOf<SudokuListItem>(SeparatorItem("Mar 2026"))
+        should("a second emission with a played sudoku that moved to the top reveals it") {
+            val firstHistory =
+                mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, TEN_O_CLOCK), sudokuItem(sudokuB, NINE_O_CLOCK))
+            val secondHistory =
+                mutableListOf(
+                    SeparatorItem("Jan 2026"),
+                    sudokuItem(sudokuB, ELEVEN_O_CLOCK, seconds = 75),
+                    sudokuItem(sudokuA, TEN_O_CLOCK),
+                )
+            every { observeSudokuHistory() } returns flowOf(firstHistory, secondHistory)
+
+            val viewModel = newViewModel()
+
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
+            viewModel.events.test {
+                awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuB)
+                expectNoEvents()
+            }
+        }
+
+        should("one emission with two new sudokus reveals the newest") {
+            val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
+            val secondHistory =
+                mutableListOf(
+                    SeparatorItem("Jan 2026"),
+                    sudokuItem(sudokuC, ELEVEN_O_CLOCK),
+                    sudokuItem(sudokuB, TEN_O_CLOCK),
+                    sudokuItem(sudokuA, NINE_O_CLOCK),
+                )
+            every { observeSudokuHistory() } returns flowOf(firstHistory, secondHistory)
+
+            val viewModel = newViewModel()
+
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
+            viewModel.events.test {
+                awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuC)
+                expectNoEvents()
+            }
+        }
+
+        should("a second emission that only removes a sudoku emits no event") {
+            val firstHistory =
+                mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, TEN_O_CLOCK), sudokuItem(sudokuB, NINE_O_CLOCK))
+            val secondHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuB, NINE_O_CLOCK))
             every { observeSudokuHistory() } returns flowOf(firstHistory, secondHistory)
 
             val viewModel = newViewModel()
@@ -186,3 +279,7 @@ class TabHistoryViewModelTest : ShouldSpec(
         }
     },
 )
+
+private val NINE_O_CLOCK = LocalDateTime.of(2026, 1, 15, 9, 0)
+private val TEN_O_CLOCK = LocalDateTime.of(2026, 1, 15, 10, 0)
+private val ELEVEN_O_CLOCK = LocalDateTime.of(2026, 1, 15, 11, 0)

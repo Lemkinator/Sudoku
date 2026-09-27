@@ -27,6 +27,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
@@ -36,6 +37,7 @@ import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabHistoryBinding
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -72,6 +74,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         )
     }
     private val viewModel: TabHistoryViewModel by viewModels()
+    private var pendingReveal: SudokuId? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -96,8 +99,14 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         }
         collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
             when (event) {
-                TabHistoryEvent.ScrollToTop -> binding.sudokuHistoryList.scrollToPosition(0)
-                TabHistoryEvent.ShowLoadError -> toast(R.string.error_loading_sudoku_history_failed)
+                is TabHistoryEvent.RevealSudoku -> {
+                    pendingReveal = event.sudokuId
+                    revealPending()
+                }
+
+                TabHistoryEvent.ShowLoadError -> {
+                    toast(R.string.error_loading_sudoku_history_failed)
+                }
             }
         }
         collectState(viewModel.errorLimit) { limit ->
@@ -136,8 +145,18 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     }
 
     private fun updateRecyclerView(sudokuHistory: List<SudokuListItem>) {
-        sudokuListAdapter.submitList(sudokuHistory)
+        sudokuListAdapter.submitList(sudokuHistory) { revealPending() }
         binding.noEntryView.updateVisibilityWith(sudokuHistory, binding.sudokuHistoryList)
+    }
+
+    private fun revealPending() {
+        val sudokuId = pendingReveal ?: return
+        if (sudokuListAdapter.currentList != viewModel.sudokuHistory.value) return
+        pendingReveal = null
+        val position = sudokuListAdapter.revealPositionOf(sudokuId)
+        if (position != NO_POSITION) {
+            (binding.sudokuHistoryList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, 0)
+        }
     }
 
     private fun SudokuListAdapter.setupOnClickListeners() {
