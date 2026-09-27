@@ -45,6 +45,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.utils.listSudoku
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
@@ -119,6 +120,26 @@ class TabHistoryRevealTest {
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
+            }
+        }
+    }
+
+    @Test
+    fun `an older sudoku imported below the viewport is revealed with its row visible`() {
+        repeat(OLDER_COUNT) { save(newSudoku(seconds = 0, updated = OLDER_DAY.plusMinutes(it.toLong()))) }
+        launchHistory(rows = SEEDED_ROWS + OLDER_COUNT + 1) { scenario ->
+            scenario.read { it.historyList().firstVisiblePosition() } shouldBe 0
+            scenario.moveToState(Lifecycle.State.CREATED)
+            save(newSudoku(seconds = 75, updated = IMPORTED_DAY))
+            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + OLDER_COUNT + 3 }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            scenario.onActivity { activity ->
+                val layoutManager = activity.historyList().layoutManager as LinearLayoutManager
+                val completelyVisible =
+                    (layoutManager.findFirstCompletelyVisibleItemPosition()..layoutManager.findLastCompletelyVisibleItemPosition()).toList()
+                IMPORTED_ROW shouldBeIn completelyVisible
+                activity.historyList().smallTextAt(IMPORTED_ROW) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
             }
         }
     }
@@ -241,12 +262,14 @@ class TabHistoryRevealTest {
         error("condition not met within ${AWAIT_ATTEMPTS * AWAIT_STEP_MS} ms")
     }
 
-    private fun launchHistory(block: (ActivityScenario<MainActivity>) -> Unit) =
-        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            scenario.onActivity { it.onTabItemSelected(0) }
-            awaitUntil { scenario.read { it.historyList().adapter?.itemCount } == SEEDED_ROWS }
-            block(scenario)
-        }
+    private fun launchHistory(
+        rows: Int = SEEDED_ROWS,
+        block: (ActivityScenario<MainActivity>) -> Unit,
+    ) = ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+        scenario.onActivity { it.onTabItemSelected(0) }
+        awaitUntil { scenario.read { it.historyList().adapter?.itemCount } == rows }
+        block(scenario)
+    }
 
     private fun ActivityScenario<MainActivity>.scrollHistoryToBottom(): Int {
         onActivity { it.historyList().scrollToPosition(SEEDED_ROWS - 1) }
@@ -300,9 +323,13 @@ class TabHistoryRevealTest {
     private companion object {
         const val SEEDED_COUNT = 30
         const val SEEDED_ROWS = SEEDED_COUNT + 1
+        const val OLDER_COUNT = 10
+        const val IMPORTED_ROW = SEEDED_ROWS + 1
         const val AWAIT_ATTEMPTS = 200
         const val AWAIT_STEP_MS = 10L
         val SEEDED_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 15, 9, 0)
         val NEXT_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 16, 10, 0)
+        val IMPORTED_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 12, 10, 0)
+        val OLDER_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 5, 9, 0)
     }
 }

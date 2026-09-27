@@ -154,7 +154,9 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         if (sudokuListAdapter.currentList != viewModel.sudokuHistory.value) return
         pendingReveal = null
         val position = sudokuListAdapter.revealPositionOf(sudokuId)
-        if (position != NO_POSITION) binding.sudokuHistoryList.scrollToPosition(position)
+        if (position != NO_POSITION) {
+            (binding.sudokuHistoryList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, 0)
+        }
     }
 
     private fun SudokuListAdapter.setupOnClickListeners() {
