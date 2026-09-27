@@ -48,6 +48,7 @@ import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -117,6 +118,24 @@ class TabHistoryRevealTest {
             awaitUntil { scenario.read { it.firstHistorySudokuId() } == seededIds[0] }
             scenario.moveToState(Lifecycle.State.RESUMED)
             awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            scenario.onActivity { activity ->
+                activity.historyList().firstVisiblePosition() shouldBe 0
+                activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
+            }
+        }
+    }
+
+    @Test
+    fun `a sudoku played after the history flow stopped moves to the top and is revealed`() {
+        launchHistory { scenario ->
+            scenario.scrollHistoryToBottom()
+            scenario.moveToState(Lifecycle.State.CREATED)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
+            save(seededSudoku(0, seconds = 75, updated = SEEDED_DAY.plusHours(2)))
+            idle()
+            scenario.read { it.firstHistorySudokuId() } shouldBe seededIds.last()
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            awaitUntil { scenario.read { it.firstHistorySudokuId() == seededIds[0] && it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
