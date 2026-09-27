@@ -33,6 +33,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
@@ -62,6 +63,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -102,6 +104,9 @@ class TabHistoryListRefreshTest {
 
     @Inject
     lateinit var deleteSudokus: DeleteSudokusUseCase
+
+    @Inject
+    lateinit var database: AppDatabase
 
     private val playedId = SudokuId.generate()
 
@@ -215,6 +220,26 @@ class TabHistoryListRefreshTest {
                 historyList(activity).awaitSmallText(1, "01:15 | Errors: 2/3 | Hints: 0") shouldBe "01:15 | Errors: 2/3 | Hints: 0"
                 topSudoku(historyViewModel(activity)).seconds shouldBe 75
             }
+        }
+    }
+
+    @Test
+    fun `a sudoku whose timestamp becomes unreadable shows the history load error`() {
+        save(olderSudoku())
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.onTabItemSelected(0) }
+            idle()
+            scenario.onActivity { activity ->
+                historyList(activity).awaitSmallText(1, "00:00 | 0% | Errors: 0/3 | Hints: 0") shouldBe
+                    "00:00 | 0% | Errors: 0/3 | Hints: 0"
+            }
+            ShadowToast.showedToast("Failed to load sudoku history") shouldBe false
+
+            // Room notifies its observers when a transaction ends, never after a raw write alone.
+            database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
+            idle()
+
+            ShadowToast.showedToast("Failed to load sudoku history") shouldBe true
         }
     }
 

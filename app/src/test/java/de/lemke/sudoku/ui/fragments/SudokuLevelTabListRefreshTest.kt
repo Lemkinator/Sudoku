@@ -31,6 +31,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
@@ -71,6 +72,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -124,6 +126,9 @@ class SudokuLevelTabListRefreshTest {
 
     @Inject
     lateinit var getSudoku: GetSudokuUseCase
+
+    @Inject
+    lateinit var database: AppDatabase
 
     private val currentLevelId = SudokuId.generate()
 
@@ -278,6 +283,19 @@ class SudokuLevelTabListRefreshTest {
                 levelList(activity).awaitSmallText(0, "01:15 | 50% | Errors: 2/3") shouldBe "01:15 | 50% | Errors: 2/3"
                 topSudoku(levelTab(activity).viewModel).seconds shouldBe 75
             }
+        }
+    }
+
+    @Test
+    fun `a level with an unreadable timestamp shows the level load error`() {
+        userSettings.currentLevelTab = 0
+        save(completedLevelOne())
+        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use {
+            idle()
+
+            ShadowToast.shownToastCount() shouldBe 1
+            ShadowToast.getTextOfLatestToast() shouldBe "Failed to load sudoku levels"
         }
     }
 
