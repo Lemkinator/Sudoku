@@ -213,7 +213,7 @@ class SudokuLevelTabRevealTest {
     }
 
     @Test
-    fun `rotating twice and swiping the size tabs keeps the position and the next levels`() {
+    fun `recreating the activity twice and swiping the size tabs keeps the position and the next levels`() {
         launchLevels { scenario ->
             val nextLevelId = scenario.read { it.topLevelId() }
             val scrolledTo = scenario.scrollLevelsToBottom()
@@ -222,9 +222,10 @@ class SudokuLevelTabRevealTest {
                 scenario.recreate()
                 awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() } }
             }
-            listOf(1, 2, 0).forEach { page ->
+            listOf(1 to SIZE_9X9, 2 to SIZE_16X16, 0 to SIZE_4X4).forEach { (page, size) ->
                 scenario.onActivity { it.findViewById<ViewPager2>(R.id.viewPagerLevel).currentItem = page }
-                idle()
+                awaitUntil { scenario.read { it.levelTab(size).lifecycle.currentState == Lifecycle.State.RESUMED } }
+                scenario.read { it.levelList(size).firstVisiblePosition() } shouldBe if (size == SIZE_4X4) scrolledTo else 0
             }
 
             scenario.onActivity { activity ->
@@ -302,7 +303,7 @@ class SudokuLevelTabRevealTest {
 
     private fun SudokuLevelActivity.progressBarShown(size: Int): Boolean = levelTab(size).binding.tabLevelProgressBar.isVisible
 
-    private fun SudokuLevelActivity.levelList(): RecyclerView = levelTab(SIZE_4X4).binding.sudokuLevelsRecycler
+    private fun SudokuLevelActivity.levelList(size: Int = SIZE_4X4): RecyclerView = levelTab(size).binding.sudokuLevelsRecycler
 
     private fun SudokuLevelActivity.committedLevelId(position: Int): SudokuId =
         (levelTab(SIZE_4X4).sudokuListAdapter.currentList[position] as SudokuItem).sudoku.id
