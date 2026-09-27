@@ -117,7 +117,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("a completed top level emitted twice generates the next level once and scrolls to it once") {
+        should("a completed top level emitted twice generates the next level once and reveals it once") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
                 every { observeSudokuLevel(4) } returns levelFlow
@@ -143,18 +143,19 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 }
                 coVerify(exactly = 1) { generateSudokuLevel(4, 2) }
                 viewModel.events.test {
-                    awaitItem() shouldBe SudokuLevelTabEvent.ScrollToTop
+                    awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
                     expectNoEvents()
                 }
             }
         }
 
-        should("a re-emission during the scroll delay still scrolls to the new next level once") {
+        should("a re-emission right after the next level shows reveals it once") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
                 every { observeSudokuLevel(4) } returns levelFlow
                 coEvery { getMaxSudokuLevel(4) } returns 1
-                coEvery { generateSudokuLevel(4, 2) } returns testSudoku(modeLevel = 2)
+                val nextLevelSudoku = testSudoku(modeLevel = 2)
+                coEvery { generateSudokuLevel(4, 2) } returns nextLevelSudoku
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
                 val viewModel = newViewModel()
 
@@ -167,7 +168,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 }
 
                 viewModel.events.test {
-                    awaitItem() shouldBe SudokuLevelTabEvent.ScrollToTop
+                    awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
                     expectNoEvents()
                 }
             }
@@ -299,7 +300,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                         )
                 }
                 viewModel.events.test {
-                    awaitItem() shouldBe SudokuLevelTabEvent.ScrollToTop
+                    awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                    expectNoEvents()
                 }
             }
         }
@@ -353,7 +355,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("a non-empty, non-completed emission sets state directly without ScrollToTop") {
+        should("a non-empty, non-completed emission sets state directly without an event") {
             val item = SudokuItem(testSudoku(completed = false), "1")
             every { observeSudokuLevel(4) } returns flowOf(listOf(item))
 
@@ -371,7 +373,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("an empty emission generates the next level and emits ScrollToTop after the delay") {
+        should("an empty emission generates the next level and reveals it with the same dispatch") {
             runTest {
                 Dispatchers.setMain(StandardTestDispatcher(testScheduler))
                 every { observeSudokuLevel(4) } returns flowOf(emptyList())
@@ -383,9 +385,9 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     viewModel.events.test {
-                        advanceUntilIdle()
-                        awaitItem() shouldBe SudokuLevelTabEvent.ScrollToTop
-                        cancelAndIgnoreRemainingEvents()
+                        runCurrent()
+                        awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                        expectNoEvents()
                     }
                     expectMostRecentItem() shouldBe
                         SudokuLevelTabUiState(
@@ -398,7 +400,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("a completed first item generates the next level and emits ScrollToTop after the delay") {
+        should("a completed first item generates the next level and reveals it with the same dispatch") {
             runTest {
                 Dispatchers.setMain(StandardTestDispatcher(testScheduler))
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
@@ -411,9 +413,9 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     viewModel.events.test {
-                        advanceUntilIdle()
-                        awaitItem() shouldBe SudokuLevelTabEvent.ScrollToTop
-                        cancelAndIgnoreRemainingEvents()
+                        runCurrent()
+                        awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                        expectNoEvents()
                     }
                     expectMostRecentItem() shouldBe
                         SudokuLevelTabUiState(

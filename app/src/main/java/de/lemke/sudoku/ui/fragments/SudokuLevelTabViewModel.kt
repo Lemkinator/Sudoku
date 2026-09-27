@@ -27,17 +27,16 @@ import de.lemke.sudoku.domain.InitSudokuLevelUseCase
 import de.lemke.sudoku.domain.ObserveSudokuLevelUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.StateFlow
@@ -47,8 +46,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transformLatest
 
-private const val SCROLL_TO_TOP_DELAY_MS = 200L
-
 data class SudokuLevelTabUiState(
     val sudokuLevel: List<SudokuListItem> = emptyList(),
     val isLoading: Boolean = true,
@@ -57,7 +54,7 @@ data class SudokuLevelTabUiState(
 )
 
 sealed interface SudokuLevelTabEvent {
-    data object ScrollToTop : SudokuLevelTabEvent
+    data class RevealSudoku(val sudokuId: SudokuId) : SudokuLevelTabEvent
 
     data object ShowLoadError : SudokuLevelTabEvent
 }
@@ -95,7 +92,7 @@ class SudokuLevelTabViewModel @Inject constructor(
         }
 
     private var nextLevelSudoku: Sudoku? = null
-    private var scrolledToNextLevelSudoku: Sudoku? = null
+    private var revealedNextLevelId: SudokuId? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
@@ -111,10 +108,9 @@ class SudokuLevelTabViewModel @Inject constructor(
                                 hasNextLevelToStart = true,
                             ),
                         )
-                        if (nextLevel !== scrolledToNextLevelSudoku) {
-                            delay(SCROLL_TO_TOP_DELAY_MS.milliseconds)
-                            scrolledToNextLevelSudoku = nextLevel
-                            _events.send(SudokuLevelTabEvent.ScrollToTop)
+                        if (nextLevel.id != revealedNextLevelId) {
+                            revealedNextLevelId = nextLevel.id
+                            _events.send(SudokuLevelTabEvent.RevealSudoku(nextLevel.id))
                         }
                     }.onFailure { e ->
                         if (e is CancellationException) throw e
