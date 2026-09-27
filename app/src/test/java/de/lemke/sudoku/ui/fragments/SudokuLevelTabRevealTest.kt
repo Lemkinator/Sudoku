@@ -195,6 +195,28 @@ class SudokuLevelTabRevealTest {
     }
 
     @Test
+    fun `a next level replaced before the list shows it leaves the scroll position alone`() {
+        launchLevels { scenario ->
+            val solvedId = scenario.read { it.topLevelId() }
+            val scrolledTo = scenario.scrollLevelsToBottom()
+            scenario.moveToState(Lifecycle.State.CREATED)
+            save(completedLevel(solvedId, COMPLETED_LEVELS + 1))
+            awaitUntil { scenario.read { it.topLevelLabel() } == "${COMPLETED_LEVELS + 2}" }
+            val replacementId = SudokuId.generate()
+            save(openLevel(replacementId, COMPLETED_LEVELS + 2))
+            awaitUntil { scenario.read { it.topLevelId() } == replacementId }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled() } }
+            scenario.onActivity { activity ->
+                activity.levelList().adapter?.itemCount shouldBe COMPLETED_LEVELS + 2
+                activity.committedLevelId(0) shouldBe replacementId
+                activity.committedLevelId(1) shouldBe solvedId
+                activity.levelList().firstVisiblePosition() shouldBe scrolledTo + 1
+            }
+        }
+    }
+
+    @Test
     fun `returning from an older completed level keeps the position and the next level`() {
         launchLevels { scenario ->
             val nextLevelId = scenario.read { it.topLevelId() }
@@ -251,6 +273,19 @@ class SudokuLevelTabRevealTest {
             filled = 16,
             errorsMade = 0,
             seconds = 40,
+            created = LocalDateTime.of(2026, 1, 15, 9, 0).plusMinutes(level.toLong()),
+        )
+
+    private fun openLevel(
+        sudokuId: SudokuId,
+        level: Int,
+    ): Sudoku =
+        listSudoku(
+            sudokuId = sudokuId,
+            modeLevel = level,
+            filled = 0,
+            errorsMade = 0,
+            seconds = 0,
             created = LocalDateTime.of(2026, 1, 15, 9, 0).plusMinutes(level.toLong()),
         )
 
