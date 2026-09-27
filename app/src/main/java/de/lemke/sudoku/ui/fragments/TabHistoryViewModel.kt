@@ -19,6 +19,7 @@ package de.lemke.sudoku.ui.fragments
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.lemke.commonutils.ui.utils.stateInViewModel
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
@@ -29,11 +30,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.transform
 
 sealed interface TabHistoryEvent {
     data object ScrollToTop : TabHistoryEvent
@@ -49,28 +49,22 @@ class TabHistoryViewModel @Inject constructor(
 ) : ViewModel() {
     val errorLimit: StateFlow<Int> = userSettings.errorLimitFlow
 
-    val sudokuHistory: StateFlow<List<SudokuListItem>>
-        field = MutableStateFlow(emptyList())
+    private var loadedHistorySize: Int? = null
+
+    val sudokuHistory: StateFlow<List<SudokuListItem>> =
+        observeSudokuHistory()
+            .transform { newHistory ->
+                val previousSize = loadedHistorySize
+                loadedHistorySize = newHistory.size
+                emit(newHistory)
+                if (previousSize != null && newHistory.size > previousSize) _events.send(TabHistoryEvent.ScrollToTop)
+            }.catch { e ->
+                if (e is CancellationException) throw e
+                _events.send(TabHistoryEvent.ShowLoadError)
+            }.stateInViewModel(viewModelScope, emptyList())
 
     private val _events = Channel<TabHistoryEvent>(BUFFERED)
     val events: Flow<TabHistoryEvent> = _events.receiveAsFlow()
-
-    init {
-        viewModelScope.launch {
-            var isFirstEmission = true
-            runCatching {
-                observeSudokuHistory().collectLatest { newHistory ->
-                    val grew = !isFirstEmission && newHistory.size > sudokuHistory.value.size
-                    isFirstEmission = false
-                    sudokuHistory.value = newHistory
-                    if (grew) _events.send(TabHistoryEvent.ScrollToTop)
-                }
-            }.onFailure { e ->
-                if (e is CancellationException) throw e
-                _events.send(TabHistoryEvent.ShowLoadError)
-            }
-        }
-    }
 
     suspend fun deleteSelectedSudokus(sudokus: List<Sudoku>) = deleteSudoku(sudokus)
 }

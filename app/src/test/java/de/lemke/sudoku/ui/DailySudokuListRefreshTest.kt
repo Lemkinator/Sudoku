@@ -43,13 +43,16 @@ import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
@@ -134,20 +137,21 @@ class DailySudokuListRefreshTest {
     fun `the state carries the new stats when the daily sudoku is saved again under the same id`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         val viewModel = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus, testClock)
-        idle()
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
+        try {
+            idle()
 
-        save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
-        idle()
+            save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
+            idle()
 
-        val sudoku =
-            viewModel.state.value.sudokus
-                .filterIsInstance<SudokuItem>()
-                .single()
-                .sudoku
-        sudoku.errorsMade shouldBe 2
-        sudoku.seconds shouldBe 75
-        sudoku.progress shouldBe 100
-        sudoku.completed shouldBe true
+            val sudoku = shownSudoku(viewModel)
+            sudoku.errorsMade shouldBe 2
+            sudoku.seconds shouldBe 75
+            sudoku.progress shouldBe 100
+            sudoku.completed shouldBe true
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test
@@ -162,6 +166,7 @@ class DailySudokuListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
             idle()
+            scenario.onActivity { activity -> shownSudoku(activity.viewModel).seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idle()
 
@@ -170,4 +175,34 @@ class DailySudokuListRefreshTest {
             }
         }
     }
+
+    @Test
+    fun `resuming the daily list after the stop timeout queries the stats saved while it was stopped`() {
+        save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
+        ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
+            idle()
+            scenario.onActivity { activity ->
+                activity.binding.dailySudokuRecycler.awaitSmallText(1, "00:00 | 0% | Errors: 0/3") shouldBe "00:00 | 0% | Errors: 0/3"
+            }
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
+            save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
+            idle()
+            scenario.onActivity { activity -> shownSudoku(activity.viewModel).seconds shouldBe 0 }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            idle()
+
+            scenario.onActivity { activity ->
+                activity.binding.dailySudokuRecycler.awaitSmallText(1, "01:15 | Errors: 2/3") shouldBe "01:15 | Errors: 2/3"
+                shownSudoku(activity.viewModel).seconds shouldBe 75
+            }
+        }
+    }
+
+    private fun shownSudoku(viewModel: DailySudokuViewModel): Sudoku =
+        viewModel.state.value.sudokus
+            .filterIsInstance<SudokuItem>()
+            .single()
+            .sudoku
 }

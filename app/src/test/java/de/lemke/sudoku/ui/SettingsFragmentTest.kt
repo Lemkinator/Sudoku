@@ -87,7 +87,7 @@ class SettingsFragmentTest {
     @BindValue
     @IoDispatcher
     @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
+    val testIoDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
 
     @BindValue
     @MainDispatcher
@@ -119,20 +119,6 @@ class SettingsFragmentTest {
     }
 
     private fun <T : Preference> SettingsActivity.SettingsFragment.pref(key: String): T = findPreference<T>(key).shouldNotBeNull()
-
-    private fun awaitMainLooperIdleUntil(
-        timeoutMillis: Long = 5000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMillis
-        while (System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            if (condition()) return
-            Thread.sleep(20)
-        }
-        shadowOf(Looper.getMainLooper()).idle()
-        check(condition()) { "condition not met within ${timeoutMillis}ms" }
-    }
 
     // region errorLimit
 
@@ -269,7 +255,7 @@ class SettingsFragmentTest {
                     Activity.RESULT_OK,
                     Intent().apply { data = Uri.fromFile(destinationFile) },
                 )
-                awaitMainLooperIdleUntil { destinationFile.readText().isNotEmpty() }
+                shadowOf(Looper.getMainLooper()).idle()
                 destinationFile.readText() shouldBe "[]"
             } finally {
                 destinationFile.delete()
@@ -308,10 +294,7 @@ class SettingsFragmentTest {
                     Activity.RESULT_OK,
                     Intent().apply { data = Uri.fromFile(sourceFile) },
                 )
-                awaitMainLooperIdleUntil {
-                    val latest = ShadowDialog.getLatestDialog()
-                    latest != null && latest !== confirmDialog && latest.isShowing
-                }
+                shadowOf(Looper.getMainLooper()).idle()
                 val resultDialog = ShadowDialog.getLatestDialog().shouldNotBeNull()
                 resultDialog shouldNotBe confirmDialog
                 resultDialog.isShowing.shouldBeTrue()

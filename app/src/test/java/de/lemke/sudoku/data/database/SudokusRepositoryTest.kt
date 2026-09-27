@@ -253,6 +253,14 @@ class SudokusRepositoryTest {
         }
 
     @Test
+    fun `getMaxSudokuLevel ignores daily sudokus`() =
+        runTest {
+            repository.saveSudoku(sudoku(size = 9, modeLevel = Sudoku.MODE_DAILY))
+
+            repository.getMaxSudokuLevel(9) shouldBe 0
+        }
+
+    @Test
     fun `deleteInvalidSudokus leaves sudokus whose stored field count matches size squared untouched`() =
         runTest {
             val valid = sudoku(size = 4)

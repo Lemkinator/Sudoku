@@ -27,15 +27,19 @@ import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabHistoryViewModelTest : ShouldSpec(
@@ -58,13 +62,73 @@ class TabHistoryViewModelTest : ShouldSpec(
             viewModel.errorLimit.value shouldBe 7
         }
 
+        should("observe the history only while sudokuHistory is collected") {
+            val history = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
+            every { observeSudokuHistory() } returns history
+            val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
+
+            val viewModel = newViewModel()
+            history.emit(firstHistory)
+
+            history.subscriptionCount.value shouldBe 0
+            viewModel.sudokuHistory.value shouldBe emptyList()
+            viewModel.sudokuHistory.test {
+                expectMostRecentItem() shouldBe firstHistory
+                history.subscriptionCount.value shouldBe 1
+            }
+        }
+
+        should("an emission within the stop timeout reaches the next collector, and the history stops being observed after it") {
+            runTest {
+                val history = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
+                every { observeSudokuHistory() } returns history
+                val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
+                val secondHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"), SeparatorItem("Feb 2026"))
+                val viewModel = newViewModel()
+                history.emit(firstHistory)
+                viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe firstHistory }
+
+                advanceTimeBy(4_000)
+                history.emit(secondHistory)
+                runCurrent()
+
+                viewModel.sudokuHistory.value shouldBe secondHistory
+                viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
+                advanceTimeBy(5_001)
+                runCurrent()
+                history.subscriptionCount.value shouldBe 0
+            }
+        }
+
+        should("a history that grew while it was not observed emits ScrollToTop once it is collected again") {
+            runTest {
+                val history = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
+                every { observeSudokuHistory() } returns history
+                val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
+                val grownHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"), SeparatorItem("Feb 2026"))
+                val viewModel = newViewModel()
+                history.emit(firstHistory)
+                viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe firstHistory }
+                advanceTimeBy(5_001)
+                runCurrent()
+
+                history.emit(grownHistory)
+                viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe grownHistory }
+
+                viewModel.events.test {
+                    awaitItem() shouldBe TabHistoryEvent.ScrollToTop
+                    expectNoEvents()
+                }
+            }
+        }
+
         should("the first emission sets sudokuHistory without emitting ScrollToTop") {
             val firstHistory = mutableListOf<SudokuListItem>(SeparatorItem("Jan 2026"))
             every { observeSudokuHistory() } returns flowOf(firstHistory)
 
             val viewModel = newViewModel()
 
-            viewModel.sudokuHistory.value shouldBe firstHistory
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe firstHistory }
             viewModel.events.test { expectNoEvents() }
         }
 
@@ -75,7 +139,7 @@ class TabHistoryViewModelTest : ShouldSpec(
 
             val viewModel = newViewModel()
 
-            viewModel.sudokuHistory.value shouldBe secondHistory
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
             viewModel.events.test {
                 awaitItem() shouldBe TabHistoryEvent.ScrollToTop
             }
@@ -88,26 +152,27 @@ class TabHistoryViewModelTest : ShouldSpec(
 
             val viewModel = newViewModel()
 
-            viewModel.sudokuHistory.value shouldBe secondHistory
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
             viewModel.events.test { expectNoEvents() }
         }
 
         should("init emits ShowLoadError when observeSudokuHistory throws") {
-            every { observeSudokuHistory() } throws RuntimeException("observe failed")
+            every { observeSudokuHistory() } returns flow { throw IllegalStateException("observe failed") }
 
             val viewModel = newViewModel()
 
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe emptyList() }
             viewModel.events.test {
                 awaitItem() shouldBe TabHistoryEvent.ShowLoadError
             }
         }
 
         should("init does not treat CancellationException as a load failure") {
-            every { observeSudokuHistory() } throws CancellationException("cancelled")
+            every { observeSudokuHistory() } returns flow { throw CancellationException("cancelled") }
 
             val viewModel = newViewModel()
 
-            viewModel.sudokuHistory.value shouldBe emptyList()
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe emptyList() }
             viewModel.events.test { expectNoEvents() }
         }
 

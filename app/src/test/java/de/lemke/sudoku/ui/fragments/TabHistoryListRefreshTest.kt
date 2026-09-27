@@ -18,6 +18,7 @@ package de.lemke.sudoku.ui.fragments
 
 import android.os.Looper
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -44,11 +45,14 @@ import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.shouldBe
+import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
@@ -144,21 +148,22 @@ class TabHistoryListRefreshTest {
         save(olderSudoku())
         save(playedSudoku(filled = 0, errorsMade = 0, seconds = 0, updated = LocalDateTime.of(2026, 1, 15, 10, 0)))
         val viewModel = TabHistoryViewModel(userSettings, observeSudokuHistory, deleteSudokus)
-        idle()
+        val collection = viewModel.sudokuHistory.launchIn(CoroutineScope(Dispatchers.Main))
+        try {
+            idle()
 
-        save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
-        idle()
+            save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
+            idle()
 
-        val sudoku =
-            viewModel.sudokuHistory.value
-                .filterIsInstance<SudokuItem>()
-                .first()
-                .sudoku
-        sudoku.id shouldBe playedId
-        sudoku.errorsMade shouldBe 2
-        sudoku.seconds shouldBe 75
-        sudoku.progress shouldBe 100
-        sudoku.completed shouldBe true
+            val sudoku = topSudoku(viewModel)
+            sudoku.id shouldBe playedId
+            sudoku.errorsMade shouldBe 2
+            sudoku.seconds shouldBe 75
+            sudoku.progress shouldBe 100
+            sudoku.completed shouldBe true
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test
@@ -176,6 +181,7 @@ class TabHistoryListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
             idle()
+            scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idle()
 
@@ -185,9 +191,45 @@ class TabHistoryListRefreshTest {
         }
     }
 
-    private fun historyList(activity: MainActivity) =
+    @Test
+    fun `resuming the history after the stop timeout queries the stats saved while it was stopped`() {
+        save(olderSudoku())
+        save(playedSudoku(filled = 0, errorsMade = 0, seconds = 0, updated = LocalDateTime.of(2026, 1, 15, 10, 0)))
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.onTabItemSelected(0) }
+            idle()
+            scenario.onActivity { activity ->
+                historyList(activity).awaitSmallText(1, "00:00 | 0% | Errors: 0/3 | Hints: 0") shouldBe
+                    "00:00 | 0% | Errors: 0/3 | Hints: 0"
+            }
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
+            save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
+            idle()
+            scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).seconds shouldBe 0 }
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            idle()
+
+            scenario.onActivity { activity ->
+                historyList(activity).awaitSmallText(1, "01:15 | Errors: 2/3 | Hints: 0") shouldBe "01:15 | Errors: 2/3 | Hints: 0"
+                topSudoku(historyViewModel(activity)).seconds shouldBe 75
+            }
+        }
+    }
+
+    private fun topSudoku(viewModel: TabHistoryViewModel): Sudoku =
+        viewModel.sudokuHistory.value
+            .filterIsInstance<SudokuItem>()
+            .first()
+            .sudoku
+
+    private fun historyTab(activity: MainActivity) =
         activity.supportFragmentManager.fragments
             .filterIsInstance<TabHistory>()
             .first()
-            .binding.sudokuHistoryList
+
+    private fun historyViewModel(activity: MainActivity) = ViewModelProvider(historyTab(activity))[TabHistoryViewModel::class.java]
+
+    private fun historyList(activity: MainActivity) = historyTab(activity).binding.sudokuHistoryList
 }
