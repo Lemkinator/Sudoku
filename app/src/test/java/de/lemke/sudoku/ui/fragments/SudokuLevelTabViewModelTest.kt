@@ -381,8 +381,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     viewModel.events.test {
-                        runCurrent()
                         awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                        testScheduler.currentTime shouldBe 0
                         expectNoEvents()
                     }
                     expectMostRecentItem() shouldBe
@@ -408,8 +408,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     viewModel.events.test {
-                        runCurrent()
                         awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                        testScheduler.currentTime shouldBe 0
                         expectNoEvents()
                     }
                     expectMostRecentItem() shouldBe
