@@ -70,11 +70,6 @@ class SudokuListAdapter(
 
     override fun getItemCount(): Int = currentList.size
 
-    fun revealPositionOf(sudokuId: SudokuId): Int {
-        val position = currentList.indexOfFirst { it is SudokuItem && it.sudoku.id == sudokuId }
-        return if (position > 0 && currentList[position - 1] is SeparatorItem) position - 1 else position
-    }
-
     override fun getItemViewType(position: Int): Int =
         when (currentList[position]) {
             is SudokuItem -> SudokuItem.VIEW_TYPE
@@ -153,6 +148,11 @@ class SudokuListAdapter(
                 holder.bindActionMode(getItemId(position))
             }
         }
+    }
+
+    fun revealPositionOf(sudokuId: SudokuId): Int {
+        val position = currentList.indexOfFirst { it is SudokuItem && it.sudoku.id == sudokuId }
+        return if (position > 0 && currentList[position - 1] is SeparatorItem) position - 1 else position
     }
 
     companion object {
