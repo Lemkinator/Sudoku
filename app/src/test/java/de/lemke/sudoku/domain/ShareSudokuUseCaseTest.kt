@@ -18,8 +18,11 @@ package de.lemke.sudoku.domain
 
 import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager.GET_PROVIDERS
+import android.content.pm.PackageManager.PackageInfoFlags
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.commonutils.ShadowFileProvider
 import de.lemke.sudoku.data.database.SudokuExport
@@ -80,6 +83,13 @@ private fun testSudoku(
 class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val useCase = ShareSudokuUseCase(context, UnconfinedTestDispatcher())
+    private val fileProviderAuthority: String =
+        context.packageManager
+            .getPackageInfo(context.packageName, PackageInfoFlags.of(GET_PROVIDERS.toLong()))
+            .providers
+            .orEmpty()
+            .single { it.name == FileProvider::class.java.name }
+            .authority
 
     @Test
     fun `invoke writes the exported sudoku as JSON readable back through the returned uri`() =
@@ -88,7 +98,7 @@ class ShareSudokuUseCaseTest {
 
             val uri = useCase(sudoku)
 
-            uri.toString() shouldBe "content://de.lemke.sudoku.debug.fileprovider/cache/Sudoku%20(4%C3%974%20Hard).sudoku"
+            uri.toString() shouldBe "content://$fileProviderAuthority/cache/Sudoku%20(4%C3%974%20Hard).sudoku"
             val json =
                 context.contentResolver
                     .openInputStream(uri)!!
