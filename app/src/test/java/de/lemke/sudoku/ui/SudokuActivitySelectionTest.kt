@@ -17,6 +17,9 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.os.Looper
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -55,7 +58,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDialog
 import de.lemke.commonutils.R as commonutilsR
 
 /** sdk = 36: Robolectric's max supported SDK. */
@@ -511,6 +516,11 @@ class SudokuActivitySelectionTest {
             activity.select(1)
             activity.sudoku.errorsMade shouldBe 1
             activity.selected shouldBe numberOneButton
+            shadowOf(Looper.getMainLooper()).idle()
+            (ShadowDialog.getLatestDialog() as AlertDialog)
+                .findViewById<TextView>(android.R.id.message)
+                ?.text
+                ?.toString() shouldBe "Error limit reached (1)."
 
             activity.select(2)
             activity.selected shouldBe numberOneButton

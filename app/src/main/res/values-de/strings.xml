@@ -14,7 +14,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="app_description">Eine Sudoku App im schönen OneUI-Design.</string>
     <string name="about_app">Über Sudoku</string>
 
@@ -94,7 +94,7 @@
     <string name="delete_invalid_sudokus_summary">Fehlerhaft generierte Sudokus oder Sudokus, die beim Speichern in der Datenbank beschädigt wurden, löschen.</string>
     <string name="error_limit">Fehlerlimit</string>
     <string name="no_limit">Kein Limit</string>
-    <string name="error_limit_reached" tools:ignore="PluralsCandidate">Fehlerlimit von %1$d erreicht.</string>
+    <string name="error_limit_reached">Fehlerlimit erreicht (%1$d).</string>
 
     <string name="export_data">Daten exportieren</string>
     <string name="export_data_summary">JSON-Datei exportieren</string>

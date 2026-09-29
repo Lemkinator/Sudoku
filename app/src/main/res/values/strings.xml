@@ -107,7 +107,7 @@
     <string name="delete_invalid_sudokus_summary">Delete incorrectly generated Sudokus or Sudokus that were corrupted during saving to the database.</string>
     <string name="error_limit">Error limit</string>
     <string name="no_limit">No limit</string>
-    <string name="error_limit_reached" tools:ignore="PluralsCandidate">Error limit of %1$d reached.</string>
+    <string name="error_limit_reached">Error limit reached (%1$d).</string>
 
     <string name="export_data">Export data</string>
     <string name="export_data_summary">Export JSON file</string>
