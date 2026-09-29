@@ -17,17 +17,18 @@
 package de.lemke.sudoku.domain
 
 import android.content.Context
+import android.database.SQLException
 import android.net.Uri
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.Sudoku
+import io.kjson.JSONException
 import io.kjson.parseJSON
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.FileNotFoundException
+import java.io.IOException
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
@@ -37,7 +38,6 @@ class ImportSudokuUseCase @Inject constructor(
     private val saveSudoku: SaveSudokuUseCase,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
-    @Suppress("TooGenericExceptionCaught")
     suspend operator fun invoke(uri: Uri?): Sudoku? =
         withContext(ioDispatcher) {
             if (uri == null) return@withContext null
@@ -49,7 +49,11 @@ class ImportSudokuUseCase @Inject constructor(
                             .bufferedReader()
                             .use { it.readText() },
                     )
-                val json = BufferedReader(InputStreamReader(context.contentResolver.openInputStream(uri))).readText()
+                val json =
+                    context.contentResolver
+                        .openInputStream(uri)
+                        ?.bufferedReader()
+                        ?.use { it.readText() } ?: throw FileNotFoundException("No content for $uri")
                 val output = schema.validateBasic(json)
                 output.errors?.forEach { Log.e("ImportSudokuUseCase", "${it.error} - ${it.instanceLocation}") }
                 if (output.errors.isNullOrEmpty()) {
@@ -63,9 +67,14 @@ class ImportSudokuUseCase @Inject constructor(
                 } else {
                     Log.e("ImportDataUseCase", "JSON Schema validation failed")
                 }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
+            } catch (e: IOException) {
                 Log.e("ImportDataUseCase", "Error when reading file:", e)
+            } catch (e: SecurityException) {
+                Log.e("ImportDataUseCase", "No permission to read file:", e)
+            } catch (e: JSONException) {
+                Log.e("ImportDataUseCase", "Error when parsing file:", e)
+            } catch (e: SQLException) {
+                Log.e("ImportDataUseCase", "Error when saving imported sudoku:", e)
             }
             return@withContext null
         }

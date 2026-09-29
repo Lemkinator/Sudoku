@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain
 
 import android.app.Application
+import android.database.sqlite.SQLiteException
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -126,6 +127,34 @@ class ImportSudokuUseCaseTest {
             useCase(uri).shouldBeNull()
 
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
+    fun `returns null and never saves when the content is not parseable JSON`() =
+        runTest {
+            val uri = uriFor("{not json")
+
+            useCase(uri).shouldBeNull()
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
+    fun `returns null when saving the imported sudoku fails in the database`() =
+        runTest {
+            val uri = uriFor(sudokuToExport(testSudoku()).stringifyJSON())
+            coEvery { saveSudoku(any(), any()) } throws SQLiteException("boom")
+
+            useCase(uri).shouldBeNull()
+        }
+
+    @Test
+    fun `propagates an unexpected exception from saving instead of returning null`() =
+        runTest {
+            val uri = uriFor(sudokuToExport(testSudoku()).stringifyJSON())
+            coEvery { saveSudoku(any(), any()) } throws IllegalStateException("bug")
+
+            shouldThrow<IllegalStateException> { useCase(uri) }.message shouldBe "bug"
         }
 
     @Test

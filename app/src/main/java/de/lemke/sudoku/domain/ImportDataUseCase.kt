@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain
 
 import android.content.Context
+import android.database.SQLException
 import android.net.Uri
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
@@ -30,11 +31,11 @@ import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuFromExport
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
+import io.kjson.JSONException
 import io.kjson.parseJSON
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.FileNotFoundException
+import java.io.IOException
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
@@ -79,11 +80,10 @@ class ImportDataUseCase @Inject constructor(
                 .show()
         }
 
-    @Suppress("TooGenericExceptionCaught")
     private suspend fun importJson(
         jsonFile: DocumentFile,
         progressDialog: ProgressDialog,
-    ): Boolean {
+    ): Boolean =
         try {
             val schema =
                 JSONSchema.parse(
@@ -92,10 +92,14 @@ class ImportDataUseCase @Inject constructor(
                         .bufferedReader()
                         .use { it.readText() },
                 )
-            val json = BufferedReader(InputStreamReader(context.contentResolver.openInputStream(jsonFile.uri))).readText()
+            val json =
+                context.contentResolver
+                    .openInputStream(jsonFile.uri)
+                    ?.bufferedReader()
+                    ?.use { it.readText() } ?: throw FileNotFoundException("No content for ${jsonFile.uri}")
             val output = schema.validateBasic(json)
             output.errors?.forEach { Log.e("ImportDataUseCase", "${it.error} - ${it.instanceLocation}") }
-            return if (output.errors.isNullOrEmpty()) {
+            if (output.errors.isNullOrEmpty()) {
                 val exportSudokus = json.parseJSON<List<SudokuExport>>()
                 withContext(mainDispatcher) {
                     progressDialog.isIndeterminate = false
@@ -120,10 +124,17 @@ class ImportDataUseCase @Inject constructor(
                 Log.e("ImportDataUseCase", "JSON Schema validation failed")
                 false
             }
-        } catch (e: Exception) {
-            if (e is CancellationException) throw e
+        } catch (e: IOException) {
             Log.e("ImportDataUseCase", "Error when reading JSON file:", e)
-            return false
+            false
+        } catch (e: SecurityException) {
+            Log.e("ImportDataUseCase", "No permission to read JSON file:", e)
+            false
+        } catch (e: JSONException) {
+            Log.e("ImportDataUseCase", "Error when parsing JSON file:", e)
+            false
+        } catch (e: SQLException) {
+            Log.e("ImportDataUseCase", "Error when saving imported sudokus:", e)
+            false
         }
-    }
 }

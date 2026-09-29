@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.pm.ProviderInfo
 import android.database.Cursor
 import android.database.MatrixCursor
+import android.database.sqlite.SQLiteException
 import android.net.Uri
 import android.os.Looper
 import android.os.ParcelFileDescriptor
@@ -119,9 +120,10 @@ class ImportDataUseCaseTest {
         content: String,
         mimeType: String? = "application/json",
         exists: Boolean = true,
+        readDenied: Boolean = false,
     ): Uri {
         val file = File.createTempFile("sudoku_import", ".json").apply { writeText(content) }
-        val provider = FakeDocumentProvider(file, mimeType, exists)
+        val provider = FakeDocumentProvider(file, mimeType, exists, readDenied)
         provider.attachInfo(context, ProviderInfo().apply { this.authority = authority })
         ShadowContentResolver.registerProviderInternal(authority, provider)
         return Uri.parse("content://$authority/document/import")
@@ -203,11 +205,43 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
         val throwingRepository = mockk<SudokusRepository>()
-        coEvery { throwingRepository.saveSudoku(any(), any()) } throws RuntimeException("boom")
+        coEvery { throwingRepository.saveSudoku(any(), any()) } throws SQLiteException("boom")
         val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
 
         runTest { throwingUseCase(uri) }
 
+        resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
+    }
+
+    @Test
+    fun `propagates an unexpected exception from saving instead of reporting a failed import`() {
+        val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
+        val uri = registerDocument("import.savebug", json)
+        val throwingRepository = mockk<SudokusRepository>()
+        coEvery { throwingRepository.saveSudoku(any(), any()) } throws IllegalStateException("bug")
+        val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+
+        shouldThrow<IllegalStateException> { runTest { throwingUseCase(uri) } }.message shouldBe "bug"
+    }
+
+    @Test
+    fun `shows the invalid-JSON error when the document is not parseable JSON`() {
+        val uri = registerDocument("import.malformed", "[{not json")
+
+        runTest { useCase(uri) }
+
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
+        resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
+    }
+
+    @Test
+    fun `shows the invalid-JSON error when reading the document is denied`() {
+        val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
+        val uri = registerDocument("import.denied", json, readDenied = true)
+
+        runTest { useCase(uri) }
+
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
     }
 
@@ -238,6 +272,7 @@ private class FakeDocumentProvider(
     private val file: File,
     private val mimeType: String?,
     private val exists: Boolean,
+    private val readDenied: Boolean,
 ) : ContentProvider() {
     override fun onCreate() = true
 
@@ -270,7 +305,10 @@ private class FakeDocumentProvider(
     override fun openFile(
         uri: Uri,
         mode: String,
-    ): ParcelFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+    ): ParcelFileDescriptor {
+        if (readDenied) throw SecurityException("Permission Denial: reading $uri")
+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+    }
 
     override fun insert(
         uri: Uri,
