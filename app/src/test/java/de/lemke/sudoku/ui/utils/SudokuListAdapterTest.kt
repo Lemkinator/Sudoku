@@ -264,7 +264,7 @@ class SudokuListAdapterTest {
 
         adapter.onBindViewHolder(holder, 0)
 
-        holder.textView.text shouldBe "${sudoku.sizeString} | ${sudoku.difficulty.getLocalString(context.resources)}"
+        holder.textView.text shouldBe "4×4 | Easy"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 0, mode = Mode.NORMAL)
         assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline)
     }
@@ -291,7 +291,7 @@ class SudokuListAdapterTest {
 
         adapter.onBindViewHolder(holder, 0)
 
-        holder.textView.text shouldBe "${context.getString(R.string.level)} 5"
+        holder.textView.text shouldBe "Level 5"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.LEVEL)
         assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_error)
     }
@@ -320,7 +320,7 @@ class SudokuListAdapterTest {
 
         adapter.onBindViewHolder(holder, 0, mutableListOf())
 
-        holder.textView.text shouldBe "${sudoku.sizeString} | ${sudoku.difficulty.getLocalString(context.resources)}"
+        holder.textView.text shouldBe "4×4 | Easy"
     }
 
     @Test

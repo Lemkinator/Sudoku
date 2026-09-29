@@ -144,9 +144,11 @@
     <string name="games_started">Spiele gestartet</string>
     <string name="games_completed">Spiele gewonnen</string>
     <string name="win_rate">Siegesrate</string>
+    <string name="win_rate_value">%1$d\%%</string>
     <string name="wins_without_error">Siege ohne Fehler</string>
     <string name="time">Zeit</string>
     <string name="best_time">Beste Zeit</string>
+    <string name="best_time_value">%1$s (%2$s, %3$s)</string>
     <string name="average_time">Durchschnittliche Zeit</string>
     <string name="wins_without_hint">Siege ohne Hinweis</string>
     <string name="most_errors">Meiste Fehler</string>
@@ -219,6 +221,8 @@
     <string name="show_only_completed_sudokus">Nur abgeschlossene Sudokus anzeigen</string>
     <string name="show_all_sudokus">Alle Sudokus anzeigen</string>
     <string name="level">Level</string>
+    <string name="level_number">Level %1$d</string>
+    <string name="size_and_difficulty">%1$s | %2$s</string>
     <string name="next_level">Nächstes Level</string>
 
     <string name="error_import_failed">Sudoku konnte nicht importiert werden</string>

@@ -158,7 +158,9 @@ class TabStatisticsFragmentTest {
         runBlocking { saveSudoku(completedSudoku(seconds = 7200)) }
         launch { fragment ->
             val bestTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.best_time) }
-            bestTime.second.shouldContain("02:00:00")
+            bestTime.second shouldBe "02:00:00 (4×4, Very easy)"
+            val winRate = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.win_rate) }
+            winRate.second shouldBe "100%"
             val totalTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.total_time_played) }
             totalTime.second.shouldContain("2h 0m")
         }

@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui.fragments
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -110,22 +109,24 @@ class TabStatistics : Fragment() {
     }, viewLifecycleOwner, RESUMED)
      */
 
-    @SuppressLint("SetTextI18n")
     private fun updateStatistics(stats: SudokuStatistics) {
         statisticsList = mutableListOf()
         statisticsList.add(getString(R.string.games) to null)
         statisticsList.add(getString(R.string.games_started) to stats.gamesStarted.toString())
         statisticsList.add(getString(R.string.games_completed) to stats.gamesCompleted.toString())
-        statisticsList.add(getString(R.string.win_rate) to "${stats.winRate}%")
+        statisticsList.add(getString(R.string.win_rate) to getString(R.string.win_rate_value, stats.winRate))
         statisticsList.add(getString(R.string.time) to null)
         statisticsList.add(
-            getString(R.string.best_time) to secondsToTimeString(stats.bestTimeSudoku?.seconds ?: -1) +
-                if (stats.bestTimeSudoku !=
-                    null
-                ) {
-                    " (${stats.bestTimeSudoku.sizeString}, ${stats.bestTimeSudoku.difficulty.getLocalString(resources)})"
+            getString(R.string.best_time) to
+                if (stats.bestTimeSudoku != null) {
+                    getString(
+                        R.string.best_time_value,
+                        secondsToTimeString(stats.bestTimeSudoku.seconds),
+                        stats.bestTimeSudoku.sizeString,
+                        stats.bestTimeSudoku.difficulty.getLocalString(resources),
+                    )
                 } else {
-                    ""
+                    secondsToTimeString(-1)
                 },
         )
         statisticsList.add(getString(R.string.average_time) to secondsToTimeString(stats.averageTime))
@@ -216,7 +217,6 @@ class TabStatistics : Fragment() {
                 }
             }
 
-        @SuppressLint("SetTextI18n")
         override fun onBindViewHolder(
             holder: ViewHolder,
             position: Int,

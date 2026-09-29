@@ -157,9 +157,11 @@
     <string name="games_started">Games started</string>
     <string name="games_completed">Games won</string>
     <string name="win_rate">Win rate</string>
+    <string name="win_rate_value">%1$d\%%</string>
     <string name="wins_without_error">Wins without errors</string>
     <string name="time">Time</string>
     <string name="best_time">Best time</string>
+    <string name="best_time_value">%1$s (%2$s, %3$s)</string>
     <string name="average_time">Average Time</string>
     <string name="wins_without_hint">Wins without hint</string>
     <string name="most_errors">Most errors</string>
@@ -232,6 +234,8 @@
     <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
     <string name="show_all_sudokus">Show all Sudokus</string>
     <string name="level">Level</string>
+    <string name="level_number">Level %1$d</string>
+    <string name="size_and_difficulty">%1$s | %2$s</string>
     <string name="next_level">Next level</string>
 
     <string name="error_import_failed">Failed to import Sudoku</string>

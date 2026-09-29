@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui.utils
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
@@ -203,13 +202,24 @@ class SudokuListAdapter(
             }
         }
 
-        @SuppressLint("SetTextI18n")
         fun bindSudoku(sudoku: Sudoku) {
             textView.text =
                 when (mode) {
-                    Mode.DAILY -> sudoku.created.toLocalDate().formatFull
-                    Mode.LEVEL -> "${context.getString(R.string.level)} ${sudoku.modeLevel}"
-                    else -> sudoku.sizeString + " | " + sudoku.difficulty.getLocalString(context.resources)
+                    Mode.DAILY -> {
+                        sudoku.created.toLocalDate().formatFull
+                    }
+
+                    Mode.LEVEL -> {
+                        context.getString(R.string.level_number, sudoku.modeLevel)
+                    }
+
+                    else -> {
+                        context.getString(
+                            R.string.size_and_difficulty,
+                            sudoku.sizeString,
+                            sudoku.difficulty.getLocalString(context.resources),
+                        )
+                    }
                 }
             imageView!!.setImageDrawable(
                 ContextCompat.getDrawable(
