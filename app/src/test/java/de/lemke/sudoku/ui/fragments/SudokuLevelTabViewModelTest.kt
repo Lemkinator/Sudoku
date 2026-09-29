@@ -39,17 +39,14 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 
 private fun testSudoku(
     size: Int = 4,
@@ -375,7 +372,6 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("an empty emission generates the next level and reveals it with the same dispatch") {
             runTest {
-                Dispatchers.setMain(StandardTestDispatcher(testScheduler))
                 every { observeSudokuLevel(4) } returns flowOf(emptyList())
                 coEvery { getMaxSudokuLevel(4) } returns 5
                 val nextLevelSudoku = testSudoku()
@@ -385,8 +381,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     viewModel.events.test {
-                        runCurrent()
                         awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                        testScheduler.currentTime shouldBe 0
                         expectNoEvents()
                     }
                     expectMostRecentItem() shouldBe
@@ -402,7 +398,6 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("a completed first item generates the next level and reveals it with the same dispatch") {
             runTest {
-                Dispatchers.setMain(StandardTestDispatcher(testScheduler))
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
                 every { observeSudokuLevel(4) } returns flowOf(listOf(completedItem))
                 coEvery { getMaxSudokuLevel(4) } returns 5
@@ -413,8 +408,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                 viewModel.state.test {
                     viewModel.events.test {
-                        runCurrent()
                         awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevelSudoku.id)
+                        testScheduler.currentTime shouldBe 0
                         expectNoEvents()
                     }
                     expectMostRecentItem() shouldBe
