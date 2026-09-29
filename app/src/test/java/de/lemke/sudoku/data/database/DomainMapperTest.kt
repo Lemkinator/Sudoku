@@ -151,6 +151,12 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromExport(export).shouldBeNull()
         }
 
+        should("sudokuFromExport returns null for a size that is not a supported sudoku size") {
+            val export = sudokuToExport(sudoku()).let { it.copy(size = -2, fields = it.fields.take(4)) }
+
+            sudokuFromExport(export).shouldBeNull()
+        }
+
         should("sudokuToExport and sudokuFromExport round-trip a sudoku with all flags unset") {
             val sudoku = sudoku()
 

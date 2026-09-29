@@ -101,8 +101,12 @@ fun fieldToDb(
     )
 
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
-    val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, sudokuExport.size) }.toMutableList()
-    if (fields.size != sudokuExport.size * sudokuExport.size) return null
+    val fields =
+        sudokuExport.fields
+            .takeIf { sudokuExport.size in listOf(Sudoku.SIZE_4X4, Sudoku.SIZE_9X9, Sudoku.SIZE_16X16) }
+            ?.mapNotNull { fieldFromExport(it, sudokuExport.size) }
+            ?.toMutableList()
+    if (fields == null || fields.size != sudokuExport.size * sudokuExport.size) return null
     return Sudoku(
         id = SudokuId(sudokuExport.id),
         size = sudokuExport.size,
