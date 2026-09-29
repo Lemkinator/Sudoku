@@ -149,12 +149,14 @@ class ImportSudokuUseCaseTest {
         }
 
     @Test
-    fun `propagates an unexpected exception from saving instead of returning null`() =
+    fun `returns null instead of crashing when the content provider throws an unexpected exception`() =
         runTest {
-            val uri = uriFor(sudokuToExport(testSudoku()).stringifyJSON())
-            coEvery { saveSudoku(any(), any()) } throws IllegalStateException("bug")
+            // Robolectric throws UnsupportedOperationException for a content uri without a registered provider.
+            val uri = Uri.parse("content://de.lemke.sudoku.unregistered/import")
 
-            shouldThrow<IllegalStateException> { useCase(uri) }.message shouldBe "bug"
+            useCase(uri).shouldBeNull()
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
         }
 
     @Test

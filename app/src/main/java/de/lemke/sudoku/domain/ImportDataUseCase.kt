@@ -17,7 +17,6 @@
 package de.lemke.sudoku.domain
 
 import android.content.Context
-import android.database.SQLException
 import android.net.Uri
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
@@ -31,11 +30,10 @@ import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuFromExport
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
-import io.kjson.JSONException
 import io.kjson.parseJSON
 import java.io.FileNotFoundException
-import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
@@ -80,6 +78,7 @@ class ImportDataUseCase @Inject constructor(
                 .show()
         }
 
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun importJson(
         jsonFile: DocumentFile,
         progressDialog: ProgressDialog,
@@ -124,17 +123,9 @@ class ImportDataUseCase @Inject constructor(
                 Log.e("ImportDataUseCase", "JSON Schema validation failed")
                 false
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.e("ImportDataUseCase", "Error when reading JSON file:", e)
-            false
-        } catch (e: SecurityException) {
-            Log.e("ImportDataUseCase", "No permission to read JSON file:", e)
-            false
-        } catch (e: JSONException) {
-            Log.e("ImportDataUseCase", "Error when parsing JSON file:", e)
-            false
-        } catch (e: SQLException) {
-            Log.e("ImportDataUseCase", "Error when saving imported sudokus:", e)
             false
         }
 }
