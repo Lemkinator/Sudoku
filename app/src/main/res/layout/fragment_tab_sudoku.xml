@@ -16,7 +16,6 @@
 -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
@@ -169,8 +168,7 @@
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_list"
                 android:minHeight="90dp"
-                android:text="@string/level"
-                tools:ignore="RtlHardcoded" />
+                android:text="@string/level" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/dailyButton"
@@ -181,8 +179,7 @@
                 android:layout_weight="1"
                 android:drawableTop="@drawable/ic_oui_calendar_task"
                 android:minHeight="90dp"
-                android:text="@string/daily_sudoku"
-                tools:ignore="RtlHardcoded" />
+                android:text="@string/daily_sudoku" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/dailyAvailableButton"
@@ -195,8 +192,7 @@
                 android:minHeight="90dp"
                 android:text="@string/daily_sudoku"
                 android:textColor="@color/commonutils_primary_text_icon_color"
-                android:visibility="gone"
-                tools:ignore="RtlHardcoded" />
+                android:visibility="gone" />
 
         </LinearLayout>
 
