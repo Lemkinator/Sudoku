@@ -221,21 +221,22 @@ class SudokuListAdapter(
                         )
                     }
                 }
-            imageView!!.setImageDrawable(
-                ContextCompat.getDrawable(
-                    context,
-                    if (sudoku.completed) {
-                        dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline
-                    } else {
-                        dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline
-                    },
-                ),
-            )
-            if (sudoku.errorLimitReached(errorLimit)) {
-                imageView!!.setImageDrawable(
-                    ContextCompat.getDrawable(context, dev.oneuiproject.oneui.R.drawable.ic_oui_error),
-                )
-            }
+            val (icon, stateDescription) =
+                when {
+                    sudoku.errorLimitReached(errorLimit) -> {
+                        dev.oneuiproject.oneui.R.drawable.ic_oui_error to R.string.sudoku_state_error_limit_reached
+                    }
+
+                    sudoku.completed -> {
+                        dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline to R.string.completed_title
+                    }
+
+                    else -> {
+                        dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline to R.string.sudoku_state_in_progress
+                    }
+                }
+            imageView!!.setImageDrawable(ContextCompat.getDrawable(context, icon))
+            imageView!!.contentDescription = context.getString(stateDescription)
             textViewSmall!!.text =
                 buildString {
                     append(context.getString(R.string.current_time, sudoku.timeString))

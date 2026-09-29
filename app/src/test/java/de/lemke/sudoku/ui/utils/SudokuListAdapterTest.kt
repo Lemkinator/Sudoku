@@ -151,10 +151,12 @@ class SudokuListAdapterTest {
     private fun assertIcon(
         holder: SudokuListAdapter.ViewHolder,
         expectedResId: Int,
+        expectedDescription: String,
     ) {
         val imageView = holder.itemView.findViewById<ImageView>(R.id.item_icon)
         val actual = imageView.drawable.shouldNotBeNull().toComparableBitmap()
         actual.sameAs(referenceIconBitmap(expectedResId)).shouldBeTrue()
+        imageView.contentDescription shouldBe expectedDescription
     }
 
     private fun smallText(holder: SudokuListAdapter.ViewHolder): String =
@@ -266,7 +268,7 @@ class SudokuListAdapterTest {
 
         holder.textView.text shouldBe "4×4 | Easy"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 0, mode = Mode.NORMAL)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline, "In progress")
     }
 
     @Test
@@ -279,7 +281,7 @@ class SudokuListAdapterTest {
         adapter.onBindViewHolder(holder, 0)
 
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.NORMAL)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline, "In progress")
     }
 
     @Test
@@ -293,7 +295,7 @@ class SudokuListAdapterTest {
 
         holder.textView.text shouldBe "Level 5"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.LEVEL)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_error)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_error, "Error limit reached")
     }
 
     @Test
@@ -308,7 +310,7 @@ class SudokuListAdapterTest {
 
         holder.textView.text shouldBe created.toLocalDate().formatFull
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.DAILY)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline, "Completed")
     }
 
     @Test

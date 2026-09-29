@@ -138,6 +138,8 @@
     <string name="current_hints">Hints: %1$d</string>
     <string name="current_progress">%1$d\%%</string>
     <string name="completed_title">Completed</string>
+    <string name="sudoku_state_in_progress">In progress</string>
+    <string name="sudoku_state_error_limit_reached">Error limit reached</string>
     <string name="sudoku_completed">Look, I have successfully completed a Sudoku:\n</string>
     <string name="sudoku_solving">Look, I am currently solving this Sudoku: \nProgress: %1$d\%% \n</string>
     <string name="sudokuStatisticsString">Type: %1$s \nSize: %2$d×%2$d \nDifficulty: %3$s \nTime: %4$s \nErrors: %5$d \nHints: %6$d \nNotes: %7$d \nRegional highlight used: %8$s \nNumber highlight used: %9$s \nCreated: %10$s \nUpdated: %11$s</string>

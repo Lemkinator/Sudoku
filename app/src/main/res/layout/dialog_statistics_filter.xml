@@ -15,7 +15,6 @@
     limitations under the License.
 -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -48,8 +47,8 @@
                 android:layout_marginHorizontal="12dp"
                 android:clickable="false"
                 android:focusable="false"
-                android:src="@drawable/drawer_item_separator_bg"
-                tools:ignore="ContentDescription" />
+                android:importantForAccessibility="no"
+                android:src="@drawable/drawer_item_separator_bg" />
         </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatCheckBox
@@ -95,8 +94,8 @@
                 android:layout_marginHorizontal="12dp"
                 android:clickable="false"
                 android:focusable="false"
-                android:src="@drawable/drawer_item_separator_bg"
-                tools:ignore="ContentDescription" />
+                android:importantForAccessibility="no"
+                android:src="@drawable/drawer_item_separator_bg" />
         </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatCheckBox
@@ -156,8 +155,8 @@
                 android:layout_marginHorizontal="12dp"
                 android:clickable="false"
                 android:focusable="false"
-                android:src="@drawable/drawer_item_separator_bg"
-                tools:ignore="ContentDescription" />
+                android:importantForAccessibility="no"
+                android:src="@drawable/drawer_item_separator_bg" />
         </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatCheckBox

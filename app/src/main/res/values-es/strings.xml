@@ -125,6 +125,8 @@
     <string name="current_hints">Pistas: %1$d</string>
     <string name="current_progress">%1$d\%%</string>
     <string name="completed_title">Completado</string>
+    <string name="sudoku_state_in_progress">En curso</string>
+    <string name="sudoku_state_error_limit_reached">Límite de errores alcanzado</string>
     <string name="sudoku_completed">Mira, he completado un Sudoku con éxito:\n</string>
     <string name="sudoku_solving">Mira, estoy resolviendo este Sudoku en este momento: \nProgreso: %1$d\%% \n</string>
     <string name="sudokuStatisticsString">Tipo: %1$s \nTamaño: %2$d×%2$d \nDificultad: %3$s \nTiempo: %4$s \nErrores: %5$d \nPistas: %6$d \nNotas: %7$d \nResaltado regional usado: %8$s \nNúmero seleccionado resaltado: %9$s \nCreado: %10$s \nModificado: %11$s</string>
