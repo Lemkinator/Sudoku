@@ -19,7 +19,6 @@ package de.lemke.sudoku.domain
 import android.app.Application
 import android.content.Context
 import android.content.pm.ProviderInfo
-import android.database.sqlite.SQLiteException
 import android.net.Uri
 import android.os.Looper
 import android.widget.TextView
@@ -199,7 +198,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
         val throwingRepository = mockk<SudokusRepository>()
-        coEvery { throwingRepository.saveSudoku(any(), any()) } throws SQLiteException("boom")
+        coEvery { throwingRepository.saveSudoku(any(), any()) } throws RuntimeException("boom")
         val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
 
         runTest { throwingUseCase(uri) }
