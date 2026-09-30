@@ -27,6 +27,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.FieldDb
+import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.SudokuDb
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Difficulty
@@ -38,9 +41,6 @@ import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.mockk
-import java.io.File
 import java.time.LocalDateTime
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CancellationException
@@ -49,7 +49,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -62,6 +64,9 @@ import de.lemke.commonutils.R as commonutilsR
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class ImportDataUseCaseTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     // An Application context never gets the manifest theme, and AppCompat dialogs refuse to inflate without it.
     private val context: Context =
         ApplicationProvider.getApplicationContext<Context>().apply { setTheme(commonutilsR.style.CommonUtils_AppTheme) }
@@ -115,12 +120,22 @@ class ImportDataUseCaseTest {
         exists: Boolean = true,
         openFailure: RuntimeException? = null,
     ): Uri {
-        val file = File.createTempFile("sudoku_import", ".json").apply { writeText(content) }
+        val file = temporaryFolder.newFile().apply { writeText(content) }
         val provider = FakeDocumentProvider(file, mimeType, exists, openFailure)
         provider.attachInfo(context, ProviderInfo().apply { this.authority = authority })
         ShadowContentResolver.registerProviderInternal(authority, provider)
         return Uri.parse("content://$authority/document/import")
     }
+
+    private fun repositoryFailingInsertWith(failure: Exception): SudokusRepository =
+        SudokusRepository(
+            object : SudokuDao by database.sudokuDao() {
+                override suspend fun insert(
+                    sudoku: SudokuDb,
+                    fields: List<FieldDb>,
+                ) = throw failure
+            },
+        )
 
     private fun resultDialogMessage(): String? {
         shadowOf(Looper.getMainLooper()).idle()
@@ -197,12 +212,12 @@ class ImportDataUseCaseTest {
     fun `logs and reports failure instead of crashing when saving an imported sudoku throws`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
-        val throwingRepository = mockk<SudokusRepository>()
-        coEvery { throwingRepository.saveSudoku(any(), any()) } throws RuntimeException("boom")
-        val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+        val failingRepository = repositoryFailingInsertWith(RuntimeException("boom"))
+        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
 
         runTest { throwingUseCase(uri) }
 
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
     }
 
@@ -242,9 +257,8 @@ class ImportDataUseCaseTest {
     fun `rethrows a CancellationException from saving instead of reporting it as a failed import`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.cancelled", json)
-        val throwingRepository = mockk<SudokusRepository>()
-        coEvery { throwingRepository.saveSudoku(any(), any()) } throws CancellationException()
-        val throwingUseCase = ImportDataUseCase(context, throwingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+        val failingRepository = repositoryFailingInsertWith(CancellationException())
+        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
 
         shouldThrow<CancellationException> { runTest { throwingUseCase(uri) } }
     }
