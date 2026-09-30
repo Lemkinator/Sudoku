@@ -89,6 +89,26 @@ class SudokuLocalStatisticsStringTest {
     }
 
     @Test
+    @Config(qualifiers = "es")
+    fun `getLocalStatisticsString names a level sudoku by its level number in Spanish`() {
+        val sudoku = statisticsSudoku(modeLevel = 5)
+
+        val text = sudoku.getLocalStatisticsString(context.resources)
+
+        text.lines().first() shouldBe "Tipo: Nivel 5 "
+    }
+
+    @Test
+    @Config(qualifiers = "de")
+    fun `getLocalStatisticsString names a level sudoku by its level number in German`() {
+        val sudoku = statisticsSudoku(modeLevel = 5)
+
+        val text = sudoku.getLocalStatisticsString(context.resources)
+
+        text.lines().first() shouldBe "Typ: Level 5 "
+    }
+
+    @Test
     fun `getLocalStatisticsString reports number highlighting used`() {
         val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_NORMAL, numberHighlightingUsed = true)
 
