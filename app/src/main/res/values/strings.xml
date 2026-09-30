@@ -119,6 +119,10 @@
     <string name="import_data_ongoing">Data is being imported…</string>
     <string name="import_data_ongoing_processing">Data is being processed…</string>
     <string name="import_data_success">Data imported successfully.</string>
+    <plurals name="import_data_success_skipped">
+        <item quantity="one">Data imported successfully. %d invalid Sudoku was skipped.</item>
+        <item quantity="other">Data imported successfully. %d invalid Sudokus were skipped.</item>
+    </plurals>
     <string name="import_data_error_no_valid_json">Error: No valid JSON file.</string>
     <string name="import_data_error_no_valid_file">Error: No valid file.</string>
     <string name="import_data_message">Caution: Importing may take some time. Already existing data may be overwritten. In the following screen, please select the JSON file created during export (e.g.: \"sudoku_export_[date].json\").</string>

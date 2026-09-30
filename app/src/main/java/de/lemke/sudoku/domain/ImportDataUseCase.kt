@@ -19,7 +19,6 @@ package de.lemke.sudoku.domain
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.appcompat.app.AlertDialog
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ActivityContext
 import de.lemke.commonutils.di.IoDispatcher
@@ -28,6 +27,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuFromExport
+import de.lemke.sudoku.domain.model.DataImportResult
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import io.kjson.parseJSON
@@ -37,7 +37,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
-import de.lemke.commonutils.R as commonutilsR
 
 class ImportDataUseCase @Inject constructor(
     @param:ActivityContext private val context: Context,
@@ -45,7 +44,7 @@ class ImportDataUseCase @Inject constructor(
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(origin: Uri): Unit =
+    suspend operator fun invoke(origin: Uri): DataImportResult =
         withContext(mainDispatcher) {
             val progressDialog = ProgressDialog(context)
             progressDialog.setCancelable(false)
@@ -55,34 +54,24 @@ class ImportDataUseCase @Inject constructor(
             progressDialog.setMessage(context.getString(R.string.import_data_ongoing))
             progressDialog.setProgressStyle(HORIZONTAL)
             progressDialog.show()
-            var result: String
-            withContext(ioDispatcher) {
-                val importFile = DocumentFile.fromSingleUri(context, origin)
-                result =
+            val result =
+                withContext(ioDispatcher) {
+                    val importFile = DocumentFile.fromSingleUri(context, origin)
                     if (importFile != null && importFile.exists() && importFile.canRead() && importFile.type == "application/json") {
-                        if (importJson(importFile, progressDialog)) {
-                            context.getString(R.string.import_data_success)
-                        } else {
-                            context.getString(R.string.import_data_error_no_valid_json)
-                        }
+                        importJson(importFile, progressDialog)
                     } else {
-                        context.getString(R.string.import_data_error_no_valid_file)
+                        DataImportResult.InvalidFile
                     }
-            }
+                }
             progressDialog.dismiss()
-            AlertDialog
-                .Builder(context)
-                .setTitle(R.string.import_data)
-                .setPositiveButton(commonutilsR.string.commonutils_ok, null)
-                .setMessage(result)
-                .show()
+            result
         }
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun importJson(
         jsonFile: DocumentFile,
         progressDialog: ProgressDialog,
-    ): Boolean =
+    ): DataImportResult =
         try {
             val schema =
                 JSONSchema.parse(
@@ -118,14 +107,14 @@ class ImportDataUseCase @Inject constructor(
                     sudokusRepository.saveSudoku(sudoku)
                     withContext(mainDispatcher) { progressDialog.incrementProgressBy(1) }
                 }
-                true
+                DataImportResult.Imported(skippedCount = exportSudokus.size - sudokus.size)
             } else {
                 Log.e("ImportDataUseCase", "JSON Schema validation failed")
-                false
+                DataImportResult.InvalidJson
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Log.e("ImportDataUseCase", "Error when reading JSON file:", e)
-            false
+            DataImportResult.InvalidJson
         }
 }

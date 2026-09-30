@@ -106,6 +106,10 @@
     <string name="import_data_ongoing">Daten werden importiert…</string>
     <string name="import_data_ongoing_processing">Daten werden verarbeitet…</string>
     <string name="import_data_success">Daten erfolgreich importiert.</string>
+    <plurals name="import_data_success_skipped">
+        <item quantity="one">Daten erfolgreich importiert. %d ungültiges Sudoku wurde übersprungen.</item>
+        <item quantity="other">Daten erfolgreich importiert. %d ungültige Sudokus wurden übersprungen.</item>
+    </plurals>
     <string name="import_data_error_no_valid_json">Fehler: Keine gültige JSON-Datei ausgewählt.</string>
     <string name="import_data_error_no_valid_file">Fehler: Keine gültige Datei ausgewählt.</string>
     <string name="import_data_message">Achtung: Das Importieren kann einige Zeit in Anspruch nehmen. Bereits bestehende Daten werden evtl. überschrieben. Im folgenden Bildschirm bitte die beim Exportieren erstellte JSON-Datei auswählen (z.B.: \"sudoku_export_[Datum].json\").</string>
