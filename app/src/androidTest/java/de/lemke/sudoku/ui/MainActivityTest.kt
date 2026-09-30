@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.view.ViewTreeObserver
 import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -26,7 +27,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import de.lemke.commonutils.bypassOobe
@@ -35,13 +35,20 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.testLevelSudoku
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabHistoryViewModel
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -84,13 +91,12 @@ class MainActivityTest {
                 Intent(ApplicationProvider.getApplicationContext(), MainActivity::class.java),
             ).use { scenario ->
                 scenario.onActivity { it.onTabItemSelected(0) }
-                scenario.waitUntil { historyList().adapter?.itemCount == SEEDED_COUNT + 1 }
+                scenario.awaitLayout { historyList().adapter?.itemCount == SEEDED_COUNT + 1 }
                 scenario.moveToState(Lifecycle.State.CREATED)
                 runBlocking { saveSudoku(historySudoku(seconds = 75, updated = NEXT_DAY)) }
-                scenario.waitUntil { historyViewModel().sudokuHistory.value.size == SEEDED_COUNT + 3 }
+                scenario.awaitHistorySize(SEEDED_COUNT + 3)
                 scenario.moveToState(Lifecycle.State.RESUMED)
-                scenario.waitUntil { historyList().adapter?.itemCount == SEEDED_COUNT + 3 }
-                scenario.waitUntil { historyList().isSettled() }
+                scenario.awaitLayout { historyList().adapter?.itemCount == SEEDED_COUNT + 3 && historyList().isSettled() }
                 scenario.onActivity { activity ->
                     (activity.historyList().layoutManager as LinearLayoutManager).findFirstVisibleItemPosition() shouldBe 0
                     activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
@@ -118,21 +124,35 @@ class MainActivityTest {
             ?.text
             ?.toString()
 
-    private fun ActivityScenario<MainActivity>.waitUntil(condition: MainActivity.() -> Boolean) {
-        repeat(WAIT_ATTEMPTS) {
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            var met = false
-            onActivity { met = it.condition() }
-            if (met) return
-            Thread.sleep(WAIT_STEP_MS)
+    private fun ActivityScenario<MainActivity>.awaitLayout(condition: MainActivity.() -> Boolean) {
+        val met = CountDownLatch(1)
+        onActivity { activity ->
+            val listener =
+                object : ViewTreeObserver.OnGlobalLayoutListener {
+                    override fun onGlobalLayout() {
+                        if (met.count > 0 && activity.condition()) {
+                            activity.window.decorView.viewTreeObserver
+                                .removeOnGlobalLayoutListener(this)
+                            met.countDown()
+                        }
+                    }
+                }
+            activity.window.decorView.viewTreeObserver
+                .addOnGlobalLayoutListener(listener)
+            listener.onGlobalLayout()
         }
-        error("condition not met within ${WAIT_ATTEMPTS * WAIT_STEP_MS} ms")
+        check(met.await(WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) { "no layout met the condition within $WAIT_TIMEOUT_SECONDS s" }
+    }
+
+    private fun ActivityScenario<MainActivity>.awaitHistorySize(size: Int) {
+        lateinit var history: StateFlow<List<SudokuListItem>>
+        onActivity { history = it.historyViewModel().sudokuHistory }
+        runBlocking { withTimeout(WAIT_TIMEOUT_SECONDS.seconds) { history.first { it.size == size } } }
     }
 
     private companion object {
         const val SEEDED_COUNT = 30
-        const val WAIT_ATTEMPTS = 500
-        const val WAIT_STEP_MS = 10L
+        const val WAIT_TIMEOUT_SECONDS = 10L
         val SEEDED_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 15, 9, 0)
         val NEXT_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 16, 10, 0)
     }
