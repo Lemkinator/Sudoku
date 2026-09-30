@@ -168,6 +168,21 @@ class ImportSudokuUseCaseTest {
         }
 
     @Test
+    fun `returns null and never saves when the content provider opens the uri without content`() =
+        runTest {
+            val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(sudokuToExport(testSudoku()).stringifyJSON()) }
+            val provider = FakeDocumentProvider(file, "application/json", true, null, hasContent = false)
+            provider.attachInfo(context, ProviderInfo().apply { authority = "import.nocontent" })
+            ShadowContentResolver.registerProviderInternal("import.nocontent", provider)
+            val uri = Uri.parse("content://import.nocontent/document/import")
+            context.contentResolver.openInputStream(uri).shouldBeNull()
+
+            useCase(uri).shouldBeNull()
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
     fun `rethrows a CancellationException instead of swallowing it as a failed import`() =
         runTest {
             val sudoku = testSudoku()

@@ -30,6 +30,7 @@ internal class FakeDocumentProvider(
     private val mimeType: String?,
     private val exists: Boolean,
     private val openFailure: RuntimeException?,
+    private val hasContent: Boolean = true,
 ) : ContentProvider() {
     override fun onCreate() = true
 
@@ -62,9 +63,9 @@ internal class FakeDocumentProvider(
     override fun openFile(
         uri: Uri,
         mode: String,
-    ): ParcelFileDescriptor {
+    ): ParcelFileDescriptor? {
         if (openFailure != null) throw openFailure
-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        return if (hasContent) ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY) else null
     }
 
     override fun insert(

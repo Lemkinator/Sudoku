@@ -119,9 +119,10 @@ class ImportDataUseCaseTest {
         mimeType: String? = "application/json",
         exists: Boolean = true,
         openFailure: RuntimeException? = null,
+        hasContent: Boolean = true,
     ): Uri {
         val file = temporaryFolder.newFile().apply { writeText(content) }
-        val provider = FakeDocumentProvider(file, mimeType, exists, openFailure)
+        val provider = FakeDocumentProvider(file, mimeType, exists, openFailure, hasContent)
         provider.attachInfo(context, ProviderInfo().apply { this.authority = authority })
         ShadowContentResolver.registerProviderInternal(authority, provider)
         return Uri.parse("content://$authority/document/import")
@@ -246,6 +247,17 @@ class ImportDataUseCaseTest {
     fun `shows the invalid-JSON error when reading the document is denied`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.denied", json, openFailure = SecurityException("Permission Denial"))
+
+        runTest { useCase(uri) }
+
+        runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
+        resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_json)
+    }
+
+    @Test
+    fun `shows the invalid-JSON error when the provider opens the document without content`() {
+        val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
+        val uri = registerDocument("import.nocontent", json, hasContent = false)
 
         runTest { useCase(uri) }
 
