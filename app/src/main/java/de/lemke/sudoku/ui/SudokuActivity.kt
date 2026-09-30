@@ -677,7 +677,7 @@ class SudokuActivity : AppCompatActivity() {
             }
         val sudokuName = getString(R.string.sudoku)
         binding.sudokuToolbarLayout.setTitle(
-            detail?.let { getString(R.string.sudoku_title_detail, sudokuName, it) } ?: sudokuName,
+            if (detail == null) sudokuName else getString(R.string.sudoku_title_detail, sudokuName, detail),
         )
     }
 
