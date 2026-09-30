@@ -41,7 +41,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -51,6 +53,9 @@ import org.robolectric.shadows.ShadowContentResolver
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class ImportSudokuUseCaseTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     private val context = ApplicationProvider.getApplicationContext<Application>()
     private val saveSudoku = mockk<SaveSudokuUseCase>(relaxUnitFun = true)
     private val useCase = ImportSudokuUseCase(context, saveSudoku, UnconfinedTestDispatcher())
@@ -72,9 +77,7 @@ class ImportSudokuUseCaseTest {
         )
 
     private fun uriFor(content: String): Uri {
-        val file = File.createTempFile("sudoku-import", ".json")
-        file.writeText(content)
-        file.deleteOnExit()
+        val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(content) }
         return Uri.fromFile(file)
     }
 
@@ -153,7 +156,7 @@ class ImportSudokuUseCaseTest {
     @Test
     fun `returns null instead of crashing when the content provider throws an unexpected exception`() =
         runTest {
-            val file = File.createTempFile("sudoku-import", ".json").apply { writeText(sudokuToExport(testSudoku()).stringifyJSON()) }
+            val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(sudokuToExport(testSudoku()).stringifyJSON()) }
             val provider = FakeDocumentProvider(file, "application/json", true, UnsupportedOperationException("provider bug"))
             provider.attachInfo(context, ProviderInfo().apply { authority = "import.providerbug" })
             ShadowContentResolver.registerProviderInternal("import.providerbug", provider)
