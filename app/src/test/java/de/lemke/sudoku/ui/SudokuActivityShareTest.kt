@@ -257,6 +257,13 @@ class SudokuActivityShareTest {
         }
 
     @Test
+    fun `the title is the bare name for a mode level outside normal, daily and level`() =
+        launch(formulaicSudoku(4, modeLevel = -2)) { activity ->
+            activity.binding.sudokuToolbarLayout.expandedTitle
+                .toString() shouldBe "Sudoku"
+        }
+
+    @Test
     fun `the subtitle shows a sudoku level's fixed error limit instead of the user's`() {
         userSettings.errorLimit = 5
         launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
