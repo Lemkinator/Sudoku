@@ -17,17 +17,11 @@
 package de.lemke.sudoku.domain
 
 import android.app.Application
-import android.content.ContentProvider
-import android.content.ContentValues
 import android.content.Context
 import android.content.pm.ProviderInfo
-import android.database.Cursor
-import android.database.MatrixCursor
 import android.database.sqlite.SQLiteException
 import android.net.Uri
 import android.os.Looper
-import android.os.ParcelFileDescriptor
-import android.provider.DocumentsContract
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.room.Room
@@ -266,65 +260,4 @@ class ImportDataUseCaseTest {
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
         resultDialogMessage() shouldBe context.getString(R.string.import_data_error_no_valid_file)
     }
-}
-
-private class FakeDocumentProvider(
-    private val file: File,
-    private val mimeType: String?,
-    private val exists: Boolean,
-    private val openFailure: RuntimeException?,
-) : ContentProvider() {
-    override fun onCreate() = true
-
-    override fun query(
-        uri: Uri,
-        projection: Array<String>?,
-        selection: String?,
-        selectionArgs: Array<String>?,
-        sortOrder: String?,
-    ): Cursor {
-        val columns = projection ?: arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
-        val cursor = MatrixCursor(columns)
-        if (exists) {
-            cursor.addRow(
-                columns.map {
-                    when (it) {
-                        DocumentsContract.Document.COLUMN_DOCUMENT_ID -> "import"
-                        DocumentsContract.Document.COLUMN_MIME_TYPE -> mimeType
-                        DocumentsContract.Document.COLUMN_DISPLAY_NAME -> file.name
-                        else -> null
-                    }
-                },
-            )
-        }
-        return cursor
-    }
-
-    override fun getType(uri: Uri): String? = mimeType
-
-    override fun openFile(
-        uri: Uri,
-        mode: String,
-    ): ParcelFileDescriptor {
-        if (openFailure != null) throw openFailure
-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-    }
-
-    override fun insert(
-        uri: Uri,
-        values: ContentValues?,
-    ): Uri? = null
-
-    override fun delete(
-        uri: Uri,
-        selection: String?,
-        selectionArgs: Array<String>?,
-    ): Int = 0
-
-    override fun update(
-        uri: Uri,
-        values: ContentValues?,
-        selection: String?,
-        selectionArgs: Array<String>?,
-    ): Int = 0
 }

@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain
 
 import android.app.Application
+import android.content.pm.ProviderInfo
 import android.database.sqlite.SQLiteException
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
@@ -44,6 +45,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowContentResolver
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -151,8 +153,11 @@ class ImportSudokuUseCaseTest {
     @Test
     fun `returns null instead of crashing when the content provider throws an unexpected exception`() =
         runTest {
-            // Robolectric throws UnsupportedOperationException for a content uri without a registered provider.
-            val uri = Uri.parse("content://de.lemke.sudoku.unregistered/import")
+            val file = File.createTempFile("sudoku-import", ".json").apply { writeText(sudokuToExport(testSudoku()).stringifyJSON()) }
+            val provider = FakeDocumentProvider(file, "application/json", true, UnsupportedOperationException("provider bug"))
+            provider.attachInfo(context, ProviderInfo().apply { authority = "import.providerbug" })
+            ShadowContentResolver.registerProviderInternal("import.providerbug", provider)
+            val uri = Uri.parse("content://import.providerbug/document/import")
 
             useCase(uri).shouldBeNull()
 
