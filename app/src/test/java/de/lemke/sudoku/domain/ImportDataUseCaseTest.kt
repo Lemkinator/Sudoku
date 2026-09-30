@@ -168,7 +168,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `saves the supported sudokus and counts every entry with an unsupported size as skipped`() {
+    fun `saves the readable sudokus and counts every entry the mapper rejects as skipped`() {
         val valid4 = testSudoku(size = 4)
         val valid9 = testSudoku(size = 9)
         val size5 = sudokuToExport(testSudoku(size = 4)).copy(size = 5)
@@ -194,7 +194,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the schema-validation error when the JSON does not match the export schema`() {
+    fun `returns InvalidJson when the JSON does not match the export schema`() {
         val uri = registerDocument("import.badschema", "{}")
 
         runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
@@ -203,7 +203,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-file error when the resolved document has the wrong mime type`() {
+    fun `returns InvalidFile when the resolved document has the wrong mime type`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.wrongmime", json, mimeType = "text/plain")
 
@@ -213,7 +213,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-file error when the resolved document has no readable mime type`() {
+    fun `returns InvalidFile when the resolved document has no readable mime type`() {
         // DocumentsContractApi19.canRead() returns false for an empty MIME type before any type comparison.
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.nomime", json, mimeType = null)
@@ -236,7 +236,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-JSON error instead of crashing when the provider fails with an unexpected exception`() {
+    fun `returns InvalidJson instead of crashing when the provider fails with an unexpected exception`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.providerbug", json, openFailure = UnsupportedOperationException("provider bug"))
 
@@ -246,7 +246,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-JSON error when the document is not parseable JSON`() {
+    fun `returns InvalidJson when the document is not parseable JSON`() {
         val uri = registerDocument("import.malformed", "[{not json")
 
         runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
@@ -255,7 +255,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-JSON error when reading the document is denied`() {
+    fun `returns InvalidJson when reading the document is denied`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.denied", json, openFailure = SecurityException("Permission Denial"))
 
@@ -265,7 +265,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-JSON error when the provider opens the document without content`() {
+    fun `returns InvalidJson when the provider opens the document without content`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.nocontent", json, hasContent = false)
 
@@ -285,7 +285,7 @@ class ImportDataUseCaseTest {
     }
 
     @Test
-    fun `shows the invalid-file error when the document does not exist`() {
+    fun `returns InvalidFile when the document does not exist`() {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.missing", json, exists = false)
 

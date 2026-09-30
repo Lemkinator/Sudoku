@@ -318,10 +318,16 @@ class SettingsFragmentTest {
     private fun registerImportDocument(
         authority: String,
         exports: List<SudokuExport>,
+    ): Uri = registerImportDocument(authority, exports.stringifyJSON(), "application/json")
+
+    private fun registerImportDocument(
+        authority: String,
+        content: String,
+        mimeType: String,
     ): Uri {
         val file = File.createTempFile("settings-fragment-import", ".json").apply { deleteOnExit() }
-        file.writeText(exports.stringifyJSON())
-        val provider = FakeDocumentProvider(file, "application/json", exists = true, openFailure = null)
+        file.writeText(content)
+        val provider = FakeDocumentProvider(file, mimeType, exists = true, openFailure = null)
         provider.attachInfo(ApplicationProvider.getApplicationContext(), ProviderInfo().apply { this.authority = authority })
         ShadowContentResolver.registerProviderInternal(authority, provider)
         return Uri.parse("content://$authority/document/import")
@@ -379,6 +385,22 @@ class SettingsFragmentTest {
             val uri = registerImportDocument("settings.import.two", listOf(exportOfSize(5), exportOfSize(4), exportOfSize(0)))
 
             importResultMessage(fragment, uri) shouldBe "Data imported successfully. 2 invalid Sudokus were skipped."
+        }
+
+    @Test
+    fun `importData's result dialog shows the invalid-file error for a document with the wrong mime type`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.wrongmime", listOf(exportOfSize(4)).stringifyJSON(), "text/plain")
+
+            importResultMessage(fragment, uri) shouldBe "Error: No valid file."
+        }
+
+    @Test
+    fun `importData's result dialog shows the invalid-JSON error for malformed JSON`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.malformed", "[{not json", "application/json")
+
+            importResultMessage(fragment, uri) shouldBe "Error: No valid JSON file."
         }
 
     // endregion
