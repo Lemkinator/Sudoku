@@ -85,7 +85,7 @@ class SudokuLocalStatisticsStringTest {
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
-        text.contains("${context.resources.getString(R.string.level)} 5") shouldBe true
+        text.lines().first() shouldBe "Type: Level 5 "
     }
 
     @Test

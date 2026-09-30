@@ -423,7 +423,7 @@ class Sudoku(
             when (modeLevel) {
                 MODE_NORMAL -> resources.getString(R.string.normal_sudoku)
                 MODE_DAILY -> resources.getString(R.string.daily_sudoku)
-                else -> resources.getString(R.string.level) + " $modeLevel"
+                else -> resources.getString(R.string.level_number, modeLevel)
             },
             size,
             difficulty.getLocalString(resources),
