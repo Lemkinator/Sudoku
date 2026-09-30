@@ -668,14 +668,16 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun setTitle() {
+        val detail =
+            when {
+                sudoku.isNormalSudoku -> sudoku.difficulty.getLocalString(resources)
+                sudoku.isDailySudoku -> sudoku.created.dateFormatShort
+                sudoku.isSudokuLevel -> getString(R.string.level_number, sudoku.modeLevel)
+                else -> null
+            }
+        val sudokuName = getString(R.string.sudoku)
         binding.sudokuToolbarLayout.setTitle(
-            getString(R.string.sudoku) +
-                when {
-                    sudoku.isNormalSudoku -> " (${sudoku.difficulty.getLocalString(resources)})"
-                    sudoku.isDailySudoku -> " (${sudoku.created.dateFormatShort})"
-                    sudoku.isSudokuLevel -> " (${getString(R.string.level)} ${sudoku.modeLevel})"
-                    else -> ""
-                },
+            detail?.let { getString(R.string.sudoku_title_detail, sudokuName, it) } ?: sudokuName,
         )
     }
 

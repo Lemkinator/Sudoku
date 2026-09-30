@@ -229,7 +229,7 @@ class SudokuActivityShareTest {
     @Test
     fun `the title reflects a daily sudoku's date`() =
         launch(formulaicSudoku(4, modeLevel = MODE_DAILY)) { activity ->
-            val expected = "${activity.getString(R.string.sudoku)} (${activity.sudoku.created.dateFormatShort})"
+            val expected = "Sudoku (${activity.sudoku.created.dateFormatShort})"
             activity.binding.sudokuToolbarLayout.expandedTitle
                 .toString() shouldBe expected
         }
@@ -245,9 +245,15 @@ class SudokuActivityShareTest {
     @Test
     fun `the title reflects a sudoku level's number`() =
         launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
-            val expected = "${activity.getString(R.string.sudoku)} (${activity.getString(R.string.level)} 3)"
             activity.binding.sudokuToolbarLayout.expandedTitle
-                .toString() shouldBe expected
+                .toString() shouldBe "Sudoku (Level 3)"
+        }
+
+    @Test
+    fun `the title reflects a normal sudoku's difficulty`() =
+        launch(formulaicSudoku(4, modeLevel = MODE_NORMAL)) { activity ->
+            activity.binding.sudokuToolbarLayout.expandedTitle
+                .toString() shouldBe "Sudoku (Very easy)"
         }
 
     @Test

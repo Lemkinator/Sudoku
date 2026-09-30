@@ -224,6 +224,7 @@
     <string name="show_all_sudokus">Mostrar todos los sudokus</string>
     <string name="level">Nivel</string>
     <string name="level_number">Nivel %1$d</string>
+    <string name="sudoku_title_detail">%1$s (%2$s)</string>
     <string name="size_and_difficulty">%1$s | %2$s</string>
     <string name="next_level">Siguiente nivel</string>
 

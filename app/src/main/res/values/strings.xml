@@ -237,6 +237,7 @@
     <string name="show_all_sudokus">Show all Sudokus</string>
     <string name="level">Level</string>
     <string name="level_number">Level %1$d</string>
+    <string name="sudoku_title_detail">%1$s (%2$s)</string>
     <string name="size_and_difficulty">%1$s | %2$s</string>
     <string name="next_level">Next level</string>
 
