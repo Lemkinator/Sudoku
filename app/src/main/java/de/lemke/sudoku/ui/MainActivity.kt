@@ -359,16 +359,14 @@ class MainActivity : AppCompatActivity() {
         position: Int,
         tab: TabLayout.Tab? = null,
     ) {
-        val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
             val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
             for (fragment in supportFragmentManager.fragments) transaction.hide(fragment)
-            transaction.show(newFragment).commitNowAllowingStateLoss()
+            transaction.show(fragmentsInstance[position]).commitNowAllowingStateLoss()
             val newTab = tab ?: binding.bottomTab.getTabAt(position)
             if (newTab?.isSelected == false) newTab.select()
         }
-        newFragment.onResume()
         invalidateOptionsMenu()
     }
 }

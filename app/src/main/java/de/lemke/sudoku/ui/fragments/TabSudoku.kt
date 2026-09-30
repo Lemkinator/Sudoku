@@ -142,7 +142,17 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch {
+        refresh()
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (!hidden) refresh()
+    }
+
+    private fun refresh() {
+        if (view == null) return
+        viewLifecycleOwner.lifecycleScope.launch {
             val sudoku = viewModel.getContinuableSudoku()
             if (sudoku != null) {
                 binding.continueGameButton.isVisible = true
