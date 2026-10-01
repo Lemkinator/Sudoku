@@ -21,6 +21,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -42,10 +43,10 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
         beforeEach { clearMocks(getAllSudokus) }
 
         should("returns true when a completed daily sudoku exists for the date") {
-            val completedField = Field(Position.create(0, 4), solution = 1, value = 1)
+            val completedField = Field(Position.create(0, SudokuSize.FOUR), solution = 1, value = 1)
             val completedSudoku =
                 Sudoku.create(
-                    size = 4,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),
@@ -57,10 +58,10 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
         }
 
         should("returns false when no daily sudoku is completed on the date") {
-            val incompleteField = Field(Position.create(0, 4), solution = 1, value = null)
+            val incompleteField = Field(Position.create(0, SudokuSize.FOUR), solution = 1, value = null)
             val incompleteSudoku =
                 Sudoku.create(
-                    size = 4,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),
@@ -72,10 +73,10 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
         }
 
         should("returns false when a completed daily sudoku exists but on a different date") {
-            val completedField = Field(Position.create(0, 4), solution = 1, value = 1)
+            val completedField = Field(Position.create(0, SudokuSize.FOUR), solution = 1, value = 1)
             val completedOnOtherDate =
                 Sudoku.create(
-                    size = 4,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.plusDays(1).atStartOfDay(),

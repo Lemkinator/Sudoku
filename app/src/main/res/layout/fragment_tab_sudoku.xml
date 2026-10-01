@@ -77,7 +77,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="10dp"
-            android:max="2"
             android:min="0"
             app:seamless="true"
             app:seslSeekBarMode="level_bar" />

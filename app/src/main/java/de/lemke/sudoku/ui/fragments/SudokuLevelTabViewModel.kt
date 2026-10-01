@@ -69,7 +69,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     private val saveSudoku: SaveSudokuUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val size: SudokuSize = SudokuSize.fromValue(savedStateHandle["size"] ?: SudokuSize.FOUR.value)
+    private val size: SudokuSize = SudokuSize.fromValue(checkNotNull(savedStateHandle.get<Int>(SudokuLevelTab.KEY_SIZE)))
 
     val state: StateFlow<SudokuLevelTabUiState> =
         flow {
@@ -97,7 +97,7 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
-        observeSudokuLevel(size.value).transformLatest { sudokuLevel ->
+        observeSudokuLevel(size).transformLatest { sudokuLevel ->
             if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
                 runCatching { findOrGenerateNextLevelSudoku() }
                     .onSuccess { nextLevel ->
@@ -131,13 +131,13 @@ class SudokuLevelTabViewModel @Inject constructor(
         }
 
     private suspend fun FlowCollector<SudokuLevelTabUiState>.findOrGenerateNextLevelSudoku(): Sudoku {
-        val level = getMaxSudokuLevel(size.value) + 1
+        val level = getMaxSudokuLevel(size) + 1
         nextLevelSudoku?.takeIf { it.modeLevel == level }?.let { return it }
         emit(state.value.copy(isGeneratingNextLevel = true))
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
     suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
-        if (getMaxSudokuLevel(size.value) < sudoku.modeLevel) saveSudoku(sudoku)
+        if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku)
     }
 }

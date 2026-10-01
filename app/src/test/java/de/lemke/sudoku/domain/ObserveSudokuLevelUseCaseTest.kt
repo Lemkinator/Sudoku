@@ -21,6 +21,7 @@ import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -36,10 +37,10 @@ class ObserveSudokuLevelUseCaseTest : ShouldSpec(
         val useCase = ObserveSudokuLevelUseCase(sudokusRepository, UnconfinedTestDispatcher())
 
         should("maps each sudoku to a SudokuItem labeled with its modeLevel") {
-            val sudoku = Sudoku.create(size = 9, difficulty = Difficulty.EASY, modeLevel = 5, fields = mutableListOf())
-            every { sudokusRepository.observeSudokuLevel(9) } returns flowOf(listOf(sudoku))
+            val sudoku = Sudoku.create(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = 5, fields = mutableListOf())
+            every { sudokusRepository.observeSudokuLevel(SudokuSize.NINE) } returns flowOf(listOf(sudoku))
 
-            useCase(9).test {
+            useCase(SudokuSize.NINE).test {
                 awaitItem() shouldBe listOf(SudokuListItem.SudokuItem(sudoku, "5"))
                 awaitComplete()
             }

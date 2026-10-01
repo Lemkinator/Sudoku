@@ -36,6 +36,7 @@ import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabHistoryViewModel
@@ -107,7 +108,7 @@ class MainActivityTest {
     private fun historySudoku(
         seconds: Int,
         updated: LocalDateTime,
-    ): Sudoku = testLevelSudoku(size = 4, level = MODE_NORMAL).copy(seconds = seconds, created = updated, updated = updated)
+    ): Sudoku = testLevelSudoku(size = SudokuSize.FOUR, level = MODE_NORMAL).copy(seconds = seconds, created = updated, updated = updated)
 
     private fun MainActivity.historyTab(): TabHistory = supportFragmentManager.fragments.filterIsInstance<TabHistory>().first()
 

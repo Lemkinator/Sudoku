@@ -50,14 +50,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
     private val viewModel: TabSudokuViewModel by viewModels()
 
-    private val SeslSeekBar.sudokuSize: SudokuSize
-        get() =
-            when (this.progress) {
-                0 -> SudokuSize.FOUR
-                1 -> SudokuSize.NINE
-                2 -> SudokuSize.SIXTEEN
-                else -> SudokuSize.NINE
-            }
+    private val SeslSeekBar.sudokuSize: SudokuSize get() = SudokuSize.entries[progress]
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,6 +66,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         super.onViewCreated(view, savedInstanceState)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
         binding.sizeSeekbar.setSeamless(true)
+        binding.sizeSeekbar.max = SudokuSize.entries.lastIndex
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.onSingleClick {
@@ -157,7 +151,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 binding.continueGameButton.text =
                     getString(
                         R.string.continue_game,
-                        sudoku.sizeString,
+                        sudoku.size.getLocalString(resources),
                         sudoku.difficulty.getLocalString(resources),
                     )
                 binding.continueGameButton.onSingleClick {

@@ -45,6 +45,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -128,12 +129,12 @@ class TabHistoryActionModeTest {
     }
 
     private fun historySudoku(): Sudoku {
-        val size = 4
+        val size = SudokuSize.FOUR
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = MODE_NORMAL,
-            fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = 1) },
+            fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
         )
     }
 

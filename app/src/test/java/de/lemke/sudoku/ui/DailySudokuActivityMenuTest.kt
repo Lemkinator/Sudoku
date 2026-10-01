@@ -40,6 +40,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -50,7 +51,6 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -107,8 +107,8 @@ class DailySudokuActivityMenuTest {
     }
 
     private fun dailySudoku(sudokuId: SudokuId = SudokuId.generate()): Sudoku {
-        val size = 4
-        val blockSize = sqrt(size.toDouble()).toInt()
+        val size = SudokuSize.FOUR
+        val blockSize = size.blockSize
         return Sudoku.create(
             sudokuId = sudokuId,
             size = size,
@@ -116,10 +116,10 @@ class DailySudokuActivityMenuTest {
             modeLevel = MODE_DAILY,
             created = LocalDateTime.now(testClock),
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
                 },
         )

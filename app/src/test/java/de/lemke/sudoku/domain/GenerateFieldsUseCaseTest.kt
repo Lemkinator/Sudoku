@@ -31,20 +31,15 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
         val useCase = GenerateFieldsUseCase(UnconfinedTestDispatcher(), CreatorSolvedBoardGenerator())
         val patternUseCase = GenerateFieldsUseCase(UnconfinedTestDispatcher(), PatternSolvedBoardGenerator())
 
-        val fieldCountBySize = mapOf(SudokuSize.FOUR to 16, SudokuSize.NINE to 81, SudokuSize.SIXTEEN to 256)
-        val digitsBySize =
-            mapOf(SudokuSize.FOUR to (1..4).toSet(), SudokuSize.NINE to (1..9).toSet(), SudokuSize.SIXTEEN to (1..16).toSet())
-
-        should("cover every sudoku size") {
-            fieldCountBySize.keys shouldBe SudokuSize.entries.toSet()
-            digitsBySize.keys shouldBe SudokuSize.entries.toSet()
-        }
-
-        SudokuSize.entries.forEach { size ->
+        listOf(
+            Triple(SudokuSize.FOUR, 16, (1..4).toSet()),
+            Triple(SudokuSize.NINE, 81, (1..9).toSet()),
+            Triple(SudokuSize.SIXTEEN, 256, (1..16).toSet()),
+        ).forEach { (size, fieldCount, digits) ->
             should("generate a $size grid with its field count and digits") {
                 val fields = patternUseCase(size, Difficulty.MEDIUM)
-                fields shouldHaveSize fieldCountBySize.getValue(size)
-                fields.map { it.solution }.toSet() shouldBe digitsBySize.getValue(size)
+                fields shouldHaveSize fieldCount
+                fields.map { it.solution }.toSet() shouldBe digits
             }
         }
 
@@ -79,11 +74,10 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
             fields.filter { !it.given }.forEach { it.value shouldBe null }
         }
 
-        should("remove exactly numbersToRemove fields for the requested difficulty") {
-            val difficulty = Difficulty.HARD
-            val fields = useCase(SudokuSize.NINE, difficulty)
+        should("remove exactly 51 fields from a 9x9 HARD grid") {
+            val fields = useCase(SudokuSize.NINE, Difficulty.HARD)
             val removedCount = fields.count { !it.given }
-            removedCount shouldBe difficulty.numbersToRemove(SudokuSize.NINE)
+            removedCount shouldBe 51
         }
 
         should("keep every solution value within the grid's valid digit range") {

@@ -45,8 +45,8 @@ class GenerateFieldsUseCase @Inject constructor(
             val gameMatrix = solvedBoardGenerator.generate(schema)
             val matrix = gameMatrix.array
             val riddle = Creator.createRiddle(gameMatrix, difficulty.numbersToRemove(size)).array
-            return@withContext MutableList(size.value * size.value) { index ->
-                val position = Position.create(index, size.value)
+            return@withContext MutableList(size.cellCount) { index ->
+                val position = Position.create(index, size)
                 val value = riddle[position.row][position.column]
                 val solutionValue = matrix[position.row][position.column]
                 Field(

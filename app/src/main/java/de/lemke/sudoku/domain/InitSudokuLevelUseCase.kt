@@ -31,8 +31,8 @@ class InitSudokuLevelUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(size: SudokuSize) =
         withContext(defaultDispatcher) {
-            val sudokuLevel = sudokusRepository.getSudokuLevel(size.value)
-            val maxLevel = getMaxSudokuLevel(size.value)
+            val sudokuLevel = sudokusRepository.getSudokuLevel(size)
+            val maxLevel = getMaxSudokuLevel(size)
             if (sudokuLevel.size < maxLevel) {
                 val missingLevels = (1..maxLevel).filter { level -> sudokuLevel.none { it.modeLevel == level } }
                 missingLevels.forEach { sudokusRepository.saveSudoku(generateSudokuLevel(size, it)) }

@@ -25,10 +25,11 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.LocalDateTime
 import org.robolectric.Shadows.shadowOf
 
-private const val LIST_SIZE = 4
+private val LIST_SIZE = SudokuSize.FOUR
 private const val DIFF_TIMEOUT_MS = 5_000L
 
 /** A 4x4 sudoku without givens whose first [filled] fields hold their solution, so progress is `filled * 100 / 16`. */
@@ -51,10 +52,11 @@ internal fun listSudoku(
         created = created,
         updated = updated,
         fields =
-            MutableList(LIST_SIZE * LIST_SIZE) { index ->
-                val row = index / LIST_SIZE
-                val col = index % LIST_SIZE
-                val solution = (2 * (row % 2) + row / 2 + col) % LIST_SIZE + 1
+            MutableList(LIST_SIZE.cellCount) { index ->
+                val blockSize = LIST_SIZE.blockSize
+                val row = index / LIST_SIZE.value
+                val col = index % LIST_SIZE.value
+                val solution = (blockSize * (row % blockSize) + row / blockSize + col) % LIST_SIZE.value + 1
                 Field(Position.create(index, LIST_SIZE), solution = solution, value = if (index < filled) solution else null)
             },
     )

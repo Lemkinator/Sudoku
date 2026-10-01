@@ -19,12 +19,16 @@ package de.lemke.sudoku.domain.model
 import android.content.res.Resources
 import de.lemke.sudoku.R
 
-enum class Difficulty {
-    VERY_EASY,
-    EASY,
-    MEDIUM,
-    HARD,
-    EXPERT,
+enum class Difficulty(
+    private val givensFour: Int,
+    private val givensNine: Int,
+    private val givensSixteen: Int,
+) {
+    VERY_EASY(givensFour = 10, givensNine = 50, givensSixteen = 196),
+    EASY(givensFour = 9, givensNine = 40, givensSixteen = 176),
+    MEDIUM(givensFour = 7, givensNine = 35, givensSixteen = 156),
+    HARD(givensFour = 6, givensNine = 30, givensSixteen = 136),
+    EXPERT(givensFour = 4, givensNine = 23, givensSixteen = 116),
     ;
 
     // Persisted/serialized as this ordinal (see fromInt/getLocalString(ordinal, ...)); entry order is the contract.
@@ -35,7 +39,14 @@ enum class Difficulty {
     // total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
     // minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
     // more than 50, 36-49, 32-35, 28-31, 22-27
-    fun numbersToRemove(size: SudokuSize): Int = size.value * size.value - givenNumbersTable.getValue(size to this)
+    fun numbersToRemove(size: SudokuSize): Int = size.cellCount - givenNumbers(size)
+
+    private fun givenNumbers(size: SudokuSize): Int =
+        when (size) {
+            SudokuSize.FOUR -> givensFour
+            SudokuSize.NINE -> givensNine
+            SudokuSize.SIXTEEN -> givensSixteen
+        }
 
     companion object {
         fun fromInt(value: Int?): Difficulty = entries.getOrNull(value ?: -1) ?: MEDIUM
@@ -47,24 +58,5 @@ enum class Difficulty {
 
         val max: Int
             get() = Difficulty.entries.size - 1
-
-        private val givenNumbersTable: Map<Pair<SudokuSize, Difficulty>, Int> =
-            mapOf(
-                (SudokuSize.FOUR to VERY_EASY) to 10,
-                (SudokuSize.FOUR to EASY) to 9,
-                (SudokuSize.FOUR to MEDIUM) to 7,
-                (SudokuSize.FOUR to HARD) to 6,
-                (SudokuSize.FOUR to EXPERT) to 4,
-                (SudokuSize.NINE to VERY_EASY) to 50,
-                (SudokuSize.NINE to EASY) to 40,
-                (SudokuSize.NINE to MEDIUM) to 35,
-                (SudokuSize.NINE to HARD) to 30,
-                (SudokuSize.NINE to EXPERT) to 23,
-                (SudokuSize.SIXTEEN to VERY_EASY) to 196,
-                (SudokuSize.SIXTEEN to EASY) to 176,
-                (SudokuSize.SIXTEEN to MEDIUM) to 156,
-                (SudokuSize.SIXTEEN to HARD) to 136,
-                (SudokuSize.SIXTEEN to EXPERT) to 116,
-            )
     }
 }

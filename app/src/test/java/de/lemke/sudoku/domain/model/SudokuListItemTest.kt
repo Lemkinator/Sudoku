@@ -27,7 +27,8 @@ import java.time.LocalDateTime
 class SudokuListItemTest : ShouldSpec(
     {
         val id = SudokuId("list-item")
-        val fields = MutableList(4) { index -> Field(Position.create(index, 2), solution = index + 1) }
+        val solvedFourByFour = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
+        val fields = MutableList(16) { index -> Field(Position.create(index, SudokuSize.FOUR), solution = solvedFourByFour[index]) }
 
         fun sudoku(
             errorsMade: Int = 0,
@@ -36,7 +37,7 @@ class SudokuListItemTest : ShouldSpec(
         ): Sudoku =
             Sudoku.create(
                 sudokuId = id,
-                size = 2,
+                size = SudokuSize.FOUR,
                 difficulty = Difficulty.VERY_EASY,
                 modeLevel = Sudoku.MODE_NORMAL,
                 hintsUsed = hintsUsed,
@@ -71,7 +72,7 @@ class SudokuListItemTest : ShouldSpec(
             val sudoku =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.VERY_EASY,
                     modeLevel = 3,
                     eraserUsed = true,
@@ -83,16 +84,17 @@ class SudokuListItemTest : ShouldSpec(
                     updated = LocalDateTime.of(2026, 1, 15, 9, 30),
                     seconds = 75,
                     fields =
-                        MutableList(4) { index ->
-                            Field(Position.create(index, 2), solution = index + 1, value = if (index < 2) index + 1 else null)
+                        MutableList(16) { index ->
+                            val solution = solvedFourByFour[index]
+                            Field(Position.create(index, SudokuSize.FOUR), solution = solution, value = if (index < 2) solution else null)
                         },
                 )
 
             SudokuItem(sudoku, "7").toString() shouldBe
                 "SudokuItem(id=list-item, modeLevel=3, regionalHighlightingUsed=false, numberHighlightingUsed=false, " +
                 "eraserUsed=true, isChecklist=false, isReverseChecklist=false, checklistNumber=2, hintsUsed=1, notesMade=4, " +
-                "errorsMade=2, created=2026-01-15T09:00, updated=2026-01-15T09:30, seconds=75, fieldValues=[1, 2, null, null], " +
-                "label=7)"
+                "errorsMade=2, created=2026-01-15T09:00, updated=2026-01-15T09:30, seconds=75, " +
+                "fieldValues=[1, 2, null, null, null, null, null, null, null, null, null, null, null, null, null, null], label=7)"
         }
 
         should("not equal a separator with the same label") {

@@ -29,13 +29,13 @@ class SudokuTest : ShouldSpec(
         should("report 100% progress instead of throwing when every field is given") {
             val sudoku =
                 Sudoku.create(
-                    size = 4,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.VERY_EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     fields =
                         mutableListOf(
-                            Field(position = Position.create(0, 4), solution = 1, value = 1, given = true),
-                            Field(position = Position.create(1, 4), solution = 2, value = 2, given = true),
+                            Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 1, given = true),
+                            Field(position = Position.create(1, SudokuSize.FOUR), solution = 2, value = 2, given = true),
                         ),
                 )
 
@@ -45,14 +45,14 @@ class SudokuTest : ShouldSpec(
         should("compute progress as the percentage of non-given fields solved correctly") {
             val sudoku =
                 Sudoku.create(
-                    size = 4,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.VERY_EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     fields =
                         mutableListOf(
-                            Field(position = Position.create(0, 4), solution = 1, value = 1, given = true),
-                            Field(position = Position.create(1, 4), solution = 2, value = 2, given = false),
-                            Field(position = Position.create(2, 4), solution = 3, value = null, given = false),
+                            Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 1, given = true),
+                            Field(position = Position.create(1, SudokuSize.FOUR), solution = 2, value = 2, given = false),
+                            Field(position = Position.create(2, SudokuSize.FOUR), solution = 3, value = null, given = false),
                         ),
                 )
 
@@ -66,12 +66,12 @@ class SudokuTest : ShouldSpec(
             sudoku[5] = field.copy(value = 3)
 
             sudoku[5].value shouldBe 3
-            sudoku[5].position shouldBe Position.create(5, 4)
+            sudoku[5].position shouldBe Position.create(5, SudokuSize.FOUR)
         }
 
         should("get and set a field by position") {
             val sudoku = fourByFourSudoku()
-            val position = Position.create(6, 4)
+            val position = Position.create(6, SudokuSize.FOUR)
 
             sudoku[position] = sudoku[position].copy(value = 2)
 
@@ -85,7 +85,7 @@ class SudokuTest : ShouldSpec(
             sudoku[1, 2] = sudoku[1, 2].copy(value = 4)
 
             sudoku[1, 2].value shouldBe 4
-            sudoku[1, 2].position shouldBe Position.create(size = 4, row = 1, column = 2)
+            sudoku[1, 2].position shouldBe Position.create(size = SudokuSize.FOUR, row = 1, column = 2)
         }
 
         should("consider two sudokus with the same id equal even with differing other fields") {
@@ -124,7 +124,7 @@ class SudokuTest : ShouldSpec(
         }
 
         should("take the hint limit from the board's sudoku size") {
-            val hintLimitBySize = mapOf(4 to 1, 9 to 3, 16 to 8)
+            val hintLimitBySize = mapOf(SudokuSize.FOUR to 1, SudokuSize.NINE to 3, SudokuSize.SIXTEEN to 8)
 
             hintLimitBySize.forEach { (size, hintLimit) ->
                 val sudoku =
@@ -132,23 +132,11 @@ class SudokuTest : ShouldSpec(
                         size = size,
                         difficulty = Difficulty.VERY_EASY,
                         modeLevel = Sudoku.MODE_NORMAL,
-                        fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = 1) },
+                        fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
                     )
 
                 sudoku.availableHints shouldBe hintLimit
             }
-        }
-
-        should("fall back to the default hint limit for a board size without a dedicated entry") {
-            val sudoku =
-                Sudoku.create(
-                    size = 5,
-                    difficulty = Difficulty.VERY_EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    fields = MutableList(25) { index -> Field(position = Position.create(index, 5), solution = index % 5 + 1) },
-                )
-
-            sudoku.availableHints shouldBe 3
         }
 
         should("generate unique ids") {
@@ -174,12 +162,12 @@ class SudokuTest : ShouldSpec(
             // Field has no equals(), so contentEquals compares fields by reference.
             val id = SudokuId.generate()
             val now = LocalDateTime.of(2026, 1, 1, 12, 0)
-            val fields = MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) }
+            val fields = MutableList(16) { index -> Field(position = Position.create(index, SudokuSize.FOUR), solution = (index % 4) + 1) }
 
             fun sudokuAt(now: LocalDateTime) =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 4,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.VERY_EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = now,
@@ -319,7 +307,13 @@ class SudokuTest : ShouldSpec(
 
         context("move, setHint and timer") {
             should("return false and not mutate the field when no timer is running") {
-                val sudoku = Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = testFields())
+                val sudoku =
+                    Sudoku.create(
+                        size = SudokuSize.FOUR,
+                        difficulty = Difficulty.EASY,
+                        modeLevel = Sudoku.MODE_NORMAL,
+                        fields = testFields(),
+                    )
 
                 sudoku.move(0, 1) shouldBe false
 
@@ -560,7 +554,13 @@ class SudokuTest : ShouldSpec(
             }
 
             should("do nothing when setting a hint while no timer is running") {
-                val sudoku = Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = testFields())
+                val sudoku =
+                    Sudoku.create(
+                        size = SudokuSize.FOUR,
+                        difficulty = Difficulty.EASY,
+                        modeLevel = Sudoku.MODE_NORMAL,
+                        fields = testFields(),
+                    )
 
                 sudoku.setHint(0)
 
@@ -813,7 +813,7 @@ private fun testFields(
     solutions
         .mapIndexed { index, solution ->
             Field(
-                position = Position.create(index, 4),
+                position = Position.create(index, SudokuSize.FOUR),
                 solution = solution,
                 value =
                     if (index in values) {
@@ -836,7 +836,7 @@ private fun runningSudoku(
 ): Sudoku =
     Sudoku
         .create(
-            size = 4,
+            size = SudokuSize.FOUR,
             difficulty = Difficulty.EASY,
             modeLevel = Sudoku.MODE_NORMAL,
             hintsUsed = hintsUsed,
@@ -888,7 +888,7 @@ private fun solvedFields(
     solutions
         .mapIndexed { index, solution ->
             Field(
-                position = Position.create(index, 4),
+                position = Position.create(index, SudokuSize.FOUR),
                 solution = solution,
                 value =
                     when (index) {
@@ -904,7 +904,7 @@ private fun querySudoku(
     unfilled: Set<Int> = emptySet(),
 ): Sudoku =
     Sudoku.create(
-        size = 4,
+        size = SudokuSize.FOUR,
         difficulty = Difficulty.EASY,
         modeLevel = Sudoku.MODE_NORMAL,
         fields = solvedFields(incorrect, unfilled),
@@ -916,14 +916,14 @@ private fun fourByFourSudoku(
 ): Sudoku =
     Sudoku.create(
         sudokuId = sudokuId,
-        size = 4,
+        size = SudokuSize.FOUR,
         difficulty = difficulty,
         modeLevel = Sudoku.MODE_NORMAL,
-        fields = MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) },
+        fields = MutableList(16) { index -> Field(position = Position.create(index, SudokuSize.FOUR), solution = (index % 4) + 1) },
     )
 
 private fun sharedFieldList(): MutableList<Field> =
-    MutableList(16) { index -> Field(position = Position.create(index, 4), solution = (index % 4) + 1) }
+    MutableList(16) { index -> Field(position = Position.create(index, SudokuSize.FOUR), solution = (index % 4) + 1) }
 
 private fun contentEqualsBaseSudoku(
     sudokuId: SudokuId,
@@ -933,7 +933,7 @@ private fun contentEqualsBaseSudoku(
 ): Sudoku =
     Sudoku.create(
         sudokuId = sudokuId,
-        size = 4,
+        size = SudokuSize.FOUR,
         difficulty = Difficulty.VERY_EASY,
         modeLevel = Sudoku.MODE_NORMAL,
         created = created,

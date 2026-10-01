@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.monthAndYear
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -41,11 +42,11 @@ private fun dailySudoku(
     completed: Boolean,
 ): Sudoku =
     Sudoku.create(
-        size = 9,
+        size = SudokuSize.NINE,
         difficulty = VERY_EASY,
         modeLevel = Sudoku.MODE_DAILY,
         created = created,
-        fields = mutableListOf(Field(position = Position.create(0, 9), solution = 1, value = if (completed) 1 else null)),
+        fields = mutableListOf(Field(position = Position.create(0, SudokuSize.NINE), solution = 1, value = if (completed) 1 else null)),
     )
 
 private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =

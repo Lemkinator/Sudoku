@@ -162,12 +162,12 @@ class SudokuLevelTabListRefreshTest {
         )
 
     private fun dailySudoku(): Sudoku {
-        val size = SudokuSize.NINE.value
+        val size = SudokuSize.NINE
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.EASY,
             modeLevel = Sudoku.MODE_DAILY,
-            fields = MutableList(size * size) { Field(Position.create(it, size), solution = it % size + 1) },
+            fields = MutableList(size.cellCount) { Field(Position.create(it, size), solution = it % size.value + 1) },
         )
     }
 
@@ -201,7 +201,7 @@ class SudokuLevelTabListRefreshTest {
     @Test
     fun `the next level after a daily-only 9x9 history is level 1`() {
         save(dailySudoku())
-        val viewModel = newViewModel(SudokuSize.NINE.value)
+        val viewModel = newViewModel(SudokuSize.NINE)
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
             idle()
@@ -233,7 +233,7 @@ class SudokuLevelTabListRefreshTest {
 
         runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
 
-        runBlocking { getMaxSudokuLevel(SudokuSize.FOUR.value) } shouldBe 2
+        runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
         runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull().modeLevel shouldBe 2
     }
 
@@ -300,14 +300,14 @@ class SudokuLevelTabListRefreshTest {
         }
     }
 
-    private fun newViewModel(size: Int = SudokuSize.FOUR.value) =
+    private fun newViewModel(size: SudokuSize = SudokuSize.FOUR) =
         SudokuLevelTabViewModel(
             initSudokuLevel,
             observeSudokuLevel,
             getMaxSudokuLevel,
             generateSudokuLevel,
             saveSudoku,
-            SavedStateHandle(mapOf("size" to size)),
+            SavedStateHandle(mapOf(SudokuLevelTab.KEY_SIZE to size.value)),
         )
 
     private fun topSudoku(viewModel: SudokuLevelTabViewModel): Sudoku =
@@ -319,7 +319,7 @@ class SudokuLevelTabListRefreshTest {
     private fun levelTab(activity: SudokuLevelActivity) =
         activity.supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
-            .first { it.arguments?.getInt("size") == SudokuSize.FOUR.value }
+            .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
 
     private fun levelList(activity: SudokuLevelActivity) = levelTab(activity).binding.sudokuLevelsRecycler
 }

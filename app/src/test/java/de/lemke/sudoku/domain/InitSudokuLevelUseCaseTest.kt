@@ -41,10 +41,10 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
         should("generates nothing when every level up to max already exists") {
             val existing =
                 (1..3).map { level ->
-                    Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = level, fields = mutableListOf())
+                    Sudoku.create(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = level, fields = mutableListOf())
                 }
-            coEvery { sudokusRepository.getSudokuLevel(4) } returns existing
-            coEvery { getMaxSudokuLevel(4) } returns 3
+            coEvery { sudokusRepository.getSudokuLevel(SudokuSize.FOUR) } returns existing
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 3
 
             useCase(SudokuSize.FOUR)
 
@@ -55,11 +55,11 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
         should("generates and saves exactly the missing levels") {
             val existing =
                 listOf(
-                    Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = 1, fields = mutableListOf()),
-                    Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = 3, fields = mutableListOf()),
+                    Sudoku.create(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = 1, fields = mutableListOf()),
+                    Sudoku.create(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = 3, fields = mutableListOf()),
                 )
-            coEvery { sudokusRepository.getSudokuLevel(4) } returns existing
-            coEvery { getMaxSudokuLevel(4) } returns 4
+            coEvery { sudokusRepository.getSudokuLevel(SudokuSize.FOUR) } returns existing
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 4
             val level2 = mockk<Sudoku>()
             val level4 = mockk<Sudoku>()
             coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns level2

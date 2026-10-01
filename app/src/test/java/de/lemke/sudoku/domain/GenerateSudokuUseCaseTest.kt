@@ -39,7 +39,7 @@ class GenerateSudokuUseCaseTest : ShouldSpec(
 
             val sudoku = useCase(SudokuSize.NINE, HARD)
 
-            sudoku.size shouldBe 9
+            sudoku.size shouldBe SudokuSize.NINE
             sudoku.difficulty shouldBe HARD
             sudoku.modeLevel shouldBe Sudoku.MODE_NORMAL
             sudoku.fields shouldBe fields

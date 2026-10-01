@@ -29,6 +29,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -50,7 +51,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
 private fun testSudoku(
-    size: Int = 4,
+    size: SudokuSize = SudokuSize.FOUR,
     completed: Boolean = false,
     modeLevel: Int = 1,
 ): Sudoku =
@@ -59,7 +60,7 @@ private fun testSudoku(
         difficulty = Difficulty.EASY,
         modeLevel = modeLevel,
         fields =
-            MutableList(size * size) { index ->
+            MutableList(size.cellCount) { index ->
                 Field(Position.create(index, size), solution = 1, value = if (completed) 1 else null)
             },
     )
@@ -79,7 +80,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             every { observeSudokuLevel(any()) } returns flowOf(listOf(SudokuItem(testSudoku(completed = false), "1")))
         }
 
-        fun newViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
+        fun newViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle(mapOf(SudokuLevelTab.KEY_SIZE to 4))) =
             SudokuLevelTabViewModel(
                 initSudokuLevel,
                 observeSudokuLevel,
@@ -89,19 +90,19 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 savedStateHandle,
             )
 
-        should("size defaults to 4 when the saved state handle has no size entry") {
-            newViewModel(SavedStateHandle())
-            coVerify(exactly = 1) { initSudokuLevel(SudokuSize.FOUR) }
+        should("fail fast when the saved state handle has no size entry") {
+            shouldThrow<IllegalStateException> { newViewModel(SavedStateHandle()) }
+            coVerify(exactly = 0) { initSudokuLevel(any()) }
         }
 
         should("size is read from the saved state handle when present") {
-            newViewModel(SavedStateHandle(mapOf("size" to 9)))
+            newViewModel(SavedStateHandle(mapOf(SudokuLevelTab.KEY_SIZE to 9)))
             coVerify(exactly = 1) { initSudokuLevel(SudokuSize.NINE) }
         }
 
         should("observe the level only while state is collected") {
             val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
-            every { observeSudokuLevel(4) } returns levelFlow
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns levelFlow
             val item = SudokuItem(testSudoku(completed = false), "1")
 
             val viewModel = newViewModel()
@@ -118,8 +119,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("a completed top level emitted twice generates the next level once and reveals it once") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
-                every { observeSudokuLevel(4) } returns levelFlow
-                coEvery { getMaxSudokuLevel(4) } returns 1
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns levelFlow
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
                 val nextLevelSudoku = testSudoku(modeLevel = 2)
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevelSudoku
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
@@ -150,8 +151,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("a re-emission right after the next level shows reveals it once") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
-                every { observeSudokuLevel(4) } returns levelFlow
-                coEvery { getMaxSudokuLevel(4) } returns 1
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns levelFlow
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
                 val nextLevelSudoku = testSudoku(modeLevel = 2)
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevelSudoku
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
@@ -175,8 +176,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("collecting state again after the stop timeout shows the same next level without generating another") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
-                every { observeSudokuLevel(4) } returns levelFlow
-                coEvery { getMaxSudokuLevel(4) } returns 1
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns levelFlow
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
                 val nextLevelSudoku = testSudoku(modeLevel = 2)
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returnsMany listOf(nextLevelSudoku, testSudoku(modeLevel = 2))
                 levelFlow.emit(listOf(SudokuItem(testSudoku(completed = true), "1")))
@@ -202,8 +203,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("returning after the stop timeout with the next level cached never shows the generating state") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
-                every { observeSudokuLevel(4) } returns levelFlow
-                coEvery { getMaxSudokuLevel(4) } returns 1
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns levelFlow
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
                 val nextLevelSudoku = testSudoku(modeLevel = 2)
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevelSudoku
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
@@ -216,7 +217,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 advanceTimeBy(5_001)
                 runCurrent()
                 val maxLevel = CompletableDeferred<Int>()
-                coEvery { getMaxSudokuLevel(4) } coAnswers { maxLevel.await() }
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } coAnswers { maxLevel.await() }
                 val levelWithNext =
                     SudokuLevelTabUiState(
                         sudokuLevel = listOf(SudokuItem(nextLevelSudoku, "2"), completedItem),
@@ -240,9 +241,9 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("a missing next level shows the generating state only while it is generated") {
             runTest {
-                every { observeSudokuLevel(4) } returns flowOf(emptyList())
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(emptyList())
                 val maxLevel = CompletableDeferred<Int>()
-                coEvery { getMaxSudokuLevel(4) } coAnswers { maxLevel.await() }
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } coAnswers { maxLevel.await() }
                 val generatedSudoku = CompletableDeferred<Sudoku>()
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 6) } coAnswers { generatedSudoku.await() }
                 val nextLevelSudoku = testSudoku(modeLevel = 6)
@@ -270,8 +271,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("a top level completed while state is not collected shows a new next level once collected again") {
             runTest {
                 val levelFlow = MutableSharedFlow<List<SudokuItem>>(replay = 1)
-                every { observeSudokuLevel(4) } returns levelFlow
-                coEvery { getMaxSudokuLevel(4) } returns 1
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns levelFlow
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
                 val nextLevelSudoku = testSudoku(modeLevel = 2)
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevelSudoku
                 levelFlow.emit(listOf(SudokuItem(testSudoku(completed = false), "1")))
@@ -355,7 +356,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("a non-empty, non-completed emission sets state directly without an event") {
             val item = SudokuItem(testSudoku(completed = false), "1")
-            every { observeSudokuLevel(4) } returns flowOf(listOf(item))
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(item))
 
             val viewModel = newViewModel()
 
@@ -373,8 +374,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("an empty emission generates the next level and reveals it with the same dispatch") {
             runTest {
-                every { observeSudokuLevel(4) } returns flowOf(emptyList())
-                coEvery { getMaxSudokuLevel(4) } returns 5
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(emptyList())
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 5
                 val nextLevelSudoku = testSudoku()
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 6) } returns nextLevelSudoku
 
@@ -400,8 +401,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("a completed first item generates the next level and reveals it with the same dispatch") {
             runTest {
                 val completedItem = SudokuItem(testSudoku(completed = true), "1")
-                every { observeSudokuLevel(4) } returns flowOf(listOf(completedItem))
-                coEvery { getMaxSudokuLevel(4) } returns 5
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(completedItem))
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 5
                 val nextLevelSudoku = testSudoku()
                 coEvery { generateSudokuLevel(SudokuSize.FOUR, 6) } returns nextLevelSudoku
 
@@ -425,8 +426,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         }
 
         should("a generateSudokuLevel failure on the first emission stops loading and generating and emits ShowLoadError") {
-            every { observeSudokuLevel(4) } returns flowOf(emptyList())
-            coEvery { getMaxSudokuLevel(4) } returns 5
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(emptyList())
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 5
             coEvery { generateSudokuLevel(SudokuSize.FOUR, 6) } throws RuntimeException("generate failed")
 
             val viewModel = newViewModel()
@@ -441,7 +442,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("an observeSudokuLevel failure stops loading and emits ShowLoadError once per collection after the stop timeout") {
             runTest {
-                every { observeSudokuLevel(4) } returns flow { throw IllegalStateException("observe failed") }
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns flow { throw IllegalStateException("observe failed") }
                 val viewModel = newViewModel()
 
                 viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false) }
@@ -453,7 +454,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 runCurrent()
                 viewModel.state.test { expectMostRecentItem() shouldBe SudokuLevelTabUiState(isLoading = false) }
 
-                verify(exactly = 2) { observeSudokuLevel(4) }
+                verify(exactly = 2) { observeSudokuLevel(SudokuSize.FOUR) }
                 viewModel.events.test {
                     awaitItem() shouldBe SudokuLevelTabEvent.ShowLoadError
                     expectNoEvents()
@@ -462,8 +463,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         }
 
         should("inner CancellationException from generateSudokuLevel is not treated as a load failure") {
-            every { observeSudokuLevel(4) } returns flowOf(emptyList())
-            coEvery { getMaxSudokuLevel(4) } returns 5
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(emptyList())
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 5
             coEvery { generateSudokuLevel(SudokuSize.FOUR, 6) } throws CancellationException("cancelled")
 
             val viewModel = newViewModel()
@@ -475,7 +476,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         }
 
         should("onNextLevelSudokuConfirmed saves a next level above the saved max level") {
-            coEvery { getMaxSudokuLevel(4) } returns 1
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
             val sudoku = testSudoku(modeLevel = 2)
             val viewModel = newViewModel()
 
@@ -485,7 +486,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         }
 
         should("onNextLevelSudokuConfirmed does not save a next level whose level is already saved") {
-            coEvery { getMaxSudokuLevel(4) } returns 2
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 2
             val viewModel = newViewModel()
 
             viewModel.onNextLevelSudokuConfirmed(testSudoku(modeLevel = 2))

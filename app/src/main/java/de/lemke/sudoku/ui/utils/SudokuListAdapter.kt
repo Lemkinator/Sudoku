@@ -216,7 +216,7 @@ class SudokuListAdapter(
                     else -> {
                         context.getString(
                             R.string.size_and_difficulty,
-                            sudoku.sizeString,
+                            sudoku.size.getLocalString(context.resources),
                             sudoku.difficulty.getLocalString(context.resources),
                         )
                     }

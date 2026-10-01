@@ -23,8 +23,32 @@ import io.kotest.matchers.shouldBe
 
 class SudokuSizeTest : ShouldSpec(
     {
-        should("define 4x4, 9x9 and 16x16 boards with hint limits 1, 3 and 8") {
-            SudokuSize.entries.associate { it.value to it.hintLimit } shouldBe mapOf(4 to 1, 9 to 3, 16 to 8)
+        should("define exactly the 4x4, 9x9 and 16x16 boards in ascending order") {
+            SudokuSize.entries shouldBe listOf(SudokuSize.FOUR, SudokuSize.NINE, SudokuSize.SIXTEEN)
+        }
+
+        should("define the 4x4 board's dimensions, hint limit and filter flag") {
+            SudokuSize.FOUR.value shouldBe 4
+            SudokuSize.FOUR.blockSize shouldBe 2
+            SudokuSize.FOUR.hintLimit shouldBe 1
+            SudokuSize.FOUR.filterFlag shouldBe SudokuFilterFlags.SIZE_4X4
+            SudokuSize.FOUR.cellCount shouldBe 16
+        }
+
+        should("define the 9x9 board's dimensions, hint limit and filter flag") {
+            SudokuSize.NINE.value shouldBe 9
+            SudokuSize.NINE.blockSize shouldBe 3
+            SudokuSize.NINE.hintLimit shouldBe 3
+            SudokuSize.NINE.filterFlag shouldBe SudokuFilterFlags.SIZE_9X9
+            SudokuSize.NINE.cellCount shouldBe 81
+        }
+
+        should("define the 16x16 board's dimensions, hint limit and filter flag") {
+            SudokuSize.SIXTEEN.value shouldBe 16
+            SudokuSize.SIXTEEN.blockSize shouldBe 4
+            SudokuSize.SIXTEEN.hintLimit shouldBe 8
+            SudokuSize.SIXTEEN.filterFlag shouldBe SudokuFilterFlags.SIZE_16X16
+            SudokuSize.SIXTEEN.cellCount shouldBe 256
         }
 
         should("look up every size by its stored value") {

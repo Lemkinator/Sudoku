@@ -412,19 +412,19 @@ class IntroActivityFlowTest {
     @Test
     fun `selectButton highlights the delete button`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size)
+            activity.selectButton(activity.sudoku.size.value)
             activity.binding.deleteButton.backgroundTintList
                 ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value
         }
 
     @Test
     fun `selectButton highlights the hint button`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size + 1)
+            activity.selectButton(activity.sudoku.size.value + 1)
             activity.binding.hintButton.backgroundTintList
                 ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size + 1
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value + 1
         }
 
     // endregion
@@ -591,7 +591,7 @@ class IntroActivityFlowTest {
     @Test
     fun `select is a no-op when the delete button is currently selected`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size)
+            activity.selectButton(activity.sudoku.size.value)
             val selectedBefore = activity.selected
             activity.select(0)
             activity.selected shouldBe selectedBefore

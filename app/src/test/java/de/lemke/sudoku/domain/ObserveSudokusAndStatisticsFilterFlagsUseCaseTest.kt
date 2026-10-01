@@ -23,6 +23,7 @@ import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -47,9 +48,19 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
 
         should("re-filters the repository's sudokus when userSettings.filterFlags changes") {
             val normal4x4 =
-                Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf())
+                Sudoku.create(
+                    size = SudokuSize.FOUR,
+                    difficulty = Difficulty.EASY,
+                    modeLevel = Sudoku.MODE_NORMAL,
+                    fields = mutableListOf(),
+                )
             val normal9x9 =
-                Sudoku.create(size = 9, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf())
+                Sudoku.create(
+                    size = SudokuSize.NINE,
+                    difficulty = Difficulty.EASY,
+                    modeLevel = Sudoku.MODE_NORMAL,
+                    fields = mutableListOf(),
+                )
             every { sudokusRepository.observeAllSudokus() } returns flowOf(listOf(normal4x4, normal9x9))
             userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_4X4 or SudokuFilterFlags.DIFFICULTY_ALL
 

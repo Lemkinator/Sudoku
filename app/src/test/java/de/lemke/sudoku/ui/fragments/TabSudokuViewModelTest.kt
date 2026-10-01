@@ -41,7 +41,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 private fun testSudoku(
-    size: Int = 9,
+    size: SudokuSize = SudokuSize.NINE,
     completed: Boolean = false,
     errorsMade: Int = 0,
 ): Sudoku =
@@ -51,7 +51,7 @@ private fun testSudoku(
         modeLevel = Sudoku.MODE_NORMAL,
         errorsMade = errorsMade,
         fields =
-            MutableList(size * size) { index ->
+            MutableList(size.cellCount) { index ->
                 Field(Position.create(index, size), solution = 1, value = if (completed) 1 else null)
             },
     )

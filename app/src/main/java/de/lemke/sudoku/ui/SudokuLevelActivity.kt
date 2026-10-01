@@ -23,11 +23,9 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
-import com.skydoves.bundler.intentOf
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
-import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivitySudokuLevelBinding
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
@@ -46,7 +44,7 @@ class SudokuLevelActivity : AppCompatActivity() {
         binding.viewPagerLevel.adapter = ViewPager2AdapterTabLevelSubtabs(this)
         binding.viewPagerLevel.offscreenPageLimit = 2
         TabLayoutMediator(binding.fragmentLevelSubTabs, binding.viewPagerLevel) { tab, position ->
-            tab.text = arrayOf(getString(R.string.size4), getString(R.string.size9), getString(R.string.size16))[position]
+            tab.text = SudokuSize.entries[position].getLocalString(resources)
         }.attach()
         binding.viewPagerLevel.setCurrentItem(viewModel.currentLevelTab, false)
         binding.viewPagerLevel.registerOnPageChangeCallback(
@@ -60,13 +58,7 @@ class SudokuLevelActivity : AppCompatActivity() {
 }
 
 class ViewPager2AdapterTabLevelSubtabs(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
-    override fun getItemCount(): Int = 3
+    override fun getItemCount(): Int = SudokuSize.entries.size
 
-    override fun createFragment(position: Int): Fragment =
-        when (position) {
-            0 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SudokuSize.FOUR.value) }.extras }
-            1 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SudokuSize.NINE.value) }.extras }
-            2 -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SudokuSize.SIXTEEN.value) }.extras }
-            else -> SudokuLevelTab().apply { arguments = intentOf { +("size" to SudokuSize.NINE.value) }.extras }
-        }
+    override fun createFragment(position: Int): Fragment = SudokuLevelTab.newInstance(SudokuSize.entries[position])
 }

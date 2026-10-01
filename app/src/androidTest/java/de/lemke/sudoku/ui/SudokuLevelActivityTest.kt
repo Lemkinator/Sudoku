@@ -124,14 +124,14 @@ class SudokuLevelActivityTest {
         level: Int,
         sudokuId: SudokuId,
     ): Sudoku =
-        testLevelSudoku(size = SudokuSize.FOUR.value, level = level, sudokuId = sudokuId).apply {
+        testLevelSudoku(size = SudokuSize.FOUR, level = level, sudokuId = sudokuId).apply {
             fields.forEach { it.value = it.solution }
         }
 
     private fun SudokuLevelActivity.levelTab(): SudokuLevelTab =
         supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
-            .first { it.arguments?.getInt("size") == SudokuSize.FOUR.value }
+            .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == SudokuSize.FOUR.value }
 
     private fun SudokuLevelActivity.progressBarShown(): Boolean =
         levelTab().requireView().findViewById<View>(R.id.tabLevelProgressBar).isVisible

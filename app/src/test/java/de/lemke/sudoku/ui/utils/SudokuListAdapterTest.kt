@@ -41,6 +41,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.formatFull
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode
 import dev.oneuiproject.oneui.widget.Separator
@@ -58,13 +59,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-private const val SIZE = 4
+private val SIZE = SudokuSize.FOUR
 
 private fun solutionFor(index: Int): Int {
-    val blockSize = 2
-    val row = index / SIZE
-    val col = index % SIZE
-    return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE + 1
+    val blockSize = SIZE.blockSize
+    val row = index / SIZE.value
+    val col = index % SIZE.value
+    return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE.value + 1
 }
 
 private fun sudokuFixture(
@@ -82,7 +83,7 @@ private fun sudokuFixture(
         hintsUsed = hintsUsed,
         created = created,
         fields =
-            MutableList(SIZE * SIZE) { index ->
+            MutableList(SIZE.cellCount) { index ->
                 val solution = solutionFor(index)
                 Field(Position.create(index, SIZE), solution = solution, value = if (completed) solution else null, given = completed)
             },

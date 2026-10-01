@@ -45,7 +45,7 @@ class GenerateSudokuLevelUseCase @Inject constructor(
                 }
             return@withContext Sudoku.create(
                 sudokuId = SudokuId.generate(),
-                size = size.value,
+                size = size,
                 difficulty = difficulty,
                 fields = generateFields(size, difficulty),
                 modeLevel = level,

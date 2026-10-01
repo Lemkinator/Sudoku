@@ -36,7 +36,7 @@ class GenerateSudokuUseCase @Inject constructor(
         withContext(defaultDispatcher) {
             return@withContext Sudoku.create(
                 sudokuId = SudokuId.generate(),
-                size = size.value,
+                size = size,
                 difficulty = difficulty,
                 fields = generateFields(size, difficulty),
                 modeLevel = Sudoku.MODE_NORMAL,

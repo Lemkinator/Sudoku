@@ -57,10 +57,10 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         listOf(
             R.string.leaderboard_total_wins to sudokus.size.toLong(),
             R.string.leaderboard_daily_sudokus to sudokus.count { it.isDailySudoku }.toLong(),
-            R.string.leaderboard_level_44 to sudokus.count { it.size == SudokuSize.FOUR.value && it.isSudokuLevel }.toLong(),
-            R.string.leaderboard_level_99 to sudokus.count { it.size == SudokuSize.NINE.value && it.isSudokuLevel }.toLong(),
-            R.string.leaderboard_level_1616 to sudokus.count { it.size == SudokuSize.SIXTEEN.value && it.isSudokuLevel }.toLong(),
-        )
+        ) +
+            SudokuSize.entries.map { size ->
+                size.playGames.levelLeaderboard to sudokus.count { it.size == size && it.isSudokuLevel }.toLong()
+            }
 
     private fun winUnlocks(sudoku: Sudoku): List<Int> =
         buildList {
@@ -80,11 +80,11 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         unlocks: MutableList<Int>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val stats = sizeStats[sudoku.size] ?: return
+        val stats = sudoku.size.playGames
         increments += stats.achievement10 to 1
         increments += stats.achievement50 to 1
         if (sudoku.seconds < stats.stopwatchSeconds) unlocks += stats.stopwatchAchievement
-        scores += stats.winsId to sudokus.count { it.size == sudoku.size }.toLong()
+        scores += stats.winsLeaderboard to sudokus.count { it.size == sudoku.size }.toLong()
     }
 
     private fun addDifficultyStats(
@@ -93,80 +93,111 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores: MutableList<Pair<Int, Long>>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val (achievement10, achievement50) = difficultyAchievements.getValue(sudoku.difficulty)
-        increments += achievement10 to 1
-        increments += achievement50 to 1
-        val (timeId, winsId) = sizeDifficultyLeaderboard[sudoku.size to sudoku.difficulty] ?: return
-        scores += timeId to sudoku.seconds * MILLIS_PER_SECOND
-        scores += winsId to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
+        val achievements = sudoku.difficulty.achievements
+        increments += achievements.achievement10 to 1
+        increments += achievements.achievement50 to 1
+        val leaderboards = sudoku.size.leaderboards(sudoku.difficulty)
+        scores += leaderboards.time to sudoku.seconds * MILLIS_PER_SECOND
+        scores += leaderboards.wins to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
     }
-
-    companion object {
-        internal val sizeStats: Map<Int, SizeStats> =
-            mapOf(
-                4 to
-                    SizeStats(
-                        R.string.achievement_10_sudokus_44,
-                        R.string.achievement_50_sudokus_44,
-                        R.string.achievement_stopwatch_44,
-                        30,
-                        R.string.leaderboard_wins_44,
-                    ),
-                9 to
-                    SizeStats(
-                        R.string.achievement_10_sudokus_99,
-                        R.string.achievement_50_sudokus_99,
-                        R.string.achievement_stopwatch_99,
-                        120,
-                        R.string.leaderboard_wins_99,
-                    ),
-                16 to
-                    SizeStats(
-                        R.string.achievement_10_sudokus_1616,
-                        R.string.achievement_50_sudokus_1616,
-                        R.string.achievement_stopwatch_1616,
-                        420,
-                        R.string.leaderboard_wins_1616,
-                    ),
-            )
-
-        internal val difficultyAchievements: Map<Difficulty, Pair<Int, Int>> =
-            mapOf(
-                VERY_EASY to (R.string.achievement_10_sudokus_very_easy to R.string.achievement_50_sudokus_very_easy),
-                EASY to (R.string.achievement_10_sudokus_easy to R.string.achievement_50_sudokus_easy),
-                MEDIUM to (R.string.achievement_10_sudokus_medium to R.string.achievement_50_sudokus_medium),
-                HARD to (R.string.achievement_10_sudokus_hard to R.string.achievement_50_sudokus_hard),
-                EXPERT to (R.string.achievement_10_sudokus_expert to R.string.achievement_50_sudokus_expert),
-            )
-
-        internal val sizeDifficultyLeaderboard: Map<Pair<Int, Difficulty>, Pair<Int, Int>> =
-            mapOf(
-                (4 to VERY_EASY) to (R.string.leaderboard_time_44_very_easy to R.string.leaderboard_wins_44_very_easy),
-                (9 to VERY_EASY) to (R.string.leaderboard_time_99_very_easy to R.string.leaderboard_wins_99_very_easy),
-                (16 to VERY_EASY) to
-                    (R.string.leaderboard_time_1616_very_easy to R.string.leaderboard_wins_1616_very_easy),
-                (4 to EASY) to (R.string.leaderboard_time_44_easy to R.string.leaderboard_wins_44_easy),
-                (9 to EASY) to (R.string.leaderboard_time_99_easy to R.string.leaderboard_wins_99_easy),
-                (16 to EASY) to (R.string.leaderboard_time_1616_easy to R.string.leaderboard_wins_1616_easy),
-                (4 to MEDIUM) to (R.string.leaderboard_time_44_medium to R.string.leaderboard_wins_44_medium),
-                (9 to MEDIUM) to (R.string.leaderboard_time_99_medium to R.string.leaderboard_wins_99_medium),
-                (16 to MEDIUM) to (R.string.leaderboard_time_1616_medium to R.string.leaderboard_wins_1616_medium),
-                (4 to HARD) to (R.string.leaderboard_time_44_hard to R.string.leaderboard_wins_44_hard),
-                (9 to HARD) to (R.string.leaderboard_time_99_hard to R.string.leaderboard_wins_99_hard),
-                (16 to HARD) to (R.string.leaderboard_time_1616_hard to R.string.leaderboard_wins_1616_hard),
-                (4 to EXPERT) to (R.string.leaderboard_time_44_expert to R.string.leaderboard_wins_44_expert),
-                (9 to EXPERT) to (R.string.leaderboard_time_99_expert to R.string.leaderboard_wins_99_expert),
-                (16 to EXPERT) to (R.string.leaderboard_time_1616_expert to R.string.leaderboard_wins_1616_expert),
-            )
-
-        internal val supportedSizes = setOf(4, 9, 16)
-    }
-
-    internal data class SizeStats(
-        val achievement10: Int,
-        val achievement50: Int,
-        val stopwatchAchievement: Int,
-        val stopwatchSeconds: Int,
-        val winsId: Int,
-    )
 }
+
+private data class SizePlayGames(
+    val achievement10: Int,
+    val achievement50: Int,
+    val stopwatchAchievement: Int,
+    val stopwatchSeconds: Int,
+    val winsLeaderboard: Int,
+    val levelLeaderboard: Int,
+)
+
+private data class DifficultyAchievements(
+    val achievement10: Int,
+    val achievement50: Int,
+)
+
+private data class DifficultyLeaderboards(
+    val time: Int,
+    val wins: Int,
+)
+
+private val SudokuSize.playGames: SizePlayGames
+    get() =
+        when (this) {
+            SudokuSize.FOUR -> {
+                SizePlayGames(
+                    achievement10 = R.string.achievement_10_sudokus_44,
+                    achievement50 = R.string.achievement_50_sudokus_44,
+                    stopwatchAchievement = R.string.achievement_stopwatch_44,
+                    stopwatchSeconds = 30,
+                    winsLeaderboard = R.string.leaderboard_wins_44,
+                    levelLeaderboard = R.string.leaderboard_level_44,
+                )
+            }
+
+            SudokuSize.NINE -> {
+                SizePlayGames(
+                    achievement10 = R.string.achievement_10_sudokus_99,
+                    achievement50 = R.string.achievement_50_sudokus_99,
+                    stopwatchAchievement = R.string.achievement_stopwatch_99,
+                    stopwatchSeconds = 120,
+                    winsLeaderboard = R.string.leaderboard_wins_99,
+                    levelLeaderboard = R.string.leaderboard_level_99,
+                )
+            }
+
+            SudokuSize.SIXTEEN -> {
+                SizePlayGames(
+                    achievement10 = R.string.achievement_10_sudokus_1616,
+                    achievement50 = R.string.achievement_50_sudokus_1616,
+                    stopwatchAchievement = R.string.achievement_stopwatch_1616,
+                    stopwatchSeconds = 420,
+                    winsLeaderboard = R.string.leaderboard_wins_1616,
+                    levelLeaderboard = R.string.leaderboard_level_1616,
+                )
+            }
+        }
+
+private val Difficulty.achievements: DifficultyAchievements
+    get() =
+        when (this) {
+            VERY_EASY -> DifficultyAchievements(R.string.achievement_10_sudokus_very_easy, R.string.achievement_50_sudokus_very_easy)
+            EASY -> DifficultyAchievements(R.string.achievement_10_sudokus_easy, R.string.achievement_50_sudokus_easy)
+            MEDIUM -> DifficultyAchievements(R.string.achievement_10_sudokus_medium, R.string.achievement_50_sudokus_medium)
+            HARD -> DifficultyAchievements(R.string.achievement_10_sudokus_hard, R.string.achievement_50_sudokus_hard)
+            EXPERT -> DifficultyAchievements(R.string.achievement_10_sudokus_expert, R.string.achievement_50_sudokus_expert)
+        }
+
+private fun SudokuSize.leaderboards(difficulty: Difficulty): DifficultyLeaderboards =
+    when (this) {
+        SudokuSize.FOUR -> leaderboards4x4(difficulty)
+        SudokuSize.NINE -> leaderboards9x9(difficulty)
+        SudokuSize.SIXTEEN -> leaderboards16x16(difficulty)
+    }
+
+private fun leaderboards4x4(difficulty: Difficulty): DifficultyLeaderboards =
+    when (difficulty) {
+        VERY_EASY -> DifficultyLeaderboards(R.string.leaderboard_time_44_very_easy, R.string.leaderboard_wins_44_very_easy)
+        EASY -> DifficultyLeaderboards(R.string.leaderboard_time_44_easy, R.string.leaderboard_wins_44_easy)
+        MEDIUM -> DifficultyLeaderboards(R.string.leaderboard_time_44_medium, R.string.leaderboard_wins_44_medium)
+        HARD -> DifficultyLeaderboards(R.string.leaderboard_time_44_hard, R.string.leaderboard_wins_44_hard)
+        EXPERT -> DifficultyLeaderboards(R.string.leaderboard_time_44_expert, R.string.leaderboard_wins_44_expert)
+    }
+
+private fun leaderboards9x9(difficulty: Difficulty): DifficultyLeaderboards =
+    when (difficulty) {
+        VERY_EASY -> DifficultyLeaderboards(R.string.leaderboard_time_99_very_easy, R.string.leaderboard_wins_99_very_easy)
+        EASY -> DifficultyLeaderboards(R.string.leaderboard_time_99_easy, R.string.leaderboard_wins_99_easy)
+        MEDIUM -> DifficultyLeaderboards(R.string.leaderboard_time_99_medium, R.string.leaderboard_wins_99_medium)
+        HARD -> DifficultyLeaderboards(R.string.leaderboard_time_99_hard, R.string.leaderboard_wins_99_hard)
+        EXPERT -> DifficultyLeaderboards(R.string.leaderboard_time_99_expert, R.string.leaderboard_wins_99_expert)
+    }
+
+private fun leaderboards16x16(difficulty: Difficulty): DifficultyLeaderboards =
+    when (difficulty) {
+        VERY_EASY -> DifficultyLeaderboards(R.string.leaderboard_time_1616_very_easy, R.string.leaderboard_wins_1616_very_easy)
+        EASY -> DifficultyLeaderboards(R.string.leaderboard_time_1616_easy, R.string.leaderboard_wins_1616_easy)
+        MEDIUM -> DifficultyLeaderboards(R.string.leaderboard_time_1616_medium, R.string.leaderboard_wins_1616_medium)
+        HARD -> DifficultyLeaderboards(R.string.leaderboard_time_1616_hard, R.string.leaderboard_wins_1616_hard)
+        EXPERT -> DifficultyLeaderboards(R.string.leaderboard_time_1616_expert, R.string.leaderboard_wins_1616_expert)
+    }

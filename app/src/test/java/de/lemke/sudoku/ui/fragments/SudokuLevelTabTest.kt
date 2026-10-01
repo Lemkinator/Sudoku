@@ -110,7 +110,7 @@ class SudokuLevelTabTest {
                 val fragment =
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<SudokuLevelTab>()
-                        .first { it.arguments?.getInt("size") == SudokuSize.FOUR.value }
+                        .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
                 block(fragment)
             }
         }
@@ -130,17 +130,17 @@ class SudokuLevelTabTest {
         level: Int,
         completed: Boolean,
     ): Sudoku {
-        val size = SudokuSize.FOUR.value
-        val blockSize = 2
+        val size = SudokuSize.FOUR
+        val blockSize = size.blockSize
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = level,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     Field(
                         position = Position.create(index, size),
                         solution = solution,

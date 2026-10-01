@@ -16,14 +16,25 @@
 
 package de.lemke.sudoku.domain.model
 
+import android.content.res.Resources
+import androidx.annotation.StringRes
+import de.lemke.sudoku.R
+
 enum class SudokuSize(
     val value: Int,
+    val blockSize: Int,
     val hintLimit: Int,
+    val filterFlag: Int,
+    @param:StringRes private val labelRes: Int,
 ) {
-    FOUR(value = 4, hintLimit = 1),
-    NINE(value = 9, hintLimit = 3),
-    SIXTEEN(value = 16, hintLimit = 8),
+    FOUR(value = 4, blockSize = 2, hintLimit = 1, filterFlag = SudokuFilterFlags.SIZE_4X4, labelRes = R.string.size4),
+    NINE(value = 9, blockSize = 3, hintLimit = 3, filterFlag = SudokuFilterFlags.SIZE_9X9, labelRes = R.string.size9),
+    SIXTEEN(value = 16, blockSize = 4, hintLimit = 8, filterFlag = SudokuFilterFlags.SIZE_16X16, labelRes = R.string.size16),
     ;
+
+    val cellCount: Int get() = value * value
+
+    fun getLocalString(resources: Resources): String = resources.getString(labelRes)
 
     companion object {
         fun fromValueOrNull(value: Int): SudokuSize? = entries.firstOrNull { it.value == value }

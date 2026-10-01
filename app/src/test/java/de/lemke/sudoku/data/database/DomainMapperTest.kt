@@ -31,7 +31,7 @@ class DomainMapperTest : ShouldSpec(
     {
         val created = LocalDateTime.of(2026, 1, 1, 12, 0)
 
-        fun sudoku(size: Int = 4) =
+        fun sudoku(size: SudokuSize = SudokuSize.FOUR) =
             Sudoku.create(
                 size = size,
                 difficulty = Difficulty.EASY,
@@ -39,8 +39,8 @@ class DomainMapperTest : ShouldSpec(
                 created = created,
                 updated = created,
                 fields =
-                    MutableList(size * size) {
-                        Field(position = Position.create(it, size), solution = it % size + 1, notes = mutableListOf('1', '2'))
+                    MutableList(size.cellCount) {
+                        Field(position = Position.create(it, size), solution = it % size.value + 1, notes = mutableListOf('1', '2'))
                     },
             )
 
@@ -63,6 +63,13 @@ class DomainMapperTest : ShouldSpec(
 
             restored.shouldNotBeNull()
             restored.notes shouldBe sudoku[0].notes
+        }
+
+        should("fieldFromDb returns null for a game size that is not a supported sudoku size") {
+            val sudoku = sudoku()
+            val fieldDb = fieldToDb(sudoku[0], sudoku.id)
+
+            fieldFromDb(fieldDb.copy(gameSize = 6)).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when the raw field count does not match size squared") {
@@ -99,18 +106,48 @@ class DomainMapperTest : ShouldSpec(
 
             restored.shouldNotBeNull()
             restored.id shouldBe sudoku.id
-            restored.fields.size shouldBe sudoku.fields.size
+            restored.size shouldBe SudokuSize.FOUR
+            restored.fields.size shouldBe 16
+        }
+
+        should("sudokuFromDb returns null for a stored size that is not a supported sudoku size") {
+            val sudokuDb = sudokuToDb(sudoku()).copy(size = 6)
+            val fields =
+                List(36) { index ->
+                    FieldDb(
+                        sudokuId = sudokuDb.id,
+                        gameSize = 6,
+                        index = index,
+                        solution = index % 6 + 1,
+                        value = null,
+                        given = false,
+                        hint = false,
+                        notes = "",
+                    )
+                }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuDb, fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when a raw field has a game size that is not a supported sudoku size") {
+            val sudoku = sudoku()
+            val fields =
+                sudoku.fields
+                    .map { fieldToDb(it, sudoku.id) }
+                    .mapIndexed { index, field -> if (index == 0) field.copy(gameSize = 6) else field }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
         }
 
         should("fieldFromExport returns null when the stored solution is null") {
             val export = fieldToExport(sudoku()[0])
-            fieldFromExport(export.copy(solution = null), size = 4).shouldBeNull()
+            fieldFromExport(export.copy(solution = null), size = SudokuSize.FOUR).shouldBeNull()
         }
 
         should("fieldFromExport defaults notes to empty when absent") {
             val export = FieldExport(index = 0, solution = 1, notes = null)
 
-            val field = fieldFromExport(export, size = 4)
+            val field = fieldFromExport(export, size = SudokuSize.FOUR)
 
             field.shouldNotBeNull()
             field.notes shouldBe mutableListOf()
@@ -119,14 +156,21 @@ class DomainMapperTest : ShouldSpec(
         should("fieldFromExport restores notes characters when present") {
             val export = FieldExport(index = 0, solution = 1, notes = "12")
 
-            val field = fieldFromExport(export, size = 4)
+            val field = fieldFromExport(export, size = SudokuSize.FOUR)
 
             field.shouldNotBeNull()
             field.notes shouldBe mutableListOf('1', '2')
         }
 
         should("fieldToExport blanks out false flags and empty notes to null") {
-            val field = Field(position = Position.create(0, 4), solution = 1, given = false, hint = false, notes = mutableListOf())
+            val field =
+                Field(
+                    position = Position.create(0, SudokuSize.FOUR),
+                    solution = 1,
+                    given = false,
+                    hint = false,
+                    notes = mutableListOf(),
+                )
 
             val export = fieldToExport(field)
 
@@ -136,7 +180,14 @@ class DomainMapperTest : ShouldSpec(
         }
 
         should("fieldToExport keeps true flags and non-empty notes") {
-            val field = Field(position = Position.create(0, 4), solution = 1, given = true, hint = true, notes = mutableListOf('3'))
+            val field =
+                Field(
+                    position = Position.create(0, SudokuSize.FOUR),
+                    solution = 1,
+                    given = true,
+                    hint = true,
+                    notes = mutableListOf('3'),
+                )
 
             val export = fieldToExport(field)
 
@@ -158,25 +209,27 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromExport(export).shouldBeNull()
         }
 
-        val fieldCountBySize = mapOf(SudokuSize.FOUR to 16, SudokuSize.NINE to 81, SudokuSize.SIXTEEN to 256)
-        val lastBlockBySize = mapOf(SudokuSize.FOUR to 3, SudokuSize.NINE to 8, SudokuSize.SIXTEEN to 15)
+        should("sudokuFromExport returns null for a 6x6 export with a matching field count") {
+            val export = sudokuToExport(sudoku()).copy(size = 6, fields = List(36) { FieldExport(index = it, solution = it % 6 + 1) })
 
-        should("cover every sudoku size") {
-            fieldCountBySize.keys shouldBe SudokuSize.entries.toSet()
-            lastBlockBySize.keys shouldBe SudokuSize.entries.toSet()
+            sudokuFromExport(export).shouldBeNull()
         }
 
-        SudokuSize.entries.forEach { size ->
+        listOf(
+            Triple(SudokuSize.FOUR, 16, 3),
+            Triple(SudokuSize.NINE, 81, 8),
+            Triple(SudokuSize.SIXTEEN, 256, 15),
+        ).forEach { (size, fieldCount, lastBlock) ->
             should("sudokuToExport and sudokuFromExport round-trip a $size sudoku") {
-                val sudoku = sudoku(size.value)
+                val sudoku = sudoku(size)
 
                 val restored = sudokuFromExport(sudokuToExport(sudoku))
 
                 restored.shouldNotBeNull()
-                restored.size shouldBe size.value
-                restored.fields.size shouldBe fieldCountBySize.getValue(size)
+                restored.size shouldBe size
+                restored.fields.size shouldBe fieldCount
                 val lastPosition = restored.fields.last().position
-                lastPosition.block shouldBe lastBlockBySize.getValue(size)
+                lastPosition.block shouldBe lastBlock
                 restored.fields.map { it.solution } shouldBe sudoku.fields.map { it.solution }
             }
         }

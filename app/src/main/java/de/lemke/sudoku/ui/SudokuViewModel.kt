@@ -46,17 +46,17 @@ class SudokuViewModel @Inject constructor(
     suspend fun loadSudoku(id: SudokuId): Sudoku? = getSudoku(id)
 
     suspend fun generateNewSudoku(
-        size: Int,
+        size: SudokuSize,
         difficulty: Difficulty,
-    ): Sudoku = generateSudoku(SudokuSize.fromValue(size), difficulty)
+    ): Sudoku = generateSudoku(size, difficulty)
 
     suspend fun generateNextLevelSudoku(
-        size: Int,
+        size: SudokuSize,
         level: Int,
-    ): Sudoku = generateSudokuLevel(SudokuSize.fromValue(size), level)
+    ): Sudoku = generateSudokuLevel(size, level)
 
     suspend fun isMaxSudokuLevel(
-        size: Int,
+        size: SudokuSize,
         level: Int,
     ): Boolean = getMaxSudokuLevel(size) == level
 

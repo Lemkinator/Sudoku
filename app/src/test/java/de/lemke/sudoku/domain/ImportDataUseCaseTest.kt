@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -94,7 +95,7 @@ class ImportDataUseCaseTest {
 
     private fun testSudoku(
         id: String = SudokuId.generate().value,
-        size: Int = 4,
+        size: SudokuSize = SudokuSize.FOUR,
         difficulty: Difficulty = Difficulty.VERY_EASY,
     ): Sudoku =
         Sudoku.create(
@@ -106,8 +107,8 @@ class ImportDataUseCaseTest {
             updated = LocalDateTime.of(2024, 1, 1, 12, 5),
             seconds = 42,
             fields =
-                MutableList(size * size) { index ->
-                    val value = index % size + 1
+                MutableList(size.cellCount) { index ->
+                    val value = index % size.value + 1
                     Field(position = Position.create(index, size), solution = value, value = value, given = true)
                 },
         )
@@ -139,8 +140,8 @@ class ImportDataUseCaseTest {
 
     @Test
     fun `imports and saves every sudoku from a schema-valid export`() {
-        val sudoku1 = testSudoku(size = 4)
-        val sudoku2 = testSudoku(size = 9, difficulty = Difficulty.EXPERT)
+        val sudoku1 = testSudoku(size = SudokuSize.FOUR)
+        val sudoku2 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EXPERT)
         val json = listOf(sudokuToExport(sudoku1), sudokuToExport(sudoku2)).stringifyJSON()
         val uri = registerDocument("import.valid", json)
 
@@ -169,10 +170,10 @@ class ImportDataUseCaseTest {
 
     @Test
     fun `saves the readable sudokus and counts every entry the mapper rejects as skipped`() {
-        val valid4 = testSudoku(size = 4)
-        val valid9 = testSudoku(size = 9)
-        val size5 = sudokuToExport(testSudoku(size = 4)).copy(size = 5)
-        val size0 = sudokuToExport(testSudoku(size = 4)).copy(size = 0)
+        val valid4 = testSudoku(size = SudokuSize.FOUR)
+        val valid9 = testSudoku(size = SudokuSize.NINE)
+        val size5 = sudokuToExport(testSudoku(size = SudokuSize.FOUR)).copy(size = 5)
+        val size0 = sudokuToExport(testSudoku(size = SudokuSize.FOUR)).copy(size = 0)
         val json = listOf(sudokuToExport(valid4), size5, sudokuToExport(valid9), size0).stringifyJSON()
         val uri = registerDocument("import.skipped", json)
 
@@ -183,12 +184,16 @@ class ImportDataUseCaseTest {
 
     @Test
     fun `counts a single unsupported entry as one skipped and dismisses the progress dialog`() {
-        val json = listOf(sudokuToExport(testSudoku(size = 16)), sudokuToExport(testSudoku(size = 4)).copy(size = 25)).stringifyJSON()
+        val json =
+            listOf(
+                sudokuToExport(testSudoku(size = SudokuSize.SIXTEEN)),
+                sudokuToExport(testSudoku(size = SudokuSize.FOUR)).copy(size = 25),
+            ).stringifyJSON()
         val uri = registerDocument("import.oneskipped", json)
 
         runTest { useCase(uri) shouldBe DataImportResult.Imported(skippedCount = 1) }
 
-        runBlocking { sudokusRepository.getAllSudokus() }.map { it.size } shouldBe listOf(16)
+        runBlocking { sudokusRepository.getAllSudokus() }.map { it.size } shouldBe listOf(SudokuSize.SIXTEEN)
         shadowOf(Looper.getMainLooper()).idle()
         ShadowDialog.getLatestDialog().isShowing.shouldBeFalse()
     }

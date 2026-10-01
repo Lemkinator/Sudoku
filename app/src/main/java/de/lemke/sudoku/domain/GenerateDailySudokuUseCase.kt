@@ -49,7 +49,7 @@ class GenerateDailySudokuUseCase @Inject constructor(
                 ).random()
             return@withContext Sudoku.create(
                 sudokuId = SudokuId.generate(),
-                size = size.value,
+                size = size,
                 difficulty = randomDifficulty,
                 fields = generateFields(size, randomDifficulty),
                 modeLevel = Sudoku.MODE_DAILY,

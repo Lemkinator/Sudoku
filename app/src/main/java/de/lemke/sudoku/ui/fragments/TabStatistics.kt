@@ -122,7 +122,7 @@ class TabStatistics : Fragment() {
                     getString(
                         R.string.best_time_value,
                         secondsToTimeString(stats.bestTimeSudoku.seconds),
-                        stats.bestTimeSudoku.sizeString,
+                        stats.bestTimeSudoku.size.getLocalString(resources),
                         stats.bestTimeSudoku.difficulty.getLocalString(resources),
                     )
                 } else {
@@ -150,8 +150,8 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedDifficulty?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonDifficulty?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.size) to null)
-        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.let { "$it×$it" } ?: "-"))
-        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.let { "$it×$it" } ?: "-"))
+        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.getLocalString(resources) ?: "-"))
+        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.feature_usage) to null)
         statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * PERCENT_SCALE).roundToInt()}%")
         statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * PERCENT_SCALE).roundToInt()}%")

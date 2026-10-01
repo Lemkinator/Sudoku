@@ -42,6 +42,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -51,7 +52,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
 import javax.inject.Inject
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -119,13 +119,13 @@ class SudokuActivityLifecycleTest {
     }
 
     private fun formulaicSudoku(
-        size: Int = 4,
+        size: SudokuSize = SudokuSize.FOUR,
         modeLevel: Int = MODE_NORMAL,
         created: LocalDateTime = LocalDateTime.now(),
         allCorrect: Boolean = false,
         sudokuId: SudokuId = SudokuId.generate(),
     ): Sudoku {
-        val blockSize = sqrt(size.toDouble()).toInt()
+        val blockSize = size.blockSize
         return Sudoku.create(
             sudokuId = sudokuId,
             size = size,
@@ -133,10 +133,10 @@ class SudokuActivityLifecycleTest {
             modeLevel = modeLevel,
             created = created,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     val given = index % 3 == 0
                     Field(
                         position = Position.create(index, size),
@@ -259,14 +259,14 @@ class SudokuActivityLifecycleTest {
     fun `KEYCODE_DEL selects the delete button`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_DEL).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value
         }
 
     @Test
     fun `KEYCODE_H selects the hint button while a hint is available and is ignored once exhausted`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_H).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size + 1
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value + 1
 
             activity.select(4)
             activity.sudoku.isHintAvailable.shouldBeFalse()

@@ -28,6 +28,7 @@ import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import org.junit.Before
@@ -60,12 +61,33 @@ class ViewPager2AdapterTabLevelSubtabsTest {
     }
 
     @Test
-    fun `createFragment builds a SudokuLevelTab for every declared position and falls back beyond it`() {
+    fun `getItemCount exposes one tab per sudoku size`() {
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                ViewPager2AdapterTabLevelSubtabs(activity).itemCount shouldBe 3
+            }
+        }
+    }
+
+    @Test
+    fun `createFragment builds a SudokuLevelTab for the size at every declared position`() {
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val adapter = ViewPager2AdapterTabLevelSubtabs(activity)
-                val sizes = listOf(0, 1, 2, 3).map { (adapter.createFragment(it) as SudokuLevelTab).arguments?.getInt("size") }
-                sizes shouldBe listOf(4, 9, 16, 9)
+                val sizes =
+                    listOf(0, 1, 2).map { position ->
+                        (adapter.createFragment(position) as SudokuLevelTab).arguments?.getInt(SudokuLevelTab.KEY_SIZE)
+                    }
+                sizes shouldBe listOf(4, 9, 16)
+            }
+        }
+    }
+
+    @Test
+    fun `createFragment rejects a position beyond the last size`() {
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                shouldThrow<IndexOutOfBoundsException> { ViewPager2AdapterTabLevelSubtabs(activity).createFragment(3) }
             }
         }
     }

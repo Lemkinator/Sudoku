@@ -26,6 +26,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
@@ -65,14 +66,14 @@ class ImportSudokuUseCaseTest {
         clearMocks(saveSudoku)
     }
 
-    private fun testSudoku(size: Int = 4): Sudoku =
+    private fun testSudoku(size: SudokuSize = SudokuSize.FOUR): Sudoku =
         Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = Sudoku.MODE_NORMAL,
             fields =
-                MutableList(size * size) { i ->
-                    Field(position = Position.create(i, size), solution = (i % size) + 1, value = (i % size) + 1, given = true)
+                MutableList(size.cellCount) { i ->
+                    Field(position = Position.create(i, size), solution = (i % size.value) + 1, value = (i % size.value) + 1, given = true)
                 },
         )
 

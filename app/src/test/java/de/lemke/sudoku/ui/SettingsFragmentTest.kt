@@ -338,13 +338,10 @@ class SettingsFragmentTest {
         sudokuToExport(
             Sudoku.create(
                 sudokuId = SudokuId.generate(),
-                size = SudokuSize.FOUR.value,
+                size = SudokuSize.FOUR,
                 difficulty = Difficulty.VERY_EASY,
                 modeLevel = Sudoku.MODE_NORMAL,
-                fields =
-                    MutableList(
-                        SudokuSize.FOUR.value * SudokuSize.FOUR.value,
-                    ) { Field(position = Position.create(it, SudokuSize.FOUR.value), solution = 1) },
+                fields = MutableList(SudokuSize.FOUR.cellCount) { Field(position = Position.create(it, SudokuSize.FOUR), solution = 1) },
             ),
         ).copy(size = size)
 

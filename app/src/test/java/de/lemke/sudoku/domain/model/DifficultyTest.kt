@@ -17,7 +17,6 @@
 package de.lemke.sudoku.domain.model
 
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
 
 class DifficultyTest : ShouldSpec(
@@ -48,17 +47,25 @@ class DifficultyTest : ShouldSpec(
             Difficulty.fromInt(Difficulty.entries.size) shouldBe Difficulty.MEDIUM
         }
 
-        should("look up numbersToRemove per known size for every difficulty") {
-            Difficulty.VERY_EASY.numbersToRemove(SudokuSize.FOUR) shouldBe 4 * 4 - 10
-            Difficulty.EXPERT.numbersToRemove(SudokuSize.NINE) shouldBe 9 * 9 - 23
-            Difficulty.HARD.numbersToRemove(SudokuSize.SIXTEEN) shouldBe 16 * 16 - 136
-        }
-
-        should("define numbersToRemove for every sudoku size and difficulty") {
-            SudokuSize.entries.forEach { size ->
-                Difficulty.entries.forEach { difficulty ->
-                    difficulty.numbersToRemove(size) shouldBeInRange (1 until size.value * size.value)
-                }
+        should("remove the cells beyond each size's givens for every size and difficulty") {
+            listOf(
+                Triple(SudokuSize.FOUR, Difficulty.VERY_EASY, 6),
+                Triple(SudokuSize.FOUR, Difficulty.EASY, 7),
+                Triple(SudokuSize.FOUR, Difficulty.MEDIUM, 9),
+                Triple(SudokuSize.FOUR, Difficulty.HARD, 10),
+                Triple(SudokuSize.FOUR, Difficulty.EXPERT, 12),
+                Triple(SudokuSize.NINE, Difficulty.VERY_EASY, 31),
+                Triple(SudokuSize.NINE, Difficulty.EASY, 41),
+                Triple(SudokuSize.NINE, Difficulty.MEDIUM, 46),
+                Triple(SudokuSize.NINE, Difficulty.HARD, 51),
+                Triple(SudokuSize.NINE, Difficulty.EXPERT, 58),
+                Triple(SudokuSize.SIXTEEN, Difficulty.VERY_EASY, 60),
+                Triple(SudokuSize.SIXTEEN, Difficulty.EASY, 80),
+                Triple(SudokuSize.SIXTEEN, Difficulty.MEDIUM, 100),
+                Triple(SudokuSize.SIXTEEN, Difficulty.HARD, 120),
+                Triple(SudokuSize.SIXTEEN, Difficulty.EXPERT, 140),
+            ).forEach { (size, difficulty, expected) ->
+                difficulty.numbersToRemove(size) shouldBe expected
             }
         }
 

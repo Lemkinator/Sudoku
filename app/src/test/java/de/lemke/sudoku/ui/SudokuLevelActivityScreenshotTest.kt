@@ -32,6 +32,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -88,7 +89,7 @@ class SudokuLevelActivityScreenshotTest {
         hiltRule.inject()
         settings.bypassOobe()
         runBlocking {
-            listOf(4, 9, 16).forEach { size -> saveSudoku(testLevelSudoku(size)) }
+            SudokuSize.entries.forEach { size -> saveSudoku(testLevelSudoku(size)) }
         }
     }
 

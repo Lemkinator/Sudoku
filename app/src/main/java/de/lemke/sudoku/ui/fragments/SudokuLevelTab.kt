@@ -28,6 +28,7 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import com.skydoves.bundler.intentOf
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
@@ -38,6 +39,7 @@ import de.lemke.sudoku.databinding.FragmentTabLevelBinding
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
@@ -123,5 +125,12 @@ class SudokuLevelTab : Fragment() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val KEY_SIZE = "size"
+
+        fun newInstance(size: SudokuSize): SudokuLevelTab =
+            SudokuLevelTab().apply { arguments = intentOf { +(KEY_SIZE to size.value) }.extras }
     }
 }
