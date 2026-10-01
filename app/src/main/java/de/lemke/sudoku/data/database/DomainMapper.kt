@@ -104,30 +104,31 @@ fun fieldToDb(
     )
 
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
-    val size = SudokuSize.fromValueOrNull(sudokuExport.size)
-    val fields = size?.let { sudokuExport.fields.mapNotNull { fieldFromExport(it, size) }.toMutableList() }
-    if (size == null || fields == null || fields.size != size.cellCount) return null
-    return Sudoku(
-        id = SudokuId(sudokuExport.id),
-        size = size,
-        difficulty = Difficulty.fromInt(sudokuExport.difficulty),
-        modeLevel = sudokuExport.modeLevel,
-        created = sudokuExport.created,
-        updated = sudokuExport.updated,
-        seconds = sudokuExport.seconds,
-        regionalHighlightingUsed = sudokuExport.regionalHighlightingUsed == true,
-        numberHighlightingUsed = sudokuExport.numberHighlightingUsed == true,
-        eraserUsed = sudokuExport.eraserUsed == true,
-        isChecklist = sudokuExport.isChecklist == true,
-        isReverseChecklist = sudokuExport.isReverseChecklist == true,
-        checklistNumber = sudokuExport.checklistNumber ?: 0,
-        hintsUsed = sudokuExport.hintsUsed ?: 0,
-        notesMade = sudokuExport.notesMade ?: 0,
-        errorsMade = sudokuExport.errorsMade ?: 0,
-        timer = null,
-        gameListener = null,
-        fields = fields,
-    )
+    val size = SudokuSize.fromValueOrNull(sudokuExport.size) ?: return null
+    val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, size) }.toMutableList()
+    return fields.takeIf { it.size == size.cellCount }?.let {
+        Sudoku(
+            id = SudokuId(sudokuExport.id),
+            size = size,
+            difficulty = Difficulty.fromInt(sudokuExport.difficulty),
+            modeLevel = sudokuExport.modeLevel,
+            created = sudokuExport.created,
+            updated = sudokuExport.updated,
+            seconds = sudokuExport.seconds,
+            regionalHighlightingUsed = sudokuExport.regionalHighlightingUsed == true,
+            numberHighlightingUsed = sudokuExport.numberHighlightingUsed == true,
+            eraserUsed = sudokuExport.eraserUsed == true,
+            isChecklist = sudokuExport.isChecklist == true,
+            isReverseChecklist = sudokuExport.isReverseChecklist == true,
+            checklistNumber = sudokuExport.checklistNumber ?: 0,
+            hintsUsed = sudokuExport.hintsUsed ?: 0,
+            notesMade = sudokuExport.notesMade ?: 0,
+            errorsMade = sudokuExport.errorsMade ?: 0,
+            timer = null,
+            gameListener = null,
+            fields = it,
+        )
+    }
 }
 
 fun sudokuToExport(sudoku: Sudoku): SudokuExport =
