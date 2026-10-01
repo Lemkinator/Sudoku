@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -28,7 +29,6 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
-import com.skydoves.bundler.intentOf
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
@@ -130,7 +130,6 @@ class SudokuLevelTab : Fragment() {
     companion object {
         const val KEY_SIZE = "size"
 
-        fun newInstance(size: SudokuSize): SudokuLevelTab =
-            SudokuLevelTab().apply { arguments = intentOf { +(KEY_SIZE to size.value) }.extras }
+        fun newInstance(size: SudokuSize): SudokuLevelTab = SudokuLevelTab().apply { arguments = bundleOf(KEY_SIZE to size.value) }
     }
 }

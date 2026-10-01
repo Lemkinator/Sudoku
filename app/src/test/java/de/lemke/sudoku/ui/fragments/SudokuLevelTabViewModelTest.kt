@@ -91,7 +91,8 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             )
 
         should("fail fast when the saved state handle has no size entry") {
-            shouldThrow<IllegalStateException> { newViewModel(SavedStateHandle()) }
+            val error = shouldThrow<IllegalStateException> { newViewModel(SavedStateHandle()) }
+            error.message shouldBe "Missing size argument"
             coVerify(exactly = 0) { initSudokuLevel(any()) }
         }
 

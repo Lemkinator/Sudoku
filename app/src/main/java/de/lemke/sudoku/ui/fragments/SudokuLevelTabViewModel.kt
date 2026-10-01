@@ -69,7 +69,10 @@ class SudokuLevelTabViewModel @Inject constructor(
     private val saveSudoku: SaveSudokuUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val size: SudokuSize = SudokuSize.fromValue(checkNotNull(savedStateHandle.get<Int>(SudokuLevelTab.KEY_SIZE)))
+    private val size: SudokuSize =
+        SudokuSize.fromValue(
+            checkNotNull(savedStateHandle.get<Int>(SudokuLevelTab.KEY_SIZE)) { "Missing ${SudokuLevelTab.KEY_SIZE} argument" },
+        )
 
     val state: StateFlow<SudokuLevelTabUiState> =
         flow {

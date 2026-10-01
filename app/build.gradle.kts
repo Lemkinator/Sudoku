@@ -195,7 +195,6 @@ dependencies {
     implementation(libs.common.utils)
     implementation(libs.coroutines.android)
     implementation(libs.async.layout.inflater)
-    implementation(libs.bundler)
     implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
