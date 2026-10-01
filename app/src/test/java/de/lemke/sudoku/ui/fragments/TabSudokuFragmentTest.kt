@@ -270,34 +270,36 @@ class TabSudokuFragmentTest {
     fun `draining the main looper before MainActivity starts leaves the continue button to the resumed view`() =
         failOnUncaughtException {
             runBlocking { saveSudoku(formulaicSudoku()) }
-            val controller = Robolectric.buildActivity(MainActivity::class.java).create()
-            shadowOf(Looper.getMainLooper()).idle()
-            controller.start().resume()
-            shadowOf(Looper.getMainLooper()).idle()
-            controller
-                .get()
-                .findViewById<View>(R.id.continueGameButton)
-                .isVisible
-                .shouldBeTrue()
-            controller.pause().stop().destroy()
+            Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+                controller.create()
+                shadowOf(Looper.getMainLooper()).idle()
+                controller.start().resume()
+                shadowOf(Looper.getMainLooper()).idle()
+                controller
+                    .get()
+                    .findViewById<View>(R.id.continueGameButton)
+                    .isVisible
+                    .shouldBeTrue()
+            }
         }
 
     @Test
     fun `showing the sudoku tab before its view exists refreshes it once the view is resumed`() =
         failOnUncaughtException {
             runBlocking { saveSudoku(formulaicSudoku()) }
-            val controller = Robolectric.buildActivity(MainActivity::class.java).create()
-            controller.get().onTabItemSelected(0)
-            controller.get().onTabItemSelected(1)
-            shadowOf(Looper.getMainLooper()).idle()
-            controller.start().resume()
-            shadowOf(Looper.getMainLooper()).idle()
-            controller
-                .get()
-                .findViewById<View>(R.id.continueGameButton)
-                .isVisible
-                .shouldBeTrue()
-            controller.pause().stop().destroy()
+            Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+                controller.create()
+                controller.get().onTabItemSelected(0)
+                controller.get().onTabItemSelected(1)
+                shadowOf(Looper.getMainLooper()).idle()
+                controller.start().resume()
+                shadowOf(Looper.getMainLooper()).idle()
+                controller
+                    .get()
+                    .findViewById<View>(R.id.continueGameButton)
+                    .isVisible
+                    .shouldBeTrue()
+            }
         }
 
     @Test
