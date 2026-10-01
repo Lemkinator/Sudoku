@@ -31,7 +31,7 @@ class SudokuSizeTest : ShouldSpec(
             SudokuSize.FOUR.value shouldBe 4
             SudokuSize.FOUR.blockSize shouldBe 2
             SudokuSize.FOUR.hintLimit shouldBe 1
-            SudokuSize.FOUR.filterFlag shouldBe SudokuFilterFlags.SIZE_4X4
+            SudokuSize.FOUR.filterFlag shouldBe (1 shl 21)
             SudokuSize.FOUR.cellCount shouldBe 16
         }
 
@@ -39,7 +39,7 @@ class SudokuSizeTest : ShouldSpec(
             SudokuSize.NINE.value shouldBe 9
             SudokuSize.NINE.blockSize shouldBe 3
             SudokuSize.NINE.hintLimit shouldBe 3
-            SudokuSize.NINE.filterFlag shouldBe SudokuFilterFlags.SIZE_9X9
+            SudokuSize.NINE.filterFlag shouldBe (1 shl 22)
             SudokuSize.NINE.cellCount shouldBe 81
         }
 
@@ -47,7 +47,7 @@ class SudokuSizeTest : ShouldSpec(
             SudokuSize.SIXTEEN.value shouldBe 16
             SudokuSize.SIXTEEN.blockSize shouldBe 4
             SudokuSize.SIXTEEN.hintLimit shouldBe 8
-            SudokuSize.SIXTEEN.filterFlag shouldBe SudokuFilterFlags.SIZE_16X16
+            SudokuSize.SIXTEEN.filterFlag shouldBe (1 shl 23)
             SudokuSize.SIXTEEN.cellCount shouldBe 256
         }
 

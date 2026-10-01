@@ -27,9 +27,9 @@ enum class SudokuSize(
     val filterFlag: Int,
     @param:StringRes private val labelRes: Int,
 ) {
-    FOUR(value = 4, blockSize = 2, hintLimit = 1, filterFlag = SudokuFilterFlags.SIZE_4X4, labelRes = R.string.size4),
-    NINE(value = 9, blockSize = 3, hintLimit = 3, filterFlag = SudokuFilterFlags.SIZE_9X9, labelRes = R.string.size9),
-    SIXTEEN(value = 16, blockSize = 4, hintLimit = 8, filterFlag = SudokuFilterFlags.SIZE_16X16, labelRes = R.string.size16),
+    FOUR(value = 4, blockSize = 2, hintLimit = 1, filterFlag = 1 shl 21, labelRes = R.string.size4),
+    NINE(value = 9, blockSize = 3, hintLimit = 3, filterFlag = 1 shl 22, labelRes = R.string.size9),
+    SIXTEEN(value = 16, blockSize = 4, hintLimit = 8, filterFlag = 1 shl 23, labelRes = R.string.size16),
     ;
 
     val cellCount: Int get() = value * value

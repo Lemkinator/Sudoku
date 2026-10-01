@@ -27,14 +27,12 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_HARD
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_MEDIUM
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_VERY_EASY
-import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_16X16
-import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_4X4
-import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -62,7 +60,7 @@ private fun DialogStatisticsFilterBinding.allCheckboxes(): List<AppCompatCheckBo
 
 private val ALL_FLAGS =
     TYPE_ALL or TYPE_NORMAL or TYPE_DAILY or TYPE_LEVEL or
-        SIZE_ALL or SIZE_4X4 or SIZE_9X9 or SIZE_16X16 or
+        SIZE_ALL or SudokuSize.FOUR.filterFlag or SudokuSize.NINE.filterFlag or SudokuSize.SIXTEEN.filterFlag or
         DIFFICULTY_ALL or DIFFICULTY_VERY_EASY or DIFFICULTY_EASY or DIFFICULTY_MEDIUM or DIFFICULTY_HARD or DIFFICULTY_EXPERT
 
 @RunWith(RobolectricTestRunner::class)
@@ -80,7 +78,7 @@ class MainActivityFilterDialogTest {
 
     @Test
     fun `initFilterDialog checks only the checkboxes matching a specific bit when no ALL bit is set`() {
-        settings.filterFlags = TYPE_NORMAL or SIZE_9X9 or DIFFICULTY_MEDIUM
+        settings.filterFlags = TYPE_NORMAL or SudokuSize.NINE.filterFlag or DIFFICULTY_MEDIUM
 
         dialogBinding.initFilterDialog(settings)
 
@@ -134,7 +132,7 @@ class MainActivityFilterDialogTest {
 
         updateFilterSettings(dialogBinding, settings)
 
-        settings.filterFlags shouldBe (TYPE_NORMAL or TYPE_DAILY or SIZE_4X4 or DIFFICULTY_VERY_EASY)
+        settings.filterFlags shouldBe (TYPE_NORMAL or TYPE_DAILY or SudokuSize.FOUR.filterFlag or DIFFICULTY_VERY_EASY)
     }
 
     @Test

@@ -62,12 +62,12 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
                     fields = mutableListOf(),
                 )
             every { sudokusRepository.observeAllSudokus() } returns flowOf(listOf(normal4x4, normal9x9))
-            userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_4X4 or SudokuFilterFlags.DIFFICULTY_ALL
+            userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuSize.FOUR.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
             useCase().test {
                 awaitItem() shouldBe listOf(normal4x4)
 
-                userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_9X9 or SudokuFilterFlags.DIFFICULTY_ALL
+                userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
                 awaitItem() shouldBe listOf(normal9x9)
                 cancelAndIgnoreRemainingEvents()

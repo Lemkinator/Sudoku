@@ -200,7 +200,7 @@ class MainActivityMenuTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             dialog.isShowing.shouldBeFalse()
-            (userSettings.filterFlags and SudokuFilterFlags.SIZE_4X4) shouldBe 0
+            (userSettings.filterFlags and SudokuSize.FOUR.filterFlag) shouldBe 0
             (userSettings.filterFlags and SudokuFilterFlags.SIZE_ALL) shouldBe 0
         }
 

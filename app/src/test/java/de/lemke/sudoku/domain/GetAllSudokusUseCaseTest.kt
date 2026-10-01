@@ -76,7 +76,7 @@ class GetAllSudokusUseCaseTest : ShouldSpec(
                     fields = mutableListOf(),
                 )
             coEvery { sudokusRepository.getAllSudokus() } returns listOf(normal9x9, daily9x9, normal4x4)
-            val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuFilterFlags.SIZE_9X9 or SudokuFilterFlags.DIFFICULTY_ALL
+            val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
             useCase(flags) shouldBe listOf(normal9x9)
         }

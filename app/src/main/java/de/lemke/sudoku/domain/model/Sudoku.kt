@@ -37,7 +37,7 @@ private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 private const val PERCENT_SCALE = 100
 
 private const val MAX_STANDARD_DIGIT = 9
-private val MAX_LARGE_DIGIT = SudokuSize.SIXTEEN.value
+private val MAX_LARGE_DIGIT = SudokuSize.entries.maxOf { it.value }
 private const val LARGE_DIGIT_OFFSET = 10
 
 @JvmInline
