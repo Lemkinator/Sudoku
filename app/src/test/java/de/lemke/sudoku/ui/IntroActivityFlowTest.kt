@@ -624,6 +624,37 @@ class IntroActivityFlowTest {
         }
 
     @Test
+    fun `tapping another field while a field is selected keeps the selection`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(0)
+            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.introStep shouldBe 3
+        }
+
+    @Test
+    fun `tapping the delete button while a field is selected is a no-op`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
+            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.introStep shouldBe 3
+            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+        }
+
+    @Test
+    fun `tapping the hint button while a field is selected is a no-op`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
+            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.introStep shouldBe 3
+            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+            activity.sudoku[DEMO_CELL_INDEX_4].hint.shouldBeFalse()
+            activity.sudoku.hintsUsed shouldBe 0
+        }
+
+    @Test
     fun `selecting the step-3 target number outside step 3 does not place a value`() =
         launch { activity ->
             toStep3(activity)
