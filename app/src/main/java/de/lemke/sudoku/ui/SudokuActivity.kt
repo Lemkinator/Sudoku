@@ -58,10 +58,8 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
@@ -201,20 +199,20 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun initSudokuButtons() {
         sudokuButtons.clear()
-        if (sudoku.size >= SIZE_4X4) {
+        if (sudoku.size >= SudokuSize.FOUR.value) {
             sudokuButtons.add(binding.numberButton1)
             sudokuButtons.add(binding.numberButton2)
             sudokuButtons.add(binding.numberButton3)
             sudokuButtons.add(binding.numberButton4)
         }
-        if (sudoku.size >= SIZE_9X9) {
+        if (sudoku.size >= SudokuSize.NINE.value) {
             sudokuButtons.add(binding.numberButton5)
             sudokuButtons.add(binding.numberButton6)
             sudokuButtons.add(binding.numberButton7)
             sudokuButtons.add(binding.numberButton8)
             sudokuButtons.add(binding.numberButton9)
         }
-        if (sudoku.size >= SIZE_16X16) {
+        if (sudoku.size >= SudokuSize.SIXTEEN.value) {
             sudokuButtons.add(binding.numberButtonA)
             sudokuButtons.add(binding.numberButtonB)
             sudokuButtons.add(binding.numberButtonC)

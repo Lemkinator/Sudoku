@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
@@ -34,9 +35,9 @@ class GenerateSudokuUseCaseTest : ShouldSpec(
 
         should("pass size/difficulty through to GenerateFieldsUseCase and mark the sudoku as normal mode") {
             val fields = mutableListOf<Field>()
-            coEvery { generateFields(9, HARD) } returns fields
+            coEvery { generateFields(SudokuSize.NINE, HARD) } returns fields
 
-            val sudoku = useCase(9, HARD)
+            val sudoku = useCase(SudokuSize.NINE, HARD)
 
             sudoku.size shouldBe 9
             sudoku.difficulty shouldBe HARD

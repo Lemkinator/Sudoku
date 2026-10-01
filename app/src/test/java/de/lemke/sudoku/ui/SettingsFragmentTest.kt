@@ -54,6 +54,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -337,13 +338,13 @@ class SettingsFragmentTest {
         sudokuToExport(
             Sudoku.create(
                 sudokuId = SudokuId.generate(),
-                size = Sudoku.SIZE_4X4,
+                size = SudokuSize.FOUR.value,
                 difficulty = Difficulty.VERY_EASY,
                 modeLevel = Sudoku.MODE_NORMAL,
                 fields =
                     MutableList(
-                        Sudoku.SIZE_4X4 * Sudoku.SIZE_4X4,
-                    ) { Field(position = Position.create(it, Sudoku.SIZE_4X4), solution = 1) },
+                        SudokuSize.FOUR.value * SudokuSize.FOUR.value,
+                    ) { Field(position = Position.create(it, SudokuSize.FOUR.value), solution = 1) },
             ),
         ).copy(size = size)
 

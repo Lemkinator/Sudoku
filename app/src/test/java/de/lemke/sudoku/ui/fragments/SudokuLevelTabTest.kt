@@ -39,9 +39,9 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -110,7 +110,7 @@ class SudokuLevelTabTest {
                 val fragment =
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<SudokuLevelTab>()
-                        .first { it.arguments?.getInt("size") == SIZE_4X4 }
+                        .first { it.arguments?.getInt("size") == SudokuSize.FOUR.value }
                 block(fragment)
             }
         }
@@ -130,7 +130,7 @@ class SudokuLevelTabTest {
         level: Int,
         completed: Boolean,
     ): Sudoku {
-        val size = SIZE_4X4
+        val size = SudokuSize.FOUR.value
         val blockSize = 2
         return Sudoku.create(
             size = size,

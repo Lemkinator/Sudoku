@@ -410,7 +410,7 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 0
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().size shouldBe Sudoku.SIZE_4X4
+            runBlocking { getAllSudokus() }.single().size shouldBe 4
         }
 
     @Test
@@ -418,6 +418,6 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 2
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().size shouldBe Sudoku.SIZE_16X16
+            runBlocking { getAllSudokus() }.single().size shouldBe 16
         }
 }

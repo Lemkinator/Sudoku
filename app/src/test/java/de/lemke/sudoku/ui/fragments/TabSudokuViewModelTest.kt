@@ -26,6 +26,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -85,13 +86,13 @@ class TabSudokuViewModelTest : ShouldSpec(
 
         should("createNewSudoku generates then saves the sudoku, in order, and returns it") {
             val sudoku = testSudoku()
-            coEvery { generateSudoku(9, Difficulty.HARD) } returns sudoku
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
 
-            val result = viewModel.createNewSudoku(9, Difficulty.HARD)
+            val result = viewModel.createNewSudoku(SudokuSize.NINE, Difficulty.HARD)
 
             result shouldBe sudoku
             coVerify(ordering = Ordering.ORDERED) {
-                generateSudoku(9, Difficulty.HARD)
+                generateSudoku(SudokuSize.NINE, Difficulty.HARD)
                 saveSudoku(sudoku)
             }
         }

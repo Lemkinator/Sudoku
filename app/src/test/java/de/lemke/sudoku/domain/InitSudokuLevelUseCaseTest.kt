@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -45,7 +46,7 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
             coEvery { sudokusRepository.getSudokuLevel(4) } returns existing
             coEvery { getMaxSudokuLevel(4) } returns 3
 
-            useCase(4)
+            useCase(SudokuSize.FOUR)
 
             coVerify(exactly = 0) { generateSudokuLevel(any(), any()) }
             coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
@@ -61,13 +62,13 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
             coEvery { getMaxSudokuLevel(4) } returns 4
             val level2 = mockk<Sudoku>()
             val level4 = mockk<Sudoku>()
-            coEvery { generateSudokuLevel(4, 2) } returns level2
-            coEvery { generateSudokuLevel(4, 4) } returns level4
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns level2
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 4) } returns level4
 
-            useCase(4)
+            useCase(SudokuSize.FOUR)
 
-            coVerify(exactly = 1) { generateSudokuLevel(4, 2) }
-            coVerify(exactly = 1) { generateSudokuLevel(4, 4) }
+            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 2) }
+            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 4) }
             coVerify(exactly = 1) { sudokusRepository.saveSudoku(level2, false) }
             coVerify(exactly = 1) { sudokusRepository.saveSudoku(level4, false) }
             coVerify(exactly = 2) { generateSudokuLevel(any(), any()) }

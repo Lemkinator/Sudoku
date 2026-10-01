@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeInRange
@@ -30,23 +31,25 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
         val useCase = GenerateFieldsUseCase(UnconfinedTestDispatcher(), CreatorSolvedBoardGenerator())
         val patternUseCase = GenerateFieldsUseCase(UnconfinedTestDispatcher(), PatternSolvedBoardGenerator())
 
-        should("generate size*size fields for a 4x4 grid") {
-            val fields = useCase(4, Difficulty.MEDIUM)
-            fields shouldHaveSize 16
+        val fieldCountBySize = mapOf(SudokuSize.FOUR to 16, SudokuSize.NINE to 81, SudokuSize.SIXTEEN to 256)
+        val digitsBySize =
+            mapOf(SudokuSize.FOUR to (1..4).toSet(), SudokuSize.NINE to (1..9).toSet(), SudokuSize.SIXTEEN to (1..16).toSet())
+
+        should("cover every sudoku size") {
+            fieldCountBySize.keys shouldBe SudokuSize.entries.toSet()
+            digitsBySize.keys shouldBe SudokuSize.entries.toSet()
         }
 
-        should("generate size*size fields for a 9x9 grid") {
-            val fields = useCase(9, Difficulty.MEDIUM)
-            fields shouldHaveSize 81
-        }
-
-        should("generate size*size fields for a 16x16 grid") {
-            val fields = patternUseCase(16, Difficulty.MEDIUM)
-            fields shouldHaveSize 256
+        SudokuSize.entries.forEach { size ->
+            should("generate a $size grid with its field count and digits") {
+                val fields = patternUseCase(size, Difficulty.MEDIUM)
+                fields shouldHaveSize fieldCountBySize.getValue(size)
+                fields.map { it.solution }.toSet() shouldBe digitsBySize.getValue(size)
+            }
         }
 
         should("take a 16x16 grid's solutions from the solved board and clear numbersToRemove of them") {
-            val fields = patternUseCase(16, Difficulty.MEDIUM)
+            val fields = patternUseCase(SudokuSize.SIXTEEN, Difficulty.MEDIUM)
             val rows = fields.map { it.solution }.chunked(16)
             rows[0] shouldBe (1..16).toList()
             rows[1] shouldBe (5..16).toList() + (1..4).toList()
@@ -62,35 +65,29 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
         }
 
         should("give every field a position matching its list index") {
-            val fields = useCase(9, Difficulty.MEDIUM)
+            val fields = useCase(SudokuSize.NINE, Difficulty.MEDIUM)
             fields.forEachIndexed { index, field -> field.position.index shouldBe index }
         }
 
         should("mark given fields with a value equal to the solution") {
-            val fields = useCase(9, Difficulty.EASY)
+            val fields = useCase(SudokuSize.NINE, Difficulty.EASY)
             fields.filter { it.given }.forEach { it.value shouldBe it.solution }
         }
 
         should("leave non-given fields without a value") {
-            val fields = useCase(9, Difficulty.EASY)
+            val fields = useCase(SudokuSize.NINE, Difficulty.EASY)
             fields.filter { !it.given }.forEach { it.value shouldBe null }
         }
 
         should("remove exactly numbersToRemove fields for the requested difficulty") {
             val difficulty = Difficulty.HARD
-            val fields = useCase(9, difficulty)
+            val fields = useCase(SudokuSize.NINE, difficulty)
             val removedCount = fields.count { !it.given }
-            removedCount shouldBe difficulty.numbersToRemove(9)
+            removedCount shouldBe difficulty.numbersToRemove(SudokuSize.NINE)
         }
 
         should("keep every solution value within the grid's valid digit range") {
-            val fields = useCase(9, Difficulty.EXPERT)
-            fields.forEach { it.solution.shouldBeInRange(1..9) }
-        }
-
-        should("fall back to the 9x9 schema for an unsupported size") {
-            val fields = useCase(6, Difficulty.MEDIUM)
-            fields shouldHaveSize 36
+            val fields = useCase(SudokuSize.NINE, Difficulty.EXPERT)
             fields.forEach { it.solution.shouldBeInRange(1..9) }
         }
     },

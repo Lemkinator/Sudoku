@@ -123,6 +123,22 @@ class SudokuTest : ShouldSpec(
             sudoku.equals(other) shouldBe false
         }
 
+        should("take the hint limit from the board's sudoku size") {
+            val hintLimitBySize = mapOf(4 to 1, 9 to 3, 16 to 8)
+
+            hintLimitBySize.forEach { (size, hintLimit) ->
+                val sudoku =
+                    Sudoku.create(
+                        size = size,
+                        difficulty = Difficulty.VERY_EASY,
+                        modeLevel = Sudoku.MODE_NORMAL,
+                        fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = 1) },
+                    )
+
+                sudoku.availableHints shouldBe hintLimit
+            }
+        }
+
         should("fall back to the default hint limit for a board size without a dedicated entry") {
             val sudoku =
                 Sudoku.create(

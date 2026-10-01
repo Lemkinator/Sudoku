@@ -30,6 +30,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
@@ -68,7 +69,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     private val saveSudoku: SaveSudokuUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val size: Int = savedStateHandle["size"] ?: Sudoku.SIZE_4X4
+    private val size: SudokuSize = SudokuSize.fromValue(savedStateHandle["size"] ?: SudokuSize.FOUR.value)
 
     val state: StateFlow<SudokuLevelTabUiState> =
         flow {
@@ -96,7 +97,7 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
-        observeSudokuLevel(size).transformLatest { sudokuLevel ->
+        observeSudokuLevel(size.value).transformLatest { sudokuLevel ->
             if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
                 runCatching { findOrGenerateNextLevelSudoku() }
                     .onSuccess { nextLevel ->
@@ -130,13 +131,13 @@ class SudokuLevelTabViewModel @Inject constructor(
         }
 
     private suspend fun FlowCollector<SudokuLevelTabUiState>.findOrGenerateNextLevelSudoku(): Sudoku {
-        val level = getMaxSudokuLevel(size) + 1
+        val level = getMaxSudokuLevel(size.value) + 1
         nextLevelSudoku?.takeIf { it.modeLevel == level }?.let { return it }
         emit(state.value.copy(isGeneratingNextLevel = true))
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
     suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
-        if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku)
+        if (getMaxSudokuLevel(size.value) < sudoku.modeLevel) saveSudoku(sudoku)
     }
 }

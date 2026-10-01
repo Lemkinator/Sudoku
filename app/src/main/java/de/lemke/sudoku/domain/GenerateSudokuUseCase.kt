@@ -20,6 +20,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -29,13 +30,13 @@ class GenerateSudokuUseCase @Inject constructor(
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(
-        size: Int,
+        size: SudokuSize,
         difficulty: Difficulty,
     ): Sudoku =
         withContext(defaultDispatcher) {
             return@withContext Sudoku.create(
                 sudokuId = SudokuId.generate(),
-                size = size,
+                size = size.value,
                 difficulty = difficulty,
                 fields = generateFields(size, difficulty),
                 modeLevel = Sudoku.MODE_NORMAL,

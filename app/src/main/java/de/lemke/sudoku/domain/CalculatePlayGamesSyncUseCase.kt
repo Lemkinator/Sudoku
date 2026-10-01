@@ -26,15 +26,13 @@ import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 private const val MILLIS_PER_SECOND = 1000L
 private const val SPEED_ACHIEVEMENT_SECONDS = 10
-private const val SIZE_4X4 = 4
-private const val SIZE_9X9 = 9
-private const val SIZE_16X16 = 16
 
 class CalculatePlayGamesSyncUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
@@ -59,9 +57,9 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         listOf(
             R.string.leaderboard_total_wins to sudokus.size.toLong(),
             R.string.leaderboard_daily_sudokus to sudokus.count { it.isDailySudoku }.toLong(),
-            R.string.leaderboard_level_44 to sudokus.count { it.size == SIZE_4X4 && it.isSudokuLevel }.toLong(),
-            R.string.leaderboard_level_99 to sudokus.count { it.size == SIZE_9X9 && it.isSudokuLevel }.toLong(),
-            R.string.leaderboard_level_1616 to sudokus.count { it.size == SIZE_16X16 && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_44 to sudokus.count { it.size == SudokuSize.FOUR.value && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_99 to sudokus.count { it.size == SudokuSize.NINE.value && it.isSudokuLevel }.toLong(),
+            R.string.leaderboard_level_1616 to sudokus.count { it.size == SudokuSize.SIXTEEN.value && it.isSudokuLevel }.toLong(),
         )
 
     private fun winUnlocks(sudoku: Sudoku): List<Int> =

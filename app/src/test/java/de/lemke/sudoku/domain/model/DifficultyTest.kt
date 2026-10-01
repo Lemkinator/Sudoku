@@ -17,6 +17,7 @@
 package de.lemke.sudoku.domain.model
 
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
 
 class DifficultyTest : ShouldSpec(
@@ -48,13 +49,17 @@ class DifficultyTest : ShouldSpec(
         }
 
         should("look up numbersToRemove per known size for every difficulty") {
-            Difficulty.VERY_EASY.numbersToRemove(4) shouldBe 4 * 4 - 10
-            Difficulty.EXPERT.numbersToRemove(9) shouldBe 9 * 9 - 23
-            Difficulty.HARD.numbersToRemove(16) shouldBe 16 * 16 - 136
+            Difficulty.VERY_EASY.numbersToRemove(SudokuSize.FOUR) shouldBe 4 * 4 - 10
+            Difficulty.EXPERT.numbersToRemove(SudokuSize.NINE) shouldBe 9 * 9 - 23
+            Difficulty.HARD.numbersToRemove(SudokuSize.SIXTEEN) shouldBe 16 * 16 - 136
         }
 
-        should("fall back to the size-9 table for an unlisted size") {
-            Difficulty.MEDIUM.numbersToRemove(25) shouldBe 25 * 25 - 35
+        should("define numbersToRemove for every sudoku size and difficulty") {
+            SudokuSize.entries.forEach { size ->
+                Difficulty.entries.forEach { difficulty ->
+                    difficulty.numbersToRemove(size) shouldBeInRange (1 until size.value * size.value)
+                }
+            }
         }
 
         should("expose max as the index of the last difficulty entry") {

@@ -28,6 +28,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -76,16 +77,16 @@ class SudokuViewModelTest : ShouldSpec(
 
         should("generateNewSudoku delegates to generateSudoku and returns its result") {
             val sudoku = mockk<Sudoku>()
-            coEvery { generateSudoku(9, Difficulty.MEDIUM) } returns sudoku
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.MEDIUM) } returns sudoku
             viewModel.generateNewSudoku(9, Difficulty.MEDIUM) shouldBe sudoku
-            coVerify(exactly = 1) { generateSudoku(9, Difficulty.MEDIUM) }
+            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.MEDIUM) }
         }
 
         should("generateNextLevelSudoku delegates to generateSudokuLevel and returns its result") {
             val sudoku = mockk<Sudoku>()
-            coEvery { generateSudokuLevel(4, 3) } returns sudoku
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 3) } returns sudoku
             viewModel.generateNextLevelSudoku(4, 3) shouldBe sudoku
-            coVerify(exactly = 1) { generateSudokuLevel(4, 3) }
+            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 3) }
         }
 
         should("isMaxSudokuLevel returns true when getMaxSudokuLevel equals the given level") {

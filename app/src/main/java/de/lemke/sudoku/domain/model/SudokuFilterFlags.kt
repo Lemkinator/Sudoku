@@ -41,15 +41,11 @@ private fun Int.matchesType(sudoku: Sudoku): Boolean =
         (this and SudokuFilterFlags.TYPE_DAILY != 0 && sudoku.isDailySudoku) ||
         (this and SudokuFilterFlags.TYPE_LEVEL != 0 && sudoku.isSudokuLevel)
 
-private const val SIZE_4X4 = 4
-private const val SIZE_9X9 = 9
-private const val SIZE_16X16 = 16
-
 private fun Int.matchesSize(sudoku: Sudoku): Boolean =
     this and SudokuFilterFlags.SIZE_ALL != 0 ||
-        (this and SudokuFilterFlags.SIZE_4X4 != 0 && sudoku.size == SIZE_4X4) ||
-        (this and SudokuFilterFlags.SIZE_9X9 != 0 && sudoku.size == SIZE_9X9) ||
-        (this and SudokuFilterFlags.SIZE_16X16 != 0 && sudoku.size == SIZE_16X16)
+        (this and SudokuFilterFlags.SIZE_4X4 != 0 && sudoku.size == SudokuSize.FOUR.value) ||
+        (this and SudokuFilterFlags.SIZE_9X9 != 0 && sudoku.size == SudokuSize.NINE.value) ||
+        (this and SudokuFilterFlags.SIZE_16X16 != 0 && sudoku.size == SudokuSize.SIXTEEN.value)
 
 private fun Int.matchesDifficulty(sudoku: Sudoku): Boolean =
     this and SudokuFilterFlags.DIFFICULTY_ALL != 0 ||

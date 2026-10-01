@@ -21,6 +21,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
     if (sudokuWithFields == null || sudokuWithFields.sudoku.size <= 0) return null
@@ -103,7 +104,7 @@ fun fieldToDb(
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
     val fields =
         sudokuExport.fields
-            .takeIf { sudokuExport.size in listOf(Sudoku.SIZE_4X4, Sudoku.SIZE_9X9, Sudoku.SIZE_16X16) }
+            .takeIf { SudokuSize.fromValueOrNull(sudokuExport.size) != null }
             ?.mapNotNull { fieldFromExport(it, sudokuExport.size) }
             ?.toMutableList()
     if (fields == null || fields.size != sudokuExport.size * sudokuExport.size) return null

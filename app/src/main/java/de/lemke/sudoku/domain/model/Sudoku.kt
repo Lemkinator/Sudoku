@@ -70,7 +70,7 @@ class Sudoku(
     val fields: MutableList<Field>,
 ) {
     private val hintLimit: Int
-        get() = hintLimitBySize[size] ?: DEFAULT_HINT_LIMIT
+        get() = SudokuSize.fromValueOrNull(size)?.hintLimit ?: DEFAULT_HINT_LIMIT
 
     val availableHints: Int
         get() = hintLimit - hintsUsed
@@ -450,12 +450,7 @@ class Sudoku(
         const val MODE_LEVEL_ERROR_LIMIT = 3
         const val MODE_DAILY_ERROR_LIMIT = 3
 
-        const val SIZE_4X4 = 4
-        const val SIZE_9X9 = 9
-        const val SIZE_16X16 = 16
-
         private const val DEFAULT_HINT_LIMIT = 3
-        private val hintLimitBySize: Map<Int, Int> = mapOf(SIZE_4X4 to 1, SIZE_9X9 to 3, SIZE_16X16 to 8)
 
         fun create(
             sudokuId: SudokuId = SudokuId.generate(),

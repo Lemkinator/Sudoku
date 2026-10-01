@@ -20,6 +20,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -155,6 +156,29 @@ class DomainMapperTest : ShouldSpec(
             val export = sudokuToExport(sudoku()).let { it.copy(size = -2, fields = it.fields.take(4)) }
 
             sudokuFromExport(export).shouldBeNull()
+        }
+
+        val fieldCountBySize = mapOf(SudokuSize.FOUR to 16, SudokuSize.NINE to 81, SudokuSize.SIXTEEN to 256)
+        val lastBlockBySize = mapOf(SudokuSize.FOUR to 3, SudokuSize.NINE to 8, SudokuSize.SIXTEEN to 15)
+
+        should("cover every sudoku size") {
+            fieldCountBySize.keys shouldBe SudokuSize.entries.toSet()
+            lastBlockBySize.keys shouldBe SudokuSize.entries.toSet()
+        }
+
+        SudokuSize.entries.forEach { size ->
+            should("sudokuToExport and sudokuFromExport round-trip a $size sudoku") {
+                val sudoku = sudoku(size.value)
+
+                val restored = sudokuFromExport(sudokuToExport(sudoku))
+
+                restored.shouldNotBeNull()
+                restored.size shouldBe size.value
+                restored.fields.size shouldBe fieldCountBySize.getValue(size)
+                val lastPosition = restored.fields.last().position
+                lastPosition.block shouldBe lastBlockBySize.getValue(size)
+                restored.fields.map { it.solution } shouldBe sudoku.fields.map { it.solution }
+            }
         }
 
         should("sudokuToExport and sudokuFromExport round-trip a sudoku with all flags unset") {

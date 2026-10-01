@@ -30,6 +30,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,12 +48,12 @@ class SudokuViewModel @Inject constructor(
     suspend fun generateNewSudoku(
         size: Int,
         difficulty: Difficulty,
-    ): Sudoku = generateSudoku(size, difficulty)
+    ): Sudoku = generateSudoku(SudokuSize.fromValue(size), difficulty)
 
     suspend fun generateNextLevelSudoku(
         size: Int,
         level: Int,
-    ): Sudoku = generateSudokuLevel(size, level)
+    ): Sudoku = generateSudokuLevel(SudokuSize.fromValue(size), level)
 
     suspend fun isMaxSudokuLevel(
         size: Int,
