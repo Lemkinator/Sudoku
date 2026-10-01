@@ -552,19 +552,14 @@ class IntroActivity : AppCompatActivity() {
     internal fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
-            null -> {
-                selectFromNothing(newSelected)
-            }
-
             // nothing is selected
-            in 0 until sudoku.itemCount -> {
-                selectFromField(newSelected)
-            }
+            null -> selectFromNothing(newSelected)
 
             // field is selected
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> {
-                selectFromNumberButton(newSelected)
-            } // number button is selected
+            in 0 until sudoku.itemCount -> selectFromField(newSelected)
+
+            // number button is selected
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> selectFromNumberButton(newSelected)
         }
     }
 
