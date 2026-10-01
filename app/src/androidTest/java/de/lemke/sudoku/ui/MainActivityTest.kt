@@ -126,22 +126,24 @@ class MainActivityTest {
 
     private fun ActivityScenario<MainActivity>.awaitLayout(condition: MainActivity.() -> Boolean) {
         val met = CountDownLatch(1)
+        lateinit var listener: ViewTreeObserver.OnGlobalLayoutListener
         onActivity { activity ->
-            val listener =
-                object : ViewTreeObserver.OnGlobalLayoutListener {
-                    override fun onGlobalLayout() {
-                        if (met.count > 0 && activity.condition()) {
-                            activity.window.decorView.viewTreeObserver
-                                .removeOnGlobalLayoutListener(this)
-                            met.countDown()
-                        }
-                    }
+            listener =
+                ViewTreeObserver.OnGlobalLayoutListener {
+                    if (met.count > 0 && activity.condition()) met.countDown()
                 }
             activity.window.decorView.viewTreeObserver
                 .addOnGlobalLayoutListener(listener)
             listener.onGlobalLayout()
         }
-        check(met.await(WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) { "no layout met the condition within $WAIT_TIMEOUT_SECONDS s" }
+        try {
+            check(met.await(WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) { "no layout met the condition within $WAIT_TIMEOUT_SECONDS s" }
+        } finally {
+            onActivity {
+                it.window.decorView.viewTreeObserver
+                    .removeOnGlobalLayoutListener(listener)
+            }
+        }
     }
 
     private fun ActivityScenario<MainActivity>.awaitHistorySize(size: Int) {
