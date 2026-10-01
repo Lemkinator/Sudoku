@@ -256,6 +256,27 @@ class SudokuActivityLifecycleTest {
         }
 
     @Test
+    fun `KEYCODE_9 selects the last number button on a 9x9 board`() =
+        launch(formulaicSudoku(size = SudokuSize.NINE)) { activity ->
+            keyUp(activity, KeyEvent.KEYCODE_9).shouldBeTrue()
+            activity.selected shouldBe 89
+        }
+
+    @Test
+    fun `KEYCODE_A is ignored on a 9x9 board`() =
+        launch(formulaicSudoku(size = SudokuSize.NINE)) { activity ->
+            keyUp(activity, KeyEvent.KEYCODE_A).shouldBeFalse()
+            activity.selected.shouldBeNull()
+        }
+
+    @Test
+    fun `KEYCODE_G selects the last number button on a 16x16 board`() =
+        launch(formulaicSudoku(size = SudokuSize.SIXTEEN)) { activity ->
+            keyUp(activity, KeyEvent.KEYCODE_G).shouldBeTrue()
+            activity.selected shouldBe 271
+        }
+
+    @Test
     fun `KEYCODE_DEL selects the delete button`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_DEL).shouldBeTrue()
