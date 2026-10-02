@@ -412,19 +412,19 @@ class IntroActivityFlowTest {
     @Test
     fun `selectButton highlights the delete button`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size)
+            activity.selectButton(activity.sudoku.size.value)
             activity.binding.deleteButton.backgroundTintList
                 ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value
         }
 
     @Test
     fun `selectButton highlights the hint button`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size + 1)
+            activity.selectButton(activity.sudoku.size.value + 1)
             activity.binding.hintButton.backgroundTintList
                 ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size + 1
+            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value + 1
         }
 
     // endregion
@@ -591,7 +591,7 @@ class IntroActivityFlowTest {
     @Test
     fun `select is a no-op when the delete button is currently selected`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size)
+            activity.selectButton(activity.sudoku.size.value)
             val selectedBefore = activity.selected
             activity.select(0)
             activity.selected shouldBe selectedBefore
@@ -621,6 +621,37 @@ class IntroActivityFlowTest {
             activity.select(null)
             activity.selected.shouldBeNull()
             activity.introStep shouldBe 3
+        }
+
+    @Test
+    fun `tapping another field while a field is selected keeps the selection`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(0)
+            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.introStep shouldBe 3
+        }
+
+    @Test
+    fun `tapping the delete button while a field is selected is a no-op`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
+            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.introStep shouldBe 3
+            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+        }
+
+    @Test
+    fun `tapping the hint button while a field is selected is a no-op`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
+            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.introStep shouldBe 3
+            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+            activity.sudoku[DEMO_CELL_INDEX_4].hint.shouldBeFalse()
+            activity.sudoku.hintsUsed shouldBe 0
         }
 
     @Test

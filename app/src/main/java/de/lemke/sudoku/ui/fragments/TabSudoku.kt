@@ -34,9 +34,7 @@ import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -52,14 +50,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private lateinit var binding: FragmentTabSudokuBinding
     private val viewModel: TabSudokuViewModel by viewModels()
 
-    private val SeslSeekBar.sudokuSize: Int
-        get() =
-            when (this.progress) {
-                0 -> SIZE_4X4
-                1 -> SIZE_9X9
-                2 -> SIZE_16X16
-                else -> SIZE_9X9
-            }
+    private val SeslSeekBar.sudokuSize: SudokuSize get() = SudokuSize.entries[progress]
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,6 +66,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         super.onViewCreated(view, savedInstanceState)
         binding.newSudokuLayout.translateYWithAppBar(requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout).appBarLayout, this)
         binding.sizeSeekbar.setSeamless(true)
+        binding.sizeSeekbar.max = SudokuSize.entries.lastIndex
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
         binding.newGameButton.onSingleClick {
@@ -142,14 +134,24 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch {
+        refresh()
+    }
+
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (!hidden) refresh()
+    }
+
+    private fun refresh() {
+        if (view == null) return
+        viewLifecycleOwner.lifecycleScope.launch {
             val sudoku = viewModel.getContinuableSudoku()
             if (sudoku != null) {
                 binding.continueGameButton.isVisible = true
                 binding.continueGameButton.text =
                     getString(
                         R.string.continue_game,
-                        sudoku.sizeString,
+                        sudoku.size.getLocalString(resources),
                         sudoku.difficulty.getLocalString(resources),
                     )
                 binding.continueGameButton.onSingleClick {

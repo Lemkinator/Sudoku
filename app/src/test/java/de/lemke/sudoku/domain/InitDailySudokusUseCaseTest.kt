@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -53,7 +54,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         should("does nothing when a daily sudoku already exists for the date") {
             val existing =
                 Sudoku.create(
-                    size = 9,
+                    size = SudokuSize.NINE,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),

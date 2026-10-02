@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.shouldBe
 import java.util.concurrent.Executor
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -64,14 +65,17 @@ class ObserveAllNormalSudokusUseCaseTest {
     }
 
     private fun normalSudoku(
-        size: Int = 4,
+        size: SudokuSize = SudokuSize.FOUR,
         modeLevel: Int = Sudoku.MODE_NORMAL,
     ): Sudoku =
         Sudoku.create(
             size = size,
             difficulty = Difficulty.EASY,
             modeLevel = modeLevel,
-            fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = index % size + 1) },
+            fields =
+                MutableList(size.cellCount) { index ->
+                    Field(position = Position.create(index, size), solution = index % size.value + 1)
+                },
         )
 
     @Test

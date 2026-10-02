@@ -25,13 +25,18 @@ import java.time.LocalDateTime
 import java.util.Locale
 import java.util.Timer
 
+private val solvedFourByFour = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
+
 private fun testFields(): MutableList<Field> =
-    mutableListOf(
-        Field(position = Position.create(0, 2), solution = 1, value = 1, given = true),
-        Field(position = Position.create(1, 2), solution = 2, value = 2, given = false, hint = true, notes = mutableListOf('3')),
-        Field(position = Position.create(2, 2), solution = 1, value = null, given = false),
-        Field(position = Position.create(3, 2), solution = 2, value = 2, given = false),
-    )
+    solvedFourByFour.mapIndexedTo(mutableListOf()) { index, solution ->
+        val position = Position.create(index, SudokuSize.FOUR)
+        when (index) {
+            1 -> Field(position = position, solution = solution, value = solution, given = false, hint = true, notes = mutableListOf('3'))
+            2 -> Field(position = position, solution = solution, value = null, given = false)
+            3 -> Field(position = position, solution = solution, value = solution, given = false)
+            else -> Field(position = position, solution = solution, value = solution, given = true)
+        }
+    }
 
 private fun testSudoku(
     sudokuId: SudokuId = SudokuId.generate(),
@@ -40,7 +45,7 @@ private fun testSudoku(
 ): Sudoku =
     Sudoku.create(
         sudokuId = sudokuId,
-        size = 2,
+        size = SudokuSize.FOUR,
         difficulty = Difficulty.EASY,
         modeLevel = modeLevel,
         created = created,
@@ -62,7 +67,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val sudoku =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,
@@ -72,7 +77,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val other =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.HARD,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = created,
@@ -89,7 +94,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val sudoku =
                 Sudoku.create(
                     sudokuId = SudokuId.generate(),
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,
@@ -99,7 +104,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val other =
                 Sudoku.create(
                     sudokuId = SudokuId.generate(),
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,
@@ -117,7 +122,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val sudoku =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,
@@ -127,7 +132,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val other =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,
@@ -148,7 +153,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val sudoku =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,
@@ -159,7 +164,7 @@ class SudokuExtensionsTest : ShouldSpec(
             val other =
                 Sudoku.create(
                     sudokuId = id,
-                    size = 2,
+                    size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_NORMAL,
                     created = created,

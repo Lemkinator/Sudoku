@@ -28,9 +28,6 @@ object SudokuFilterFlags {
     const val DIFFICULTY_HARD = 1 shl 14
     const val DIFFICULTY_EXPERT = 1 shl 15
     const val SIZE_ALL = 1 shl 20
-    const val SIZE_4X4 = 1 shl 21
-    const val SIZE_9X9 = 1 shl 22
-    const val SIZE_16X16 = 1 shl 23
 }
 
 fun Int.matchesSudokuFilterFlags(sudoku: Sudoku): Boolean = matchesType(sudoku) && matchesSize(sudoku) && matchesDifficulty(sudoku)
@@ -41,15 +38,7 @@ private fun Int.matchesType(sudoku: Sudoku): Boolean =
         (this and SudokuFilterFlags.TYPE_DAILY != 0 && sudoku.isDailySudoku) ||
         (this and SudokuFilterFlags.TYPE_LEVEL != 0 && sudoku.isSudokuLevel)
 
-private const val SIZE_4X4 = 4
-private const val SIZE_9X9 = 9
-private const val SIZE_16X16 = 16
-
-private fun Int.matchesSize(sudoku: Sudoku): Boolean =
-    this and SudokuFilterFlags.SIZE_ALL != 0 ||
-        (this and SudokuFilterFlags.SIZE_4X4 != 0 && sudoku.size == SIZE_4X4) ||
-        (this and SudokuFilterFlags.SIZE_9X9 != 0 && sudoku.size == SIZE_9X9) ||
-        (this and SudokuFilterFlags.SIZE_16X16 != 0 && sudoku.size == SIZE_16X16)
+private fun Int.matchesSize(sudoku: Sudoku): Boolean = this and SudokuFilterFlags.SIZE_ALL != 0 || this and sudoku.size.filterFlag != 0
 
 private fun Int.matchesDifficulty(sudoku: Sudoku): Boolean =
     this and SudokuFilterFlags.DIFFICULTY_ALL != 0 ||

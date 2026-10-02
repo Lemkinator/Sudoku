@@ -29,6 +29,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
@@ -56,7 +57,7 @@ class SudokuActivityTest {
     fun setUp() {
         hiltRule.inject()
         settings.bypassOobe()
-        runBlocking { saveSudoku(testLevelSudoku(size = 9, level = MODE_NORMAL, sudokuId = SUDOKU_ID)) }
+        runBlocking { saveSudoku(testLevelSudoku(size = SudokuSize.NINE, level = MODE_NORMAL, sudokuId = SUDOKU_ID)) }
     }
 
     @Test

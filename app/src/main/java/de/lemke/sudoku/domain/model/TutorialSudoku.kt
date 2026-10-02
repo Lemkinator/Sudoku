@@ -16,8 +16,7 @@
 
 package de.lemke.sudoku.domain.model
 
-private const val TUTORIAL_SIZE = 9
-private const val TUTORIAL_CELL_COUNT = TUTORIAL_SIZE * TUTORIAL_SIZE
+private val TUTORIAL_SIZE = SudokuSize.NINE
 
 // Row-major, one digit per cell.
 private const val TUTORIAL_SOLUTION =
@@ -41,7 +40,7 @@ fun tutorialSudoku(
         difficulty = Difficulty.VERY_EASY,
         modeLevel = modeLevel,
         fields =
-            MutableList(TUTORIAL_CELL_COUNT) { index ->
+            MutableList(TUTORIAL_SIZE.cellCount) { index ->
                 val solution = TUTORIAL_SOLUTION[index] - '0'
                 val given = TUTORIAL_GIVEN_MASK[index] == '1'
                 Field(

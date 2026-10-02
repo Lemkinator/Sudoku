@@ -37,7 +37,8 @@ class ShareSudokuUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(sudoku: Sudoku): Uri =
         withContext(ioDispatcher) {
-            val fileName = "Sudoku (${sudoku.sizeString} ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"
+            val size = sudoku.size.getLocalString(context.resources)
+            val fileName = "Sudoku ($size ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"
             val file = File(context.cacheDir, fileName)
             val uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider", file)
             val json = sudokuToExport(sudoku).stringifyJSON(JSONConfig { includeNulls = true })

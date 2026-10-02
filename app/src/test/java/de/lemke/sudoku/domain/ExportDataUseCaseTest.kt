@@ -21,6 +21,7 @@ import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuToExport
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import io.kjson.parseJSON
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -77,7 +78,7 @@ class ExportDataUseCaseTest {
     @Test
     fun `writes every sudoku as JSON that round-trips to the mapped export`() =
         runTest {
-            val sudokus = listOf(testLevelSudoku(size = 9), testLevelSudoku(size = 4))
+            val sudokus = listOf(testLevelSudoku(size = SudokuSize.NINE), testLevelSudoku(size = SudokuSize.FOUR))
             coEvery { getAllSudokus() } returns sudokus
 
             useCase(Uri.fromFile(destinationFile))

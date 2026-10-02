@@ -40,6 +40,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -104,18 +105,18 @@ class SudokuActivityCompletionTest {
         sudokuId: SudokuId,
         modeLevel: Int = MODE_NORMAL,
     ): Sudoku {
-        val size = 4
-        val blockSize = 2
+        val size = SudokuSize.FOUR
+        val blockSize = size.blockSize
         return Sudoku.create(
             sudokuId = sudokuId,
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = modeLevel,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     val given = index != 0
                     Field(
                         position = Position.create(index, size),

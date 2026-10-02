@@ -22,6 +22,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.dateFormatShort
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -34,11 +35,11 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 private fun sudokuUpdatedAt(updated: LocalDateTime): Sudoku =
     Sudoku.create(
-        size = 4,
+        size = SudokuSize.FOUR,
         difficulty = VERY_EASY,
         modeLevel = Sudoku.MODE_NORMAL,
         updated = updated,
-        fields = mutableListOf(Field(position = Position.create(0, 4), solution = 1, value = 1)),
+        fields = mutableListOf(Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 1)),
     )
 
 private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =

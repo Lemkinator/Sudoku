@@ -21,8 +21,10 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context.NOTIFICATION_SERVICE
 import android.content.Intent
+import android.content.pm.ProviderInfo
 import android.net.Uri
 import android.os.Looper
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
@@ -43,7 +45,17 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.SudokuExport
+import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.FakeDocumentProvider
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
+import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -66,6 +78,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowContentResolver
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
@@ -301,6 +314,91 @@ class SettingsFragmentTest {
             } finally {
                 sourceFile.delete()
             }
+        }
+
+    private fun registerImportDocument(
+        authority: String,
+        exports: List<SudokuExport>,
+    ): Uri = registerImportDocument(authority, exports.stringifyJSON(), "application/json")
+
+    private fun registerImportDocument(
+        authority: String,
+        content: String,
+        mimeType: String,
+    ): Uri {
+        val file = File.createTempFile("settings-fragment-import", ".json").apply { deleteOnExit() }
+        file.writeText(content)
+        val provider = FakeDocumentProvider(file, mimeType, exists = true, openFailure = null)
+        provider.attachInfo(ApplicationProvider.getApplicationContext(), ProviderInfo().apply { this.authority = authority })
+        ShadowContentResolver.registerProviderInternal(authority, provider)
+        return Uri.parse("content://$authority/document/import")
+    }
+
+    private fun exportOfSize(size: Int): SudokuExport =
+        sudokuToExport(
+            Sudoku.create(
+                sudokuId = SudokuId.generate(),
+                size = SudokuSize.FOUR,
+                difficulty = Difficulty.VERY_EASY,
+                modeLevel = Sudoku.MODE_NORMAL,
+                fields = MutableList(SudokuSize.FOUR.cellCount) { Field(position = Position.create(it, SudokuSize.FOUR), solution = 1) },
+            ),
+        ).copy(size = size)
+
+    private fun importResultMessage(
+        fragment: SettingsActivity.SettingsFragment,
+        uri: Uri,
+    ): String? {
+        val pref = fragment.pref<PreferenceScreen>("importData")
+        pref.onPreferenceClickListener?.onPreferenceClick(pref)
+        (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        shadowOf(Looper.getMainLooper()).idle()
+        val shadowActivity = shadowOf(fragment.requireActivity())
+        val started = shadowActivity.peekNextStartedActivityForResult()!!
+        shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent().apply { data = uri })
+        shadowOf(Looper.getMainLooper()).idle()
+        val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
+        return resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString()
+    }
+
+    @Test
+    fun `importData's result dialog keeps the plain success message when nothing is skipped`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.none", listOf(exportOfSize(4)))
+
+            importResultMessage(fragment, uri) shouldBe "Data imported successfully."
+        }
+
+    @Test
+    fun `importData's result dialog names one skipped sudoku`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.one", listOf(exportOfSize(4), exportOfSize(5)))
+
+            importResultMessage(fragment, uri) shouldBe "Data imported successfully. 1 invalid Sudoku was skipped."
+        }
+
+    @Test
+    fun `importData's result dialog counts two skipped sudokus`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.two", listOf(exportOfSize(5), exportOfSize(4), exportOfSize(0)))
+
+            importResultMessage(fragment, uri) shouldBe "Data imported successfully. 2 invalid Sudokus were skipped."
+        }
+
+    @Test
+    fun `importData's result dialog shows the invalid-file error for a document with the wrong mime type`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.wrongmime", listOf(exportOfSize(4)).stringifyJSON(), "text/plain")
+
+            importResultMessage(fragment, uri) shouldBe "Error: No valid file."
+        }
+
+    @Test
+    fun `importData's result dialog shows the invalid-JSON error for malformed JSON`() =
+        launch { fragment ->
+            val uri = registerImportDocument("settings.import.malformed", "[{not json", "application/json")
+
+            importResultMessage(fragment, uri) shouldBe "Error: No valid JSON file."
         }
 
     // endregion

@@ -36,6 +36,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -129,18 +130,18 @@ class AlarmReceiverTest {
     @Test
     fun `onReceive does not send a notification when today's daily sudoku is already completed`() {
         graph.userSettings().dailySudokuNotificationEnabled = true
-        val size = 4
-        val blockSize = 2
+        val size = SudokuSize.FOUR
+        val blockSize = size.blockSize
         val today =
             Sudoku.create(
                 size = size,
                 difficulty = Difficulty.VERY_EASY,
                 modeLevel = MODE_DAILY,
                 fields =
-                    MutableList(size * size) { index ->
-                        val row = index / size
-                        val col = index % size
-                        val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                    MutableList(size.cellCount) { index ->
+                        val row = index / size.value
+                        val col = index % size.value
+                        val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                         Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
                     },
             )

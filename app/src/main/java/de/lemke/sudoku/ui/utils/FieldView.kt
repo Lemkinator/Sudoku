@@ -76,13 +76,15 @@ class FieldView(context: Context) : LinearLayout(context) {
         position = Position.create(index, sudoku.size)
         field = sudoku[position.index]
         if (fieldViewContainer == null) return
+        val blockSize = sudoku.size.blockSize
+        val lastLine = sudoku.size.value - 1
 
         when {
-            position.row % sudoku.blockSize == sudoku.blockSize - 1 && position.row != sudoku.size - 1 -> {
+            position.row % blockSize == blockSize - 1 && position.row != lastLine -> {
                 foreground =
                     AppCompatResources.getDrawable(
                         context,
-                        if (position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1) {
+                        if (position.column % blockSize == blockSize - 1 && position.column != lastLine) {
                             R.drawable.sudoku_view_item_fg_border_bottom_right
                         } else {
                             R.drawable.sudoku_view_item_fg_border_bottom
@@ -90,13 +92,13 @@ class FieldView(context: Context) : LinearLayout(context) {
                     )
             }
 
-            position.column % sudoku.blockSize == sudoku.blockSize - 1 && position.column != sudoku.size - 1 -> {
+            position.column % blockSize == blockSize - 1 && position.column != lastLine -> {
                 foreground = AppCompatResources.getDrawable(context, R.drawable.sudoku_view_item_fg_border_right)
             }
         }
-        val rm = position.row % (sudoku.blockSize * 2)
-        val cm = position.column % (sudoku.blockSize * 2)
-        isColored = rm >= sudoku.blockSize != cm >= sudoku.blockSize
+        val rm = position.row % (blockSize * 2)
+        val cm = position.column % (blockSize * 2)
+        isColored = rm >= blockSize != cm >= blockSize
         update()
     }
 
@@ -134,7 +136,7 @@ class FieldView(context: Context) : LinearLayout(context) {
     private fun updateNotes() {
         fieldViewNotes?.isVisible = field.notes.isNotEmpty()
         fieldViewNotes?.text = field.notes.joinToString("")
-        if (position.row == sudoku.size - 1 && (position.column == 0 || position.column == sudoku.size - 1)) {
+        if (position.row == sudoku.size.value - 1 && (position.column == 0 || position.column == sudoku.size.value - 1)) {
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
         }
     }

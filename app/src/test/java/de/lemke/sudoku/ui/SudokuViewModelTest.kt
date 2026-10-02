@@ -28,6 +28,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -76,26 +77,26 @@ class SudokuViewModelTest : ShouldSpec(
 
         should("generateNewSudoku delegates to generateSudoku and returns its result") {
             val sudoku = mockk<Sudoku>()
-            coEvery { generateSudoku(9, Difficulty.MEDIUM) } returns sudoku
-            viewModel.generateNewSudoku(9, Difficulty.MEDIUM) shouldBe sudoku
-            coVerify(exactly = 1) { generateSudoku(9, Difficulty.MEDIUM) }
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.MEDIUM) } returns sudoku
+            viewModel.generateNewSudoku(SudokuSize.NINE, Difficulty.MEDIUM) shouldBe sudoku
+            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.MEDIUM) }
         }
 
         should("generateNextLevelSudoku delegates to generateSudokuLevel and returns its result") {
             val sudoku = mockk<Sudoku>()
-            coEvery { generateSudokuLevel(4, 3) } returns sudoku
-            viewModel.generateNextLevelSudoku(4, 3) shouldBe sudoku
-            coVerify(exactly = 1) { generateSudokuLevel(4, 3) }
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 3) } returns sudoku
+            viewModel.generateNextLevelSudoku(SudokuSize.FOUR, 3) shouldBe sudoku
+            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 3) }
         }
 
         should("isMaxSudokuLevel returns true when getMaxSudokuLevel equals the given level") {
-            coEvery { getMaxSudokuLevel(9) } returns 5
-            viewModel.isMaxSudokuLevel(9, 5) shouldBe true
+            coEvery { getMaxSudokuLevel(SudokuSize.NINE) } returns 5
+            viewModel.isMaxSudokuLevel(SudokuSize.NINE, 5) shouldBe true
         }
 
         should("isMaxSudokuLevel returns false when getMaxSudokuLevel differs from the given level") {
-            coEvery { getMaxSudokuLevel(9) } returns 5
-            viewModel.isMaxSudokuLevel(9, 4) shouldBe false
+            coEvery { getMaxSudokuLevel(SudokuSize.NINE) } returns 5
+            viewModel.isMaxSudokuLevel(SudokuSize.NINE, 4) shouldBe false
         }
 
         should("saveSudokuProgress delegates to saveSudoku with onlyUpdate defaulting to false") {

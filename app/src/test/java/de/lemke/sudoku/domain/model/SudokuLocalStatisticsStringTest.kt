@@ -34,7 +34,7 @@ private fun statisticsSudoku(
 ): Sudoku {
     val created = LocalDateTime.of(2024, 1, 1, 12, 0)
     return Sudoku.create(
-        size = 4,
+        size = SudokuSize.FOUR,
         difficulty = Difficulty.EASY,
         modeLevel = modeLevel,
         numberHighlightingUsed = numberHighlightingUsed,
@@ -48,7 +48,11 @@ private fun statisticsSudoku(
             (0 until 16)
                 .map { index ->
                     val solution = (index % 4) + 1
-                    Field(position = Position.create(index, 4), solution = solution, value = if (completed) solution else null)
+                    Field(
+                        position = Position.create(index, SudokuSize.FOUR),
+                        solution = solution,
+                        value = if (completed) solution else null,
+                    )
                 }.toMutableList(),
     )
 }
@@ -65,7 +69,7 @@ class SudokuLocalStatisticsStringTest {
         val text = sudoku.getLocalStatisticsString(context.resources)
 
         text.contains(context.resources.getString(R.string.normal_sudoku)) shouldBe true
-        text.contains(sudoku.sizeString) shouldBe true
+        text.contains("Size: 4×4") shouldBe true
         text.contains(sudoku.difficulty.getLocalString(context.resources)) shouldBe true
         text.contains(sudoku.timeString) shouldBe true
     }
@@ -85,7 +89,27 @@ class SudokuLocalStatisticsStringTest {
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
-        text.contains("${context.resources.getString(R.string.level)} 5") shouldBe true
+        text.lines().first() shouldBe "Type: Level 5 "
+    }
+
+    @Test
+    @Config(qualifiers = "es")
+    fun `getLocalStatisticsString names a level sudoku by its level number in Spanish`() {
+        val sudoku = statisticsSudoku(modeLevel = 5)
+
+        val text = sudoku.getLocalStatisticsString(context.resources)
+
+        text.lines().first() shouldBe "Tipo: Nivel 5 "
+    }
+
+    @Test
+    @Config(qualifiers = "de")
+    fun `getLocalStatisticsString names a level sudoku by its level number in German`() {
+        val sudoku = statisticsSudoku(modeLevel = 5)
+
+        val text = sudoku.getLocalStatisticsString(context.resources)
+
+        text.lines().first() shouldBe "Typ: Level 5 "
     }
 
     @Test

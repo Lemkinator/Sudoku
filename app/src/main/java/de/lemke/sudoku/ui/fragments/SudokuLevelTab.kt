@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -38,6 +39,7 @@ import de.lemke.sudoku.databinding.FragmentTabLevelBinding
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.SudokuListAdapter
@@ -83,8 +85,17 @@ class SudokuLevelTab : Fragment() {
                 SudokuLevelTabEvent.ShowLoadError -> {
                     toast(R.string.error_loading_sudoku_level_failed)
                 }
+
+                SudokuLevelTabEvent.ShowStartError -> {
+                    toast(R.string.error_starting_sudoku_level_failed)
+                }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.onTabResumed()
     }
 
     private fun revealPending() {
@@ -108,20 +119,19 @@ class SudokuLevelTab : Fragment() {
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuItem) {
-                lifecycleScope.launch {
-                    if (position == 0 && viewModel.state.value.hasNextLevelToStart) {
-                        binding.tabLevelProgressBar.isVisible = true
-                        try {
-                            viewModel.onNextLevelSudokuConfirmed(sudokuListItem.sudoku)
-                        } finally {
-                            binding.tabLevelProgressBar.isVisible = false
-                        }
-                    }
+                viewLifecycleOwner.lifecycleScope.launch {
+                    if (!viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)) return@launch
                     viewHolder.itemView.transformToActivity(
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
                     )
                 }
             }
         }
+    }
+
+    companion object {
+        const val KEY_SIZE = "size"
+
+        fun newInstance(size: SudokuSize): SudokuLevelTab = SudokuLevelTab().apply { arguments = bundleOf(KEY_SIZE to size.value) }
     }
 }

@@ -20,6 +20,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.sfuhrm.sudoku.Creator
 import de.sfuhrm.sudoku.GameSchemas
 import javax.inject.Inject
@@ -31,21 +32,20 @@ class GenerateFieldsUseCase @Inject constructor(
     private val solvedBoardGenerator: SolvedBoardGenerator,
 ) {
     suspend operator fun invoke(
-        size: Int,
+        size: SudokuSize,
         difficulty: Difficulty,
     ): MutableList<Field> =
         withContext(defaultDispatcher) {
             val schema =
                 when (size) {
-                    4 -> GameSchemas.SCHEMA_4X4
-                    9 -> GameSchemas.SCHEMA_9X9
-                    16 -> GameSchemas.SCHEMA_16X16
-                    else -> GameSchemas.SCHEMA_9X9
+                    SudokuSize.FOUR -> GameSchemas.SCHEMA_4X4
+                    SudokuSize.NINE -> GameSchemas.SCHEMA_9X9
+                    SudokuSize.SIXTEEN -> GameSchemas.SCHEMA_16X16
                 }
             val gameMatrix = solvedBoardGenerator.generate(schema)
             val matrix = gameMatrix.array
             val riddle = Creator.createRiddle(gameMatrix, difficulty.numbersToRemove(size)).array
-            return@withContext MutableList(size * size) { index ->
+            return@withContext MutableList(size.cellCount) { index ->
                 val position = Position.create(index, size)
                 val value = riddle[position.row][position.column]
                 val solutionValue = matrix[position.row][position.column]

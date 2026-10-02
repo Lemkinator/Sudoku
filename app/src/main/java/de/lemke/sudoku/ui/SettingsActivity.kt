@@ -61,6 +61,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.ExportDataUseCase
 import de.lemke.sudoku.domain.ImportDataUseCase
+import de.lemke.sudoku.domain.model.DataImportResult
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
 import dev.oneuiproject.oneui.ktx.onClick
 import dev.oneuiproject.oneui.ktx.onNewValue
@@ -136,7 +137,7 @@ class SettingsActivity : AppCompatActivity() {
                     if (uri == null) {
                         toast(R.string.error_no_file_selected)
                     } else {
-                        lifecycleScope.launch { importData(uri) }
+                        lifecycleScope.launch { showImportResult(importData(uri)) }
                     }
                 }
             initCommonUtilsPreferences(userSettings)
@@ -232,6 +233,34 @@ class SettingsActivity : AppCompatActivity() {
                     }.show()
             }
         }
+
+        private fun showImportResult(result: DataImportResult) {
+            AlertDialog
+                .Builder(requireContext())
+                .setTitle(R.string.import_data)
+                .setPositiveButton(commonutilsR.string.commonutils_ok, null)
+                .setMessage(importResultMessage(result))
+                .show()
+        }
+
+        private fun importResultMessage(result: DataImportResult): String =
+            when (result) {
+                is DataImportResult.Imported if result.skippedCount > 0 -> {
+                    resources.getQuantityString(R.plurals.import_data_success_skipped, result.skippedCount, result.skippedCount)
+                }
+
+                is DataImportResult.Imported -> {
+                    getString(R.string.import_data_success)
+                }
+
+                DataImportResult.InvalidJson -> {
+                    getString(R.string.import_data_error_no_valid_json)
+                }
+
+                DataImportResult.InvalidFile -> {
+                    getString(R.string.import_data_error_no_valid_file)
+                }
+            }
 
         internal fun initDeleteInvalidSudokusPreference() {
             findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onClick {

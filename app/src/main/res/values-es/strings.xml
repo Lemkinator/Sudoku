@@ -14,7 +14,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="about_app">Acerca de Sudoku</string>
     <string name="app_description">Una aplicación de Sudoku con un hermoso diseño basado en OneUI.</string>
 
@@ -94,7 +94,7 @@
     <string name="delete_invalid_sudokus_summary">Eliminar Sudokus generados incorrectamente o Sudokus que se corrompieron durante el guardado en la base de datos.</string>
     <string name="error_limit">Límite de errores</string>
     <string name="no_limit">Sin límite</string>
-    <string name="error_limit_reached" tools:ignore="PluralsCandidate">Límite de errores alcanzado (%1$d).</string>
+    <string name="error_limit_reached">Límite de errores alcanzado (%1$d).</string>
 
     <string name="export_data">Exportar datos</string>
     <string name="export_data_summary">Exportar archivo JSON</string>
@@ -106,6 +106,11 @@
     <string name="import_data_ongoing">Importando datos…</string>
     <string name="import_data_ongoing_processing">Procesando datos…</string>
     <string name="import_data_success">Datos importados correctamente.</string>
+    <plurals name="import_data_success_skipped">
+        <item quantity="one">Datos importados correctamente. Se omitió %d sudoku no válido.</item>
+        <item quantity="many">Datos importados correctamente. Se omitieron %d sudokus no válidos.</item>
+        <item quantity="other">Datos importados correctamente. Se omitieron %d sudokus no válidos.</item>
+    </plurals>
     <string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
     <string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>
     <string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, \"sudoku_export_[Fecha].json\").</string>
@@ -125,6 +130,8 @@
     <string name="current_hints">Pistas: %1$d</string>
     <string name="current_progress">%1$d\%%</string>
     <string name="completed_title">Completado</string>
+    <string name="sudoku_state_in_progress">En curso</string>
+    <string name="sudoku_state_error_limit_reached">Límite de errores alcanzado</string>
     <string name="sudoku_completed">Mira, he completado un Sudoku con éxito:\n</string>
     <string name="sudoku_solving">Mira, estoy resolviendo este Sudoku en este momento: \nProgreso: %1$d\%% \n</string>
     <string name="sudokuStatisticsString">Tipo: %1$s \nTamaño: %2$d×%2$d \nDificultad: %3$s \nTiempo: %4$s \nErrores: %5$d \nPistas: %6$d \nNotas: %7$d \nResaltado regional usado: %8$s \nNúmero seleccionado resaltado: %9$s \nCreado: %10$s \nModificado: %11$s</string>
@@ -144,9 +151,11 @@
     <string name="games_started">Juegos iniciados</string>
     <string name="games_completed">Juegos completados</string>
     <string name="win_rate">Tasa de victoria</string>
+    <string name="win_rate_value">%1$d\%%</string>
     <string name="wins_without_error">Victorias sin errores</string>
     <string name="time">Tiempo</string>
     <string name="best_time">Mejor tiempo</string>
+    <string name="best_time_value">%1$s (%2$s, %3$s)</string>
     <string name="average_time">Tiempo promedio</string>
     <string name="wins_without_hint">Victorias sin pista</string>
     <string name="most_errors">Más errores</string>
@@ -219,12 +228,16 @@
     <string name="show_only_completed_sudokus">Mostrar solo sudokus completados</string>
     <string name="show_all_sudokus">Mostrar todos los sudokus</string>
     <string name="level">Nivel</string>
+    <string name="level_number">Nivel %1$d</string>
+    <string name="sudoku_title_detail">%1$s (%2$s)</string>
+    <string name="size_and_difficulty">%1$s | %2$s</string>
     <string name="next_level">Siguiente nivel</string>
 
     <string name="error_import_failed">Fallo al importar el sudoku</string>
     <string name="error_sudoku_not_found">Sudoku no encontrado…</string>
     <string name="error_loading_daily_sudokus_failed">No se pudieron cargar los sudokus diarios</string>
     <string name="error_loading_sudoku_level_failed">No se pudieron cargar los niveles de sudoku</string>
+    <string name="error_starting_sudoku_level_failed">No se pudo iniciar el nivel</string>
     <string name="error_loading_sudoku_history_failed">No se pudo cargar el historial de sudoku</string>
     <string name="error_loading_statistics_failed">No se pudieron cargar las estadísticas</string>
 

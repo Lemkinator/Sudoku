@@ -51,8 +51,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import java.util.Timer
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
@@ -88,7 +86,6 @@ private const val FIELD_ANIMATION_ROTATION_DEGREES = 100f
 @AndroidEntryPoint
 class IntroActivity : AppCompatActivity() {
     internal lateinit var binding: ActivityIntroBinding
-    private lateinit var loadingDialog: ProgressDialog
     internal var colorPrimary: Int = 0
     lateinit var gameAdapter: SudokuViewAdapter
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -124,11 +121,6 @@ class IntroActivity : AppCompatActivity() {
             }
         }
 
-        loadingDialog = ProgressDialog(this)
-        loadingDialog.setProgressStyle(CIRCLE)
-        loadingDialog.setCancelable(false)
-        loadingDialog.show()
-
         val typedValue = TypedValue()
         theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
         colorPrimary = typedValue.data
@@ -137,7 +129,6 @@ class IntroActivity : AppCompatActivity() {
         binding.introContinueButton.setOnClickListener { showNotificationsDialogOrFinish() }
         binding.introNextButton.setOnClickListener { nextIntroStep() }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        loadingDialog.dismiss()
         nextIntroStep()
     }
 
@@ -223,7 +214,7 @@ class IntroActivity : AppCompatActivity() {
     private fun initSudoku() {
         binding.sudokuToolbarLayout.setTitle(getString(R.string.intro))
         refreshHintButton()
-        binding.gameRecycler.layoutManager = GridLayoutManager(this, sudoku.size)
+        binding.gameRecycler.layoutManager = GridLayoutManager(this, sudoku.size.value)
         gameAdapter = SudokuViewAdapter(this, sudoku)
         binding.gameRecycler.adapter = gameAdapter
         binding.gameRecycler.seslSetFillBottomEnabled(true)
@@ -247,8 +238,8 @@ class IntroActivity : AppCompatActivity() {
             sudokuButtons[index].isVisible = true
             sudokuButtons[index].setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + index) } }
         }
-        binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size) } }
-        binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size + 1) } }
+        binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size.value) } }
+        binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size.value + 1) } }
     }
 
     internal fun checkRowColumnBlockCompleted(position: Position) {
@@ -268,7 +259,7 @@ class IntroActivity : AppCompatActivity() {
         animateSudoku: Boolean = false,
     ): Job? {
         if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
-        val delay = 60L / sudoku.blockSize
+        val delay = 60L / sudoku.size.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
@@ -332,7 +323,7 @@ class IntroActivity : AppCompatActivity() {
                         .start()
                 }.start()
         }
-        delay((delay / sudoku.blockSize).milliseconds)
+        delay((delay / sudoku.size.blockSize).milliseconds)
     }
 
     internal fun startAnimation(currentIntroStep: Int) {
@@ -524,11 +515,11 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         if (i != null) {
             when (i) {
-                sudoku.size -> {
+                sudoku.size.value -> {
                     binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
                 }
 
-                sudoku.size + 1 -> {
+                sudoku.size.value + 1 -> {
                     binding.hintButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
                 }
 
@@ -552,13 +543,14 @@ class IntroActivity : AppCompatActivity() {
     internal fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
+            // nothing is selected
             null -> selectFromNothing(newSelected)
 
-            // nothing is selected
+            // field is selected
             in 0 until sudoku.itemCount -> selectFromField(newSelected)
 
-            // field is selected
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected) // number button is selected
+            // number button is selected
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> selectFromNumberButton(newSelected)
         }
     }
 
@@ -575,7 +567,7 @@ class IntroActivity : AppCompatActivity() {
             }
 
             // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
                 val button = newSelected!!
                 if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
                     selectButton(button - sudoku.itemCount)
@@ -597,7 +589,7 @@ class IntroActivity : AppCompatActivity() {
             }
 
             // selected number
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> {
                 val number = newSelected!!
                 if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
                     sudoku.move(position, number - sudoku.itemCount + 1, false)

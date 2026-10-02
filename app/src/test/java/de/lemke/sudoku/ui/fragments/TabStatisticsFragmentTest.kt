@@ -38,6 +38,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.MainActivity
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -47,7 +48,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import javax.inject.Inject
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -102,30 +102,30 @@ class TabStatisticsFragmentTest {
     }
 
     private fun completedSudoku(seconds: Int): Sudoku {
-        val size = 4
-        val blockSize = sqrt(size.toDouble()).toInt()
+        val size = SudokuSize.FOUR
+        val blockSize = size.blockSize
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = MODE_NORMAL,
             seconds = seconds,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
                 },
         )
     }
 
     private fun startedSudoku(): Sudoku {
-        val size = 4
+        val size = SudokuSize.FOUR
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = MODE_NORMAL,
-            fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = 1) },
+            fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
         )
     }
 
@@ -158,7 +158,9 @@ class TabStatisticsFragmentTest {
         runBlocking { saveSudoku(completedSudoku(seconds = 7200)) }
         launch { fragment ->
             val bestTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.best_time) }
-            bestTime.second.shouldContain("02:00:00")
+            bestTime.second shouldBe "02:00:00 (4×4, Very easy)"
+            val winRate = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.win_rate) }
+            winRate.second shouldBe "100%"
             val totalTime = fragment.statisticsList.first { it.first == fragment.getString(de.lemke.sudoku.R.string.total_time_played) }
             totalTime.second.shouldContain("2h 0m")
         }

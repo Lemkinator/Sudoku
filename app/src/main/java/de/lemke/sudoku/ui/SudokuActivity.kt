@@ -58,9 +58,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldView
@@ -92,6 +89,28 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
+    private val allNumberButtons: List<AppCompatButton>
+        get() =
+            with(binding) {
+                listOf(
+                    numberButton1,
+                    numberButton2,
+                    numberButton3,
+                    numberButton4,
+                    numberButton5,
+                    numberButton6,
+                    numberButton7,
+                    numberButton8,
+                    numberButton9,
+                    numberButtonA,
+                    numberButtonB,
+                    numberButtonC,
+                    numberButtonD,
+                    numberButtonE,
+                    numberButtonF,
+                    numberButtonG,
+                )
+            }
     internal var notesEnabled = false
     internal var selected: Int? = null
     private var menuPausePlayVisible = false
@@ -174,12 +193,12 @@ class SudokuActivity : AppCompatActivity() {
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        digitKeyButtons[keyCode]?.let { (minSize, buttonIndex) ->
-            return if (sudoku.size > minSize) select(sudoku.itemCount + buttonIndex).let { true } else false
+        digitKeyButtonIndex[keyCode]?.let { buttonIndex ->
+            return if (buttonIndex < sudoku.size.value) select(sudoku.itemCount + buttonIndex).let { true } else false
         }
         return when (keyCode) {
-            KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size).let { true }
-            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size + 1).let { true } else false
+            KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size.value).let { true }
+            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size.value + 1).let { true } else false
             KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
             KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
             else -> super.onKeyUp(keyCode, event)
@@ -190,7 +209,7 @@ class SudokuActivity : AppCompatActivity() {
         this.sudoku = sudoku
         setTitle()
         setSubtitle()
-        binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size)
+        binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.size.value)
         gameAdapter = SudokuViewAdapter(this@SudokuActivity, sudoku)
         binding.gameRecycler.adapter = gameAdapter
         sudoku.gameListener = SudokuGameListener()
@@ -201,34 +220,13 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun initSudokuButtons() {
         sudokuButtons.clear()
-        if (sudoku.size >= SIZE_4X4) {
-            sudokuButtons.add(binding.numberButton1)
-            sudokuButtons.add(binding.numberButton2)
-            sudokuButtons.add(binding.numberButton3)
-            sudokuButtons.add(binding.numberButton4)
-        }
-        if (sudoku.size >= SIZE_9X9) {
-            sudokuButtons.add(binding.numberButton5)
-            sudokuButtons.add(binding.numberButton6)
-            sudokuButtons.add(binding.numberButton7)
-            sudokuButtons.add(binding.numberButton8)
-            sudokuButtons.add(binding.numberButton9)
-        }
-        if (sudoku.size >= SIZE_16X16) {
-            sudokuButtons.add(binding.numberButtonA)
-            sudokuButtons.add(binding.numberButtonB)
-            sudokuButtons.add(binding.numberButtonC)
-            sudokuButtons.add(binding.numberButtonD)
-            sudokuButtons.add(binding.numberButtonE)
-            sudokuButtons.add(binding.numberButtonF)
-            sudokuButtons.add(binding.numberButtonG)
-        }
+        sudokuButtons.addAll(allNumberButtons.take(sudoku.size.value))
         for (index in sudokuButtons.indices) {
             sudokuButtons[index].isVisible = true
             sudokuButtons[index].setOnClickListener { select(sudoku.itemCount + index) }
         }
-        binding.deleteButton.setOnClickListener { select(sudoku.itemCount + sudoku.size) }
-        binding.hintButton.setOnClickListener { select(sudoku.itemCount + sudoku.size + 1) }
+        binding.deleteButton.setOnClickListener { select(sudoku.itemCount + sudoku.size.value) }
+        binding.hintButton.setOnClickListener { select(sudoku.itemCount + sudoku.size.value + 1) }
         binding.resumeButton.setOnClickListener { resumeGame() }
         selectButton(null, false)
         checkAnyNumberCompleted()
@@ -345,7 +343,6 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun restartGame() {
-        loadingDialog.show()
         sudoku.reset()
         lifecycleScope.launch {
             viewModel.saveSudokuProgress(sudoku)
@@ -364,13 +361,13 @@ class SudokuActivity : AppCompatActivity() {
             in 0 until sudoku.itemCount -> selectFromField(newSelected)
 
             // number button is selected
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> selectFromNumberButton(newSelected)
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> selectFromNumberButton(newSelected)
 
             // delete button is selected
-            sudoku.itemCount + sudoku.size -> selectFromDeleteButton(newSelected)
+            sudoku.itemCount + sudoku.size.value -> selectFromDeleteButton(newSelected)
 
             // hint button is selected
-            sudoku.itemCount + sudoku.size + 1 -> selectFromHintButton(newSelected)
+            sudoku.itemCount + sudoku.size.value + 1 -> selectFromHintButton(newSelected)
         }
     }
 
@@ -386,7 +383,7 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
@@ -410,19 +407,19 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             // selected number
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> {
                 sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
                 selected = null
             }
 
             // selected delete
-            sudoku.itemCount + sudoku.size -> {
+            sudoku.itemCount + sudoku.size.value -> {
                 sudoku.move(position, null, notesEnabled)
                 selected = null
             }
 
             // selected hint
-            sudoku.itemCount + sudoku.size + 1 -> {
+            sudoku.itemCount + sudoku.size.value + 1 -> {
                 sudoku.setHint(position)
                 selected = null
                 refreshHintButton()
@@ -446,7 +443,7 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
                 gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
@@ -472,7 +469,7 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             // selected button(not delete)
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 2 -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
@@ -499,7 +496,7 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             // selected button(not hint)
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size + 1 -> {
+            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 1 -> {
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
@@ -529,7 +526,7 @@ class SudokuActivity : AppCompatActivity() {
         animateSudoku: Boolean = false,
     ): Job? {
         if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
-        val delay = 60L / sudoku.blockSize
+        val delay = 60L / sudoku.size.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
@@ -593,7 +590,7 @@ class SudokuActivity : AppCompatActivity() {
                         .start()
                 }.start()
         }
-        delay((delay / sudoku.blockSize).milliseconds)
+        delay((delay / sudoku.size.blockSize).milliseconds)
     }
 
     private fun selectButton(
@@ -605,11 +602,11 @@ class SudokuActivity : AppCompatActivity() {
         binding.hintButton.backgroundTintList = transparent
         if (i != null) {
             when (i) {
-                sudoku.size -> {
+                sudoku.size.value -> {
                     binding.deleteButton.backgroundTintList = colorPrimary
                 }
 
-                sudoku.size + 1 -> {
+                sudoku.size.value + 1 -> {
                     binding.hintButton.backgroundTintList = colorPrimary
                 }
 
@@ -668,14 +665,16 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun setTitle() {
+        val detail =
+            when {
+                sudoku.isNormalSudoku -> sudoku.difficulty.getLocalString(resources)
+                sudoku.isDailySudoku -> sudoku.created.dateFormatShort
+                sudoku.isSudokuLevel -> getString(R.string.level_number, sudoku.modeLevel)
+                else -> null
+            }
+        val sudokuName = getString(R.string.sudoku)
         binding.sudokuToolbarLayout.setTitle(
-            getString(R.string.sudoku) +
-                when {
-                    sudoku.isNormalSudoku -> " (${sudoku.difficulty.getLocalString(resources)})"
-                    sudoku.isDailySudoku -> " (${sudoku.created.dateFormatShort})"
-                    sudoku.isSudokuLevel -> " (${getString(R.string.level)} ${sudoku.modeLevel})"
-                    else -> ""
-                },
+            if (detail == null) sudokuName else getString(R.string.sudoku_title_detail, sudokuName, detail),
         )
     }
 
@@ -743,26 +742,25 @@ class SudokuActivity : AppCompatActivity() {
     companion object {
         const val KEY_SUDOKU_ID = "key_sudoku_id"
 
-        // keyCode -> (minimum sudoku size to enable this key, number-button index)
-        private val digitKeyButtons: Map<Int, Pair<Int, Int>> =
-            mapOf(
-                KeyEvent.KEYCODE_1 to (0 to 0),
-                KeyEvent.KEYCODE_2 to (0 to 1),
-                KeyEvent.KEYCODE_3 to (0 to 2),
-                KeyEvent.KEYCODE_4 to (0 to 3),
-                KeyEvent.KEYCODE_5 to (4 to 4),
-                KeyEvent.KEYCODE_6 to (4 to 5),
-                KeyEvent.KEYCODE_7 to (4 to 6),
-                KeyEvent.KEYCODE_8 to (4 to 7),
-                KeyEvent.KEYCODE_9 to (4 to 8),
-                KeyEvent.KEYCODE_A to (9 to 9),
-                KeyEvent.KEYCODE_B to (9 to 10),
-                KeyEvent.KEYCODE_C to (9 to 11),
-                KeyEvent.KEYCODE_D to (9 to 12),
-                KeyEvent.KEYCODE_E to (9 to 13),
-                KeyEvent.KEYCODE_F to (9 to 14),
-                KeyEvent.KEYCODE_G to (9 to 15),
-            )
+        private val digitKeyButtonIndex: Map<Int, Int> =
+            listOf(
+                KeyEvent.KEYCODE_1,
+                KeyEvent.KEYCODE_2,
+                KeyEvent.KEYCODE_3,
+                KeyEvent.KEYCODE_4,
+                KeyEvent.KEYCODE_5,
+                KeyEvent.KEYCODE_6,
+                KeyEvent.KEYCODE_7,
+                KeyEvent.KEYCODE_8,
+                KeyEvent.KEYCODE_9,
+                KeyEvent.KEYCODE_A,
+                KeyEvent.KEYCODE_B,
+                KeyEvent.KEYCODE_C,
+                KeyEvent.KEYCODE_D,
+                KeyEvent.KEYCODE_E,
+                KeyEvent.KEYCODE_F,
+                KeyEvent.KEYCODE_G,
+            ).withIndex().associate { (index, keyCode) -> keyCode to index }
     }
 
     inner class SudokuGameListener : GameListener {

@@ -40,17 +40,16 @@
             android:id="@+id/item_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/sudoku_state_in_progress"
             android:src="@drawable/ic_oui_time_outline"
-            app:tint="@color/oui_primary_icon_color"
-            tools:ignore="ContentDescription" />
+            app:tint="@color/oui_primary_icon_color" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:paddingStart="15dp"
-            tools:ignore="RtlSymmetry">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/item_text"

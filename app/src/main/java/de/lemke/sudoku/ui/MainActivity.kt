@@ -76,14 +76,12 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_EXPERT
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_HARD
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_MEDIUM
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_VERY_EASY
-import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_16X16
-import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_4X4
-import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_LEVEL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.openLeakCanary
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
@@ -359,16 +357,14 @@ class MainActivity : AppCompatActivity() {
         position: Int,
         tab: TabLayout.Tab? = null,
     ) {
-        val newFragment: Fragment = fragmentsInstance[position]
         if (selectedPosition != position) {
             selectedPosition = position
             val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
             for (fragment in supportFragmentManager.fragments) transaction.hide(fragment)
-            transaction.show(newFragment).commitNowAllowingStateLoss()
+            transaction.show(fragmentsInstance[position]).commitNowAllowingStateLoss()
             val newTab = tab ?: binding.bottomTab.getTabAt(position)
             if (newTab?.isSelected == false) newTab.select()
         }
-        newFragment.onResume()
         invalidateOptionsMenu()
     }
 }
@@ -377,9 +373,9 @@ internal fun DialogStatisticsFilterBinding.initFilterDialog(settings: UserSettin
     filterNormal.isChecked = settings.filterFlags and TYPE_NORMAL != 0 || settings.filterFlags and TYPE_ALL != 0
     filterDaily.isChecked = settings.filterFlags and TYPE_DAILY != 0 || settings.filterFlags and TYPE_ALL != 0
     filterLevel.isChecked = settings.filterFlags and TYPE_LEVEL != 0 || settings.filterFlags and TYPE_ALL != 0
-    filterSize4.isChecked = settings.filterFlags and SIZE_4X4 != 0 || settings.filterFlags and SIZE_ALL != 0
-    filterSize9.isChecked = settings.filterFlags and SIZE_9X9 != 0 || settings.filterFlags and SIZE_ALL != 0
-    filterSize16.isChecked = settings.filterFlags and SIZE_16X16 != 0 || settings.filterFlags and SIZE_ALL != 0
+    filterSize4.isChecked = settings.filterFlags and SudokuSize.FOUR.filterFlag != 0 || settings.filterFlags and SIZE_ALL != 0
+    filterSize9.isChecked = settings.filterFlags and SudokuSize.NINE.filterFlag != 0 || settings.filterFlags and SIZE_ALL != 0
+    filterSize16.isChecked = settings.filterFlags and SudokuSize.SIXTEEN.filterFlag != 0 || settings.filterFlags and SIZE_ALL != 0
     filterDifficultyVeryEasy.isChecked =
         settings.filterFlags and DIFFICULTY_VERY_EASY != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
     filterDifficultyEasy.isChecked = settings.filterFlags and DIFFICULTY_EASY != 0 || settings.filterFlags and DIFFICULTY_ALL != 0
@@ -402,9 +398,9 @@ internal fun updateFilterSettings(
         )
     val sizeFlags =
         combineFlags(
-            dialogBinding.filterSize4.isChecked to SIZE_4X4,
-            dialogBinding.filterSize9.isChecked to SIZE_9X9,
-            dialogBinding.filterSize16.isChecked to SIZE_16X16,
+            dialogBinding.filterSize4.isChecked to SudokuSize.FOUR.filterFlag,
+            dialogBinding.filterSize9.isChecked to SudokuSize.NINE.filterFlag,
+            dialogBinding.filterSize16.isChecked to SudokuSize.SIXTEEN.filterFlag,
             allFlag = SIZE_ALL,
         )
     val difficultyFlags =

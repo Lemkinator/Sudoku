@@ -17,6 +17,9 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.os.Looper
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -38,6 +41,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -45,7 +49,6 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -55,7 +58,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDialog
 import de.lemke.commonutils.R as commonutilsR
 
 /** sdk = 36: Robolectric's max supported SDK. */
@@ -92,7 +97,7 @@ class SudokuActivitySelectionTest {
     fun setup() {
         hiltRule.inject()
         userSettings.bypassOobe()
-        runBlocking { saveSudoku(testLevelSudoku(size = 4, level = MODE_NORMAL, sudokuId = SUDOKU_ID)) }
+        runBlocking { saveSudoku(testLevelSudoku(size = SudokuSize.FOUR, level = MODE_NORMAL, sudokuId = SUDOKU_ID)) }
     }
 
     private fun launch(
@@ -132,7 +137,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting the delete button while nothing is selected highlights it`() =
         launch { activity ->
-            val deleteIndex = activity.sudoku.itemCount + activity.sudoku.size
+            val deleteIndex = activity.sudoku.itemCount + activity.sudoku.size.value
             activity.select(deleteIndex)
             activity.selected shouldBe deleteIndex
             activity.binding.deleteButton.backgroundTintList
@@ -142,7 +147,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting the hint button while nothing is selected highlights it`() =
         launch { activity ->
-            val hintIndex = activity.sudoku.itemCount + activity.sudoku.size + 1
+            val hintIndex = activity.sudoku.itemCount + activity.sudoku.size.value + 1
             activity.select(hintIndex)
             activity.selected shouldBe hintIndex
             activity.binding.hintButton.backgroundTintList
@@ -215,7 +220,7 @@ class SudokuActivitySelectionTest {
             activity.sudoku[1].value shouldBe 2
 
             activity.select(1)
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
             activity.sudoku[1].value.shouldBeNull()
             activity.selected.shouldBeNull()
         }
@@ -224,7 +229,7 @@ class SudokuActivitySelectionTest {
     fun `selecting the hint button while a field is selected sets a hint and deselects once hints are exhausted`() =
         launch { activity ->
             activity.select(4)
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size + 1)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
             activity.sudoku[4].hint.shouldBeTrue()
             activity.sudoku[4].value shouldBe 3
             activity.sudoku.isHintAvailable.shouldBeFalse()
@@ -307,7 +312,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting the delete button again deselects it`() =
         launch { activity ->
-            val deleteIndex = activity.sudoku.itemCount + activity.sudoku.size
+            val deleteIndex = activity.sudoku.itemCount + activity.sudoku.size.value
             activity.select(deleteIndex)
             activity.select(deleteIndex)
             activity.selected.shouldBeNull()
@@ -316,7 +321,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting nothing while the delete button is selected deselects it`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
             activity.select(null)
             activity.selected.shouldBeNull()
         }
@@ -328,7 +333,7 @@ class SudokuActivitySelectionTest {
             activity.select(activity.sudoku.itemCount + 1)
             activity.sudoku[1].value shouldBe 2
 
-            val deleteIndex = activity.sudoku.itemCount + activity.sudoku.size
+            val deleteIndex = activity.sudoku.itemCount + activity.sudoku.size.value
             activity.select(deleteIndex)
             activity.select(1)
             activity.sudoku[1].value.shouldBeNull()
@@ -338,7 +343,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting another button while the delete button is selected switches the highlight`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
             activity.select(activity.sudoku.itemCount)
             activity.selected shouldBe activity.sudoku.itemCount
             activity.binding.deleteButton.backgroundTintList
@@ -348,7 +353,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting an out-of-range index while the delete button is selected deselects it`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
             activity.select(9999)
             activity.selected.shouldBeNull()
         }
@@ -356,7 +361,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting a negative index while the delete button is selected deselects it`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
             activity.select(-1)
             activity.selected.shouldBeNull()
         }
@@ -368,7 +373,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting the hint button again deselects it`() =
         launch { activity ->
-            val hintIndex = activity.sudoku.itemCount + activity.sudoku.size + 1
+            val hintIndex = activity.sudoku.itemCount + activity.sudoku.size.value + 1
             activity.select(hintIndex)
             activity.select(hintIndex)
             activity.selected.shouldBeNull()
@@ -377,7 +382,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting nothing while the hint button is selected deselects it`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size + 1)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
             activity.select(null)
             activity.selected.shouldBeNull()
         }
@@ -385,7 +390,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting another button while the hint button is selected switches the highlight`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size + 1)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
             activity.select(activity.sudoku.itemCount)
             activity.selected shouldBe activity.sudoku.itemCount
             activity.binding.hintButton.backgroundTintList
@@ -395,7 +400,7 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting an out-of-range index while the hint button is selected deselects it`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size + 1)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
             activity.select(9999)
             activity.selected.shouldBeNull()
         }
@@ -403,16 +408,16 @@ class SudokuActivitySelectionTest {
     @Test
     fun `selecting a negative index while the hint button is selected deselects it`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size + 1)
+            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
             activity.select(-1)
             activity.selected.shouldBeNull()
         }
 
     @Test
     fun `setting a hint from the hint button keeps it selected while hints remain available`() {
-        runBlocking { saveSudoku(formulaicSudoku(size = 9, sudokuId = LARGE_SUDOKU_ID)) }
+        runBlocking { saveSudoku(formulaicSudoku(size = SudokuSize.NINE, sudokuId = LARGE_SUDOKU_ID)) }
         launch(LARGE_SUDOKU_ID) { activity ->
-            val hintIndex = activity.sudoku.itemCount + activity.sudoku.size + 1
+            val hintIndex = activity.sudoku.itemCount + activity.sudoku.size.value + 1
             activity.select(hintIndex)
             activity.select(1)
             activity.sudoku[1].hint.shouldBeTrue()
@@ -511,6 +516,11 @@ class SudokuActivitySelectionTest {
             activity.select(1)
             activity.sudoku.errorsMade shouldBe 1
             activity.selected shouldBe numberOneButton
+            shadowOf(Looper.getMainLooper()).idle()
+            (ShadowDialog.getLatestDialog() as AlertDialog)
+                .findViewById<TextView>(android.R.id.message)
+                ?.text
+                ?.toString() shouldBe "Error limit reached (1)."
 
             activity.select(2)
             activity.selected shouldBe numberOneButton
@@ -519,20 +529,20 @@ class SudokuActivitySelectionTest {
     // endregion
 
     private fun formulaicSudoku(
-        size: Int,
+        size: SudokuSize,
         sudokuId: SudokuId,
     ): Sudoku {
-        val blockSize = sqrt(size.toDouble()).toInt()
+        val blockSize = size.blockSize
         return Sudoku.create(
             sudokuId = sudokuId,
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = MODE_NORMAL,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     val given = index % 3 == 0
                     Field(
                         position = Position.create(index, size),

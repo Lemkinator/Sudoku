@@ -47,6 +47,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
 import io.kjson.stringifyJSON
@@ -199,7 +200,7 @@ class MainActivityMenuTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             dialog.isShowing.shouldBeFalse()
-            (userSettings.filterFlags and SudokuFilterFlags.SIZE_4X4) shouldBe 0
+            (userSettings.filterFlags and SudokuSize.FOUR.filterFlag) shouldBe 0
             (userSettings.filterFlags and SudokuFilterFlags.SIZE_ALL) shouldBe 0
         }
 
@@ -321,15 +322,16 @@ class MainActivityMenuTest {
     @Test
     fun `launching with a resolvable import uri opens the imported sudoku`() {
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val size = 4
+        val size = SudokuSize.FOUR
         val sudoku =
             Sudoku.create(
                 size = size,
                 difficulty = Difficulty.VERY_EASY,
                 modeLevel = Sudoku.MODE_NORMAL,
                 fields =
-                    MutableList(size * size) { i ->
-                        Field(position = Position.create(i, size), solution = (i % size) + 1, value = (i % size) + 1, given = true)
+                    MutableList(size.cellCount) { i ->
+                        val solution = (i % size.value) + 1
+                        Field(position = Position.create(i, size), solution = solution, value = solution, given = true)
                     },
             )
         val file = File.createTempFile("main-activity-import", ".json")

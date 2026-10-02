@@ -20,6 +20,7 @@ import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -39,8 +40,18 @@ class GetAllSudokusUseCaseTest : ShouldSpec(
         should("returns every sudoku from the repository when using the default all-inclusive flags") {
             val sudokus =
                 listOf(
-                    Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf()),
-                    Sudoku.create(size = 9, difficulty = Difficulty.HARD, modeLevel = Sudoku.MODE_DAILY, fields = mutableListOf()),
+                    Sudoku.create(
+                        size = SudokuSize.FOUR,
+                        difficulty = Difficulty.EASY,
+                        modeLevel = Sudoku.MODE_NORMAL,
+                        fields = mutableListOf(),
+                    ),
+                    Sudoku.create(
+                        size = SudokuSize.NINE,
+                        difficulty = Difficulty.HARD,
+                        modeLevel = Sudoku.MODE_DAILY,
+                        fields = mutableListOf(),
+                    ),
                 )
             coEvery { sudokusRepository.getAllSudokus() } returns sudokus
 
@@ -49,13 +60,23 @@ class GetAllSudokusUseCaseTest : ShouldSpec(
 
         should("filters out sudokus that don't match the given flags") {
             val normal9x9 =
-                Sudoku.create(size = 9, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf())
+                Sudoku.create(
+                    size = SudokuSize.NINE,
+                    difficulty = Difficulty.EASY,
+                    modeLevel = Sudoku.MODE_NORMAL,
+                    fields = mutableListOf(),
+                )
             val daily9x9 =
-                Sudoku.create(size = 9, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY, fields = mutableListOf())
+                Sudoku.create(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY, fields = mutableListOf())
             val normal4x4 =
-                Sudoku.create(size = 4, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL, fields = mutableListOf())
+                Sudoku.create(
+                    size = SudokuSize.FOUR,
+                    difficulty = Difficulty.EASY,
+                    modeLevel = Sudoku.MODE_NORMAL,
+                    fields = mutableListOf(),
+                )
             coEvery { sudokusRepository.getAllSudokus() } returns listOf(normal9x9, daily9x9, normal4x4)
-            val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuFilterFlags.SIZE_9X9 or SudokuFilterFlags.DIFFICULTY_ALL
+            val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
             useCase(flags) shouldBe listOf(normal9x9)
         }

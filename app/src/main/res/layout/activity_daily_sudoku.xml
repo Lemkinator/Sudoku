@@ -23,21 +23,12 @@
     app:showNavButtonAsBack="true"
     app:title="@string/daily_sudoku">
 
-    <dev.oneuiproject.oneui.widget.RoundedLinearLayout
+    <dev.oneuiproject.oneui.widget.RoundedFrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         app:edgeInsetLeft="10dp"
         app:edgeInsetRight="10dp"
         app:roundedCorners="top_left|top_right">
-
-        <androidx.appcompat.widget.SeslProgressBar
-            android:id="@+id/dailyProgressBar"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="16dp"
-            android:layout_gravity="bottom"
-            android:indeterminate="true" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/dailySudokuRecycler"
@@ -48,6 +39,6 @@
             android:scrollbarStyle="outsideOverlay"
             android:visibility="gone" />
 
-    </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
+    </dev.oneuiproject.oneui.widget.RoundedFrameLayout>
 
 </dev.oneuiproject.oneui.layout.ToolbarLayout>

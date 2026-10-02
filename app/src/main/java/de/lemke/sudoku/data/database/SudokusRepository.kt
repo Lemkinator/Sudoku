@@ -18,6 +18,7 @@ package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.map
@@ -29,7 +30,8 @@ class SudokusRepository @Inject constructor(
 
     fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
-    fun observeSudokuLevel(size: Int) = sudokuDao.observeSudokuLevel(size).map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+    fun observeSudokuLevel(size: SudokuSize) =
+        sudokuDao.observeSudokuLevel(size.value).map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
     fun observeDailySudokus() = sudokuDao.observeDailySudokus().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
 
@@ -37,7 +39,7 @@ class SudokusRepository @Inject constructor(
 
     suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(sudokuDao.getRecentlyUpdatedNormalSudoku())
 
-    suspend fun getSudokuLevel(size: Int): List<Sudoku> = sudokuDao.getAllSudokuLevel(size).mapNotNull { sudokuFromDb(it) }
+    suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> = sudokuDao.getAllSudokuLevel(size.value).mapNotNull { sudokuFromDb(it) }
 
     suspend fun getDailySudokus(): List<Sudoku> = sudokuDao.getDailySudokus().mapNotNull { sudokuFromDb(it) }
 
@@ -58,7 +60,7 @@ class SudokusRepository @Inject constructor(
         sudokuDao.insert(sudokuToDb(sudoku), sudoku.fields.map { fieldToDb(it, sudoku.id) })
     }
 
-    suspend fun getMaxSudokuLevel(size: Int): Int = sudokuDao.getMaxSudokuLevel(size) ?: 0
+    suspend fun getMaxSudokuLevel(size: SudokuSize): Int = sudokuDao.getMaxSudokuLevel(size.value) ?: 0
 
     suspend fun deleteInvalidSudokus() {
         val invalidRows = sudokuDao.getAll().filter { sudokuFromDb(it) == null }
@@ -66,9 +68,9 @@ class SudokusRepository @Inject constructor(
     }
 
     private suspend fun getSudokuLevel(
-        size: Int,
+        size: SudokuSize,
         level: Int,
-    ): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size, level))
+    ): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size.value, level))
 
     private suspend fun getDailySudoku(date: LocalDate): Sudoku? =
         sudokuFromDb(sudokuDao.getDailySudokus().firstOrNull { it.sudoku.created.toLocalDate() == date })

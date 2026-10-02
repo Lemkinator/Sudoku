@@ -47,14 +47,26 @@ class DifficultyTest : ShouldSpec(
             Difficulty.fromInt(Difficulty.entries.size) shouldBe Difficulty.MEDIUM
         }
 
-        should("look up numbersToRemove per known size for every difficulty") {
-            Difficulty.VERY_EASY.numbersToRemove(4) shouldBe 4 * 4 - 10
-            Difficulty.EXPERT.numbersToRemove(9) shouldBe 9 * 9 - 23
-            Difficulty.HARD.numbersToRemove(16) shouldBe 16 * 16 - 136
-        }
-
-        should("fall back to the size-9 table for an unlisted size") {
-            Difficulty.MEDIUM.numbersToRemove(25) shouldBe 25 * 25 - 35
+        should("remove the cells beyond each size's givens for every size and difficulty") {
+            listOf(
+                Triple(SudokuSize.FOUR, Difficulty.VERY_EASY, 6),
+                Triple(SudokuSize.FOUR, Difficulty.EASY, 7),
+                Triple(SudokuSize.FOUR, Difficulty.MEDIUM, 9),
+                Triple(SudokuSize.FOUR, Difficulty.HARD, 10),
+                Triple(SudokuSize.FOUR, Difficulty.EXPERT, 12),
+                Triple(SudokuSize.NINE, Difficulty.VERY_EASY, 31),
+                Triple(SudokuSize.NINE, Difficulty.EASY, 41),
+                Triple(SudokuSize.NINE, Difficulty.MEDIUM, 46),
+                Triple(SudokuSize.NINE, Difficulty.HARD, 51),
+                Triple(SudokuSize.NINE, Difficulty.EXPERT, 58),
+                Triple(SudokuSize.SIXTEEN, Difficulty.VERY_EASY, 60),
+                Triple(SudokuSize.SIXTEEN, Difficulty.EASY, 80),
+                Triple(SudokuSize.SIXTEEN, Difficulty.MEDIUM, 100),
+                Triple(SudokuSize.SIXTEEN, Difficulty.HARD, 120),
+                Triple(SudokuSize.SIXTEEN, Difficulty.EXPERT, 140),
+            ).forEach { (size, difficulty, expected) ->
+                difficulty.numbersToRemove(size) shouldBe expected
+            }
         }
 
         should("expose max as the index of the last difficulty entry") {

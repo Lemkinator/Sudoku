@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
@@ -43,9 +44,9 @@ class GenerateDailySudokuUseCaseTest : ShouldSpec(
         should("mark the sudoku as daily mode, stamp created from the injected clock, and pick a supported difficulty") {
             every { clock.instant() } returns fixedInstant
             every { clock.zone } returns ZoneOffset.UTC
-            coEvery { generateFields(9, any()) } returns mutableListOf<Field>()
+            coEvery { generateFields(SudokuSize.NINE, any()) } returns mutableListOf<Field>()
 
-            val sudoku = useCase(9)
+            val sudoku = useCase(SudokuSize.NINE)
 
             sudoku.modeLevel shouldBe Sudoku.MODE_DAILY
             sudoku.created shouldBe LocalDateTime.ofInstant(fixedInstant, ZoneOffset.UTC)

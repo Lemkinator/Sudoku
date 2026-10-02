@@ -31,12 +31,12 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.mockk
 import java.util.Timer
-import kotlin.math.sqrt
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +45,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-private const val SIZE = 4
+private val SIZE = SudokuSize.FOUR
 private const val GIVEN_INDEX = 0
 private const val PLAIN_INDEX = 1
 private const val HINT_INDEX = 4
@@ -56,10 +56,10 @@ private const val COLORED_BY_COLUMN_INDEX = 2
 private const val UNCOLORED_BOTH_HALVES_INDEX = 10
 
 private fun solutionFor(index: Int): Int {
-    val blockSize = sqrt(SIZE.toDouble()).toInt()
-    val row = index / SIZE
-    val col = index % SIZE
-    return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE + 1
+    val blockSize = SIZE.blockSize
+    val row = index / SIZE.value
+    val col = index % SIZE.value
+    return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE.value + 1
 }
 
 private fun fourByFourSudoku(): Sudoku {
@@ -75,7 +75,7 @@ private fun fourByFourSudoku(): Sudoku {
         difficulty = Difficulty.VERY_EASY,
         modeLevel = Sudoku.MODE_NORMAL,
         fields =
-            MutableList(SIZE * SIZE) { index ->
+            MutableList(SIZE.cellCount) { index ->
                 overrides[index] ?: Field(Position.create(index, SIZE), solution = solutionFor(index))
             },
     )

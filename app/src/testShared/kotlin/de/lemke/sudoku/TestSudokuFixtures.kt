@@ -21,8 +21,8 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.tutorialSudoku
-import kotlin.math.sqrt
 
 /**
  * For size 9 (the only size ever actually rendered in a screenshot test), reuses
@@ -34,25 +34,35 @@ import kotlin.math.sqrt
  * human authored. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented).
  */
 fun testLevelSudoku(
-    size: Int,
+    size: SudokuSize,
     level: Int = 1,
     sudokuId: SudokuId = SudokuId.generate(),
+): Sudoku =
+    when (size) {
+        SudokuSize.NINE -> tutorialSudoku(sudokuId = sudokuId, modeLevel = level)
+        SudokuSize.FOUR, SudokuSize.SIXTEEN -> patternLevelSudoku(size = size, level = level, sudokuId = sudokuId)
+    }
+
+private fun patternLevelSudoku(
+    size: SudokuSize,
+    level: Int,
+    sudokuId: SudokuId,
 ): Sudoku {
-    if (size == 9) return tutorialSudoku(sudokuId = sudokuId, modeLevel = level)
-    val blockSize = sqrt(size.toDouble()).toInt()
+    val blockSize = size.blockSize
     return Sudoku.create(
         sudokuId = sudokuId,
         size = size,
         difficulty = Difficulty.VERY_EASY,
         modeLevel = level,
         fields =
-            MutableList(size * size) { index ->
-                val row = index / size
-                val col = index % size
-                val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+            MutableList(size.cellCount) { index ->
+                val position = Position.create(index, size)
+                val row = position.row
+                val col = position.column
+                val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                 val given = index % 3 == 0
                 Field(
-                    position = Position.create(index, size),
+                    position = position,
                     solution = solution,
                     value = if (given) solution else null,
                     given = given,

@@ -20,6 +20,7 @@ import android.os.Looper
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
@@ -44,7 +45,7 @@ class SudokuViewAdapterTest {
     @Before
     fun setUp() {
         context = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
-        sudoku = testLevelSudoku(size = 4)
+        sudoku = testLevelSudoku(size = SudokuSize.FOUR)
         adapter = SudokuViewAdapter(context, sudoku)
         for (index in 0 until sudoku.itemCount) {
             val holder = adapter.onCreateViewHolder(FrameLayout(context), 0)

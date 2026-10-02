@@ -48,13 +48,13 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import javax.inject.Inject
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -112,11 +112,11 @@ class SudokuActivityShareTest {
     }
 
     private fun formulaicSudoku(
-        size: Int,
+        size: SudokuSize,
         modeLevel: Int = MODE_NORMAL,
         created: LocalDateTime = LocalDateTime.now(),
     ): Sudoku {
-        val blockSize = sqrt(size.toDouble()).toInt()
+        val blockSize = size.blockSize
         return Sudoku.create(
             sudokuId = SudokuId.generate(),
             size = size,
@@ -124,10 +124,10 @@ class SudokuActivityShareTest {
             modeLevel = modeLevel,
             created = created,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     val given = index % 3 == 0
                     Field(
                         position = Position.create(index, size),
@@ -177,7 +177,7 @@ class SudokuActivityShareTest {
         check(condition()) { "share chooser was not started within ${timeoutMillis}ms" }
     }
 
-    private fun levelSudokuWithAnEntry(): Sudoku = formulaicSudoku(4, modeLevel = 3).apply { fields[1].value = 2 }
+    private fun levelSudokuWithAnEntry(): Sudoku = formulaicSudoku(SudokuSize.FOUR, modeLevel = 3).apply { fields[1].value = 2 }
 
     private fun sharedSudoku(activity: SudokuActivity): SudokuExport {
         val chooser = shadowOf(activity).nextStartedActivity
@@ -194,7 +194,7 @@ class SudokuActivityShareTest {
 
     @Test
     fun `sharing as text starts a plain-text share chooser`() =
-        launch(formulaicSudoku(4)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR)) { activity ->
             shareVia(activity, R.id.radioButtonText)
             val started = shadowOf(activity).nextStartedActivity
             started.action shouldBe Intent.ACTION_CHOOSER
@@ -222,14 +222,14 @@ class SudokuActivityShareTest {
 
     @Test
     fun `a 16x16 board wires up every extended number button`() =
-        launch(formulaicSudoku(16)) { activity ->
+        launch(formulaicSudoku(SudokuSize.SIXTEEN)) { activity ->
             activity.sudokuButtons.size shouldBe 16
         }
 
     @Test
     fun `the title reflects a daily sudoku's date`() =
-        launch(formulaicSudoku(4, modeLevel = MODE_DAILY)) { activity ->
-            val expected = "${activity.getString(R.string.sudoku)} (${activity.sudoku.created.dateFormatShort})"
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_DAILY)) { activity ->
+            val expected = "Sudoku (${activity.sudoku.created.dateFormatShort})"
             activity.binding.sudokuToolbarLayout.expandedTitle
                 .toString() shouldBe expected
         }
@@ -237,23 +237,36 @@ class SudokuActivityShareTest {
     @Test
     fun `the subtitle shows a daily sudoku's fixed error limit instead of the user's`() {
         userSettings.errorLimit = 5
-        launch(formulaicSudoku(4, modeLevel = MODE_DAILY)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_DAILY)) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
     }
 
     @Test
     fun `the title reflects a sudoku level's number`() =
-        launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
-            val expected = "${activity.getString(R.string.sudoku)} (${activity.getString(R.string.level)} 3)"
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = 3)) { activity ->
             activity.binding.sudokuToolbarLayout.expandedTitle
-                .toString() shouldBe expected
+                .toString() shouldBe "Sudoku (Level 3)"
+        }
+
+    @Test
+    fun `the title reflects a normal sudoku's difficulty`() =
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_NORMAL)) { activity ->
+            activity.binding.sudokuToolbarLayout.expandedTitle
+                .toString() shouldBe "Sudoku (Very easy)"
+        }
+
+    @Test
+    fun `the title is the bare name for a mode level outside normal, daily and level`() =
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = -2)) { activity ->
+            activity.binding.sudokuToolbarLayout.expandedTitle
+                .toString() shouldBe "Sudoku"
         }
 
     @Test
     fun `the subtitle shows a sudoku level's fixed error limit instead of the user's`() {
         userSettings.errorLimit = 5
-        launch(formulaicSudoku(4, modeLevel = 3)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = 3)) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
     }
@@ -261,7 +274,7 @@ class SudokuActivityShareTest {
     @Test
     fun `the subtitle omits the error limit for a normal sudoku with an unlimited error setting`() {
         userSettings.errorLimit = 0
-        launch(formulaicSudoku(4, modeLevel = MODE_NORMAL)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_NORMAL)) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0"
         }
     }

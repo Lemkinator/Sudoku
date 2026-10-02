@@ -32,6 +32,7 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -44,10 +45,10 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-private fun testFields(size: Int): MutableList<Field> =
-    (0 until size * size)
+private fun testFields(size: SudokuSize): MutableList<Field> =
+    (0 until size.cellCount)
         .map { index ->
-            val solution = (index % size) + 1
+            val solution = (index % size.value) + 1
             Field(
                 position = Position.create(index, size),
                 solution = solution,
@@ -59,7 +60,7 @@ private fun testFields(size: Int): MutableList<Field> =
         }.toMutableList()
 
 private fun testSudoku(
-    size: Int = 4,
+    size: SudokuSize = SudokuSize.FOUR,
     difficulty: Difficulty = Difficulty.HARD,
 ): Sudoku =
     Sudoku.create(
@@ -141,7 +142,7 @@ class ShareSudokuUseCaseTest {
 
     @Test
     fun `invoke names the file after the sudoku's size and localized difficulty`() {
-        val sudoku = testSudoku(size = 9, difficulty = Difficulty.EASY)
+        val sudoku = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY)
         val expectedName = "Sudoku (9×9 Easy).sudoku"
 
         lateinit var uri: Uri

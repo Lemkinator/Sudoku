@@ -41,6 +41,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.formatFull
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode
 import dev.oneuiproject.oneui.widget.Separator
@@ -58,13 +59,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-private const val SIZE = 4
+private val SIZE = SudokuSize.FOUR
 
 private fun solutionFor(index: Int): Int {
-    val blockSize = 2
-    val row = index / SIZE
-    val col = index % SIZE
-    return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE + 1
+    val blockSize = SIZE.blockSize
+    val row = index / SIZE.value
+    val col = index % SIZE.value
+    return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE.value + 1
 }
 
 private fun sudokuFixture(
@@ -82,7 +83,7 @@ private fun sudokuFixture(
         hintsUsed = hintsUsed,
         created = created,
         fields =
-            MutableList(SIZE * SIZE) { index ->
+            MutableList(SIZE.cellCount) { index ->
                 val solution = solutionFor(index)
                 Field(Position.create(index, SIZE), solution = solution, value = if (completed) solution else null, given = completed)
             },
@@ -151,10 +152,12 @@ class SudokuListAdapterTest {
     private fun assertIcon(
         holder: SudokuListAdapter.ViewHolder,
         expectedResId: Int,
+        expectedDescription: String,
     ) {
         val imageView = holder.itemView.findViewById<ImageView>(R.id.item_icon)
         val actual = imageView.drawable.shouldNotBeNull().toComparableBitmap()
         actual.sameAs(referenceIconBitmap(expectedResId)).shouldBeTrue()
+        imageView.contentDescription shouldBe expectedDescription
     }
 
     private fun smallText(holder: SudokuListAdapter.ViewHolder): String =
@@ -264,9 +267,9 @@ class SudokuListAdapterTest {
 
         adapter.onBindViewHolder(holder, 0)
 
-        holder.textView.text shouldBe "${sudoku.sizeString} | ${sudoku.difficulty.getLocalString(context.resources)}"
+        holder.textView.text shouldBe "4×4 | Easy"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 0, mode = Mode.NORMAL)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline, "In progress")
     }
 
     @Test
@@ -279,7 +282,7 @@ class SudokuListAdapterTest {
         adapter.onBindViewHolder(holder, 0)
 
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.NORMAL)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline, "In progress")
     }
 
     @Test
@@ -291,9 +294,9 @@ class SudokuListAdapterTest {
 
         adapter.onBindViewHolder(holder, 0)
 
-        holder.textView.text shouldBe "${context.getString(R.string.level)} 5"
+        holder.textView.text shouldBe "Level 5"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.LEVEL)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_error)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_error, "Error limit reached")
     }
 
     @Test
@@ -308,7 +311,7 @@ class SudokuListAdapterTest {
 
         holder.textView.text shouldBe created.toLocalDate().formatFull
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.DAILY)
-        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline)
+        assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline, "Completed")
     }
 
     @Test
@@ -320,7 +323,7 @@ class SudokuListAdapterTest {
 
         adapter.onBindViewHolder(holder, 0, mutableListOf())
 
-        holder.textView.text shouldBe "${sudoku.sizeString} | ${sudoku.difficulty.getLocalString(context.resources)}"
+        holder.textView.text shouldBe "4×4 | Easy"
     }
 
     @Test

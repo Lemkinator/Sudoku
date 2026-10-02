@@ -24,8 +24,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.parseJSON
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.FileNotFoundException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -49,7 +48,11 @@ class ImportSudokuUseCase @Inject constructor(
                             .bufferedReader()
                             .use { it.readText() },
                     )
-                val json = BufferedReader(InputStreamReader(context.contentResolver.openInputStream(uri))).readText()
+                val json =
+                    context.contentResolver
+                        .openInputStream(uri)
+                        ?.bufferedReader()
+                        ?.use { it.readText() } ?: throw FileNotFoundException("No content for $uri")
                 val output = schema.validateBasic(json)
                 output.errors?.forEach { Log.e("ImportSudokuUseCase", "${it.error} - ${it.instanceLocation}") }
                 if (output.errors.isNullOrEmpty()) {

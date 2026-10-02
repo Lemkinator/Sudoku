@@ -107,7 +107,7 @@
     <string name="delete_invalid_sudokus_summary">Delete incorrectly generated Sudokus or Sudokus that were corrupted during saving to the database.</string>
     <string name="error_limit">Error limit</string>
     <string name="no_limit">No limit</string>
-    <string name="error_limit_reached" tools:ignore="PluralsCandidate">Error limit of %1$d reached.</string>
+    <string name="error_limit_reached">Error limit reached (%1$d).</string>
 
     <string name="export_data">Export data</string>
     <string name="export_data_summary">Export JSON file</string>
@@ -119,6 +119,10 @@
     <string name="import_data_ongoing">Data is being imported…</string>
     <string name="import_data_ongoing_processing">Data is being processed…</string>
     <string name="import_data_success">Data imported successfully.</string>
+    <plurals name="import_data_success_skipped">
+        <item quantity="one">Data imported successfully. %d invalid Sudoku was skipped.</item>
+        <item quantity="other">Data imported successfully. %d invalid Sudokus were skipped.</item>
+    </plurals>
     <string name="import_data_error_no_valid_json">Error: No valid JSON file.</string>
     <string name="import_data_error_no_valid_file">Error: No valid file.</string>
     <string name="import_data_message">Caution: Importing may take some time. Already existing data may be overwritten. In the following screen, please select the JSON file created during export (e.g.: \"sudoku_export_[date].json\").</string>
@@ -138,6 +142,8 @@
     <string name="current_hints">Hints: %1$d</string>
     <string name="current_progress">%1$d\%%</string>
     <string name="completed_title">Completed</string>
+    <string name="sudoku_state_in_progress">In progress</string>
+    <string name="sudoku_state_error_limit_reached">Error limit reached</string>
     <string name="sudoku_completed">Look, I have successfully completed a Sudoku:\n</string>
     <string name="sudoku_solving">Look, I am currently solving this Sudoku: \nProgress: %1$d\%% \n</string>
     <string name="sudokuStatisticsString">Type: %1$s \nSize: %2$d×%2$d \nDifficulty: %3$s \nTime: %4$s \nErrors: %5$d \nHints: %6$d \nNotes: %7$d \nRegional highlight used: %8$s \nNumber highlight used: %9$s \nCreated: %10$s \nUpdated: %11$s</string>
@@ -157,9 +163,11 @@
     <string name="games_started">Games started</string>
     <string name="games_completed">Games won</string>
     <string name="win_rate">Win rate</string>
+    <string name="win_rate_value">%1$d\%%</string>
     <string name="wins_without_error">Wins without errors</string>
     <string name="time">Time</string>
     <string name="best_time">Best time</string>
+    <string name="best_time_value">%1$s (%2$s, %3$s)</string>
     <string name="average_time">Average Time</string>
     <string name="wins_without_hint">Wins without hint</string>
     <string name="most_errors">Most errors</string>
@@ -232,12 +240,16 @@
     <string name="show_only_completed_sudokus">Show only completed Sudokus</string>
     <string name="show_all_sudokus">Show all Sudokus</string>
     <string name="level">Level</string>
+    <string name="level_number">Level %1$d</string>
+    <string name="sudoku_title_detail">%1$s (%2$s)</string>
+    <string name="size_and_difficulty">%1$s | %2$s</string>
     <string name="next_level">Next level</string>
 
     <string name="error_import_failed">Failed to import Sudoku</string>
     <string name="error_sudoku_not_found">Sudoku not found…</string>
     <string name="error_loading_daily_sudokus_failed">Failed to load daily sudokus</string>
     <string name="error_loading_sudoku_level_failed">Failed to load sudoku levels</string>
+    <string name="error_starting_sudoku_level_failed">Could not start the level</string>
     <string name="error_loading_sudoku_history_failed">Failed to load sudoku history</string>
     <string name="error_loading_statistics_failed">Failed to load statistics</string>
     <string name="memory_leaks" translatable="false">Memory leaks</string>

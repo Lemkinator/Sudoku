@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 
 @HiltViewModel
@@ -48,7 +49,7 @@ class TabSudokuViewModel @Inject constructor(
         }
 
     suspend fun createNewSudoku(
-        size: Int,
+        size: SudokuSize,
         difficulty: Difficulty,
     ): Sudoku {
         val sudoku = generateSudoku(size, difficulty)

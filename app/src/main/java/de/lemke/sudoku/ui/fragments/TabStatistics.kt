@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui.fragments
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -25,7 +24,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.TextView
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
@@ -82,7 +80,6 @@ class TabStatistics : Fragment() {
         }
         // setupMenuProvider()
         collectState(viewModel.state, minActiveState = RESUMED) { state ->
-            binding.statisticsProgressBar.isVisible = state.isLoading
             state.statistics?.let {
                 val previousSize = statisticsList.size
                 updateStatistics(it)
@@ -110,22 +107,24 @@ class TabStatistics : Fragment() {
     }, viewLifecycleOwner, RESUMED)
      */
 
-    @SuppressLint("SetTextI18n")
     private fun updateStatistics(stats: SudokuStatistics) {
         statisticsList = mutableListOf()
         statisticsList.add(getString(R.string.games) to null)
         statisticsList.add(getString(R.string.games_started) to stats.gamesStarted.toString())
         statisticsList.add(getString(R.string.games_completed) to stats.gamesCompleted.toString())
-        statisticsList.add(getString(R.string.win_rate) to "${stats.winRate}%")
+        statisticsList.add(getString(R.string.win_rate) to getString(R.string.win_rate_value, stats.winRate))
         statisticsList.add(getString(R.string.time) to null)
         statisticsList.add(
-            getString(R.string.best_time) to secondsToTimeString(stats.bestTimeSudoku?.seconds ?: -1) +
-                if (stats.bestTimeSudoku !=
-                    null
-                ) {
-                    " (${stats.bestTimeSudoku.sizeString}, ${stats.bestTimeSudoku.difficulty.getLocalString(resources)})"
+            getString(R.string.best_time) to
+                if (stats.bestTimeSudoku != null) {
+                    getString(
+                        R.string.best_time_value,
+                        secondsToTimeString(stats.bestTimeSudoku.seconds),
+                        stats.bestTimeSudoku.size.getLocalString(resources),
+                        stats.bestTimeSudoku.difficulty.getLocalString(resources),
+                    )
                 } else {
-                    ""
+                    secondsToTimeString(-1)
                 },
         )
         statisticsList.add(getString(R.string.average_time) to secondsToTimeString(stats.averageTime))
@@ -149,8 +148,8 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedDifficulty?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonDifficulty?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.size) to null)
-        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.let { "$it×$it" } ?: "-"))
-        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.let { "$it×$it" } ?: "-"))
+        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.getLocalString(resources) ?: "-"))
+        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.getLocalString(resources) ?: "-"))
         statisticsList.add(getString(R.string.feature_usage) to null)
         statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * PERCENT_SCALE).roundToInt()}%")
         statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * PERCENT_SCALE).roundToInt()}%")
@@ -216,7 +215,6 @@ class TabStatistics : Fragment() {
                 }
             }
 
-        @SuppressLint("SetTextI18n")
         override fun onBindViewHolder(
             holder: ViewHolder,
             position: Int,

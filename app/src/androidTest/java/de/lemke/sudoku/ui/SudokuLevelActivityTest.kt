@@ -43,9 +43,9 @@ import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 import de.lemke.sudoku.ui.fragments.SudokuLevelTabViewModel
@@ -123,12 +123,15 @@ class SudokuLevelActivityTest {
     private fun completedLevel(
         level: Int,
         sudokuId: SudokuId,
-    ): Sudoku = testLevelSudoku(size = SIZE_4X4, level = level, sudokuId = sudokuId).apply { fields.forEach { it.value = it.solution } }
+    ): Sudoku =
+        testLevelSudoku(size = SudokuSize.FOUR, level = level, sudokuId = sudokuId).apply {
+            fields.forEach { it.value = it.solution }
+        }
 
     private fun SudokuLevelActivity.levelTab(): SudokuLevelTab =
         supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
-            .first { it.arguments?.getInt("size") == SIZE_4X4 }
+            .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == SudokuSize.FOUR.value }
 
     private fun SudokuLevelActivity.progressBarShown(): Boolean =
         levelTab().requireView().findViewById<View>(R.id.tabLevelProgressBar).isVisible

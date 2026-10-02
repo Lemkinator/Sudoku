@@ -39,6 +39,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -140,12 +141,12 @@ class MainActivityTabReselectTest {
         }
 
     private fun historySudoku(): Sudoku {
-        val size = 4
+        val size = SudokuSize.FOUR
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = Sudoku.MODE_NORMAL,
-            fields = MutableList(size * size) { index -> Field(position = Position.create(index, size), solution = 1) },
+            fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
         )
     }
 

@@ -19,12 +19,16 @@ package de.lemke.sudoku.domain.model
 import android.content.res.Resources
 import de.lemke.sudoku.R
 
-enum class Difficulty {
-    VERY_EASY,
-    EASY,
-    MEDIUM,
-    HARD,
-    EXPERT,
+enum class Difficulty(
+    private val givensFour: Int,
+    private val givensNine: Int,
+    private val givensSixteen: Int,
+) {
+    VERY_EASY(givensFour = 10, givensNine = 50, givensSixteen = 196),
+    EASY(givensFour = 9, givensNine = 40, givensSixteen = 176),
+    MEDIUM(givensFour = 7, givensNine = 35, givensSixteen = 156),
+    HARD(givensFour = 6, givensNine = 30, givensSixteen = 136),
+    EXPERT(givensFour = 4, givensNine = 23, givensSixteen = 116),
     ;
 
     // Persisted/serialized as this ordinal (see fromInt/getLocalString(ordinal, ...)); entry order is the contract.
@@ -35,13 +39,16 @@ enum class Difficulty {
     // total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
     // minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
     // more than 50, 36-49, 32-35, 28-31, 22-27
-    private fun givenNumbers(size: Int): Int = givenNumbersTable[size to this] ?: givenNumbersTable.getValue(DEFAULT_SIZE to this)
+    fun numbersToRemove(size: SudokuSize): Int = size.cellCount - givenNumbers(size)
 
-    fun numbersToRemove(size: Int): Int = size * size - givenNumbers(size)
+    private fun givenNumbers(size: SudokuSize): Int =
+        when (size) {
+            SudokuSize.FOUR -> givensFour
+            SudokuSize.NINE -> givensNine
+            SudokuSize.SIXTEEN -> givensSixteen
+        }
 
     companion object {
-        private const val DEFAULT_SIZE = 9
-
         fun fromInt(value: Int?): Difficulty = entries.getOrNull(value ?: -1) ?: MEDIUM
 
         fun getLocalString(
@@ -51,24 +58,5 @@ enum class Difficulty {
 
         val max: Int
             get() = Difficulty.entries.size - 1
-
-        private val givenNumbersTable: Map<Pair<Int, Difficulty>, Int> =
-            mapOf(
-                (4 to VERY_EASY) to 10,
-                (4 to EASY) to 9,
-                (4 to MEDIUM) to 7,
-                (4 to HARD) to 6,
-                (4 to EXPERT) to 4,
-                (9 to VERY_EASY) to 50,
-                (9 to EASY) to 40,
-                (9 to MEDIUM) to 35,
-                (9 to HARD) to 30,
-                (9 to EXPERT) to 23,
-                (16 to VERY_EASY) to 196,
-                (16 to EASY) to 176,
-                (16 to MEDIUM) to 156,
-                (16 to HARD) to 136,
-                (16 to EXPERT) to 116,
-            )
     }
 }

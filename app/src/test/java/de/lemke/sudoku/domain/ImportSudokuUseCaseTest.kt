@@ -17,6 +17,8 @@
 package de.lemke.sudoku.domain
 
 import android.app.Application
+import android.content.pm.ProviderInfo
+import android.database.sqlite.SQLiteException
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -24,6 +26,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
@@ -39,15 +42,21 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowContentResolver
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class ImportSudokuUseCaseTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     private val context = ApplicationProvider.getApplicationContext<Application>()
     private val saveSudoku = mockk<SaveSudokuUseCase>(relaxUnitFun = true)
     private val useCase = ImportSudokuUseCase(context, saveSudoku, UnconfinedTestDispatcher())
@@ -57,21 +66,19 @@ class ImportSudokuUseCaseTest {
         clearMocks(saveSudoku)
     }
 
-    private fun testSudoku(size: Int = 4): Sudoku =
+    private fun testSudoku(size: SudokuSize = SudokuSize.FOUR): Sudoku =
         Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = Sudoku.MODE_NORMAL,
             fields =
-                MutableList(size * size) { i ->
-                    Field(position = Position.create(i, size), solution = (i % size) + 1, value = (i % size) + 1, given = true)
+                MutableList(size.cellCount) { i ->
+                    Field(position = Position.create(i, size), solution = (i % size.value) + 1, value = (i % size.value) + 1, given = true)
                 },
         )
 
     private fun uriFor(content: String): Uri {
-        val file = File.createTempFile("sudoku-import", ".json")
-        file.writeText(content)
-        file.deleteOnExit()
+        val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(content) }
         return Uri.fromFile(file)
     }
 
@@ -122,6 +129,54 @@ class ImportSudokuUseCaseTest {
     fun `returns null instead of throwing when the file cannot be opened`() =
         runTest {
             val uri = Uri.fromFile(File(context.cacheDir, "does-not-exist-${System.nanoTime()}.json"))
+
+            useCase(uri).shouldBeNull()
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
+    fun `returns null and never saves when the content is not parseable JSON`() =
+        runTest {
+            val uri = uriFor("{not json")
+
+            useCase(uri).shouldBeNull()
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
+    fun `returns null when saving the imported sudoku fails in the database`() =
+        runTest {
+            val uri = uriFor(sudokuToExport(testSudoku()).stringifyJSON())
+            coEvery { saveSudoku(any(), any()) } throws SQLiteException("boom")
+
+            useCase(uri).shouldBeNull()
+        }
+
+    @Test
+    fun `returns null instead of crashing when the content provider throws an unexpected exception`() =
+        runTest {
+            val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(sudokuToExport(testSudoku()).stringifyJSON()) }
+            val provider = FakeDocumentProvider(file, "application/json", true, UnsupportedOperationException("provider bug"))
+            provider.attachInfo(context, ProviderInfo().apply { authority = "import.providerbug" })
+            ShadowContentResolver.registerProviderInternal("import.providerbug", provider)
+            val uri = Uri.parse("content://import.providerbug/document/import")
+
+            useCase(uri).shouldBeNull()
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+    @Test
+    fun `returns null and never saves when the content provider opens the uri without content`() =
+        runTest {
+            val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(sudokuToExport(testSudoku()).stringifyJSON()) }
+            val provider = FakeDocumentProvider(file, "application/json", true, null, hasContent = false)
+            provider.attachInfo(context, ProviderInfo().apply { authority = "import.nocontent" })
+            ShadowContentResolver.registerProviderInternal("import.nocontent", provider)
+            val uri = Uri.parse("content://import.nocontent/document/import")
+            context.contentResolver.openInputStream(uri).shouldBeNull()
 
             useCase(uri).shouldBeNull()
 

@@ -14,18 +14,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
-
-    <androidx.appcompat.widget.SeslProgressBar
-        android:id="@+id/statisticsProgressBar"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="16dp"
-        android:layout_gravity="bottom"
-        android:indeterminate="true" />
+    android:layout_height="match_parent">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/statisticsListRecycler"
@@ -35,4 +26,4 @@
         android:paddingHorizontal="10dp"
         android:scrollbarStyle="outsideOverlay" />
 
-</LinearLayout>
+</FrameLayout>

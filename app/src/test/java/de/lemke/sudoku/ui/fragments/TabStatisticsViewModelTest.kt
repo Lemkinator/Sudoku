@@ -63,12 +63,12 @@ class TabStatisticsViewModelTest : ShouldSpec(
             viewModel.state.value shouldBe TabStatisticsUiState()
             coVerify(exactly = 0) { calculateStatistics(any()) }
             viewModel.state.test {
-                expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = statistics, isLoading = false)
+                expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = statistics)
                 sudokusFlow.subscriptionCount.value shouldBe 1
             }
         }
 
-        should("stays loading until the first statistics, then keeps them shown without loading while recomputing") {
+        should("shows no statistics until the first ones, then keeps them shown while recomputing") {
             val sudokusFlow = MutableSharedFlow<List<Sudoku>>(extraBufferCapacity = 1)
             every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
             val firstDeferred = CompletableDeferred<SudokuStatistics>()
@@ -83,24 +83,24 @@ class TabStatisticsViewModelTest : ShouldSpec(
                 sudokusFlow.emit(emptyList())
                 val firstStats = mockk<SudokuStatistics>()
                 firstDeferred.complete(firstStats)
-                awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false)
+                awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats)
 
                 val sudokuList = listOf(mockk<Sudoku>())
                 val secondDeferred = CompletableDeferred<SudokuStatistics>()
                 coEvery { calculateStatistics(sudokuList) } coAnswers { secondDeferred.await() }
                 sudokusFlow.emit(sudokuList)
                 expectNoEvents()
-                viewModel.state.value shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false)
+                viewModel.state.value shouldBe TabStatisticsUiState(statistics = firstStats)
 
                 val secondStats = mockk<SudokuStatistics>()
                 secondDeferred.complete(secondStats)
-                awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats, isLoading = false)
+                awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats)
 
                 cancelAndIgnoreRemainingEvents()
             }
         }
 
-        should("collecting again after the stop timeout recomputes the shown statistics without loading") {
+        should("collecting again after the stop timeout recomputes the shown statistics") {
             runTest {
                 val sudokusFlow = MutableSharedFlow<List<Sudoku>>(replay = 1)
                 every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
@@ -108,7 +108,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
                 coEvery { calculateStatistics(emptyList()) } returns firstStats
                 sudokusFlow.emit(emptyList())
                 val viewModel = newViewModel()
-                viewModel.state.test { expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false) }
+                viewModel.state.test { expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = firstStats) }
                 advanceTimeBy(5_001)
                 runCurrent()
                 sudokusFlow.subscriptionCount.value shouldBe 0
@@ -116,39 +116,39 @@ class TabStatisticsViewModelTest : ShouldSpec(
                 coEvery { calculateStatistics(emptyList()) } coAnswers { recomputed.await() }
 
                 viewModel.state.test {
-                    awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats, isLoading = false)
+                    awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats)
                     runCurrent()
                     sudokusFlow.subscriptionCount.value shouldBe 1
                     expectNoEvents()
                     val secondStats = mockk<SudokuStatistics>()
                     recomputed.complete(secondStats)
                     runCurrent()
-                    awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats, isLoading = false)
+                    awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats)
                 }
             }
         }
 
-        should("init sets isLoading false and emits ShowLoadError when observeSudokusAndStatisticsFilterFlags throws") {
+        should("init keeps no statistics and emits ShowLoadError when observeSudokusAndStatisticsFilterFlags throws") {
             every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw IllegalStateException("observe failed") }
 
             val viewModel = newViewModel()
 
             viewModel.state.test {
-                expectMostRecentItem() shouldBe TabStatisticsUiState(isLoading = false)
+                expectMostRecentItem() shouldBe TabStatisticsUiState()
             }
             viewModel.events.test {
                 awaitItem() shouldBe TabStatisticsEvent.ShowLoadError
             }
         }
 
-        should("init sets isLoading false and emits ShowLoadError when calculateStatistics throws") {
+        should("init keeps no statistics and emits ShowLoadError when calculateStatistics throws") {
             every { observeSudokusAndStatisticsFilterFlags() } returns flowOf(emptyList())
             coEvery { calculateStatistics(emptyList()) } throws RuntimeException("calculate failed")
 
             val viewModel = newViewModel()
 
             viewModel.state.test {
-                expectMostRecentItem() shouldBe TabStatisticsUiState(isLoading = false)
+                expectMostRecentItem() shouldBe TabStatisticsUiState()
             }
             viewModel.events.test {
                 awaitItem() shouldBe TabStatisticsEvent.ShowLoadError

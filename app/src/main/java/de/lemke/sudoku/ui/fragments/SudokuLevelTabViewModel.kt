@@ -30,6 +30,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
@@ -57,6 +58,8 @@ sealed interface SudokuLevelTabEvent {
     data class RevealSudoku(val sudokuId: SudokuId) : SudokuLevelTabEvent
 
     data object ShowLoadError : SudokuLevelTabEvent
+
+    data object ShowStartError : SudokuLevelTabEvent
 }
 
 @HiltViewModel
@@ -68,7 +71,10 @@ class SudokuLevelTabViewModel @Inject constructor(
     private val saveSudoku: SaveSudokuUseCase,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val size: Int = savedStateHandle["size"] ?: Sudoku.SIZE_4X4
+    private val size: SudokuSize =
+        SudokuSize.fromValue(
+            checkNotNull(savedStateHandle.get<Int>(SudokuLevelTab.KEY_SIZE)) { "Missing ${SudokuLevelTab.KEY_SIZE} argument" },
+        )
 
     val state: StateFlow<SudokuLevelTabUiState> =
         flow {
@@ -93,6 +99,7 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private var nextLevelSudoku: Sudoku? = null
     private var revealedNextLevelId: SudokuId? = null
+    private var sudokuStarting = false
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
@@ -136,7 +143,36 @@ class SudokuLevelTabViewModel @Inject constructor(
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
-    suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
-        if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku)
+    suspend fun confirmSudokuStart(
+        position: Int,
+        sudoku: Sudoku,
+    ): Boolean {
+        if (sudokuStarting) return false
+        sudokuStarting = true
+        if (position == 0 && state.value.hasNextLevelToStart) sudokuStarting = saveNextLevel(sudoku)
+        return sudokuStarting
+    }
+
+    private suspend fun saveNextLevel(sudoku: Sudoku): Boolean {
+        val saveResult =
+            viewModelScope
+                .async {
+                    runCatching {
+                        val levelUnsaved = getMaxSudokuLevel(size) < sudoku.modeLevel
+                        if (levelUnsaved) saveSudoku(sudoku)
+                        levelUnsaved
+                    }
+                }.await()
+        val saveFailure = saveResult.exceptionOrNull()
+        if (saveFailure is CancellationException) {
+            sudokuStarting = false
+            throw saveFailure
+        }
+        if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowStartError)
+        return saveResult.getOrDefault(false)
+    }
+
+    fun onTabResumed() {
+        sudokuStarting = false
     }
 }

@@ -16,8 +16,10 @@
 
 package de.lemke.sudoku.ui.fragments
 
+import android.database.sqlite.SQLiteFullException
 import android.os.Looper
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.BindValue
@@ -26,12 +28,18 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
-import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.TestPersistenceModule
+import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.FieldDb
+import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
+import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
@@ -39,9 +47,9 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -49,11 +57,13 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -61,6 +71,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -91,16 +102,47 @@ class SudokuLevelTabTest {
     @JvmField
     val solvedBoardGenerator: SolvedBoardGenerator = PatternSolvedBoardGenerator()
 
+    private var insertGate = CompletableDeferred(Unit)
+    private var insertCalls = 0
+    private var insertFailure: Exception? = null
+    private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
+    private val sudokuDao = database.sudokuDao()
+
+    @BindValue
+    @JvmField
+    val sudokusRepository: SudokusRepository =
+        SudokusRepository(
+            object : SudokuDao by sudokuDao {
+                override suspend fun insert(
+                    sudoku: SudokuDb,
+                    fields: List<FieldDb>,
+                ) {
+                    insertCalls++
+                    insertFailure?.let { throw it }
+                    insertGate.await()
+                    sudokuDao.insert(sudoku, fields)
+                }
+            },
+        )
+
     @Inject
-    lateinit var settings: SettingsRepository
+    lateinit var settings: UserSettings
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
+
+    @Inject
+    lateinit var getMaxSudokuLevel: GetMaxSudokuLevelUseCase
 
     @Before
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
     }
 
     private fun launch(block: (SudokuLevelTab) -> Unit) {
@@ -110,7 +152,7 @@ class SudokuLevelTabTest {
                 val fragment =
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<SudokuLevelTab>()
-                        .first { it.arguments?.getInt("size") == SIZE_4X4 }
+                        .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
                 block(fragment)
             }
         }
@@ -130,17 +172,17 @@ class SudokuLevelTabTest {
         level: Int,
         completed: Boolean,
     ): Sudoku {
-        val size = SIZE_4X4
-        val blockSize = 2
+        val size = SudokuSize.FOUR
+        val blockSize = size.blockSize
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = level,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     Field(
                         position = Position.create(index, size),
                         solution = solution,
@@ -181,6 +223,149 @@ class SudokuLevelTabTest {
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
         }
+
+    @Test
+    fun `confirming the auto-generated next level keeps the level list in place until the game starts`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            nextLevel.modeLevel shouldBe 2
+            fragment.binding.sudokuLevelsRecycler.top shouldBe 0
+            insertGate = CompletableDeferred()
+
+            clickItem(fragment, 0, nextLevel)
+
+            fragment.binding.sudokuLevelsRecycler.top shouldBe 0
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+
+            insertGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
+            val started = shadowOf(fragment.requireActivity()).nextStartedActivity
+            started.shouldNotBeNull()
+            started.component?.className shouldBe SudokuActivity::class.java.name
+        }
+    }
+
+    @Test
+    fun `tapping the auto-generated next level twice while it saves starts one game and saves it once`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            insertGate = CompletableDeferred()
+            insertCalls = 0
+
+            clickItem(fragment, 0, nextLevel)
+            clickItem(fragment, 0, nextLevel)
+            insertGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val startedActivities = generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList()
+            startedActivities.size shouldBe 1
+            startedActivities.single().component?.className shouldBe SudokuActivity::class.java.name
+            insertCalls shouldBe 1
+        }
+    }
+
+    @Test
+    fun `tapping the auto-generated next level again after it saved starts one game and saves it once`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            insertCalls = 0
+
+            clickItem(fragment, 0, nextLevel)
+            clickItem(fragment, 0, nextLevel)
+
+            val startedActivities = generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList()
+            startedActivities.size shouldBe 1
+            insertCalls shouldBe 1
+        }
+    }
+
+    @Test
+    fun `a failed next-level save starts no game and shows the start error`() {
+        settings.currentLevelTab = 0
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            insertFailure = SQLiteFullException("database or disk is full")
+
+            clickItem(fragment, 0, nextLevel)
+
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+            runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 1
+            ShadowToast.getTextOfLatestToast() shouldBe "Could not start the level"
+        }
+    }
+
+    @Test
+    fun `tapping an existing level twice starts one game`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val level =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+
+            clickItem(fragment, 0, level)
+            clickItem(fragment, 0, level)
+
+            generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
+        }
+    }
+
+    @Test
+    fun `a level tap after returning to the tab starts a game again`() {
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+            lateinit var fragment: SudokuLevelTab
+            scenario.onActivity { activity ->
+                fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<SudokuLevelTab>()
+                        .single { it.isResumed }
+            }
+            val firstLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            clickItem(fragment, 0, firstLevel)
+            clickItem(fragment, 0, firstLevel)
+            generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+            clickItem(fragment, 0, firstLevel)
+
+            generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
+        }
+    }
 
     @Test
     fun `clicking a level at a non-zero position starts the game without confirming a new one`() {

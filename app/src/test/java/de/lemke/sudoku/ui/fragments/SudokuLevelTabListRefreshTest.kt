@@ -46,10 +46,9 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
@@ -162,13 +161,15 @@ class SudokuLevelTabListRefreshTest {
             created = LocalDateTime.of(2026, 1, 15, 9, 0),
         )
 
-    private fun dailySudoku(): Sudoku =
-        Sudoku.create(
-            size = SIZE_9X9,
+    private fun dailySudoku(): Sudoku {
+        val size = SudokuSize.NINE
+        return Sudoku.create(
+            size = size,
             difficulty = Difficulty.EASY,
             modeLevel = Sudoku.MODE_DAILY,
-            fields = MutableList(SIZE_9X9 * SIZE_9X9) { Field(Position.create(it, SIZE_9X9), solution = it % SIZE_9X9 + 1) },
+            fields = MutableList(size.cellCount) { Field(Position.create(it, size), solution = it % size.value + 1) },
         )
+    }
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
@@ -200,7 +201,7 @@ class SudokuLevelTabListRefreshTest {
     @Test
     fun `the next level after a daily-only 9x9 history is level 1`() {
         save(dailySudoku())
-        val viewModel = newViewModel(SIZE_9X9)
+        val viewModel = newViewModel(SudokuSize.NINE)
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
             idle()
@@ -214,12 +215,19 @@ class SudokuLevelTabListRefreshTest {
     }
 
     @Test
-    fun `confirming a next level whose level is already saved keeps the saved progress`() {
+    fun `confirming a next level whose level was saved meanwhile keeps the saved progress`() {
         save(completedLevelOne())
+        val viewModel = newViewModel()
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
+        idle()
+        collection.cancel()
+        val nextLevel = topSudoku(viewModel)
+        nextLevel.modeLevel shouldBe 2
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
-        runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
+        runBlocking { viewModel.confirmSudokuStart(0, nextLevel) } shouldBe true
 
+        runBlocking { getSudoku(nextLevel.id) } shouldBe null
         val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()
         saved.errorsMade shouldBe 2
         saved.seconds shouldBe 75
@@ -229,11 +237,19 @@ class SudokuLevelTabListRefreshTest {
     @Test
     fun `confirming a next level above the saved max level saves it`() {
         save(completedLevelOne())
+        val viewModel = newViewModel()
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
+        try {
+            idle()
+            val nextLevel = topSudoku(viewModel)
 
-        runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
+            runBlocking { viewModel.confirmSudokuStart(0, nextLevel) } shouldBe true
 
-        runBlocking { getMaxSudokuLevel(SIZE_4X4) } shouldBe 2
-        runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull().modeLevel shouldBe 2
+            runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
+            runBlocking { getSudoku(nextLevel.id) }.shouldNotBeNull().modeLevel shouldBe 2
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test
@@ -299,14 +315,14 @@ class SudokuLevelTabListRefreshTest {
         }
     }
 
-    private fun newViewModel(size: Int = SIZE_4X4) =
+    private fun newViewModel(size: SudokuSize = SudokuSize.FOUR) =
         SudokuLevelTabViewModel(
             initSudokuLevel,
             observeSudokuLevel,
             getMaxSudokuLevel,
             generateSudokuLevel,
             saveSudoku,
-            SavedStateHandle(mapOf("size" to size)),
+            SavedStateHandle(mapOf(SudokuLevelTab.KEY_SIZE to size.value)),
         )
 
     private fun topSudoku(viewModel: SudokuLevelTabViewModel): Sudoku =
@@ -318,7 +334,7 @@ class SudokuLevelTabListRefreshTest {
     private fun levelTab(activity: SudokuLevelActivity) =
         activity.supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
-            .first { it.arguments?.getInt("size") == SIZE_4X4 }
+            .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
 
     private fun levelList(activity: SudokuLevelActivity) = levelTab(activity).binding.sudokuLevelsRecycler
 }

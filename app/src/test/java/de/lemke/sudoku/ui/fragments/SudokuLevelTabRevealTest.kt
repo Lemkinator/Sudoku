@@ -42,11 +42,9 @@ import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_16X16
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_4X4
-import de.lemke.sudoku.domain.model.Sudoku.Companion.SIZE_9X9
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.shouldBe
@@ -125,7 +123,7 @@ class SudokuLevelTabRevealTest {
             scenario.onActivity { activity ->
                 activity.levelList().firstVisiblePosition() shouldBe 0
                 activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
-                activity.progressBarShown(SIZE_4X4) shouldBe false
+                activity.progressBarShown(SudokuSize.FOUR) shouldBe false
             }
         }
     }
@@ -152,7 +150,7 @@ class SudokuLevelTabRevealTest {
                 activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
                 activity.topLevelId() shouldBe nextLevelId
                 activity.committedLevelId(1) shouldBe solvedId
-                activity.progressBarShown(SIZE_4X4) shouldBe false
+                activity.progressBarShown(SudokuSize.FOUR) shouldBe false
             }
         }
     }
@@ -229,7 +227,7 @@ class SudokuLevelTabRevealTest {
                 activity.levelList().firstVisiblePosition() shouldBe scrolledTo
                 activity.topLevelId() shouldBe nextLevelId
                 activity.levelList().adapter?.itemCount shouldBe COMPLETED_LEVELS + 1
-                activity.progressBarShown(SIZE_4X4) shouldBe false
+                activity.progressBarShown(SudokuSize.FOUR) shouldBe false
             }
         }
     }
@@ -244,21 +242,21 @@ class SudokuLevelTabRevealTest {
                 scenario.recreate()
                 awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() } }
             }
-            listOf(1 to SIZE_9X9, 2 to SIZE_16X16, 0 to SIZE_4X4).forEach { (page, size) ->
+            listOf(1 to SudokuSize.NINE, 2 to SudokuSize.SIXTEEN, 0 to SudokuSize.FOUR).forEach { (page, size) ->
                 scenario.onActivity { it.findViewById<ViewPager2>(R.id.viewPagerLevel).currentItem = page }
                 awaitUntil { scenario.read { it.levelTab(size).lifecycle.currentState == Lifecycle.State.RESUMED } }
-                scenario.read { it.levelList(size).firstVisiblePosition() } shouldBe if (size == SIZE_4X4) scrolledTo else 0
+                scenario.read { it.levelList(size).firstVisiblePosition() } shouldBe if (size == SudokuSize.FOUR) scrolledTo else 0
             }
 
             scenario.onActivity { activity ->
                 activity.levelList().firstVisiblePosition() shouldBe scrolledTo
                 activity.topLevelId() shouldBe nextLevelId
                 activity.levelList().adapter?.itemCount shouldBe COMPLETED_LEVELS + 1
-                listOf(SIZE_4X4, SIZE_9X9, SIZE_16X16).forEach { size ->
+                SudokuSize.entries.forEach { size ->
                     activity.progressBarShown(size) shouldBe false
                 }
-                activity.levelTab(SIZE_9X9).sudokuListAdapter.itemCount shouldBe 1
-                activity.levelTab(SIZE_16X16).sudokuListAdapter.itemCount shouldBe 1
+                activity.levelTab(SudokuSize.NINE).sudokuListAdapter.itemCount shouldBe 1
+                activity.levelTab(SudokuSize.SIXTEEN).sudokuListAdapter.itemCount shouldBe 1
             }
         }
     }
@@ -331,20 +329,21 @@ class SudokuLevelTabRevealTest {
         return result.single()
     }
 
-    private fun SudokuLevelActivity.levelTab(size: Int): SudokuLevelTab =
+    private fun SudokuLevelActivity.levelTab(size: SudokuSize): SudokuLevelTab =
         supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
-            .first { it.arguments?.getInt("size") == size }
+            .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == size.value }
 
-    private fun SudokuLevelActivity.progressBarShown(size: Int): Boolean = levelTab(size).binding.tabLevelProgressBar.isVisible
+    private fun SudokuLevelActivity.progressBarShown(size: SudokuSize): Boolean = levelTab(size).binding.tabLevelProgressBar.isVisible
 
-    private fun SudokuLevelActivity.levelList(size: Int = SIZE_4X4): RecyclerView = levelTab(size).binding.sudokuLevelsRecycler
+    private fun SudokuLevelActivity.levelList(size: SudokuSize = SudokuSize.FOUR): RecyclerView =
+        levelTab(size).binding.sudokuLevelsRecycler
 
     private fun SudokuLevelActivity.committedLevelId(position: Int): SudokuId =
-        (levelTab(SIZE_4X4).sudokuListAdapter.currentList[position] as SudokuItem).sudoku.id
+        (levelTab(SudokuSize.FOUR).sudokuListAdapter.currentList[position] as SudokuItem).sudoku.id
 
     private fun SudokuLevelActivity.topLevelItem(): SudokuItem =
-        levelTab(SIZE_4X4)
+        levelTab(SudokuSize.FOUR)
             .viewModel.state.value.sudokuLevel
             .first() as SudokuItem
 
@@ -353,7 +352,7 @@ class SudokuLevelTabRevealTest {
     private fun SudokuLevelActivity.topLevelLabel(): String = topLevelItem().label
 
     private fun SudokuLevelActivity.adapterHoldsViewModelLevels(): Boolean {
-        val tab = levelTab(SIZE_4X4)
+        val tab = levelTab(SudokuSize.FOUR)
         val levels = tab.viewModel.state.value.sudokuLevel
         val committed = tab.sudokuListAdapter.currentList
         return committed.size == levels.size && levels.indices.all { committed[it] === levels[it] }

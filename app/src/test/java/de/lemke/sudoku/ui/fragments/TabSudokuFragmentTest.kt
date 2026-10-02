@@ -48,16 +48,17 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,6 +68,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -120,20 +122,20 @@ class TabSudokuFragmentTest {
     }
 
     private fun formulaicSudoku(
-        size: Int = 4,
+        size: SudokuSize = SudokuSize.FOUR,
         modeLevel: Int = MODE_NORMAL,
         allCorrect: Boolean = false,
     ): Sudoku {
-        val blockSize = sqrt(size.toDouble()).toInt()
+        val blockSize = size.blockSize
         return Sudoku.create(
             size = size,
             difficulty = Difficulty.VERY_EASY,
             modeLevel = modeLevel,
             fields =
-                MutableList(size * size) { index ->
-                    val row = index / size
-                    val col = index % size
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size + 1
+                MutableList(size.cellCount) { index ->
+                    val row = index / size.value
+                    val col = index % size.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
                     val given = index % 3 == 0 || allCorrect
                     Field(
                         position = Position.create(index, size),
@@ -156,6 +158,19 @@ class TabSudokuFragmentTest {
                 block(fragment)
             }
         }
+    }
+
+    private fun failOnUncaughtException(block: () -> Unit) {
+        val thread = Thread.currentThread()
+        val previous = thread.uncaughtExceptionHandler
+        val uncaught = mutableListOf<Throwable>()
+        thread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e -> uncaught += e }
+        try {
+            block()
+        } finally {
+            thread.uncaughtExceptionHandler = previous
+        }
+        uncaught.shouldBeEmpty()
     }
 
     private fun click(view: View) {
@@ -220,6 +235,12 @@ class TabSudokuFragmentTest {
         }
 
     @Test
+    fun `the size seekbar offers one step per sudoku size`() =
+        launch { fragment ->
+            fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).max shouldBe 2
+        }
+
+    @Test
     fun `changing the size seekbar persists the slider value`() =
         launch { fragment ->
             val seekBar = fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar)
@@ -250,6 +271,58 @@ class TabSudokuFragmentTest {
             started.component?.className shouldBe SudokuActivity::class.java.name
         }
     }
+
+    @Test
+    fun `draining the main looper before MainActivity starts leaves the continue button to the resumed view`() =
+        failOnUncaughtException {
+            runBlocking { saveSudoku(formulaicSudoku()) }
+            Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+                controller.create()
+                shadowOf(Looper.getMainLooper()).idle()
+                controller.start().resume()
+                shadowOf(Looper.getMainLooper()).idle()
+                controller
+                    .get()
+                    .findViewById<View>(R.id.continueGameButton)
+                    .isVisible
+                    .shouldBeTrue()
+            }
+        }
+
+    @Test
+    fun `showing the sudoku tab before its view exists refreshes it once the view is resumed`() =
+        failOnUncaughtException {
+            runBlocking { saveSudoku(formulaicSudoku()) }
+            Robolectric.buildActivity(MainActivity::class.java).use { controller ->
+                controller.create()
+                controller.get().onTabItemSelected(0)
+                controller.get().onTabItemSelected(1)
+                shadowOf(Looper.getMainLooper()).idle()
+                controller.start().resume()
+                shadowOf(Looper.getMainLooper()).idle()
+                controller
+                    .get()
+                    .findViewById<View>(R.id.continueGameButton)
+                    .isVisible
+                    .shouldBeTrue()
+            }
+        }
+
+    @Test
+    fun `switching back to the sudoku tab refreshes the continue button`() =
+        launch { fragment ->
+            val activity = fragment.requireActivity() as MainActivity
+            activity.onTabItemSelected(0)
+            shadowOf(Looper.getMainLooper()).idle()
+            runBlocking { saveSudoku(formulaicSudoku()) }
+            activity.onTabItemSelected(1)
+            shadowOf(Looper.getMainLooper()).idle()
+            fragment
+                .requireView()
+                .findViewById<View>(R.id.continueGameButton)
+                .isVisible
+                .shouldBeTrue()
+        }
 
     @Test
     fun `onResume hides the continue button when there is nothing to continue`() =
@@ -343,7 +416,7 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 0
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().size shouldBe Sudoku.SIZE_4X4
+            runBlocking { getAllSudokus() }.single().size shouldBe SudokuSize.FOUR
         }
 
     @Test
@@ -351,6 +424,6 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 2
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().size shouldBe Sudoku.SIZE_16X16
+            runBlocking { getAllSudokus() }.single().size shouldBe SudokuSize.SIXTEEN
         }
 }

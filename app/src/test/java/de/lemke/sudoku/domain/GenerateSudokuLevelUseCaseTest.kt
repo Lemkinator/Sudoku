@@ -22,6 +22,7 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
@@ -54,9 +55,9 @@ class GenerateSudokuLevelUseCaseTest : ShouldSpec(
                 )
 
             cases.forEach { (level, expectedDifficulty) ->
-                coEvery { generateFields(9, expectedDifficulty) } returns mutableListOf<Field>()
+                coEvery { generateFields(SudokuSize.NINE, expectedDifficulty) } returns mutableListOf<Field>()
 
-                val sudoku = useCase(9, level)
+                val sudoku = useCase(SudokuSize.NINE, level)
 
                 sudoku.difficulty shouldBe expectedDifficulty
                 sudoku.modeLevel shouldBe level

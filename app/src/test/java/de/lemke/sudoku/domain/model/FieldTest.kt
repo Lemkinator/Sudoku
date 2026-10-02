@@ -24,7 +24,7 @@ class FieldTest : ShouldSpec(
         should("keep the value in the initial field when the field is given") {
             val field =
                 Field(
-                    position = Position.create(0, 4),
+                    position = Position.create(0, SudokuSize.FOUR),
                     solution = 3,
                     value = 3,
                     given = true,
@@ -43,7 +43,7 @@ class FieldTest : ShouldSpec(
         should("clear the value in the initial field when the field is not given") {
             val field =
                 Field(
-                    position = Position.create(0, 4),
+                    position = Position.create(0, SudokuSize.FOUR),
                     solution = 3,
                     value = 3,
                     given = false,
@@ -60,7 +60,7 @@ class FieldTest : ShouldSpec(
         }
 
         should("add a note and sort it into place, returning true") {
-            val field = Field(position = Position.create(0, 4), solution = 1, notes = mutableListOf('1', '3'))
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, notes = mutableListOf('1', '3'))
 
             val added = field.toggleNote(2)
 
@@ -69,7 +69,7 @@ class FieldTest : ShouldSpec(
         }
 
         should("remove an existing note on toggle, returning false") {
-            val field = Field(position = Position.create(0, 4), solution = 1, notes = mutableListOf('1', '2', '3'))
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, notes = mutableListOf('1', '2', '3'))
 
             val added = field.toggleNote(2)
 
@@ -78,14 +78,14 @@ class FieldTest : ShouldSpec(
         }
 
         should("return false when toggling a note for null") {
-            val field = Field(position = Position.create(0, 4), solution = 1)
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1)
 
             field.toggleNote(null) shouldBe false
             field.notes shouldBe mutableListOf()
         }
 
         should("remove a note via removeNote") {
-            val field = Field(position = Position.create(0, 4), solution = 1, notes = mutableListOf('1', '2'))
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, notes = mutableListOf('1', '2'))
 
             val removed = field.removeNote(1)
 
@@ -94,13 +94,13 @@ class FieldTest : ShouldSpec(
         }
 
         should("report false from removeNote when the note wasn't present") {
-            val field = Field(position = Position.create(0, 4), solution = 1, notes = mutableListOf('2'))
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, notes = mutableListOf('2'))
 
             field.removeNote(1) shouldBe false
         }
 
         should("set the value to the solution and mark hint used") {
-            val field = Field(position = Position.create(0, 4), solution = 4)
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 4)
 
             field.setHint()
 
@@ -111,7 +111,7 @@ class FieldTest : ShouldSpec(
         should("copy with all defaulted params producing an equal but distinct field") {
             val field =
                 Field(
-                    position = Position.create(0, 4),
+                    position = Position.create(0, SudokuSize.FOUR),
                     solution = 2,
                     value = 2,
                     given = true,
@@ -133,14 +133,14 @@ class FieldTest : ShouldSpec(
         should("copy with overridden params replacing the originals") {
             val field =
                 Field(
-                    position = Position.create(0, 4),
+                    position = Position.create(0, SudokuSize.FOUR),
                     solution = 2,
                     value = 2,
                     given = true,
                     hint = true,
                     notes = mutableListOf('1'),
                 )
-            val newPosition = Position.create(1, 4)
+            val newPosition = Position.create(1, SudokuSize.FOUR)
 
             val copy =
                 field.copy(
@@ -163,7 +163,7 @@ class FieldTest : ShouldSpec(
         should("keep the value on reset when given") {
             val field =
                 Field(
-                    position = Position.create(0, 4),
+                    position = Position.create(0, SudokuSize.FOUR),
                     solution = 1,
                     value = 1,
                     given = true,
@@ -181,7 +181,7 @@ class FieldTest : ShouldSpec(
         should("clear the value on reset when not given") {
             val field =
                 Field(
-                    position = Position.create(0, 4),
+                    position = Position.create(0, SudokuSize.FOUR),
                     solution = 1,
                     value = 1,
                     given = false,
@@ -197,21 +197,21 @@ class FieldTest : ShouldSpec(
         }
 
         should("report error when the value is set but doesn't match the solution") {
-            val field = Field(position = Position.create(0, 4), solution = 1, value = 2)
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 2)
 
             field.error shouldBe true
             field.correct shouldBe false
         }
 
         should("report correct when the value matches the solution") {
-            val field = Field(position = Position.create(0, 4), solution = 1, value = 1)
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 1)
 
             field.error shouldBe false
             field.correct shouldBe true
         }
 
         should("report neither error nor correct when the value is null") {
-            val field = Field(position = Position.create(0, 4), solution = 1, value = null)
+            val field = Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = null)
 
             field.error shouldBe false
             field.correct shouldBe false

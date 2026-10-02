@@ -21,15 +21,16 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
-    if (sudokuWithFields == null || sudokuWithFields.sudoku.size <= 0) return null
+    val size = sudokuWithFields?.let { SudokuSize.fromValueOrNull(it.sudoku.size) }
+    if (sudokuWithFields == null || size == null) return null
     val fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList()
-    val expectedFieldCount = sudokuWithFields.sudoku.size * sudokuWithFields.sudoku.size
-    return fields.takeIf { it.size == expectedFieldCount }?.let {
+    return fields.takeIf { it.size == size.cellCount }?.let {
         Sudoku(
             id = SudokuId(sudokuWithFields.sudoku.id),
-            size = sudokuWithFields.sudoku.size,
+            size = size,
             difficulty = Difficulty.fromInt(sudokuWithFields.sudoku.difficulty),
             modeLevel = sudokuWithFields.sudoku.modeLevel,
             created = sudokuWithFields.sudoku.created,
@@ -54,7 +55,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
     SudokuDb(
         id = sudoku.id.value,
-        size = sudoku.size,
+        size = sudoku.size.value,
         difficulty = sudoku.difficulty.ordinal,
         modeLevel = sudoku.modeLevel,
         created = sudoku.created,
@@ -71,12 +72,13 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         errorsMade = sudoku.errorsMade,
     )
 
-fun fieldFromDb(fieldDb: FieldDb?): Field? =
-    if (fieldDb?.solution == null || fieldDb.gameSize <= 0) {
+fun fieldFromDb(fieldDb: FieldDb?): Field? {
+    val size = fieldDb?.let { SudokuSize.fromValueOrNull(it.gameSize) }
+    return if (fieldDb?.solution == null || size == null) {
         null
     } else {
         Field(
-            position = Position.create(fieldDb.index, fieldDb.gameSize),
+            position = Position.create(fieldDb.index, size),
             solution = fieldDb.solution,
             value = fieldDb.value,
             given = fieldDb.given,
@@ -84,6 +86,7 @@ fun fieldFromDb(fieldDb: FieldDb?): Field? =
             notes = fieldDb.notes.toMutableList(),
         )
     }
+}
 
 fun fieldToDb(
     field: Field,
@@ -92,7 +95,7 @@ fun fieldToDb(
     FieldDb(
         sudokuId = sudokuId.value,
         index = field.position.index,
-        gameSize = field.position.size,
+        gameSize = field.position.size.value,
         solution = field.solution,
         value = field.value,
         given = field.given,
@@ -101,35 +104,37 @@ fun fieldToDb(
     )
 
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
-    val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, sudokuExport.size) }.toMutableList()
-    if (fields.size != sudokuExport.size * sudokuExport.size) return null
-    return Sudoku(
-        id = SudokuId(sudokuExport.id),
-        size = sudokuExport.size,
-        difficulty = Difficulty.fromInt(sudokuExport.difficulty),
-        modeLevel = sudokuExport.modeLevel,
-        created = sudokuExport.created,
-        updated = sudokuExport.updated,
-        seconds = sudokuExport.seconds,
-        regionalHighlightingUsed = sudokuExport.regionalHighlightingUsed == true,
-        numberHighlightingUsed = sudokuExport.numberHighlightingUsed == true,
-        eraserUsed = sudokuExport.eraserUsed == true,
-        isChecklist = sudokuExport.isChecklist == true,
-        isReverseChecklist = sudokuExport.isReverseChecklist == true,
-        checklistNumber = sudokuExport.checklistNumber ?: 0,
-        hintsUsed = sudokuExport.hintsUsed ?: 0,
-        notesMade = sudokuExport.notesMade ?: 0,
-        errorsMade = sudokuExport.errorsMade ?: 0,
-        timer = null,
-        gameListener = null,
-        fields = fields,
-    )
+    val size = SudokuSize.fromValueOrNull(sudokuExport.size) ?: return null
+    val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, size) }.toMutableList()
+    return fields.takeIf { it.size == size.cellCount }?.let {
+        Sudoku(
+            id = SudokuId(sudokuExport.id),
+            size = size,
+            difficulty = Difficulty.fromInt(sudokuExport.difficulty),
+            modeLevel = sudokuExport.modeLevel,
+            created = sudokuExport.created,
+            updated = sudokuExport.updated,
+            seconds = sudokuExport.seconds,
+            regionalHighlightingUsed = sudokuExport.regionalHighlightingUsed == true,
+            numberHighlightingUsed = sudokuExport.numberHighlightingUsed == true,
+            eraserUsed = sudokuExport.eraserUsed == true,
+            isChecklist = sudokuExport.isChecklist == true,
+            isReverseChecklist = sudokuExport.isReverseChecklist == true,
+            checklistNumber = sudokuExport.checklistNumber ?: 0,
+            hintsUsed = sudokuExport.hintsUsed ?: 0,
+            notesMade = sudokuExport.notesMade ?: 0,
+            errorsMade = sudokuExport.errorsMade ?: 0,
+            timer = null,
+            gameListener = null,
+            fields = it,
+        )
+    }
 }
 
 fun sudokuToExport(sudoku: Sudoku): SudokuExport =
     SudokuExport(
         id = sudoku.id.value,
-        size = sudoku.size,
+        size = sudoku.size.value,
         difficulty = sudoku.difficulty.ordinal,
         modeLevel = sudoku.modeLevel,
         created = sudoku.created,
@@ -149,7 +154,7 @@ fun sudokuToExport(sudoku: Sudoku): SudokuExport =
 
 fun fieldFromExport(
     fieldExport: FieldExport,
-    size: Int,
+    size: SudokuSize,
 ): Field? =
     if (fieldExport.solution == null) {
         null

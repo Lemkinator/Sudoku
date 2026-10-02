@@ -31,14 +31,13 @@ import java.util.Locale
 import java.util.Timer
 import java.util.UUID
 import kotlin.concurrent.timer
-import kotlin.math.sqrt
 
 private const val SECONDS_PER_MINUTE = 60
 private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 private const val PERCENT_SCALE = 100
 
 private const val MAX_STANDARD_DIGIT = 9
-private const val MAX_LARGE_DIGIT = 16
+private val MAX_LARGE_DIGIT = SudokuSize.entries.maxOf { it.value }
 private const val LARGE_DIGIT_OFFSET = 10
 
 @JvmInline
@@ -50,7 +49,7 @@ value class SudokuId(val value: String) {
 
 class Sudoku(
     val id: SudokuId,
-    val size: Int,
+    val size: SudokuSize,
     val difficulty: Difficulty,
     val modeLevel: Int,
     var regionalHighlightingUsed: Boolean,
@@ -69,13 +68,10 @@ class Sudoku(
     var gameListener: GameListener?,
     val fields: MutableList<Field>,
 ) {
-    private val hintLimit: Int
-        get() = hintLimitBySize[size] ?: DEFAULT_HINT_LIMIT
-
     val availableHints: Int
-        get() = hintLimit - hintsUsed
+        get() = size.hintLimit - hintsUsed
 
-    val isHintAvailable: Boolean get() = if (isNormalSudoku) hintsUsed < hintLimit else false
+    val isHintAvailable: Boolean get() = if (isNormalSudoku) hintsUsed < size.hintLimit else false
 
     val isSudokuLevel: Boolean get() = modeLevel > 0
 
@@ -87,11 +83,7 @@ class Sudoku(
 
     val resumed: Boolean get() = timer != null
 
-    val itemCount: Int get() = this.size * this.size
-
-    val blockSize: Int get() = sqrt(this.size.toDouble()).toInt()
-
-    val sizeString: String get() = "$size×$size"
+    val itemCount: Int get() = size.cellCount
 
     val progress: Int
         get() {
@@ -140,7 +132,7 @@ class Sudoku(
 
     fun copy(
         sudokuId: SudokuId = this.id,
-        size: Int = this.size,
+        size: SudokuSize = this.size,
         difficulty: Difficulty = this.difficulty,
         modeLevel: Int = this.modeLevel,
         regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
@@ -329,7 +321,7 @@ class Sudoku(
             checklistNumber == 0 -> {
                 when (value) {
                     1 -> isChecklist = true
-                    size -> isReverseChecklist = true
+                    size.value -> isReverseChecklist = true
                 }
             }
         }
@@ -410,11 +402,11 @@ class Sudoku(
     fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
 
     fun getCompletedNumbers(): List<Pair<Int, Boolean>> {
-        val numbers = MutableList(size) { 0 }
+        val numbers = MutableList(size.value) { 0 }
         fields.forEach { field ->
             if (field.correct) numbers[field.value!! - 1]++
         }
-        return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size) }
+        return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size.value) }
     }
 
     fun getLocalStatisticsString(resources: Resources): String =
@@ -423,9 +415,9 @@ class Sudoku(
             when (modeLevel) {
                 MODE_NORMAL -> resources.getString(R.string.normal_sudoku)
                 MODE_DAILY -> resources.getString(R.string.daily_sudoku)
-                else -> resources.getString(R.string.level) + " $modeLevel"
+                else -> resources.getString(R.string.level_number, modeLevel)
             },
-            size,
+            size.value,
             difficulty.getLocalString(resources),
             timeString,
             errorsMade,
@@ -450,16 +442,9 @@ class Sudoku(
         const val MODE_LEVEL_ERROR_LIMIT = 3
         const val MODE_DAILY_ERROR_LIMIT = 3
 
-        const val SIZE_4X4 = 4
-        const val SIZE_9X9 = 9
-        const val SIZE_16X16 = 16
-
-        private const val DEFAULT_HINT_LIMIT = 3
-        private val hintLimitBySize: Map<Int, Int> = mapOf(SIZE_4X4 to 1, SIZE_9X9 to 3, SIZE_16X16 to 8)
-
         fun create(
             sudokuId: SudokuId = SudokuId.generate(),
-            size: Int,
+            size: SudokuSize,
             difficulty: Difficulty,
             modeLevel: Int,
             regionalHighlightingUsed: Boolean = false,
