@@ -159,7 +159,10 @@ class SudokuLevelTabViewModel @Inject constructor(
                 .async { runCatching { if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku) } }
                 .await()
                 .exceptionOrNull()
-        if (saveFailure is CancellationException) throw saveFailure
+        if (saveFailure is CancellationException) {
+            sudokuStarting = false
+            throw saveFailure
+        }
         if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowStartError)
         return saveFailure == null
     }

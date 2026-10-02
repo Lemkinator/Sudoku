@@ -569,7 +569,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("a CancellationException from the next-level save is rethrown, not treated as a save failure") {
+        should("a CancellationException from the next-level save is rethrown, not treated as a save failure, and allows another start") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
             coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
@@ -581,6 +581,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 expectMostRecentItem().hasNextLevelToStart shouldBe true
 
                 shouldThrow<CancellationException> { viewModel.confirmSudokuStart(0, nextLevel) }
+                viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
             }
             viewModel.events.test {
                 awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevel.id)
