@@ -154,17 +154,22 @@ class SudokuLevelTabViewModel @Inject constructor(
     }
 
     private suspend fun saveNextLevel(sudoku: Sudoku): Boolean {
-        val saveFailure =
+        val saveResult =
             viewModelScope
-                .async { runCatching { if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku) } }
-                .await()
-                .exceptionOrNull()
+                .async {
+                    runCatching {
+                        val levelUnsaved = getMaxSudokuLevel(size) < sudoku.modeLevel
+                        if (levelUnsaved) saveSudoku(sudoku)
+                        levelUnsaved
+                    }
+                }.await()
+        val saveFailure = saveResult.exceptionOrNull()
         if (saveFailure is CancellationException) {
             sudokuStarting = false
             throw saveFailure
         }
         if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowStartError)
-        return saveFailure == null
+        return saveResult.getOrDefault(false)
     }
 
     fun onTabResumed() {
