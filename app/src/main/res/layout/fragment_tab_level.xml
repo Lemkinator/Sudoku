@@ -14,22 +14,13 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<dev.oneuiproject.oneui.widget.RoundedLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<dev.oneuiproject.oneui.widget.RoundedFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     app:edgeInsetLeft="10dp"
     app:edgeInsetRight="10dp"
     app:roundedCorners="top_left|top_right">
-
-    <androidx.appcompat.widget.SeslProgressBar
-        android:id="@+id/tabLevelProgressBar"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="16dp"
-        android:layout_gravity="bottom"
-        android:indeterminate="true" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/sudokuLevelsRecycler"
@@ -40,4 +31,12 @@
         android:scrollbarStyle="outsideOverlay"
         android:visibility="gone" />
 
-</dev.oneuiproject.oneui.widget.RoundedLinearLayout>
+    <androidx.appcompat.widget.SeslProgressBar
+        android:id="@+id/tabLevelProgressBar"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:layout_gravity="top"
+        android:indeterminate="true" />
+
+</dev.oneuiproject.oneui.widget.RoundedFrameLayout>
