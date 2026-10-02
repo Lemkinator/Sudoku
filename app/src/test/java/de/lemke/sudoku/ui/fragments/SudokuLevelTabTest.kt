@@ -18,6 +18,7 @@ package de.lemke.sudoku.ui.fragments
 
 import android.os.Looper
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.BindValue
@@ -270,6 +271,74 @@ class SudokuLevelTabTest {
             startedActivities.size shouldBe 1
             startedActivities.single().component?.className shouldBe SudokuActivity::class.java.name
             insertCalls shouldBe 1
+        }
+    }
+
+    @Test
+    fun `tapping the auto-generated next level again after it saved starts one game and saves it once`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            insertCalls = 0
+
+            clickItem(fragment, 0, nextLevel)
+            clickItem(fragment, 0, nextLevel)
+
+            val startedActivities = generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList()
+            startedActivities.size shouldBe 1
+            insertCalls shouldBe 1
+        }
+    }
+
+    @Test
+    fun `tapping an existing level twice starts one game`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val level =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+
+            clickItem(fragment, 0, level)
+            clickItem(fragment, 0, level)
+
+            generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
+        }
+    }
+
+    @Test
+    fun `a level tap after returning to the tab starts a game again`() {
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+            lateinit var fragment: SudokuLevelTab
+            scenario.onActivity { activity ->
+                fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<SudokuLevelTab>()
+                        .single { it.isResumed }
+            }
+            val firstLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            clickItem(fragment, 0, firstLevel)
+            clickItem(fragment, 0, firstLevel)
+            generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+            clickItem(fragment, 0, firstLevel)
+
+            generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
         }
     }
 

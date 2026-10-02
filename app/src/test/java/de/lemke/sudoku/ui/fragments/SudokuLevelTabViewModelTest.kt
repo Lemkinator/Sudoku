@@ -542,11 +542,21 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
                     saveGate.complete(Unit)
                     firstStart.await() shouldBe true
-                    viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
                 }
 
                 coVerify(exactly = 1) { saveSudoku(nextLevel) }
             }
+        }
+
+        should("a confirmed start refuses further starts until the tab resumes") {
+            val level = testSudoku(modeLevel = 1)
+            val viewModel = newViewModel()
+
+            viewModel.confirmSudokuStart(1, level) shouldBe true
+            viewModel.confirmSudokuStart(1, level) shouldBe false
+            viewModel.onTabResumed()
+
+            viewModel.confirmSudokuStart(1, level) shouldBe true
         }
     },
 )

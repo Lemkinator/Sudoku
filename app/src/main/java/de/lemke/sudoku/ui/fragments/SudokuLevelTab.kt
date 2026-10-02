@@ -89,6 +89,11 @@ class SudokuLevelTab : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.onTabResumed()
+    }
+
     private fun revealPending() {
         val sudokuId = pendingReveal ?: return
         if (sudokuListAdapter.currentList != viewModel.state.value.sudokuLevel) return
