@@ -496,12 +496,13 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("confirming the next level does not save it when its level is already saved") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
-            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returnsMany listOf(1, 2)
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
             coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
             val viewModel = newViewModel()
 
             viewModel.state.test {
                 expectMostRecentItem().hasNextLevelToStart shouldBe true
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 2
 
                 viewModel.confirmSudokuStart(0, nextLevel) shouldBe true
             }
