@@ -112,12 +112,7 @@ class SudokuLevelTab : Fragment() {
             if (sudokuListItem is SudokuItem) {
                 lifecycleScope.launch {
                     if (position == 0 && viewModel.state.value.hasNextLevelToStart) {
-                        binding.tabLevelProgressBar.isVisible = true
-                        try {
-                            viewModel.onNextLevelSudokuConfirmed(sudokuListItem.sudoku)
-                        } finally {
-                            binding.tabLevelProgressBar.isVisible = false
-                        }
+                        viewModel.onNextLevelSudokuConfirmed(sudokuListItem.sudoku)
                     }
                     viewHolder.itemView.transformToActivity(
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),

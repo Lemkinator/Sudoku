@@ -30,6 +30,11 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.TestPersistenceModule
+import de.lemke.sudoku.data.database.FieldDb
+import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -49,6 +54,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -90,6 +96,24 @@ class SudokuLevelTabTest {
     @BindValue
     @JvmField
     val solvedBoardGenerator: SolvedBoardGenerator = PatternSolvedBoardGenerator()
+
+    private var insertGate = CompletableDeferred(Unit)
+    private val sudokuDao = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext()).sudokuDao()
+
+    @BindValue
+    @JvmField
+    val sudokusRepository: SudokusRepository =
+        SudokusRepository(
+            object : SudokuDao by sudokuDao {
+                override suspend fun insert(
+                    sudoku: SudokuDb,
+                    fields: List<FieldDb>,
+                ) {
+                    insertGate.await()
+                    sudokuDao.insert(sudoku, fields)
+                }
+            },
+        )
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -181,6 +205,34 @@ class SudokuLevelTabTest {
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
         }
+
+    @Test
+    fun `confirming the auto-generated next level keeps the level list in place until the game starts`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            nextLevel.modeLevel shouldBe 2
+            fragment.binding.sudokuLevelsRecycler.top shouldBe 0
+            insertGate = CompletableDeferred()
+
+            clickItem(fragment, 0, nextLevel)
+
+            fragment.binding.sudokuLevelsRecycler.top shouldBe 0
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+
+            insertGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val started = shadowOf(fragment.requireActivity()).nextStartedActivity
+            started.shouldNotBeNull()
+            started.component?.className shouldBe SudokuActivity::class.java.name
+        }
+    }
 
     @Test
     fun `clicking a level at a non-zero position starts the game without confirming a new one`() {
