@@ -23,10 +23,9 @@
     app:showNavButtonAsBack="true"
     app:title="@string/daily_sudoku">
 
-    <dev.oneuiproject.oneui.widget.RoundedLinearLayout
+    <dev.oneuiproject.oneui.widget.RoundedFrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         app:edgeInsetLeft="10dp"
         app:edgeInsetRight="10dp"
         app:roundedCorners="top_left|top_right">
@@ -40,6 +39,6 @@
             android:scrollbarStyle="outsideOverlay"
             android:visibility="gone" />
 
-    </dev.oneuiproject.oneui.widget.RoundedLinearLayout>
+    </dev.oneuiproject.oneui.widget.RoundedFrameLayout>
 
 </dev.oneuiproject.oneui.layout.ToolbarLayout>
