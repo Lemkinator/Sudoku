@@ -37,6 +37,7 @@ import de.lemke.sudoku.data.database.SudokuDb
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
+import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
@@ -60,6 +61,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -99,7 +101,8 @@ class SudokuLevelTabTest {
 
     private var insertGate = CompletableDeferred(Unit)
     private var insertCalls = 0
-    private val sudokuDao = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext()).sudokuDao()
+    private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
+    private val sudokuDao = database.sudokuDao()
 
     @BindValue
     @JvmField
@@ -123,10 +126,18 @@ class SudokuLevelTabTest {
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
 
+    @Inject
+    lateinit var getMaxSudokuLevel: GetMaxSudokuLevelUseCase
+
     @Before
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
     }
 
     private fun launch(block: (SudokuLevelTab) -> Unit) {
@@ -230,6 +241,7 @@ class SudokuLevelTabTest {
             insertGate.complete(Unit)
             shadowOf(Looper.getMainLooper()).idle()
 
+            runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
