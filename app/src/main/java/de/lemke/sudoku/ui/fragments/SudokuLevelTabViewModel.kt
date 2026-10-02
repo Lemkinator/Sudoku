@@ -35,6 +35,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
@@ -46,6 +47,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.launch
 
 data class SudokuLevelTabUiState(
     val sudokuLevel: List<SudokuListItem> = emptyList(),
@@ -97,6 +99,7 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private var nextLevelSudoku: Sudoku? = null
     private var revealedNextLevelId: SudokuId? = null
+    private var nextLevelConfirmation: Job? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
@@ -140,7 +143,17 @@ class SudokuLevelTabViewModel @Inject constructor(
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
-    suspend fun onNextLevelSudokuConfirmed(sudoku: Sudoku) {
-        if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku)
+    suspend fun confirmSudokuStart(
+        position: Int,
+        sudoku: Sudoku,
+    ): Boolean {
+        if (nextLevelConfirmation?.isActive == true) return false
+        if (position == 0 && state.value.hasNextLevelToStart) {
+            viewModelScope
+                .launch { if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku) }
+                .also { nextLevelConfirmation = it }
+                .join()
+        }
+        return true
     }
 }

@@ -98,6 +98,7 @@ class SudokuLevelTabTest {
     val solvedBoardGenerator: SolvedBoardGenerator = PatternSolvedBoardGenerator()
 
     private var insertGate = CompletableDeferred(Unit)
+    private var insertCalls = 0
     private val sudokuDao = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext()).sudokuDao()
 
     @BindValue
@@ -109,6 +110,7 @@ class SudokuLevelTabTest {
                     sudoku: SudokuDb,
                     fields: List<FieldDb>,
                 ) {
+                    insertCalls++
                     insertGate.await()
                     sudokuDao.insert(sudoku, fields)
                 }
@@ -231,6 +233,31 @@ class SudokuLevelTabTest {
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
+        }
+    }
+
+    @Test
+    fun `tapping the auto-generated next level twice while it saves starts one game and saves it once`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            insertGate = CompletableDeferred()
+            insertCalls = 0
+
+            clickItem(fragment, 0, nextLevel)
+            clickItem(fragment, 0, nextLevel)
+            insertGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val startedActivities = generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList()
+            startedActivities.size shouldBe 1
+            startedActivities.single().component?.className shouldBe SudokuActivity::class.java.name
+            insertCalls shouldBe 1
         }
     }
 

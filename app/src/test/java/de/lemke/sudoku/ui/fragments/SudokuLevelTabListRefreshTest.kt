@@ -215,12 +215,19 @@ class SudokuLevelTabListRefreshTest {
     }
 
     @Test
-    fun `confirming a next level whose level is already saved keeps the saved progress`() {
+    fun `confirming a next level whose level was saved meanwhile keeps the saved progress`() {
         save(completedLevelOne())
+        val viewModel = newViewModel()
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
+        idle()
+        collection.cancel()
+        val nextLevel = topSudoku(viewModel)
+        nextLevel.modeLevel shouldBe 2
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
-        runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
+        runBlocking { viewModel.confirmSudokuStart(0, nextLevel) } shouldBe true
 
+        runBlocking { getSudoku(nextLevel.id) } shouldBe null
         val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()
         saved.errorsMade shouldBe 2
         saved.seconds shouldBe 75
@@ -230,11 +237,19 @@ class SudokuLevelTabListRefreshTest {
     @Test
     fun `confirming a next level above the saved max level saves it`() {
         save(completedLevelOne())
+        val viewModel = newViewModel()
+        val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
+        try {
+            idle()
+            val nextLevel = topSudoku(viewModel)
 
-        runBlocking { newViewModel().onNextLevelSudokuConfirmed(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0)) }
+            runBlocking { viewModel.confirmSudokuStart(0, nextLevel) } shouldBe true
 
-        runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
-        runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull().modeLevel shouldBe 2
+            runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
+            runBlocking { getSudoku(nextLevel.id) }.shouldNotBeNull().modeLevel shouldBe 2
+        } finally {
+            collection.cancel()
+        }
     }
 
     @Test

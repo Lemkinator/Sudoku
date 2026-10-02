@@ -111,9 +111,7 @@ class SudokuLevelTab : Fragment() {
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuItem) {
                 lifecycleScope.launch {
-                    if (position == 0 && viewModel.state.value.hasNextLevelToStart) {
-                        viewModel.onNextLevelSudokuConfirmed(sudokuListItem.sudoku)
-                    }
+                    if (!viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)) return@launch
                     viewHolder.itemView.transformToActivity(
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
                     )

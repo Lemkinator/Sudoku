@@ -42,6 +42,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -476,23 +477,76 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("onNextLevelSudokuConfirmed saves a next level above the saved max level") {
+        should("confirming the next level saves it when its level is above the saved max level") {
+            val nextLevel = testSudoku(modeLevel = 2)
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
             coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
-            val sudoku = testSudoku(modeLevel = 2)
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
             val viewModel = newViewModel()
 
-            viewModel.onNextLevelSudokuConfirmed(sudoku)
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe true
 
-            coVerify(exactly = 1) { saveSudoku(sudoku) }
+                viewModel.confirmSudokuStart(0, nextLevel) shouldBe true
+            }
+
+            coVerify(exactly = 1) { saveSudoku(nextLevel) }
         }
 
-        should("onNextLevelSudokuConfirmed does not save a next level whose level is already saved") {
-            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 2
+        should("confirming the next level does not save it when its level is already saved") {
+            val nextLevel = testSudoku(modeLevel = 2)
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returnsMany listOf(1, 2)
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
             val viewModel = newViewModel()
 
-            viewModel.onNextLevelSudokuConfirmed(testSudoku(modeLevel = 2))
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe true
+
+                viewModel.confirmSudokuStart(0, nextLevel) shouldBe true
+            }
 
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+        should("starting a level that is not the next level never saves it") {
+            val level = testSudoku(modeLevel = 1)
+            val viewModel = newViewModel()
+
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe false
+
+                viewModel.confirmSudokuStart(0, level) shouldBe true
+            }
+
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+        should("a start requested while the next level is still saving is refused") {
+            runTest {
+                val nextLevel = testSudoku(modeLevel = 2)
+                val saveGate = CompletableDeferred<Unit>()
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+                coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
+                coEvery { saveSudoku(nextLevel) } coAnswers { saveGate.await() }
+                val viewModel = newViewModel()
+
+                viewModel.state.test {
+                    expectMostRecentItem().hasNextLevelToStart shouldBe true
+                    val firstStart = async { viewModel.confirmSudokuStart(0, nextLevel) }
+                    runCurrent()
+
+                    viewModel.confirmSudokuStart(0, nextLevel) shouldBe false
+                    viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe false
+
+                    saveGate.complete(Unit)
+                    firstStart.await() shouldBe true
+                    viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
+                }
+
+                coVerify(exactly = 1) { saveSudoku(nextLevel) }
+            }
         }
     },
 )
