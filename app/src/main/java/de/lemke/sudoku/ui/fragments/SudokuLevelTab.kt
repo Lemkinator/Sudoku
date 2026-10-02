@@ -85,6 +85,10 @@ class SudokuLevelTab : Fragment() {
                 SudokuLevelTabEvent.ShowLoadError -> {
                     toast(R.string.error_loading_sudoku_level_failed)
                 }
+
+                SudokuLevelTabEvent.ShowStartError -> {
+                    toast(R.string.error_starting_sudoku_level_failed)
+                }
             }
         }
     }

@@ -58,6 +58,8 @@ sealed interface SudokuLevelTabEvent {
     data class RevealSudoku(val sudokuId: SudokuId) : SudokuLevelTabEvent
 
     data object ShowLoadError : SudokuLevelTabEvent
+
+    data object ShowStartError : SudokuLevelTabEvent
 }
 
 @HiltViewModel
@@ -158,7 +160,7 @@ class SudokuLevelTabViewModel @Inject constructor(
                 .await()
                 .exceptionOrNull()
         if (saveFailure is CancellationException) throw saveFailure
-        if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowLoadError)
+        if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowStartError)
         return saveFailure == null
     }
 

@@ -28,11 +28,11 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
-import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.TestPersistenceModule
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FieldDb
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuDb
@@ -71,6 +71,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -125,7 +126,7 @@ class SudokuLevelTabTest {
         )
 
     @Inject
-    lateinit var settings: SettingsRepository
+    lateinit var settings: UserSettings
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
@@ -299,7 +300,8 @@ class SudokuLevelTabTest {
     }
 
     @Test
-    fun `a failed next-level save starts no game`() {
+    fun `a failed next-level save starts no game and shows the start error`() {
+        settings.currentLevelTab = 0
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
         launch { fragment ->
             shadowOf(Looper.getMainLooper()).idle()
@@ -314,6 +316,7 @@ class SudokuLevelTabTest {
 
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
             runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 1
+            ShadowToast.getTextOfLatestToast() shouldBe "Could not start the level"
         }
     }
 
