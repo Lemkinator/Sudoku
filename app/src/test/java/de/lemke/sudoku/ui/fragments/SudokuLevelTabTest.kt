@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.ui.fragments
 
+import android.database.sqlite.SQLiteFullException
 import android.os.Looper
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -102,6 +103,7 @@ class SudokuLevelTabTest {
 
     private var insertGate = CompletableDeferred(Unit)
     private var insertCalls = 0
+    private var insertFailure: Exception? = null
     private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
     private val sudokuDao = database.sudokuDao()
 
@@ -115,6 +117,7 @@ class SudokuLevelTabTest {
                     fields: List<FieldDb>,
                 ) {
                     insertCalls++
+                    insertFailure?.let { throw it }
                     insertGate.await()
                     sudokuDao.insert(sudoku, fields)
                 }
@@ -292,6 +295,25 @@ class SudokuLevelTabTest {
             val startedActivities = generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList()
             startedActivities.size shouldBe 1
             insertCalls shouldBe 1
+        }
+    }
+
+    @Test
+    fun `a failed next-level save starts no game`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val nextLevel =
+                (
+                    fragment.viewModel.state.value.sudokuLevel
+                        .first() as SudokuItem
+                ).sudoku
+            insertFailure = SQLiteFullException("database or disk is full")
+
+            clickItem(fragment, 0, nextLevel)
+
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
+            runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 1
         }
     }
 

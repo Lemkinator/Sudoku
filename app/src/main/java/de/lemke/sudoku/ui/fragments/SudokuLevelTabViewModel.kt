@@ -46,7 +46,6 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transformLatest
-import kotlinx.coroutines.launch
 
 data class SudokuLevelTabUiState(
     val sudokuLevel: List<SudokuListItem> = emptyList(),
@@ -148,10 +147,19 @@ class SudokuLevelTabViewModel @Inject constructor(
     ): Boolean {
         if (sudokuStarting) return false
         sudokuStarting = true
-        if (position == 0 && state.value.hasNextLevelToStart) {
-            viewModelScope.launch { if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku) }.join()
-        }
-        return true
+        if (position == 0 && state.value.hasNextLevelToStart) sudokuStarting = saveNextLevel(sudoku)
+        return sudokuStarting
+    }
+
+    private suspend fun saveNextLevel(sudoku: Sudoku): Boolean {
+        val saveFailure =
+            viewModelScope
+                .async { runCatching { if (getMaxSudokuLevel(size) < sudoku.modeLevel) saveSudoku(sudoku) } }
+                .await()
+                .exceptionOrNull()
+        if (saveFailure is CancellationException) throw saveFailure
+        if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowLoadError)
+        return saveFailure == null
     }
 
     fun onTabResumed() {

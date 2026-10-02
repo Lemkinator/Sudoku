@@ -548,6 +548,45 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
+        should("a failed next-level save refuses the start, emits ShowLoadError and allows another start") {
+            val nextLevel = testSudoku(modeLevel = 2)
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
+            coEvery { saveSudoku(nextLevel) } throws IllegalStateException("insert failed")
+            val viewModel = newViewModel()
+
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe true
+
+                viewModel.confirmSudokuStart(0, nextLevel) shouldBe false
+                viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
+            }
+            viewModel.events.test {
+                awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevel.id)
+                awaitItem() shouldBe SudokuLevelTabEvent.ShowLoadError
+            }
+        }
+
+        should("a CancellationException from the next-level save is rethrown, not treated as a save failure") {
+            val nextLevel = testSudoku(modeLevel = 2)
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
+            coEvery { saveSudoku(nextLevel) } throws CancellationException("cancelled")
+            val viewModel = newViewModel()
+
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe true
+
+                shouldThrow<CancellationException> { viewModel.confirmSudokuStart(0, nextLevel) }
+            }
+            viewModel.events.test {
+                awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevel.id)
+                expectNoEvents()
+            }
+        }
+
         should("a confirmed start refuses further starts until the tab resumes") {
             val level = testSudoku(modeLevel = 1)
             val viewModel = newViewModel()
