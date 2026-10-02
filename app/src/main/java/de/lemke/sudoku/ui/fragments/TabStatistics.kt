@@ -24,7 +24,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.TextView
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
@@ -81,7 +80,6 @@ class TabStatistics : Fragment() {
         }
         // setupMenuProvider()
         collectState(viewModel.state, minActiveState = RESUMED) { state ->
-            binding.statisticsProgressBar.isVisible = state.isLoading
             state.statistics?.let {
                 val previousSize = statisticsList.size
                 updateStatistics(it)

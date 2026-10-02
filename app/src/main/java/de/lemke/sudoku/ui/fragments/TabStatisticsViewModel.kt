@@ -31,12 +31,11 @@ import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.transformLatest
 
 data class TabStatisticsUiState(
     val statistics: SudokuStatistics? = null,
-    val isLoading: Boolean = true,
 )
 
 sealed interface TabStatisticsEvent {
@@ -51,13 +50,9 @@ class TabStatisticsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<TabStatisticsUiState> =
         observeSudokusAndStatisticsFilterFlags()
-            .transformLatest { filterFlags ->
-                if (state.value.statistics == null) emit(state.value.copy(isLoading = true))
-                val statistics = calculateStatistics(filterFlags)
-                emit(TabStatisticsUiState(statistics = statistics, isLoading = false))
-            }.catch { e ->
+            .mapLatest { filterFlags -> TabStatisticsUiState(statistics = calculateStatistics(filterFlags)) }
+            .catch { e ->
                 if (e is CancellationException) throw e
-                emit(state.value.copy(isLoading = false))
                 _events.send(TabStatisticsEvent.ShowLoadError)
             }.stateInViewModel(viewModelScope, TabStatisticsUiState())
 

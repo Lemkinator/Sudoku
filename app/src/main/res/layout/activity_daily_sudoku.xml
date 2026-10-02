@@ -31,14 +31,6 @@
         app:edgeInsetRight="10dp"
         app:roundedCorners="top_left|top_right">
 
-        <androidx.appcompat.widget.SeslProgressBar
-            android:id="@+id/dailyProgressBar"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="16dp"
-            android:layout_gravity="bottom"
-            android:indeterminate="true" />
-
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/dailySudokuRecycler"
             android:layout_width="match_parent"

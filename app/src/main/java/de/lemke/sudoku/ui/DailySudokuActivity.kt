@@ -64,7 +64,6 @@ class DailySudokuActivity : AppCompatActivity() {
         collectState(viewModel.state, minActiveState = RESUMED) { state ->
             sudokuListAdapter.submitList(state.sudokus)
             binding.dailySudokuRecycler.isVisible = !state.isLoading
-            binding.dailyProgressBar.isVisible = state.isLoading
         }
         collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
             when (event) {

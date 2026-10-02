@@ -51,8 +51,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import java.util.Timer
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
@@ -88,7 +86,6 @@ private const val FIELD_ANIMATION_ROTATION_DEGREES = 100f
 @AndroidEntryPoint
 class IntroActivity : AppCompatActivity() {
     internal lateinit var binding: ActivityIntroBinding
-    private lateinit var loadingDialog: ProgressDialog
     internal var colorPrimary: Int = 0
     lateinit var gameAdapter: SudokuViewAdapter
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -124,11 +121,6 @@ class IntroActivity : AppCompatActivity() {
             }
         }
 
-        loadingDialog = ProgressDialog(this)
-        loadingDialog.setProgressStyle(CIRCLE)
-        loadingDialog.setCancelable(false)
-        loadingDialog.show()
-
         val typedValue = TypedValue()
         theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, typedValue, true)
         colorPrimary = typedValue.data
@@ -137,7 +129,6 @@ class IntroActivity : AppCompatActivity() {
         binding.introContinueButton.setOnClickListener { showNotificationsDialogOrFinish() }
         binding.introNextButton.setOnClickListener { nextIntroStep() }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
-        loadingDialog.dismiss()
         nextIntroStep()
     }
 
