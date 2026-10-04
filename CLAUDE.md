@@ -137,7 +137,10 @@ Four tools run as part of `./gradlew build`:
   Kover XML (`.github/scripts/strip-zero-instruction-lines.py`) before the Codecov upload.
 - **Konsist** — architecture rules in
   `app/src/test/java/de/lemke/sudoku/ArchitectureTest.kt`. Enforces
-  `data/domain/ui` layering. Runs as part of `./gradlew test`. `CodingConventionsTest.kt` also
+  `data/domain/ui` layering and state-only ViewModels: a file that declares a ViewModel uses no
+  `Channel` or `SharedFlow` (by import, declared type or call), and `ui` never imports `collectEvents`.
+  A probe test feeds the rule fully qualified, typed and inferred variants to keep it loophole-free.
+  Runs as part of `./gradlew test`. `CodingConventionsTest.kt` also
   enforces the common-utils launch latch through `assertLaunchLatchConventions()` from the
   common-utils testFixtures: it bans raw activity launches and result registration by name, and a
   `show`/`showNow` call whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a
