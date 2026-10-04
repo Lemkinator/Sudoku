@@ -225,7 +225,10 @@ class SudokuLevelTabListRefreshTest {
         nextLevel.modeLevel shouldBe 2
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
-        runBlocking { viewModel.confirmSudokuStart(0, nextLevel) } shouldBe true
+        viewModel.confirmSudokuStart(0, nextLevel)
+        idle()
+
+        viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
 
         runBlocking { getSudoku(nextLevel.id) } shouldBe null
         val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()
@@ -243,8 +246,10 @@ class SudokuLevelTabListRefreshTest {
             idle()
             val nextLevel = topSudoku(viewModel)
 
-            runBlocking { viewModel.confirmSudokuStart(0, nextLevel) } shouldBe true
+            viewModel.confirmSudokuStart(0, nextLevel)
+            idle()
 
+            viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
             runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
             runBlocking { getSudoku(nextLevel.id) }.shouldNotBeNull().modeLevel shouldBe 2
         } finally {

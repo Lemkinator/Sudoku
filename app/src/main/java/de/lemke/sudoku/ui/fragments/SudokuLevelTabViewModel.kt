@@ -40,12 +40,15 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class SudokuLevelTabUiState(
     val sudokuLevel: List<SudokuListItem> = emptyList(),
@@ -58,8 +61,19 @@ sealed interface SudokuLevelTabEvent {
     data class RevealSudoku(val sudokuId: SudokuId) : SudokuLevelTabEvent
 
     data object ShowLoadError : SudokuLevelTabEvent
+}
 
-    data object ShowStartError : SudokuLevelTabEvent
+/** The start of a level row. The tab opens a [Result] or shows its error, and then reports it handled. */
+sealed interface LevelStart {
+    sealed interface Result : LevelStart
+
+    data object Idle : LevelStart
+
+    data object Running : LevelStart
+
+    data class Open(val sudokuId: SudokuId) : Result
+
+    data object Failed : Result
 }
 
 @HiltViewModel
@@ -87,6 +101,9 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private val _events = Channel<SudokuLevelTabEvent>(BUFFERED)
     val events: Flow<SudokuLevelTabEvent> = _events.receiveAsFlow()
+
+    val levelStart: StateFlow<LevelStart>
+        field = MutableStateFlow<LevelStart>(LevelStart.Idle)
 
     private val levelInitialized: Deferred<Boolean> =
         viewModelScope.async {
@@ -142,24 +159,28 @@ class SudokuLevelTabViewModel @Inject constructor(
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
-    suspend fun confirmSudokuStart(
+    fun confirmSudokuStart(
         position: Int,
         sudoku: Sudoku,
-    ): Boolean = position != 0 || !state.value.hasNextLevelToStart || saveNextLevel(sudoku)
-
-    private suspend fun saveNextLevel(sudoku: Sudoku): Boolean {
-        val saveResult =
-            viewModelScope
-                .async {
-                    runCatching {
-                        val levelUnsaved = getMaxSudokuLevel(size) < sudoku.modeLevel
-                        if (levelUnsaved) saveSudoku(sudoku)
-                        levelUnsaved
-                    }
-                }.await()
-        val saveFailure = saveResult.exceptionOrNull()
-        if (saveFailure is CancellationException) throw saveFailure
-        if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowStartError)
-        return saveResult.getOrDefault(false)
+    ) {
+        if (levelStart.value == LevelStart.Running) return
+        if (position != 0 || !state.value.hasNextLevelToStart) {
+            levelStart.value = LevelStart.Open(sudoku.id)
+            return
+        }
+        levelStart.value = LevelStart.Running
+        viewModelScope.launch { levelStart.value = saveNextLevel(sudoku) }
     }
+
+    fun onLevelStartHandled(result: LevelStart.Result) {
+        levelStart.update { if (it == result) LevelStart.Idle else it }
+    }
+
+    private suspend fun saveNextLevel(sudoku: Sudoku): LevelStart =
+        runCatching {
+            val levelUnsaved = getMaxSudokuLevel(size) < sudoku.modeLevel
+            if (levelUnsaved) saveSudoku(sudoku)
+            levelUnsaved
+        }.map { levelUnsaved -> if (levelUnsaved) LevelStart.Open(sudoku.id) else LevelStart.Idle }
+            .getOrElse { e -> if (e is CancellationException) throw e else LevelStart.Failed }
 }

@@ -31,7 +31,6 @@ import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
-import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
@@ -56,6 +55,7 @@ class SudokuLevelTab : Fragment() {
     internal val viewModel: SudokuLevelTabViewModel by viewModels()
     internal val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(requireContext(), MODE_LEVEL_ERROR_LIMIT, LEVEL) }
     private var pendingReveal: SudokuId? = null
+    private var levelStartView: View? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -84,12 +84,30 @@ class SudokuLevelTab : Fragment() {
                 SudokuLevelTabEvent.ShowLoadError -> {
                     toast(R.string.error_loading_sudoku_level_failed)
                 }
-
-                SudokuLevelTabEvent.ShowStartError -> {
-                    toast(R.string.error_starting_sudoku_level_failed)
-                }
             }
         }
+        collectState(viewModel.levelStart, minActiveState = RESUMED) { if (it is LevelStart.Result) onLevelStartResult(it) }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        levelStartView = null
+    }
+
+    private fun onLevelStartResult(result: LevelStart.Result) {
+        val handled =
+            when (result) {
+                is LevelStart.Open -> openSudoku(result.sudokuId)
+                LevelStart.Failed -> true.also { toast(R.string.error_starting_sudoku_level_failed) }
+            }
+        if (!handled) return
+        levelStartView = null
+        viewModel.onLevelStartHandled(result)
+    }
+
+    private fun openSudoku(sudokuId: SudokuId): Boolean {
+        val intent = Intent(requireContext(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        return requireActivity().transformToActivity(levelStartView, intent)
     }
 
     private fun revealPending() {
@@ -112,16 +130,9 @@ class SudokuLevelTab : Fragment() {
 
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
-            if (sudokuListItem is SudokuItem) {
-                singleLaunchSuspending(
-                    work = { viewModel.confirmSudokuStart(position, sudokuListItem.sudoku) },
-                    then = { confirmed ->
-                        if (confirmed) {
-                            val intent = Intent(requireActivity(), SudokuActivity::class.java)
-                            viewHolder.itemView.transformToActivity(intent.putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value))
-                        }
-                    },
-                )
+            if (sudokuListItem is SudokuItem && viewModel.levelStart.value != LevelStart.Running) {
+                levelStartView = viewHolder.itemView
+                viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)
             }
         }
     }

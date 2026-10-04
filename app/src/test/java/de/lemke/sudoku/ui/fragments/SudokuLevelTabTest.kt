@@ -31,6 +31,7 @@ import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.singleLaunch
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FieldDb
@@ -145,7 +146,11 @@ class SudokuLevelTabTest {
         database.close()
     }
 
-    private fun launch(block: (SudokuLevelTab) -> Unit) {
+    private fun launch(
+        currentLevelTab: Int = 0,
+        block: (SudokuLevelTab) -> Unit,
+    ) {
+        settings.currentLevelTab = currentLevelTab
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             shadowOf(Looper.getMainLooper()).idle()
             scenario.onActivity { activity ->
@@ -164,7 +169,9 @@ class SudokuLevelTabTest {
         sudoku: Sudoku,
     ) {
         val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuLevelsRecycler, SudokuItem.VIEW_TYPE)
-        fragment.sudokuListAdapter.onClickItem?.invoke(position, SudokuItem(sudoku, sudoku.modeLevel.toString()), holder)
+        fragment.singleLaunch {
+            fragment.sudokuListAdapter.onClickItem?.invoke(position, SudokuItem(sudoku, sudoku.modeLevel.toString()), holder)
+        }
         shadowOf(Looper.getMainLooper()).idle()
     }
 
@@ -195,7 +202,7 @@ class SudokuLevelTabTest {
 
     @Test
     fun `an offscreen tab shows its loaded level list instead of the progress bar`() =
-        launch { fragment ->
+        launch(currentLevelTab = 1) { fragment ->
             fragment.isResumed.shouldBeFalse()
 
             fragment.binding.tabLevelProgressBar.isVisible
@@ -301,7 +308,6 @@ class SudokuLevelTabTest {
 
     @Test
     fun `a failed next-level save starts no game and shows the start error`() {
-        settings.currentLevelTab = 0
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
         launch { fragment ->
             shadowOf(Looper.getMainLooper()).idle()
@@ -317,6 +323,33 @@ class SudokuLevelTabTest {
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
             runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 1
             ShadowToast.getTextOfLatestToast() shouldBe "Could not start the level"
+            fragment.viewModel.levelStart.value shouldBe LevelStart.Idle
+        }
+    }
+
+    @Test
+    fun `tapping a level row twice opens SudokuActivity once`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
+        launch { fragment ->
+            shadowOf(Looper.getMainLooper()).idle()
+            val row =
+                fragment.binding.sudokuLevelsRecycler
+                    .findViewHolderForAdapterPosition(0)
+                    .shouldNotBeNull()
+                    .itemView
+
+            row.performClick()
+            row.performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val activity = fragment.requireActivity()
+            shadowOf(activity)
+                .nextStartedActivity
+                .shouldNotBeNull()
+                .component
+                ?.className shouldBe SudokuActivity::class.java.name
+            shadowOf(activity).nextStartedActivity shouldBe null
+            fragment.viewModel.levelStart.value shouldBe LevelStart.Idle
         }
     }
 

@@ -477,7 +477,31 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("confirming the next level saves it when its level is above the saved max level") {
+        should("confirming a row other than the top row opens it without saving") {
+            val level = testSudoku(modeLevel = 1)
+            val viewModel = newViewModel()
+
+            viewModel.confirmSudokuStart(1, level)
+
+            viewModel.levelStart.value shouldBe LevelStart.Open(level.id)
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+        should("confirming the top row without a next level to start opens it without saving") {
+            val level = testSudoku(modeLevel = 1)
+            val viewModel = newViewModel()
+
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe false
+
+                viewModel.confirmSudokuStart(0, level)
+            }
+
+            viewModel.levelStart.value shouldBe LevelStart.Open(level.id)
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+        should("confirming the next level saves it and then opens it when its level is above the saved max level") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
             coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
@@ -487,13 +511,14 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem().hasNextLevelToStart shouldBe true
 
-                viewModel.confirmSudokuStart(0, nextLevel) shouldBe true
+                viewModel.confirmSudokuStart(0, nextLevel)
             }
 
+            viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
             coVerify(exactly = 1) { saveSudoku(nextLevel) }
         }
 
-        should("confirming the next level refuses the start without saving it when its level is already saved") {
+        should("confirming the next level returns to idle without saving it when its level is already saved") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
             coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
@@ -504,10 +529,10 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 expectMostRecentItem().hasNextLevelToStart shouldBe true
                 coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 2
 
-                viewModel.confirmSudokuStart(0, nextLevel) shouldBe false
-                viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
+                viewModel.confirmSudokuStart(0, nextLevel)
             }
 
+            viewModel.levelStart.value shouldBe LevelStart.Idle
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
             viewModel.events.test {
                 awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevel.id)
@@ -515,20 +540,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("starting a level that is not the next level never saves it") {
-            val level = testSudoku(modeLevel = 1)
-            val viewModel = newViewModel()
-
-            viewModel.state.test {
-                expectMostRecentItem().hasNextLevelToStart shouldBe false
-
-                viewModel.confirmSudokuStart(0, level) shouldBe true
-            }
-
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
-        }
-
-        should("a failed next-level save refuses the start, emits ShowStartError and allows another start") {
+        should("a failed next-level save ends the start as failed without another event") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
             coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
@@ -539,41 +551,66 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem().hasNextLevelToStart shouldBe true
 
-                viewModel.confirmSudokuStart(0, nextLevel) shouldBe false
-                viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
+                viewModel.confirmSudokuStart(0, nextLevel)
             }
-            viewModel.events.test {
-                awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevel.id)
-                awaitItem() shouldBe SudokuLevelTabEvent.ShowStartError
-            }
-        }
 
-        should("a CancellationException from the next-level save is rethrown, not treated as a save failure, and allows another start") {
-            val nextLevel = testSudoku(modeLevel = 2)
-            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
-            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
-            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
-            coEvery { saveSudoku(nextLevel) } throws CancellationException("cancelled")
-            val viewModel = newViewModel()
-
-            viewModel.state.test {
-                expectMostRecentItem().hasNextLevelToStart shouldBe true
-
-                shouldThrow<CancellationException> { viewModel.confirmSudokuStart(0, nextLevel) }
-                viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe true
-            }
+            viewModel.levelStart.value shouldBe LevelStart.Failed
             viewModel.events.test {
                 awaitItem() shouldBe SudokuLevelTabEvent.RevealSudoku(nextLevel.id)
                 expectNoEvents()
             }
         }
 
-        should("a repeated start of a saved level is confirmed every time") {
+        should("a second confirm while the next level saves is refused and saves it once") {
+            runTest {
+                val nextLevel = testSudoku(modeLevel = 2)
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+                coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
+                val saveGate = CompletableDeferred<Unit>()
+                coEvery { saveSudoku(nextLevel) } coAnswers { saveGate.await() }
+                val viewModel = newViewModel()
+
+                viewModel.state.test {
+                    expectMostRecentItem().hasNextLevelToStart shouldBe true
+
+                    viewModel.confirmSudokuStart(0, nextLevel)
+                    runCurrent()
+                    viewModel.levelStart.value shouldBe LevelStart.Running
+                    viewModel.confirmSudokuStart(0, nextLevel)
+                    viewModel.confirmSudokuStart(1, testSudoku(completed = true))
+                    viewModel.levelStart.value shouldBe LevelStart.Running
+                    saveGate.complete(Unit)
+                    runCurrent()
+                }
+
+                viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
+                coVerify(exactly = 1) { saveSudoku(nextLevel) }
+            }
+        }
+
+        should("handling the current result returns to idle and a repeated start opens the level again") {
             val level = testSudoku(modeLevel = 1)
             val viewModel = newViewModel()
+            viewModel.confirmSudokuStart(1, level)
 
-            viewModel.confirmSudokuStart(1, level) shouldBe true
-            viewModel.confirmSudokuStart(1, level) shouldBe true
+            viewModel.onLevelStartHandled(LevelStart.Open(level.id))
+
+            viewModel.levelStart.value shouldBe LevelStart.Idle
+            viewModel.confirmSudokuStart(1, level)
+            viewModel.levelStart.value shouldBe LevelStart.Open(level.id)
+        }
+
+        should("handling a stale result keeps the current result") {
+            val level = testSudoku(modeLevel = 1)
+            val otherLevel = testSudoku(modeLevel = 1)
+            val viewModel = newViewModel()
+            viewModel.confirmSudokuStart(1, level)
+
+            viewModel.onLevelStartHandled(LevelStart.Open(otherLevel.id))
+            viewModel.onLevelStartHandled(LevelStart.Failed)
+
+            viewModel.levelStart.value shouldBe LevelStart.Open(level.id)
         }
     },
 )
