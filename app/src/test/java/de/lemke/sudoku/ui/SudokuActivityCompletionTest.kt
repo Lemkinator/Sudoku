@@ -16,9 +16,11 @@
 
 package de.lemke.sudoku.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -32,6 +34,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
@@ -47,16 +50,24 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import io.mockk.verify
+import io.mockk.verifyOrder
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
@@ -329,6 +340,45 @@ class SudokuActivityCompletionTest {
             awaitUntil { activity.viewModel.game.value is SudokuGame.Playing }
             loadingDialog.isShowing shouldBe false
             activity.sudoku.completed shouldBe false
+        }
+    }
+
+    @Test
+    fun `recreating the activity while the Play Games sync is calculated applies it once, then asks for the in-app review`() {
+        mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+        every { any<Activity>().applyPlayGamesSync(any()) } just Runs
+        var reviewRequested = false
+        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers { reviewRequested = true }
+        try {
+            val sudokuId = SudokuId.generate()
+            runBlocking { saveSudoku(almostSolvedSudoku(sudokuId)) }
+            syncCalculated = CompletableDeferred()
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+            ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.select(0)
+                    activity.select(activity.sudoku.itemCount)
+                }
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
+                scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Idle }
+                coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
+
+                scenario.recreate()
+                syncCalculated.complete(Unit)
+                awaitUntil { reviewRequested }
+
+                scenario.onActivity { activity -> activity.viewModel.playGamesSync.value shouldBe null }
+                verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
+                verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
+                verifyOrder {
+                    any<Activity>().applyPlayGamesSync(any())
+                    any<AppCompatActivity>().showInAppReviewIfPossible(any())
+                }
+                coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
+            }
+        } finally {
+            unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
         }
     }
 
