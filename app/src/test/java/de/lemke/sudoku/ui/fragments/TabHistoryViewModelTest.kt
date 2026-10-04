@@ -31,11 +31,13 @@ import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import java.time.LocalDateTime
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -269,13 +271,65 @@ class TabHistoryViewModelTest : ShouldSpec(
             viewModel.events.test { expectNoEvents() }
         }
 
-        should("deleteSelectedSudokus delegates to deleteSudoku") {
+        should("deleting the selection delegates to deleteSudoku and finishes") {
             val sudokus = listOf(mockk<Sudoku>(), mockk<Sudoku>())
             val viewModel = newViewModel()
 
-            viewModel.deleteSelectedSudokus(sudokus)
+            viewModel.deletion.value shouldBe HistoryDeletion.Idle
+            viewModel.onDeleteSelected(sudokus)
 
+            viewModel.deletion.value shouldBe HistoryDeletion.Finished
             coVerify(exactly = 1) { deleteSudoku(sudokus) }
+        }
+
+        should("a second delete while the first runs is refused and deletes once") {
+            runTest {
+                val sudokus = listOf(mockk<Sudoku>())
+                val deleteGate = CompletableDeferred<Unit>()
+                coEvery { deleteSudoku(sudokus) } coAnswers { deleteGate.await() }
+                val viewModel = newViewModel()
+
+                viewModel.onDeleteSelected(sudokus)
+                runCurrent()
+                viewModel.deletion.value shouldBe HistoryDeletion.Running
+                viewModel.onDeleteSelected(sudokus)
+                deleteGate.complete(Unit)
+                runCurrent()
+
+                viewModel.deletion.value shouldBe HistoryDeletion.Finished
+                coVerify(exactly = 1) { deleteSudoku(sudokus) }
+            }
+        }
+
+        should("handling the finished deletion returns to idle and allows another delete") {
+            val sudokus = listOf(mockk<Sudoku>())
+            val viewModel = newViewModel()
+            viewModel.onDeleteSelected(sudokus)
+
+            viewModel.onDeletionHandled(HistoryDeletion.Finished)
+
+            viewModel.deletion.value shouldBe HistoryDeletion.Idle
+            viewModel.onDeleteSelected(sudokus)
+            viewModel.deletion.value shouldBe HistoryDeletion.Finished
+            coVerify(exactly = 2) { deleteSudoku(sudokus) }
+        }
+
+        should("handling a finished deletion while another runs keeps it running") {
+            runTest {
+                val sudokus = listOf(mockk<Sudoku>())
+                val deleteGate = CompletableDeferred<Unit>()
+                coEvery { deleteSudoku(sudokus) } coAnswers { deleteGate.await() }
+                val viewModel = newViewModel()
+                viewModel.onDeleteSelected(sudokus)
+                runCurrent()
+
+                viewModel.onDeletionHandled(HistoryDeletion.Finished)
+
+                viewModel.deletion.value shouldBe HistoryDeletion.Running
+                deleteGate.complete(Unit)
+                runCurrent()
+                viewModel.deletion.value shouldBe HistoryDeletion.Finished
+            }
         }
     },
 )

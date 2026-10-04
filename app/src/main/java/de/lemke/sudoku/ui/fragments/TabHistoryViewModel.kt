@@ -33,15 +33,29 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 sealed interface TabHistoryEvent {
     data class RevealSudoku(val sudokuId: SudokuId) : TabHistoryEvent
 
     data object ShowLoadError : TabHistoryEvent
+}
+
+/** The deletion of the selected sudokus. The tab ends its action mode on a [Result] and then reports it handled. */
+sealed interface HistoryDeletion {
+    sealed interface Result : HistoryDeletion
+
+    data object Idle : HistoryDeletion
+
+    data object Running : HistoryDeletion
+
+    data object Finished : Result
 }
 
 @HiltViewModel
@@ -72,5 +86,19 @@ class TabHistoryViewModel @Inject constructor(
     private val _events = Channel<TabHistoryEvent>(BUFFERED)
     val events: Flow<TabHistoryEvent> = _events.receiveAsFlow()
 
-    suspend fun deleteSelectedSudokus(sudokus: List<Sudoku>) = deleteSudoku(sudokus)
+    val deletion: StateFlow<HistoryDeletion>
+        field = MutableStateFlow<HistoryDeletion>(HistoryDeletion.Idle)
+
+    fun onDeleteSelected(sudokus: List<Sudoku>) {
+        if (deletion.value == HistoryDeletion.Running) return
+        deletion.value = HistoryDeletion.Running
+        viewModelScope.launch {
+            deleteSudoku(sudokus)
+            deletion.value = HistoryDeletion.Finished
+        }
+    }
+
+    fun onDeletionHandled(result: HistoryDeletion.Result) {
+        deletion.update { if (it == result) HistoryDeletion.Idle else it }
+    }
 }
