@@ -28,7 +28,6 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.restoreSearchAndActionMode
 import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
@@ -73,7 +72,6 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         )
     }
     private val viewModel: TabHistoryViewModel by viewModels()
-    private var pendingReveal: SudokuId? = null
     private var deleteProgressDialog: ProgressDialog? = null
 
     override fun onCreateView(
@@ -97,16 +95,11 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         collectState(viewModel.sudokuHistory, minActiveState = RESUMED) { history ->
             updateRecyclerView(history)
         }
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                is TabHistoryEvent.RevealSudoku -> {
-                    pendingReveal = event.sudokuId
-                    revealPending()
-                }
-
-                TabHistoryEvent.ShowLoadError -> {
-                    toast(R.string.error_loading_sudoku_history_failed)
-                }
+        collectState(viewModel.reveal, minActiveState = RESUMED) { revealPending() }
+        collectState(viewModel.loadFailed, minActiveState = RESUMED) { failed ->
+            if (failed) {
+                toast(R.string.error_loading_sudoku_history_failed)
+                viewModel.onLoadFailureHandled()
             }
         }
         collectState(viewModel.errorLimit) { limit ->
@@ -157,9 +150,9 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     }
 
     private fun revealPending() {
-        val sudokuId = pendingReveal ?: return
-        if (sudokuListAdapter.currentList != viewModel.sudokuHistory.value) return
-        pendingReveal = null
+        val sudokuId = viewModel.reveal.value ?: return
+        if (!isResumed || sudokuListAdapter.currentList != viewModel.sudokuHistory.value) return
+        viewModel.onRevealHandled(sudokuId)
         val position = sudokuListAdapter.revealPositionOf(sudokuId)
         if (position != NO_POSITION) {
             (binding.sudokuHistoryList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, 0)

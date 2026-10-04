@@ -144,14 +144,11 @@ class TabHistoryViewModelTest : ShouldSpec(
                 history.emit(grownHistory)
                 viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe grownHistory }
 
-                viewModel.events.test {
-                    awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuB)
-                    expectNoEvents()
-                }
+                viewModel.reveal.value shouldBe sudokuB
             }
         }
 
-        should("an upstream restart with an unchanged history emits no event") {
+        should("an upstream restart with an unchanged history reveals nothing") {
             runTest {
                 val history = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
                 every { observeSudokuHistory() } returns history
@@ -170,18 +167,18 @@ class TabHistoryViewModelTest : ShouldSpec(
                     history.subscriptionCount.value shouldBe 1
                 }
 
-                viewModel.events.test { expectNoEvents() }
+                viewModel.reveal.value shouldBe null
             }
         }
 
-        should("the first emission sets sudokuHistory without an event") {
+        should("the first emission sets sudokuHistory without a reveal") {
             val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
             every { observeSudokuHistory() } returns flowOf(firstHistory)
 
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe firstHistory }
-            viewModel.events.test { expectNoEvents() }
+            viewModel.reveal.value shouldBe null
         }
 
         should("a second emission with a new sudoku reveals it") {
@@ -193,10 +190,7 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
-            viewModel.events.test {
-                awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuB)
-                expectNoEvents()
-            }
+            viewModel.reveal.value shouldBe sudokuB
         }
 
         should("a second emission with a played sudoku that moved to the top reveals it") {
@@ -213,10 +207,7 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
-            viewModel.events.test {
-                awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuB)
-                expectNoEvents()
-            }
+            viewModel.reveal.value shouldBe sudokuB
         }
 
         should("one emission with two new sudokus reveals the newest") {
@@ -233,13 +224,10 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
-            viewModel.events.test {
-                awaitItem() shouldBe TabHistoryEvent.RevealSudoku(sudokuC)
-                expectNoEvents()
-            }
+            viewModel.reveal.value shouldBe sudokuC
         }
 
-        should("a second emission that only removes a sudoku emits no event") {
+        should("a second emission that only removes a sudoku reveals nothing") {
             val firstHistory =
                 mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, TEN_O_CLOCK), sudokuItem(sudokuB, NINE_O_CLOCK))
             val secondHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuB, NINE_O_CLOCK))
@@ -248,17 +236,58 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
-            viewModel.events.test { expectNoEvents() }
+            viewModel.reveal.value shouldBe null
         }
 
-        should("init emits ShowLoadError when observeSudokuHistory throws") {
+        should("init reports loadFailed when observeSudokuHistory throws") {
             every { observeSudokuHistory() } returns flow { throw IllegalStateException("observe failed") }
 
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe emptyList() }
-            viewModel.events.test {
-                awaitItem() shouldBe TabHistoryEvent.ShowLoadError
+            viewModel.loadFailed.value shouldBe true
+        }
+
+        should("onLoadFailureHandled clears a reported load failure") {
+            every { observeSudokuHistory() } returns flow { throw IllegalStateException("observe failed") }
+            val viewModel = newViewModel()
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe emptyList() }
+            viewModel.loadFailed.value shouldBe true
+
+            viewModel.onLoadFailureHandled()
+
+            viewModel.loadFailed.value shouldBe false
+        }
+
+        should("a newer change replaces the pending reveal, a stale handled id keeps it and its own id clears it") {
+            val history = MutableSharedFlow<MutableList<SudokuListItem>>()
+            every { observeSudokuHistory() } returns history
+            val viewModel = newViewModel()
+
+            viewModel.sudokuHistory.test {
+                history.subscriptionCount.value shouldBe 1
+                history.emit(mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK)))
+
+                history.emit(
+                    mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuB, TEN_O_CLOCK), sudokuItem(sudokuA, NINE_O_CLOCK)),
+                )
+                viewModel.reveal.value shouldBe sudokuB
+                history.emit(
+                    mutableListOf(
+                        SeparatorItem("Jan 2026"),
+                        sudokuItem(sudokuC, ELEVEN_O_CLOCK),
+                        sudokuItem(sudokuB, TEN_O_CLOCK),
+                        sudokuItem(sudokuA, NINE_O_CLOCK),
+                    ),
+                )
+                viewModel.reveal.value shouldBe sudokuC
+
+                viewModel.onRevealHandled(sudokuB)
+                viewModel.reveal.value shouldBe sudokuC
+
+                viewModel.onRevealHandled(sudokuC)
+                viewModel.reveal.value shouldBe null
+                cancelAndIgnoreRemainingEvents()
             }
         }
 
@@ -268,7 +297,7 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe emptyList() }
-            viewModel.events.test { expectNoEvents() }
+            viewModel.loadFailed.value shouldBe false
         }
 
         should("deleting the selection delegates to deleteSudoku and finishes") {

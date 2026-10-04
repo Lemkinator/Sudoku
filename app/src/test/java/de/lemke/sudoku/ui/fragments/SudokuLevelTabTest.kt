@@ -328,6 +328,32 @@ class SudokuLevelTabTest {
     }
 
     @Test
+    fun `an unreadable level shows the load error once and marks it handled`() {
+        runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
+        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        settings.currentLevelTab = 0
+        ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+
+            ShadowToast.shownToastCount() shouldBe 1
+            ShadowToast.getTextOfLatestToast() shouldBe "Failed to load sudoku levels"
+            scenario.onActivity { activity ->
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<SudokuLevelTab>()
+                        .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
+                fragment.viewModel.loadFailed.value shouldBe false
+            }
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            ShadowToast.shownToastCount() shouldBe 1
+        }
+    }
+
+    @Test
     fun `tapping a level row twice opens SudokuActivity once`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
         launch { fragment ->
