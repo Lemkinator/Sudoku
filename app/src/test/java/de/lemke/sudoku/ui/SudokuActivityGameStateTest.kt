@@ -43,6 +43,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -198,7 +199,7 @@ class SudokuActivityGameStateTest {
     }
 
     @Test
-    fun `a restart shows the loading dialog over the reset board until it is saved, then plays it`() {
+    fun `a restart keeps the reset board without a loading dialog until it is saved, then plays it`() {
         val sudoku = formulaicSudoku(solved = false)
         launch(sudoku) { scenario ->
             scenario.onActivity { activity ->
@@ -214,7 +215,7 @@ class SudokuActivityGameStateTest {
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
                 activity.sudoku.errorsMade shouldBe 0
-                loadingDialog()?.isShowing shouldBe true
+                (loadingDialog()?.isShowing == true).shouldBeFalse()
             }
 
             pausableDefaultDispatcher.resume()
@@ -222,7 +223,6 @@ class SudokuActivityGameStateTest {
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudoku.id
                 activity.sudoku[1].value.shouldBeNull()
-                loadingDialog()?.isShowing shouldBe false
             }
         }
     }
