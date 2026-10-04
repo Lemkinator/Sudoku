@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
     private var isUIReady = false
     private var importProgressDialog: ProgressDialog? = null
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForSingleLaunchResult(StartActivityForResult()) {}
-    internal val viewModel: MainViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModels()
 
     @Inject
     lateinit var userSettings: UserSettings

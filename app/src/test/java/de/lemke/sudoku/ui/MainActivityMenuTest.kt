@@ -22,6 +22,7 @@ import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -369,7 +370,7 @@ class MainActivityMenuTest {
         var finished = false
         while (!finished && System.nanoTime() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
-            onActivity { activity -> finished = activity.viewModel.importedSudoku.value != ImportedSudoku.Importing }
+            onActivity { activity -> finished = activity.importedSudoku != ImportedSudoku.Importing }
         }
     }
 
@@ -437,7 +438,7 @@ class MainActivityMenuTest {
                     val shadowActivity = shadowOf(activity)
                     shadowActivity.nextStartedActivity?.component?.className shouldBe SettingsActivity::class.java.name
                     shadowActivity.nextStartedActivity shouldBe null
-                    activity.viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(sudoku.id)
+                    activity.importedSudoku shouldBe ImportedSudoku.Imported(sudoku.id)
                 }
                 scenario.moveToState(Lifecycle.State.STARTED)
                 scenario.moveToState(Lifecycle.State.RESUMED)
@@ -446,7 +447,7 @@ class MainActivityMenuTest {
                     val shadowActivity = shadowOf(activity)
                     shadowActivity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
                     shadowActivity.nextStartedActivity shouldBe null
-                    activity.viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
+                    activity.importedSudoku shouldBe ImportedSudoku.Idle
                 }
             }
         }
@@ -457,3 +458,6 @@ class MainActivityMenuTest {
         const val IMPORT_TIMEOUT_NANOS = 10_000_000_000L
     }
 }
+
+private val MainActivity.importedSudoku: ImportedSudoku
+    get() = ViewModelProvider(this)[MainViewModel::class.java].importedSudoku.value
