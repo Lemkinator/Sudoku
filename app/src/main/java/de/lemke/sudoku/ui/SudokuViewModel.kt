@@ -187,15 +187,18 @@ class SudokuViewModel @Inject constructor(
 
     suspend fun saveSudokuProgress(sudoku: Sudoku) = saveSudoku(sudoku, onlyUpdate = true)
 
-    private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result =
-        runCatching<SudokuCompletion.Result> {
-            saveSudokuProgress(completed)
-            SudokuCompletion.Summary(completed, followUpOf(completed))
-        }.getOrElse { e -> if (e is CancellationException) throw e else SudokuCompletion.Failed }
+    private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
+        val saved = orOnFailure(false) { saveSudokuProgress(completed).let { true } }
+        return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
+    }
 
     private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =
-        runCatching { calculatePlayGamesSync(completed) }
-            .getOrElse { e -> if (e is CancellationException) throw e else PlayGamesSync() }
+        orOnFailure(PlayGamesSync()) { calculatePlayGamesSync(completed) }
+
+    private inline fun <T> orOnFailure(
+        fallback: T,
+        block: () -> T,
+    ): T = runCatching(block).getOrElse { e -> if (e is CancellationException) throw e else fallback }
 
     private suspend fun followUpOf(completed: Sudoku): FollowUp? =
         when {

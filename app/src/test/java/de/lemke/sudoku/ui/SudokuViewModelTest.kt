@@ -399,6 +399,19 @@ class SudokuViewModelTest : ShouldSpec(
             coVerify(exactly = 0) { calculatePlayGamesSync(any()) }
         }
 
+        should("onCompleted offers the summary without a follow-up and syncs Play Games when only the max-level read fails") {
+            val completed = testSudoku(SudokuSize.NINE, modeLevel = 5)
+            val viewModel = playing(completed)
+            coEvery { getMaxSudokuLevel(SudokuSize.NINE) } throws IllegalStateException("query failed")
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync(achievementUnlocks = listOf(7))
+
+            viewModel.onCompleted()
+
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, null)
+            viewModel.playGamesSync.value shouldBe PlayGamesSync(achievementUnlocks = listOf(7))
+            coVerify(exactly = 1) { saveSudoku(completed, true) }
+        }
+
         should("onCompleted keeps the summary and syncs nothing when the Play Games sync calculation fails") {
             val completed = testSudoku()
             val viewModel = playing(completed)
