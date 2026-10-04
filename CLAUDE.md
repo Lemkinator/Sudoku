@@ -66,7 +66,7 @@ don't store history.
 ## Architecture
 
 Clean Architecture with three layers. Activities/Fragments obtain a `@HiltViewModel`-annotated ViewModel via `by viewModels()`, which owns
-the use-case injections; screens with state/events expose them via `StateFlow`/`Channel<Event>`.
+the use-case injections; screens expose state, including one-off results, via `StateFlow`.
 
 ```text
 de.lemke.sudoku/
@@ -78,6 +78,10 @@ de.lemke.sudoku/
 **Data flow:** UI → ViewModel → UseCase → Repository → Room/SharedPreferences. Reactive updates via `Flow<>`. Background work via
 `withContext(dispatcher)`, where `dispatcher` is a Hilt-injected `CoroutineDispatcher` (see `di/DispatchersModule.kt` below) — never call
 `Dispatchers.IO`/`.Default`/`.Main` directly in use cases.
+
+**Play Games:** the drawer's achievements and leaderboards run `preparePlayGamesScreen` in `singleLaunchSuspending`,
+because sign-in needs the Activity. Its silent authentication check and intent fetch give up after 10 s and end
+silently.
 
 **Domain models:** `Sudoku` (4×4/9×9/16×16), `Field` (cell with solution/value/notes), `Position` (row/col/block), `Difficulty` (
 VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`, `setHint()`, `errorLimitReached()`).
@@ -103,8 +107,9 @@ scheduled via `AlarmReceiver`.
 with common-utils' `stateInViewModel(viewModelScope, initialValue)`. It shares via `SharingStarted.WhileSubscribed` with a 5 s stop
 timeout, so Room queries run only while the screen collects. The upstream restarts on every return after that timeout. One-time init
 steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a `viewModelScope.async` that the upstream awaits. A
-`catch` ahead of `stateInViewModel` sends the screen's load-error event once per failed run; the next return retries. One-shot
-navigation/toast/finish events use `Channel<Event>(BUFFERED).receiveAsFlow()`.
+`catch` ahead of `stateInViewModel` sets the screen's `loadFailed` state once per failed run; the next return retries.
+`SudokuViewModel` owns the played sudoku (`SudokuGame`) and keeps its id in the `SavedStateHandle`, so a restart or a
+follow-up game survives recreation.
 
 ## Notable Dependencies
 
@@ -132,7 +137,13 @@ Four tools run as part of `./gradlew build`:
   Kover XML (`.github/scripts/strip-zero-instruction-lines.py`) before the Codecov upload.
 - **Konsist** — architecture rules in
   `app/src/test/java/de/lemke/sudoku/ArchitectureTest.kt`. Enforces
-  `data/domain/ui` layering. Runs as part of `./gradlew test`.
+  `data/domain/ui` layering. Runs as part of `./gradlew test`. `CodingConventionsTest.kt` also
+  enforces the common-utils launch latch through `assertLaunchLatchConventions()` from the
+  common-utils testFixtures: it bans raw activity launches and result registration by name, and a
+  `show`/`showNow` call whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a
+  `FragmentTransaction` named `*transaction`. Launch through `singleLaunchActivity`, `transformToActivity` or
+  `registerForSingleLaunchResult`; wrap taps in the input helpers (`onSingleLaunchClick`, `singleLaunchMenuItem`,
+  `onSingleLaunchItemSelected`, `singleLaunchSuspending`); show dialogs with `showOnce(tag)`.
 
 **ktlint rule overrides** — two rules disabled in `.editorconfig` to match
 community practice (NowInAndroid, Pokedex both use the inline form):
