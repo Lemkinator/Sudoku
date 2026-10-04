@@ -32,6 +32,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -156,9 +157,11 @@ class SudokuActivityCompletionTest {
     fun `completing a normal sudoku with animations enabled shows the completion dialog`() {
         val sudokuId = SudokuId.generate()
         runBlocking { saveSudoku(almostSolvedSudoku(sudokuId)) }
-        completeBoard(sudokuId) {
+        completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog?
             dialog.shouldNotBeNull()
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe activity.getString(R.string.new_game)
+            activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
         }
     }
 
@@ -200,6 +203,19 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             shadowOf(Looper.getMainLooper()).idle()
             activity.sudoku.modeLevel shouldBe 2
+        }
+    }
+
+    @Test
+    fun `completing a level below the max level offers no follow-up`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking {
+            saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1))
+            saveSudoku(almostSolvedSudoku(SudokuId.generate(), modeLevel = 2))
+        }
+        completeBoard(sudokuId) {
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isShown shouldBe false
         }
     }
 }

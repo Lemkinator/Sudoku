@@ -31,7 +31,6 @@ import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,6 +70,20 @@ sealed interface SudokuShare {
     data class File(val uri: Uri) : Result
 }
 
+/** The wrap-up of the completed sudoku. The activity shows a [Result] and then reports it handled. */
+sealed interface SudokuCompletion {
+    sealed interface Result : SudokuCompletion
+
+    data object Idle : SudokuCompletion
+
+    data object Running : SudokuCompletion
+
+    data class Summary(
+        val followUp: FollowUp?,
+        val playGamesSync: PlayGamesSync,
+    ) : Result
+}
+
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
@@ -87,6 +100,9 @@ class SudokuViewModel @Inject constructor(
 
     val share: StateFlow<SudokuShare>
         field = MutableStateFlow<SudokuShare>(SudokuShare.Idle)
+
+    val completion: StateFlow<SudokuCompletion>
+        field = MutableStateFlow<SudokuCompletion>(SudokuCompletion.Idle)
 
     init {
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
@@ -136,12 +152,26 @@ class SudokuViewModel @Inject constructor(
         share.update { if (it == result) SudokuShare.Idle else it }
     }
 
-    suspend fun isMaxSudokuLevel(
-        size: SudokuSize,
-        level: Int,
-    ): Boolean = getMaxSudokuLevel(size) == level
+    fun onCompleted() {
+        val completed = (game.value as? SudokuGame.Playing)?.sudoku?.takeIf { it.completed }
+        if (completed == null || completion.value != SudokuCompletion.Idle) return
+        completion.value = SudokuCompletion.Running
+        viewModelScope.launch {
+            saveSudokuProgress(completed)
+            completion.value = SudokuCompletion.Summary(followUpOf(completed), calculatePlayGamesSync(completed))
+        }
+    }
+
+    fun onCompletionHandled(result: SudokuCompletion.Result) {
+        completion.update { if (it == result) SudokuCompletion.Idle else it }
+    }
 
     suspend fun saveSudokuProgress(sudoku: Sudoku) = saveSudoku(sudoku, onlyUpdate = true)
 
-    suspend fun syncPlayGames(sudoku: Sudoku? = null): PlayGamesSync = calculatePlayGamesSync(sudoku)
+    private suspend fun followUpOf(completed: Sudoku): FollowUp? =
+        when {
+            completed.isSudokuLevel -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.size) == completed.modeLevel }
+            completed.isNormalSudoku -> FollowUp.NEW_GAME
+            else -> null
+        }
 }

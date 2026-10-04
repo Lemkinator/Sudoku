@@ -37,6 +37,7 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.annotation.IdRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
@@ -151,6 +152,7 @@ class SudokuActivity : AppCompatActivity() {
         collectState(viewModel.game) { renderLoadingDialog(it) }
         collectState(viewModel.game, minActiveState = RESUMED) { onGame(it) }
         collectState(viewModel.share, minActiveState = RESUMED) { if (it is SudokuShare.Result) onShareResult(it) }
+        collectState(viewModel.completion, minActiveState = RESUMED) { if (it is SudokuCompletion.Result) onCompletionResult(it) }
     }
 
     override fun onDestroy() {
@@ -311,25 +313,27 @@ class SudokuActivity : AppCompatActivity() {
         menuPausePlayVisible = false
         invalidateOptionsMenu()
         animateGameButtonsVisibility(false)
-        val dialog =
-            AlertDialog
-                .Builder(this@SudokuActivity)
-                .setTitle(R.string.completed_title)
-                .setMessage(sudoku.getLocalStatisticsString(resources))
-                .setNeutralButton(commonutilsR.string.commonutils_ok, null)
-        lifecycleScope.launch {
-            viewModel.saveSudokuProgress(sudoku)
-            if (sudoku.isSudokuLevel &&
-                viewModel.isMaxSudokuLevel(sudoku.size, sudoku.modeLevel)
-            ) {
-                dialog.setPositiveButton(R.string.next_level) { _, _ -> singleLaunch { viewModel.onFollowUp(FollowUp.NEXT_LEVEL) } }
-            } else if (sudoku.isNormalSudoku) {
-                dialog.setPositiveButton(R.string.new_game) { _, _ -> singleLaunch { viewModel.onFollowUp(FollowUp.NEW_GAME) } }
+        viewModel.onCompleted()
+    }
+
+    private fun onCompletionResult(result: SudokuCompletion.Result) {
+        when (result) {
+            is SudokuCompletion.Summary -> {
+                val dialog =
+                    AlertDialog
+                        .Builder(this@SudokuActivity)
+                        .setTitle(R.string.completed_title)
+                        .setMessage(sudoku.getLocalStatisticsString(resources))
+                        .setNeutralButton(commonutilsR.string.commonutils_ok, null)
+                result.followUp?.let { followUp ->
+                    dialog.setPositiveButton(followUp.buttonText) { _, _ -> singleLaunch { viewModel.onFollowUp(followUp) } }
+                }
+                dialog.showOnce(COMPLETED_DIALOG_TAG)
+                applyPlayGamesSync(result.playGamesSync)
+                showInAppReviewIfPossible(userSettings)
             }
-            dialog.showOnce(COMPLETED_DIALOG_TAG)
-            applyPlayGamesSync(viewModel.syncPlayGames(sudoku))
-            showInAppReviewIfPossible(userSettings)
         }
+        viewModel.onCompletionHandled(result)
     }
 
     private fun checkErrorLimit(): Boolean {
@@ -822,6 +826,14 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 }
+
+@get:StringRes
+private val FollowUp.buttonText: Int
+    get() =
+        when (this) {
+            FollowUp.NEW_GAME -> R.string.new_game
+            FollowUp.NEXT_LEVEL -> R.string.next_level
+        }
 
 /** What the share dialog shares, one per radio button. */
 private enum class ShareContent(
