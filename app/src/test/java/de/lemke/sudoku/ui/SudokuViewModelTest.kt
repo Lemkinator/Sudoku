@@ -442,6 +442,31 @@ class SudokuViewModelTest : ShouldSpec(
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
         }
 
+        should("onCompleted of a completed sudoku that is ready but not started does nothing") {
+            val completed = testSudoku()
+            coEvery { getSudoku(completed.id) } returns completed
+            val viewModel = viewModel(SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value)))
+
+            viewModel.onCompleted()
+
+            viewModel.game.value shouldBe SudokuGame.Ready(completed)
+            viewModel.completion.value shouldBe SudokuCompletion.Idle
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+        should("onCompleted while the follow-up generates does nothing") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { generateSudoku(SudokuSize.FOUR, Difficulty.EASY) } coAnswers { CompletableDeferred<Sudoku>().await() }
+            viewModel.onFollowUp(FollowUp.NEW_GAME)
+
+            viewModel.onCompleted()
+
+            viewModel.game.value shouldBe SudokuGame.Generating
+            viewModel.completion.value shouldBe SudokuCompletion.Idle
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
         should("onCompletionHandled returns to idle, and a stale handled call keeps the pending summary") {
             val completed = testSudoku()
             val viewModel = playing(completed)
