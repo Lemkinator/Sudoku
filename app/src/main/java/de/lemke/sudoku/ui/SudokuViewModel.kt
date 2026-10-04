@@ -165,8 +165,9 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onCompleted() {
-        val completed = (game.value as? SudokuGame.Playing)?.sudoku?.takeIf { it.completed }
-        if (completed == null || completion.value != SudokuCompletion.Idle) return
+        val playing = game.value as? SudokuGame.Playing
+        if (playing == null || !playing.sudoku.completed || completion.value != SudokuCompletion.Idle) return
+        val completed = playing.sudoku
         completion.value = SudokuCompletion.Running
         wrapUp =
             viewModelScope.launch {
