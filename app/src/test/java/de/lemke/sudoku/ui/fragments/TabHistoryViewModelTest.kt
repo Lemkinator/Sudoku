@@ -291,11 +291,19 @@ class TabHistoryViewModelTest : ShouldSpec(
             }
         }
 
-        should("handling a reveal while none is pending keeps none pending") {
+        should("handling another id keeps the pending reveal and handling its own id clears it") {
+            val firstHistory = mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuA, NINE_O_CLOCK))
+            val secondHistory =
+                mutableListOf(SeparatorItem("Jan 2026"), sudokuItem(sudokuB, TEN_O_CLOCK), sudokuItem(sudokuA, NINE_O_CLOCK))
+            every { observeSudokuHistory() } returns flowOf(firstHistory, secondHistory)
             val viewModel = newViewModel()
+            viewModel.sudokuHistory.test { expectMostRecentItem() shouldBe secondHistory }
+            viewModel.reveal.value shouldBe sudokuB
 
             viewModel.onRevealHandled(sudokuA)
+            viewModel.reveal.value shouldBe sudokuB
 
+            viewModel.onRevealHandled(sudokuB)
             viewModel.reveal.value shouldBe null
         }
 

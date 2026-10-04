@@ -590,13 +590,22 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
 
             viewModel.levelStart.value shouldBe LevelStart.Running
+            coVerify(exactly = 1) { saveSudoku(nextLevel) }
         }
 
-        should("handling a reveal while none is pending keeps none pending") {
+        should("handling another id keeps the pending reveal and handling its own id clears it") {
+            val nextLevel = testSudoku(modeLevel = 2)
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
             val viewModel = newViewModel()
+            viewModel.state.test { expectMostRecentItem().hasNextLevelToStart shouldBe true }
+            viewModel.reveal.value shouldBe nextLevel.id
 
             viewModel.onRevealHandled(testSudoku(modeLevel = 1).id)
+            viewModel.reveal.value shouldBe nextLevel.id
 
+            viewModel.onRevealHandled(nextLevel.id)
             viewModel.reveal.value shouldBe null
         }
 
