@@ -57,14 +57,22 @@ class MainViewModel @Inject constructor(
     val importedSudoku: StateFlow<ImportedSudoku>
         field = MutableStateFlow<ImportedSudoku>(ImportedSudoku.Idle)
 
-    /** Imports the file at [uri] once, also when a recreated or restored activity hands the same [uri] again. */
+    private var importingFile: String? = null
+
+    /**
+     * Imports the file at [uri] once, also when a recreated or restored activity hands the same [uri] again.
+     * A process death during the import imports the file again, which replaces the sudoku stored under the file's id.
+     */
     fun onFileOpened(uri: Uri) {
         val uriString = uri.toString()
-        if (savedStateHandle.get<String>(KEY_OPENED_FILE) == uriString) return
-        savedStateHandle[KEY_OPENED_FILE] = uriString
+        if (uriString == importingFile || savedStateHandle.get<String>(KEY_OPENED_FILE) == uriString) return
+        importingFile = uriString
         importedSudoku.value = ImportedSudoku.Importing
         viewModelScope.launch {
-            importedSudoku.value = importSudoku(uri)?.let { ImportedSudoku.Imported(it.id) } ?: ImportedSudoku.Failed
+            val result = importSudoku(uri)?.let { ImportedSudoku.Imported(it.id) } ?: ImportedSudoku.Failed
+            savedStateHandle[KEY_OPENED_FILE] = uriString
+            importingFile = null
+            importedSudoku.value = result
         }
     }
 

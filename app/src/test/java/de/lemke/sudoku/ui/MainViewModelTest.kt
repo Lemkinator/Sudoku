@@ -130,6 +130,28 @@ class MainViewModelTest : ShouldSpec(
             coVerify(exactly = 1) { importSudoku(uri) }
         }
 
+        should("onFileOpened imports a file only once when the activity is recreated during the import") {
+            val imported = CompletableDeferred<Sudoku?>()
+            coEvery { importSudoku(uri) } coAnswers { imported.await() }
+            viewModel.onFileOpened(uri)
+            viewModel.onFileOpened(uri)
+            imported.complete(sudoku())
+            viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
+            coVerify(exactly = 1) { importSudoku(uri) }
+        }
+
+        should("onFileOpened imports the file again after process death during the import") {
+            val interrupted = CompletableDeferred<Sudoku?>()
+            coEvery { importSudoku(uri) } coAnswers { interrupted.await() }
+            viewModel.onFileOpened(uri)
+            savedStateHandle = SavedStateHandle(savedStateHandle.keys().associateWith { savedStateHandle.get<Any>(it) })
+            coEvery { importSudoku(uri) } returns sudoku()
+            val restored = newViewModel()
+            restored.onFileOpened(uri)
+            restored.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
+            coVerify(exactly = 2) { importSudoku(uri) }
+        }
+
         should("onFileOpened imports a different file opened later") {
             val otherUri = mockk<Uri> { every { this@mockk.toString() } returns "content://files/other.json" }
             coEvery { importSudoku(uri) } returns sudoku()
