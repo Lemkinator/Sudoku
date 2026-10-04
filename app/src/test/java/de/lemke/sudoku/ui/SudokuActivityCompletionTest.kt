@@ -162,6 +162,7 @@ class SudokuActivityCompletionTest {
             dialog.shouldNotBeNull()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe activity.getString(R.string.new_game)
             activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+            activity.viewModel.playGamesSync.value shouldBe null
         }
     }
 

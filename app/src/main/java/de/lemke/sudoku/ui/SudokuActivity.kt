@@ -64,6 +64,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
 import de.lemke.sudoku.domain.model.GameListener
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
@@ -153,6 +154,7 @@ class SudokuActivity : AppCompatActivity() {
         collectState(viewModel.game, minActiveState = RESUMED) { onGame(it) }
         collectState(viewModel.share, minActiveState = RESUMED) { if (it is SudokuShare.Result) onShareResult(it) }
         collectState(viewModel.completion, minActiveState = RESUMED) { if (it is SudokuCompletion.Result) onCompletionResult(it) }
+        collectState(viewModel.playGamesSync, minActiveState = RESUMED) { it?.let(::onPlayGamesSync) }
     }
 
     override fun onDestroy() {
@@ -329,11 +331,15 @@ class SudokuActivity : AppCompatActivity() {
                     dialog.setPositiveButton(followUp.buttonText) { _, _ -> singleLaunch { viewModel.onFollowUp(followUp) } }
                 }
                 dialog.showOnce(COMPLETED_DIALOG_TAG)
-                applyPlayGamesSync(result.playGamesSync)
-                showInAppReviewIfPossible(userSettings)
             }
         }
         viewModel.onCompletionHandled(result)
+    }
+
+    private fun onPlayGamesSync(sync: PlayGamesSync) {
+        applyPlayGamesSync(sync)
+        showInAppReviewIfPossible(userSettings)
+        viewModel.onPlayGamesSyncHandled(sync)
     }
 
     private fun checkErrorLimit(): Boolean {

@@ -78,10 +78,7 @@ sealed interface SudokuCompletion {
 
     data object Running : SudokuCompletion
 
-    data class Summary(
-        val followUp: FollowUp?,
-        val playGamesSync: PlayGamesSync,
-    ) : Result
+    data class Summary(val followUp: FollowUp?) : Result
 }
 
 @HiltViewModel
@@ -103,6 +100,10 @@ class SudokuViewModel @Inject constructor(
 
     val completion: StateFlow<SudokuCompletion>
         field = MutableStateFlow<SudokuCompletion>(SudokuCompletion.Idle)
+
+    /** The Play Games sync of the completed sudoku. The activity applies it and then reports it handled. */
+    val playGamesSync: StateFlow<PlayGamesSync?>
+        field = MutableStateFlow<PlayGamesSync?>(null)
 
     init {
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
@@ -158,12 +159,17 @@ class SudokuViewModel @Inject constructor(
         completion.value = SudokuCompletion.Running
         viewModelScope.launch {
             saveSudokuProgress(completed)
-            completion.value = SudokuCompletion.Summary(followUpOf(completed), calculatePlayGamesSync(completed))
+            completion.value = SudokuCompletion.Summary(followUpOf(completed))
+            playGamesSync.value = calculatePlayGamesSync(completed)
         }
     }
 
     fun onCompletionHandled(result: SudokuCompletion.Result) {
         completion.update { if (it == result) SudokuCompletion.Idle else it }
+    }
+
+    fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
+        playGamesSync.update { if (it == sync) null else it }
     }
 
     suspend fun saveSudokuProgress(sudoku: Sudoku) = saveSudoku(sudoku, onlyUpdate = true)

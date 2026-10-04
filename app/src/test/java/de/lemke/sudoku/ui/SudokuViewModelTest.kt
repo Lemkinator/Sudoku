@@ -253,7 +253,7 @@ class SudokuViewModelTest : ShouldSpec(
             coVerify(exactly = 1) { saveSudoku(sudoku, true) }
         }
 
-        should("onCompleted saves the completed level, then offers the next level when it is the max level") {
+        should("onCompleted saves the completed level, offers the next level when it is the max level, then syncs Play Games") {
             val completed = testSudoku(SudokuSize.NINE, modeLevel = 5)
             val viewModel = playing(completed)
             val sync = PlayGamesSync(achievementUnlocks = listOf(7))
@@ -262,9 +262,11 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEXT_LEVEL, sync)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEXT_LEVEL)
+            viewModel.playGamesSync.value shouldBe sync
             coVerify(ordering = Ordering.ORDERED) {
                 saveSudoku(completed, true)
+                getMaxSudokuLevel(SudokuSize.NINE)
                 calculatePlayGamesSync(completed)
             }
         }
@@ -277,7 +279,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(null, PlayGamesSync())
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(null)
         }
 
         should("onCompleted offers a new game for a normal sudoku without a level lookup") {
@@ -287,7 +289,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME, PlayGamesSync())
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
             coVerify(exactly = 0) { getMaxSudokuLevel(any()) }
         }
 
@@ -298,24 +300,39 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(null, PlayGamesSync())
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(null)
             coVerify(exactly = 0) { getMaxSudokuLevel(any()) }
         }
 
-        should("onCompleted reports running until the summary is ready, and a second call wraps up once") {
+        should("onCompleted reports running until the sudoku is saved, and a second call wraps up once") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            val saved = CompletableDeferred<Unit>()
+            coEvery { saveSudoku(completed, true) } coAnswers { saved.await() }
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+
+            viewModel.onCompleted()
+            viewModel.onCompleted()
+
+            viewModel.completion.value shouldBe SudokuCompletion.Running
+            saved.complete(Unit)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
+            coVerify(exactly = 1) { saveSudoku(completed, true) }
+            coVerify(exactly = 1) { calculatePlayGamesSync(completed) }
+        }
+
+        should("onCompleted offers the summary before the Play Games sync is calculated") {
             val completed = testSudoku()
             val viewModel = playing(completed)
             val sync = CompletableDeferred<PlayGamesSync>()
             coEvery { calculatePlayGamesSync(completed) } coAnswers { sync.await() }
 
             viewModel.onCompleted()
-            viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Running
-            sync.complete(PlayGamesSync())
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME, PlayGamesSync())
-            coVerify(exactly = 1) { saveSudoku(completed, true) }
-            coVerify(exactly = 1) { calculatePlayGamesSync(completed) }
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
+            viewModel.playGamesSync.value shouldBe null
+            sync.complete(PlayGamesSync(achievementUnlocks = listOf(7)))
+            viewModel.playGamesSync.value shouldBe PlayGamesSync(achievementUnlocks = listOf(7))
         }
 
         should("onCompleted of an unfinished sudoku does nothing") {
@@ -334,10 +351,23 @@ class SudokuViewModelTest : ShouldSpec(
             coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
             viewModel.onCompleted()
 
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(null, PlayGamesSync()))
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME, PlayGamesSync())
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(FollowUp.NEW_GAME, PlayGamesSync()))
+            viewModel.onCompletionHandled(SudokuCompletion.Summary(null))
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
+            viewModel.onCompletionHandled(SudokuCompletion.Summary(FollowUp.NEW_GAME))
             viewModel.completion.value shouldBe SudokuCompletion.Idle
+        }
+
+        should("onPlayGamesSyncHandled clears the sync, and a stale handled call keeps the pending one") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            val sync = PlayGamesSync(achievementUnlocks = listOf(7))
+            coEvery { calculatePlayGamesSync(completed) } returns sync
+            viewModel.onCompleted()
+
+            viewModel.onPlayGamesSyncHandled(PlayGamesSync())
+            viewModel.playGamesSync.value shouldBe sync
+            viewModel.onPlayGamesSyncHandled(sync)
+            viewModel.playGamesSync.value shouldBe null
         }
     },
 )
