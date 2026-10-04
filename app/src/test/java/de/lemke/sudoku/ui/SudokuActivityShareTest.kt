@@ -22,6 +22,7 @@ import android.os.Looper
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.IntentCompat
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -36,6 +37,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokuExport
@@ -261,6 +263,44 @@ class SudokuActivityShareTest {
                 sharedSudoku(activity).fields[1].value shouldBe 2
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
+        }
+    }
+
+    @Test
+    fun `a sudoku file written while a launch is pending is shared once the activity resumes again`() {
+        val sudoku = levelSudokuWithAnEntry()
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            lateinit var viewModel: SudokuViewModel
+            scenario.onActivity { activity ->
+                activity.userSettings.animationsEnabled = false
+                viewModel = activity.viewModel
+                activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
+                viewModel.onShare(activity.sudoku.getInitialSudoku())
+            }
+            awaitMainLooperIdleUntil { viewModel.share.value is SudokuShare.File }
+            val file = viewModel.share.value as SudokuShare.File
+            scenario.onActivity { activity ->
+                shadowOf(activity).nextStartedActivity.component?.className shouldBe MainActivity::class.java.name
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.share.value shouldBe file
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.onActivity { activity ->
+                val chooser = shadowOf(activity).nextStartedActivity
+                chooser.action shouldBe Intent.ACTION_CHOOSER
+                val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
+                send.type shouldBe "application/sudoku"
+                IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java) shouldBe file.uri
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.share.value shouldBe SudokuShare.Idle
         }
     }
 

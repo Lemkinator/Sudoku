@@ -16,10 +16,13 @@
 
 package de.lemke.sudoku.ui.fragments
 
+import android.content.Intent
 import android.os.Looper
 import android.view.View
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -33,6 +36,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
@@ -212,6 +216,42 @@ class TabSudokuFragmentTest {
                 started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
+        }
+    }
+
+    @Test
+    fun `a new sudoku created while a launch is pending opens once the activity resumes again`() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+            lateinit var viewModel: TabSudokuViewModel
+            scenario.onActivity { activity ->
+                activity.singleLaunchActivity(Intent(activity, SudokuLevelActivity::class.java)) shouldBe true
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabSudoku>()
+                        .first()
+                viewModel = ViewModelProvider(fragment)[TabSudokuViewModel::class.java]
+                viewModel.onNewGame(SudokuSize.FOUR, Difficulty.VERY_EASY)
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+            val generated = runBlocking { getAllSudokus() }.single()
+            scenario.onActivity { activity ->
+                shadowOf(activity).nextStartedActivity.component?.className shouldBe SudokuLevelActivity::class.java.name
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.newGame.value shouldBe NewGame.Created(generated.id)
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.onActivity { activity ->
+                val started = shadowOf(activity).nextStartedActivity
+                started.component?.className shouldBe SudokuActivity::class.java.name
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.newGame.value shouldBe NewGame.Idle
         }
     }
 
