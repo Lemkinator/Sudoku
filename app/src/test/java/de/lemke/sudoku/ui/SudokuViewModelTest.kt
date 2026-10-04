@@ -423,18 +423,21 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.playGamesSync.value shouldBe PlayGamesSync()
         }
 
-        should("onCompleted rethrows a cancellation of the save and leaves the completion running") {
+        should("onCompleted maps a cancellation of the save in an active wrap-up to failed, so a restart works again") {
             val completed = testSudoku()
             val viewModel = playing(completed)
             coEvery { saveSudoku(completed, true) } throws CancellationException()
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Running
+            viewModel.completion.value shouldBe SudokuCompletion.Failed
             coVerify(exactly = 0) { calculatePlayGamesSync(any()) }
+            viewModel.onCompletionHandled(SudokuCompletion.Failed)
+            viewModel.onRestart()
+            viewModel.game.value shouldBe SudokuGame.Ready(completed)
         }
 
-        should("onCompleted rethrows a cancellation of the Play Games sync calculation and syncs nothing") {
+        should("onCompleted falls back to an empty sync on a cancellation of the calculation in an active wrap-up") {
             val completed = testSudoku()
             val viewModel = playing(completed)
             coEvery { calculatePlayGamesSync(completed) } throws CancellationException()
@@ -442,7 +445,7 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.onCompleted()
 
             viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
-            viewModel.playGamesSync.value shouldBe null
+            viewModel.playGamesSync.value shouldBe PlayGamesSync()
         }
 
         should("onCompleted of an unfinished sudoku does nothing") {

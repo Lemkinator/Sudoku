@@ -33,8 +33,9 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -195,10 +196,14 @@ class SudokuViewModel @Inject constructor(
     private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =
         orOnFailure(PlayGamesSync()) { calculatePlayGamesSync(completed) }
 
-    private inline fun <T> orOnFailure(
+    private suspend inline fun <T> orOnFailure(
         fallback: T,
         block: () -> T,
-    ): T = runCatching(block).getOrElse { e -> if (e is CancellationException) throw e else fallback }
+    ): T =
+        runCatching(block).getOrElse {
+            currentCoroutineContext().ensureActive()
+            fallback
+        }
 
     private suspend fun followUpOf(completed: Sudoku): FollowUp? =
         when {
