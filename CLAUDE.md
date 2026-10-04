@@ -128,7 +128,8 @@ Four tools run as part of `./gradlew build`:
   `autoCorrect = false` — fixes are manual.
 - **Kover** — coverage floor enforced via `minBound` in `app/build.gradle.kts`'s
   `kover { reports { variant("debug") { verify { rule { ... } } } } }`.
-  Verify: `./gradlew koverVerifyDebug`.
+  Verify: `./gradlew koverVerifyDebug`. CI strips zero-instruction `<line>` entries from the
+  Kover XML (`.github/scripts/strip-zero-instruction-lines.py`) before the Codecov upload.
 - **Konsist** — architecture rules in
   `app/src/test/java/de/lemke/sudoku/ArchitectureTest.kt`. Enforces
   `data/domain/ui` layering. Runs as part of `./gradlew test`.
