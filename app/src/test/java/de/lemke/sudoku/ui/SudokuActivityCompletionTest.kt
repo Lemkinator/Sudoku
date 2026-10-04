@@ -35,7 +35,6 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
-import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
@@ -207,7 +206,7 @@ class SudokuActivityCompletionTest {
         completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog?
             dialog.shouldNotBeNull()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe activity.getString(R.string.new_game)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "New Game"
             activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
             activity.viewModel.playGamesSync.value shouldBe null
         }
@@ -281,7 +280,7 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
 
             scenario.onActivity { activity ->
-                ShadowToast.getTextOfLatestToast() shouldBe activity.getString(R.string.error_saving_sudoku_failed)
+                ShadowToast.getTextOfLatestToast() shouldBe "Could not save the sudoku"
                 ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().shouldBeEmpty()
                 activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
                 activity.viewModel.playGamesSync.value shouldBe null
@@ -314,7 +313,7 @@ class SudokuActivityCompletionTest {
             scenario.onActivity { activity ->
                 val dialogs = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>()
                 dialogs.size shouldBe 1
-                dialogs.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe activity.getString(R.string.next_level)
+                dialogs.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "Next level"
                 activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
             }
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
