@@ -214,10 +214,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun renderLoadingDialog(game: SudokuGame) {
-        when (game) {
-            SudokuGame.Generating, SudokuGame.Restarting -> loadingDialog.showOnce(LOADING_DIALOG_TAG)
-            else -> loadingDialog.dismiss()
-        }
+        if (game == SudokuGame.Generating) loadingDialog.showOnce(LOADING_DIALOG_TAG) else loadingDialog.dismiss()
     }
 
     private fun onSudokuNotFound() {

@@ -322,7 +322,7 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `a restart after the completion dialog shows the loading dialog until the Play Games sync is calculated`() {
+    fun `a restart after the completion dialog waits without a loading dialog until the Play Games sync is calculated`() {
         val sudokuId = SudokuId.generate()
         runBlocking { saveSudoku(almostSolvedSudoku(sudokuId)) }
         syncCalculated = CompletableDeferred()
@@ -333,11 +333,11 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idle()
 
             activity.viewModel.game.value shouldBe SudokuGame.Restarting
-            val loadingDialog = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().single()
-            loadingDialog.isShowing shouldBe true
+            activity.sudoku.completed shouldBe true
+            ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().shouldBeEmpty()
             syncCalculated.complete(Unit)
             awaitUntil { activity.viewModel.game.value is SudokuGame.Playing }
-            loadingDialog.isShowing shouldBe false
+            ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().shouldBeEmpty()
             activity.sudoku.completed shouldBe false
         }
     }
