@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui
 
 import androidx.lifecycle.SavedStateHandle
-import app.cash.turbine.test
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import io.kotest.core.spec.style.ShouldSpec
@@ -56,51 +55,87 @@ class IntroViewModelTest : ShouldSpec(
             viewModel.openedFromSettings.shouldBeFalse()
         }
 
-        should("onNotificationsDeclined disables notifications and emits AdvanceOnboarding") {
+        should("notificationChoice starts pending") {
             val viewModel = newViewModel()
-            viewModel.events.test {
-                viewModel.onNotificationsDeclined()
-                awaitItem() shouldBe IntroEvent.AdvanceOnboarding
-            }
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
+        }
+
+        should("onNotificationsDeclined disables notifications and reports Saved") {
+            val viewModel = newViewModel()
+
+            viewModel.onNotificationsDeclined()
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
             verify(exactly = 1) { setDailyNotificationEnabled(false) }
         }
 
-        should("onNotificationsAccepted enables notifications and emits AdvanceOnboarding when permission is granted") {
+        should("onNotificationsAccepted enables notifications and reports Saved when permission is granted") {
             every { isNotificationPermissionGranted() } returns true
             val viewModel = newViewModel()
-            viewModel.events.test {
-                viewModel.onNotificationsAccepted()
-                awaitItem() shouldBe IntroEvent.AdvanceOnboarding
-            }
+
+            viewModel.onNotificationsAccepted()
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
             verify(exactly = 1) { setDailyNotificationEnabled(true) }
         }
 
-        should("onNotificationsAccepted only emits RequestNotificationPermission when permission is not granted") {
+        should("onNotificationsAccepted only reports RequestPermission when permission is not granted") {
             every { isNotificationPermissionGranted() } returns false
             val viewModel = newViewModel()
-            viewModel.events.test {
-                viewModel.onNotificationsAccepted()
-                awaitItem() shouldBe IntroEvent.RequestNotificationPermission
-            }
+
+            viewModel.onNotificationsAccepted()
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.RequestPermission
             verify(exactly = 0) { setDailyNotificationEnabled(any()) }
         }
 
-        should("onNotificationPermissionResult enables notifications and advances when granted") {
+        should("onNotificationPermissionResult enables notifications and reports Saved when granted") {
             val viewModel = newViewModel()
-            viewModel.events.test {
-                viewModel.onNotificationPermissionResult(true)
-                awaitItem() shouldBe IntroEvent.AdvanceOnboarding
-            }
+
+            viewModel.onNotificationPermissionResult(true)
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
             verify(exactly = 1) { setDailyNotificationEnabled(true) }
         }
 
-        should("onNotificationPermissionResult disables notifications and advances when not granted") {
+        should("onNotificationPermissionResult disables notifications and reports Saved when not granted") {
             val viewModel = newViewModel()
-            viewModel.events.test {
-                viewModel.onNotificationPermissionResult(false)
-                awaitItem() shouldBe IntroEvent.AdvanceOnboarding
-            }
+
+            viewModel.onNotificationPermissionResult(false)
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
             verify(exactly = 1) { setDailyNotificationEnabled(false) }
+        }
+
+        should("handling the current result returns to pending") {
+            val viewModel = newViewModel()
+            viewModel.onNotificationsDeclined()
+
+            viewModel.onNotificationChoiceHandled(NotificationChoice.Saved)
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
+        }
+
+        should("handling a requested permission returns to pending, and the permission result then reports Saved") {
+            every { isNotificationPermissionGranted() } returns false
+            val viewModel = newViewModel()
+            viewModel.onNotificationsAccepted()
+
+            viewModel.onNotificationChoiceHandled(NotificationChoice.RequestPermission)
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
+            viewModel.onNotificationPermissionResult(true)
+            viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
+        }
+
+        should("handling a stale result keeps the current result") {
+            every { isNotificationPermissionGranted() } returns false
+            val viewModel = newViewModel()
+            viewModel.onNotificationsAccepted()
+
+            viewModel.onNotificationChoiceHandled(NotificationChoice.Saved)
+
+            viewModel.notificationChoice.value shouldBe NotificationChoice.RequestPermission
         }
     },
 )

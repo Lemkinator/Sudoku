@@ -41,7 +41,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.advanceOnboarding
-import de.lemke.commonutils.ui.utils.collectEvents
+import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
@@ -113,16 +113,8 @@ class IntroActivity : AppCompatActivity() {
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                IntroEvent.AdvanceOnboarding -> {
-                    advanceOnboarding()
-                }
-
-                IntroEvent.RequestNotificationPermission -> {
-                    if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-                }
-            }
+        collectState(viewModel.notificationChoice, minActiveState = RESUMED) {
+            if (it is NotificationChoice.Result) onNotificationChoice(it)
         }
 
         val typedValue = TypedValue()
@@ -625,6 +617,19 @@ class IntroActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun onNotificationChoice(result: NotificationChoice.Result) {
+        when (result) {
+            NotificationChoice.Saved -> {
+                advanceOnboarding()
+            }
+
+            NotificationChoice.RequestPermission -> {
+                if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+            }
+        }
+        viewModel.onNotificationChoiceHandled(result)
     }
 
     private fun showNotificationsDialogOrFinish() {

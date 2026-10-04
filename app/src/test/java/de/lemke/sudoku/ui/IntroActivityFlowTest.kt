@@ -489,13 +489,14 @@ class IntroActivityFlowTest {
         }
 
     @Test
-    fun `declining notifications advances onboarding and finishes`() =
+    fun `declining notifications advances onboarding, finishes and marks the choice handled`() =
         launch { activity ->
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_NEGATIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             activity.isFinishing.shouldBeTrue()
+            activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
         }
 
     @Test
@@ -511,7 +512,7 @@ class IntroActivityFlowTest {
         }
 
     @Test
-    fun `accepting notifications without permission requests it instead of finishing`() =
+    fun `accepting notifications without permission requests it instead of finishing and marks the choice handled`() =
         launch { activity ->
             shadowOf(ApplicationProvider.getApplicationContext<HiltTestApplication>())
                 .denyPermissions(android.Manifest.permission.POST_NOTIFICATIONS)
@@ -520,6 +521,13 @@ class IntroActivityFlowTest {
             dialog.getButton(BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idle()
             activity.isFinishing.shouldBeFalse()
+            shadowOf(activity)
+                .lastRequestedPermission
+                .shouldNotBeNull()
+                .requestedPermissions
+                .toList() shouldBe
+                listOf("android.permission.POST_NOTIFICATIONS")
+            activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
         }
 
     @Test
