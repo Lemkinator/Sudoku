@@ -61,6 +61,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import leakcanary.AppWatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -267,11 +268,14 @@ class MainActivityMenuTest {
         }
 
     @Test
-    fun `leaks_dest opens the memory leak screen`() =
+    fun `leaks_dest opens the memory leak screen`() {
+        // Robolectric skips LeakCanary's auto-install ContentProvider under HiltTestApplication.
+        if (!AppWatcher.isInstalled) AppWatcher.manualInstall(ApplicationProvider.getApplicationContext<HiltTestApplication>())
         launch { activity ->
             clickNavItem(activity, R.id.leaks_dest)
-            shadowOf(activity).nextStartedActivity.shouldNotBeNull()
+            shadowOf(activity).nextStartedActivity?.component?.className shouldBe "leakcanary.internal.activity.LeakActivity"
         }
+    }
 
     private fun navigationListenerOf(navigationView: DrawerNavigationView): NavigationView.OnNavigationItemSelectedListener {
         val field = DrawerNavigationView::class.java.getDeclaredField("navigationItemSelectedListener").apply { isAccessible = true }
