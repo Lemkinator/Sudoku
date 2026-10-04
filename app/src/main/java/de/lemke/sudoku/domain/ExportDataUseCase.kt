@@ -18,9 +18,11 @@ package de.lemke.sudoku.domain
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.database.sudokuToExport
+import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.ExportProgress
 import io.kjson.stringifyJSON
 import javax.inject.Inject
@@ -35,7 +37,7 @@ class ExportDataUseCase @Inject constructor(
     suspend operator fun invoke(
         destination: Uri,
         onProgress: (ExportProgress) -> Unit,
-    ): Unit =
+    ): DataExportResult =
         withContext(ioDispatcher) {
             onProgress(ExportProgress.Reading)
             val sudokus = getAllSudokus()
@@ -45,10 +47,26 @@ class ExportDataUseCase @Inject constructor(
                     sudokuToExport(sudoku).also { onProgress(ExportProgress.Converting(done = index + 1, total = sudokus.size)) }
                 }
             onProgress(ExportProgress.Writing)
-            val exportString = exportSudokus.stringifyJSON()
-            context.contentResolver
-                .openOutputStream(destination)!!
-                .bufferedWriter()
-                .use { bufferedWriter -> bufferedWriter.write(exportString) }
+            write(exportSudokus.stringifyJSON(), destination)
+        }
+
+    private fun write(
+        content: String,
+        destination: Uri,
+    ): DataExportResult =
+        runCatching {
+            when (val stream = context.contentResolver.openOutputStream(destination)) {
+                null -> {
+                    DataExportResult.WriteFailed
+                }
+
+                else -> {
+                    stream.bufferedWriter().use { bufferedWriter -> bufferedWriter.write(content) }
+                    DataExportResult.Exported
+                }
+            }
+        }.getOrElse { e ->
+            Log.e("ExportDataUseCase", "Error when writing the export file:", e)
+            DataExportResult.WriteFailed
         }
 }

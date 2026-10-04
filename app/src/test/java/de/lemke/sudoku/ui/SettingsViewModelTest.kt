@@ -29,6 +29,7 @@ import de.lemke.sudoku.domain.ExportDataUseCase
 import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.DataImportResult
 import de.lemke.sudoku.domain.model.ExportProgress
 import de.lemke.sudoku.domain.model.ImportProgress
@@ -87,11 +88,12 @@ class SettingsViewModelTest : ShouldSpec(
                 importData,
             )
 
-        fun exportSteps(): Channel<ExportProgress> =
+        fun exportSteps(result: DataExportResult = DataExportResult.Exported): Channel<ExportProgress> =
             Channel<ExportProgress>().also { steps ->
                 coEvery { exportData(exportUri, any()) } coAnswers {
                     val onProgress = secondArg<(ExportProgress) -> Unit>()
                     for (step in steps) onProgress(step)
+                    result
                 }
             }
 
@@ -299,7 +301,19 @@ class SettingsViewModelTest : ShouldSpec(
                     steps.close()
                     runCurrent()
 
-                    settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported
+                    settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.Exported)
+                }
+            }
+
+            should("ends Exported with WriteFailed when the use case cannot write the destination") {
+                runTest {
+                    exportSteps(DataExportResult.WriteFailed).close()
+                    val settingsViewModel = newViewModel()
+
+                    settingsViewModel.onExportDestinationPicked(exportUri)
+                    runCurrent()
+
+                    settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.WriteFailed)
                 }
             }
 
@@ -381,7 +395,7 @@ class SettingsViewModelTest : ShouldSpec(
                     settingsViewModel.onExportDestinationPicked(exportUri)
                     runCurrent()
 
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported)
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
 
                     settingsViewModel.dataTransfer.value shouldBe DataTransfer.Idle
                 }
@@ -394,7 +408,7 @@ class SettingsViewModelTest : ShouldSpec(
                     settingsViewModel.onImportFilePicked(importUri)
                     runCurrent()
 
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported)
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
 
                     settingsViewModel.dataTransfer.value shouldBe DataTransfer.Imported(DataImportResult.Imported(skippedCount = 0))
                 }
@@ -407,11 +421,11 @@ class SettingsViewModelTest : ShouldSpec(
                     val settingsViewModel = newViewModel()
                     settingsViewModel.onExportDestinationPicked(exportUri)
                     runCurrent()
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported)
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
                     settingsViewModel.onImportFilePicked(importUri)
                     runCurrent()
 
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported)
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
 
                     settingsViewModel.dataTransfer.value shouldBe DataTransfer.Importing(ImportProgress.Reading)
                     steps.close()

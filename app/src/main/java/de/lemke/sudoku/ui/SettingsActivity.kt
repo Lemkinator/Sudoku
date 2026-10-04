@@ -64,6 +64,7 @@ import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
+import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.DataImportResult
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
@@ -280,20 +281,26 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun onDataTransferResult(result: DataTransfer.Result) {
             when (result) {
-                DataTransfer.Exported -> showExportSuccess()
+                is DataTransfer.Exported -> showExportResult(result.result)
                 is DataTransfer.Imported -> showImportResult(result.result)
             }
             viewModel.onDataTransferHandled(result)
         }
 
-        private fun showExportSuccess() {
+        private fun showExportResult(result: DataExportResult) {
             AlertDialog
                 .Builder(requireContext())
                 .setTitle(R.string.export_data)
-                .setMessage(R.string.export_data_success)
+                .setMessage(exportResultMessage(result))
                 .setPositiveButton(commonutilsR.string.commonutils_ok, null)
-                .showOnce(EXPORT_SUCCESS_DIALOG_TAG)
+                .showOnce(EXPORT_RESULT_DIALOG_TAG)
         }
+
+        private fun exportResultMessage(result: DataExportResult): String =
+            when (result) {
+                DataExportResult.Exported -> getString(R.string.export_data_success)
+                DataExportResult.WriteFailed -> getString(commonutilsR.string.commonutils_error_creating_file)
+            }
 
         private fun showImportResult(result: DataImportResult) {
             AlertDialog
@@ -394,7 +401,7 @@ class SettingsActivity : AppCompatActivity() {
             const val NOTIFICATION_TIME_PICKER_TAG = "notificationTimePicker"
             const val IMPORT_DATA_DIALOG_TAG = "importData"
             const val IMPORT_RESULT_DIALOG_TAG = "importResult"
-            const val EXPORT_SUCCESS_DIALOG_TAG = "exportSuccess"
+            const val EXPORT_RESULT_DIALOG_TAG = "exportResult"
             const val DATA_TRANSFER_PROGRESS_DIALOG_TAG = "dataTransferProgress"
             const val DELETE_INVALID_SUDOKUS_DIALOG_TAG = "deleteInvalidSudokus"
         }

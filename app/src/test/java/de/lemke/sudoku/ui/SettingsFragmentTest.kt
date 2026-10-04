@@ -374,6 +374,27 @@ class SettingsFragmentTest {
         }
 
     @Test
+    fun `exportData shows the file error dialog instead of crashing when the provider fails to open the destination`() =
+        launch { fragment ->
+            val authority = "settings.export.denied"
+            val provider =
+                FakeDocumentProvider(
+                    File.createTempFile("settings-fragment-export", ".json").apply { deleteOnExit() },
+                    "application/json",
+                    exists = true,
+                    openFailure = SecurityException("Permission Denial"),
+                )
+            provider.attachInfo(ApplicationProvider.getApplicationContext(), ProviderInfo().apply { this.authority = authority })
+            ShadowContentResolver.registerProviderInternal(authority, provider)
+
+            pickExportDestination(fragment, Uri.parse("content://$authority/document/export"))
+
+            val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
+            resultDialog.isShowing.shouldBeTrue()
+            resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
+        }
+
+    @Test
     fun `importData's result callback shows an error toast when no file was selected`() =
         launch { fragment ->
             val pref = fragment.pref<PreferenceScreen>("importData")

@@ -18,10 +18,12 @@ package de.lemke.sudoku.domain
 
 import android.app.Application
 import android.content.Context
+import android.content.pm.ProviderInfo
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuToExport
+import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.ExportProgress
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
@@ -31,6 +33,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.mockk
 import java.io.File
+import java.io.FileNotFoundException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -40,6 +43,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowContentResolver
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -61,6 +65,18 @@ class ExportDataUseCaseTest {
     @After
     fun tearDown() {
         destinationFile.delete()
+    }
+
+    private fun registerDestination(
+        authority: String,
+        openFailure: Exception? = null,
+        hasContent: Boolean = true,
+    ): Uri {
+        val provider =
+            FakeDocumentProvider(destinationFile, "application/json", exists = true, openFailure = openFailure, hasContent = hasContent)
+        provider.attachInfo(context, ProviderInfo().apply { this.authority = authority })
+        ShadowContentResolver.registerProviderInternal(authority, provider)
+        return Uri.parse("content://$authority/document/export")
     }
 
     @Test
@@ -85,8 +101,9 @@ class ExportDataUseCaseTest {
             val sudokus = listOf(testLevelSudoku(size = SudokuSize.NINE), testLevelSudoku(size = SudokuSize.FOUR))
             coEvery { getAllSudokus() } returns sudokus
 
-            useCase(Uri.fromFile(destinationFile)) { progress += it }
+            val result = useCase(Uri.fromFile(destinationFile)) { progress += it }
 
+            result shouldBe DataExportResult.Exported
             val exported = destinationFile.readText().parseJSON<List<SudokuExport>>()
             exported shouldBe sudokus.map { sudokuToExport(it) }
         }
@@ -106,5 +123,38 @@ class ExportDataUseCaseTest {
                     ExportProgress.Converting(done = 2, total = 2),
                     ExportProgress.Writing,
                 )
+        }
+
+    @Test
+    fun `returns WriteFailed when the provider opens no output stream`() =
+        runTest {
+            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))
+            val destination = registerDestination("export.nostream", hasContent = false)
+
+            useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
+
+            destinationFile.readText() shouldBe ""
+        }
+
+    @Test
+    fun `returns WriteFailed instead of crashing when the provider fails with an IOException`() =
+        runTest {
+            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))
+            val destination = registerDestination("export.ioerror", openFailure = FileNotFoundException("document deleted"))
+
+            useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
+
+            destinationFile.readText() shouldBe ""
+        }
+
+    @Test
+    fun `returns WriteFailed instead of crashing when writing to the document is denied`() =
+        runTest {
+            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))
+            val destination = registerDestination("export.denied", openFailure = SecurityException("Permission Denial"))
+
+            useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
+
+            destinationFile.readText() shouldBe ""
         }
 }

@@ -36,6 +36,7 @@ import de.lemke.sudoku.domain.ExportDataUseCase
 import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.DataImportResult
 import de.lemke.sudoku.domain.model.ExportProgress
 import de.lemke.sudoku.domain.model.ImportProgress
@@ -82,7 +83,9 @@ sealed interface DataTransfer {
         val progress: ImportProgress,
     ) : Running
 
-    data object Exported : Result
+    data class Exported(
+        val result: DataExportResult,
+    ) : Result
 
     data class Imported(
         val result: DataImportResult,
@@ -159,8 +162,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onExportDestinationPicked(uri: Uri) =
         startDataTransfer(DataTransfer.Exporting(ExportProgress.Reading)) {
-            exportData(uri) { dataTransfer.value = DataTransfer.Exporting(it) }
-            DataTransfer.Exported
+            DataTransfer.Exported(exportData(uri) { dataTransfer.value = DataTransfer.Exporting(it) })
         }
 
     fun onImportFilePicked(uri: Uri) =

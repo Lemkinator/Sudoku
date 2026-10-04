@@ -29,7 +29,7 @@ internal class FakeDocumentProvider(
     private val file: File,
     private val mimeType: String?,
     private val exists: Boolean,
-    private val openFailure: RuntimeException?,
+    private val openFailure: Exception?,
     private val hasContent: Boolean = true,
 ) : ContentProvider() {
     override fun onCreate() = true
