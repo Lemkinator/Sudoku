@@ -206,6 +206,7 @@ class TabSudokuFragmentTest {
             shadowOf(Looper.getMainLooper()).idle()
             val generated = runBlocking { getAllSudokus() }.single()
             scenario.onActivity { activity ->
+                activity.supportFragmentManager.fragments.size shouldBe 3
                 val started = shadowOf(activity).nextStartedActivity
                 started.component?.className shouldBe SudokuActivity::class.java.name
                 started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
