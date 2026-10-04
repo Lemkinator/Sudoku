@@ -148,6 +148,18 @@ class ExportDataUseCaseTest {
         }
 
     @Test
+    fun `returns WriteFailed instead of crashing when writing the content to the opened stream fails`() =
+        runTest {
+            // Larger than the writer's 8 KiB encoder buffer, so the write itself reaches the read-only descriptor.
+            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.SIXTEEN))
+            val destination = registerDestination("export.readonly")
+
+            useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
+
+            destinationFile.readText() shouldBe ""
+        }
+
+    @Test
     fun `returns WriteFailed instead of crashing when writing to the document is denied`() =
         runTest {
             coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))

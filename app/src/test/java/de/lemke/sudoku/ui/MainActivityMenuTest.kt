@@ -51,6 +51,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
 import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -448,6 +449,32 @@ class MainActivityMenuTest {
                     shadowActivity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
                     shadowActivity.nextStartedActivity shouldBe null
                     activity.importedSudoku shouldBe ImportedSudoku.Idle
+                }
+            }
+        }
+
+    @Test
+    fun `leaving and returning to the app during an import keeps one progress dialog and dismisses it when the import ends`() =
+        withImportFile { file, sudoku ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
+            pausableIoDispatcher.pause()
+            ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+                shadowOf(Looper.getMainLooper()).idle()
+                scenario.onActivity { activity -> activity.importedSudoku shouldBe ImportedSudoku.Importing }
+
+                scenario.moveToState(Lifecycle.State.CREATED)
+                scenario.moveToState(Lifecycle.State.RESUMED)
+                shadowOf(Looper.getMainLooper()).idle()
+                pausableIoDispatcher.resume()
+                scenario.idleUntilImportFinished()
+                shadowOf(Looper.getMainLooper()).idle()
+
+                val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
+                progressDialogs.size shouldBe 1
+                progressDialogs.single().isShowing.shouldBeFalse()
+                scenario.onActivity { activity ->
+                    shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
                 }
             }
         }

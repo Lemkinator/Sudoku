@@ -575,6 +575,31 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.reveal.value shouldBe nextLevel.id
         }
 
+        should("a canceled next-level save is not reported as a failed start") {
+            val nextLevel = testSudoku(modeLevel = 2)
+            every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
+            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
+            coEvery { saveSudoku(nextLevel) } throws CancellationException("cancelled")
+            val viewModel = newViewModel()
+
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe true
+
+                viewModel.confirmSudokuStart(0, nextLevel)
+            }
+
+            viewModel.levelStart.value shouldBe LevelStart.Running
+        }
+
+        should("handling a reveal while none is pending keeps none pending") {
+            val viewModel = newViewModel()
+
+            viewModel.onRevealHandled(testSudoku(modeLevel = 1).id)
+
+            viewModel.reveal.value shouldBe null
+        }
+
         should("a second confirm while the next level saves is refused and saves it once") {
             runTest {
                 val nextLevel = testSudoku(modeLevel = 2)

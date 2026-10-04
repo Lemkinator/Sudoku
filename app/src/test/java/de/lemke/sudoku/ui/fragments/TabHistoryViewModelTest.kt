@@ -291,6 +291,14 @@ class TabHistoryViewModelTest : ShouldSpec(
             }
         }
 
+        should("handling a reveal while none is pending keeps none pending") {
+            val viewModel = newViewModel()
+
+            viewModel.onRevealHandled(sudokuA)
+
+            viewModel.reveal.value shouldBe null
+        }
+
         should("init does not treat CancellationException as a load failure") {
             every { observeSudokuHistory() } returns flow { throw CancellationException("cancelled") }
 

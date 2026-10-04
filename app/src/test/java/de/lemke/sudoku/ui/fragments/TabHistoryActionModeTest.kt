@@ -19,6 +19,7 @@ package de.lemke.sudoku.ui.fragments
 import android.os.Bundle
 import android.os.Looper
 import androidx.appcompat.view.menu.MenuBuilder
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -255,6 +256,39 @@ class TabHistoryActionModeTest {
             drawerLayout.isActionMode.shouldBeFalse()
             fragment.sudokuListAdapter.isActionMode.shouldBeFalse()
             progressDialog.isShowing.shouldBeFalse()
+            runBlocking { getAllSudokus() }.shouldBeEmpty()
+        }
+    }
+
+    @Test
+    fun `leaving and returning to the app during a deletion keeps one progress dialog and dismisses it when the deletion ends`() {
+        runBlocking { saveSudoku(historySudoku()) }
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.onTabItemSelected(0) }
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.onActivity { activity ->
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabHistory>()
+                        .first()
+                fragment.launchActionMode()
+                shadowOf(Looper.getMainLooper()).idle()
+                val listener = actionModeListenerOf(activity.findViewById(R.id.drawerLayout))
+                listener.onSelectAll(true)
+                deleteGate = CompletableDeferred()
+                listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+            deleteGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
+            progressDialogs.size shouldBe 1
+            progressDialogs.single().isShowing.shouldBeFalse()
             runBlocking { getAllSudokus() }.shouldBeEmpty()
         }
     }
