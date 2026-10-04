@@ -183,9 +183,43 @@ class SettingsFragmentTest {
             started.getBooleanExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, false).shouldBeTrue()
         }
 
+    @Test
+    fun `tapping the intro preference twice opens one IntroActivity`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("intro")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val activity = shadowOf(fragment.requireActivity())
+            activity.nextStartedActivity?.component?.className shouldBe IntroActivity::class.java.name
+            activity.nextStartedActivity shouldBe null
+        }
+
     // endregion
 
     // region exportData / importData
+
+    @Test
+    fun `tapping the importData preference twice shows one confirmation dialog`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("importData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            ShadowDialog.getShownDialogs().count { it.isShowing } shouldBe 1
+        }
+
+    @Test
+    fun `tapping the import confirmation's ok button twice launches one document picker`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("importData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val okButton = (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)
+            okButton.performClick()
+            okButton.performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            val activity = shadowOf(fragment.requireActivity())
+            activity.nextStartedActivity?.action shouldBe android.content.Intent.ACTION_GET_CONTENT
+            activity.nextStartedActivity shouldBe null
+        }
 
     @Test
     fun `exportData preference launches a create-document picker`() =

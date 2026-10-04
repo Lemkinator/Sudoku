@@ -19,7 +19,6 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Looper
-import android.os.SystemClock
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.test.core.app.ActivityScenario
@@ -177,6 +176,15 @@ class MainActivityMenuTest {
         }
 
     @Test
+    fun `selecting menu_item_filter twice shows one filter dialog`() =
+        launch { activity ->
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter)).shouldBeTrue()
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter)).shouldBeTrue()
+            shadowOf(Looper.getMainLooper()).idle()
+            ShadowDialog.getShownDialogs().count { it.isShowing } shouldBe 1
+        }
+
+    @Test
     fun `the filter dialog's cancel button dismisses without changing settings`() =
         launch { activity ->
             val originalFilterFlags = userSettings.filterFlags
@@ -218,7 +226,6 @@ class MainActivityMenuTest {
         activity: MainActivity,
         id: Int,
     ) {
-        SystemClock.sleep(601L)
         val item = activity.binding.navigationView.findMenuItem(id) as androidx.appcompat.view.menu.MenuItemImpl
         item.invoke()
     }
@@ -251,6 +258,15 @@ class MainActivityMenuTest {
         }
 
     @Test
+    fun `tapping settings_dest twice opens one settings activity`() =
+        launch { activity ->
+            clickNavItem(activity, R.id.settings_dest)
+            clickNavItem(activity, R.id.settings_dest)
+            shadowOf(activity).nextStartedActivity?.component?.className shouldBe SettingsActivity::class.java.name
+            shadowOf(activity).nextStartedActivity shouldBe null
+        }
+
+    @Test
     fun `leaks_dest opens the memory leak screen`() =
         launch { activity ->
             clickNavItem(activity, R.id.leaks_dest)
@@ -265,7 +281,6 @@ class MainActivityMenuTest {
     @Test
     fun `an unrecognized navigation item is ignored`() =
         launch { activity ->
-            SystemClock.sleep(601L)
             val listener = navigationListenerOf(activity.binding.navigationView)
             listener.onNavigationItemSelected(RoboMenuItem(-54321)).shouldBeFalse()
         }

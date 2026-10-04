@@ -232,6 +232,22 @@ class TabHistoryActionModeTest {
     }
 
     @Test
+    fun `clicking an item twice outside action mode opens one SudokuActivity`() {
+        val sudoku = historySudoku()
+        runBlocking { saveSudoku(sudoku) }
+        launch { fragment ->
+            val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val activity = shadowOf(fragment.requireActivity())
+            activity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+            activity.nextStartedActivity shouldBe null
+        }
+    }
+
+    @Test
     fun `clicking an item while in action mode toggles its selection instead of opening it`() {
         val sudoku = historySudoku()
         runBlocking { saveSudoku(sudoku) }

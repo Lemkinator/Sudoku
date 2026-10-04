@@ -38,6 +38,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.GamesSignInModule
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
@@ -112,14 +113,12 @@ class MainActivityGamesSignInTest {
     }
 
     private fun clickAchievements(activity: MainActivity) {
-        android.os.SystemClock.sleep(601L)
         val item =
             activity.binding.navigationView.findMenuItem(R.id.achievements_dest) as androidx.appcompat.view.menu.MenuItemImpl
         item.invoke()
     }
 
     private fun clickLeaderboards(activity: MainActivity) {
-        android.os.SystemClock.sleep(601L)
         val item =
             activity.binding.navigationView.findMenuItem(R.id.leaderboards_dest) as androidx.appcompat.view.menu.MenuItemImpl
         item.invoke()
@@ -173,6 +172,19 @@ class MainActivityGamesSignInTest {
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
             verify(exactly = 1) { fakeClient.signIn() }
+        }
+
+    @Test
+    fun `tapping achievements_dest twice signs in once`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            every { fakeClient.signIn() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            clickAchievements(activity)
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.isAuthenticated() }
+            verify(exactly = 1) { fakeClient.signIn() }
+            ShadowToast.shownToastCount() shouldBe 1
         }
 
     @Test
