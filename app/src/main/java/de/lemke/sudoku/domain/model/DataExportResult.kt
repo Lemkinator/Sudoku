@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku
+package de.lemke.sudoku.domain.model
 
-import android.content.Context
-import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import leakcanary.LeakCanary
+sealed interface DataExportResult {
+    data object Written : DataExportResult
 
-fun openLeakCanary(context: Context) {
-    context.singleLaunchActivity(LeakCanary.newLeakDisplayActivityIntent())
+    data object WriteFailed : DataExportResult
 }

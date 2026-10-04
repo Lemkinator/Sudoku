@@ -33,6 +33,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -92,6 +93,9 @@ class SudokuActivityCompletionTest {
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
+
+    @Inject
+    lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Before
     fun setup() {
@@ -168,6 +172,21 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             shadowOf(Looper.getMainLooper()).idle()
             activity.sudoku.id shouldNotBe sudokuId
+        }
+    }
+
+    @Test
+    fun `clicking new game twice on a completed normal sudoku's dialog starts one fresh sudoku`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { saveSudoku(almostSolvedSudoku(sudokuId)) }
+        completeBoard(sudokuId) { activity ->
+            val newGameButton = (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)
+            newGameButton.performClick()
+            newGameButton.performClick()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            shadowOf(Looper.getMainLooper()).idle()
+            activity.sudoku.id shouldNotBe sudokuId
+            runBlocking { getAllSudokus() }.size shouldBe 2
         }
     }
 

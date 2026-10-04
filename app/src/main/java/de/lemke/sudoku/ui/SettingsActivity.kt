@@ -40,7 +40,7 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.picker.app.SeslTimePickerDialog
 import androidx.picker.widget.SeslTimePicker
 import androidx.preference.DropDownPreference
@@ -49,21 +49,26 @@ import androidx.preference.PreferenceScreen
 import androidx.preference.SeslSwitchPreferenceScreen
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
+import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.commonutils.ui.utils.openApp
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
+import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.shareApp
+import de.lemke.commonutils.ui.utils.showOnce
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.commonutils.ui.utils.toSafeFileName
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
-import de.lemke.sudoku.domain.ExportDataUseCase
-import de.lemke.sudoku.domain.ImportDataUseCase
+import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.DataImportResult
+import dev.oneuiproject.oneui.dialog.ProgressDialog
+import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
-import dev.oneuiproject.oneui.ktx.onClick
 import dev.oneuiproject.oneui.ktx.onNewValue
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.widget.RelativeLink
@@ -71,9 +76,6 @@ import java.util.Calendar
 import java.util.Calendar.HOUR_OF_DAY
 import java.util.Calendar.MINUTE
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.design.R as designR
 
@@ -102,14 +104,11 @@ class SettingsActivity : AppCompatActivity() {
         @Inject
         lateinit var userSettings: UserSettings
 
-        @Inject
-        lateinit var exportData: ExportDataUseCase
-
-        @Inject
-        lateinit var importData: ImportDataUseCase
+        private var deleteInvalidSudokusDialog: AlertDialog? = null
+        private var dataTransferProgressDialog: ProgressDialog? = null
 
         private val requestPermissionLauncher =
-            registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+            registerForSingleLaunchResult(RequestPermission()) { isGranted: Boolean ->
                 viewModel.onNotificationPermissionResult(isGranted)
                 findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")?.isChecked =
                     viewModel.isDailyNotificationChecked
@@ -127,17 +126,16 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
             exportActivityResultLauncher =
-                registerForActivityResult(StartActivityForResult()) { result ->
-                    if (result.resultCode == RESULT_OK && result.data?.data != null) {
-                        lifecycleScope.launch { exportData(result.data!!.data!!) }
-                    }
+                registerForSingleLaunchResult(StartActivityForResult()) { result ->
+                    val uri = result.data?.data
+                    if (result.resultCode == RESULT_OK && uri != null) viewModel.onExportDestinationPicked(uri)
                 }
             importActivityResultLauncher =
-                registerForActivityResult(GetContent()) { uri: Uri? ->
+                registerForSingleLaunchResult(GetContent()) { uri: Uri? ->
                     if (uri == null) {
                         toast(R.string.error_no_file_selected)
                     } else {
-                        lifecycleScope.launch { showImportResult(importData(uri)) }
+                        viewModel.onImportFilePicked(uri)
                     }
                 }
             initCommonUtilsPreferences(userSettings)
@@ -156,6 +154,16 @@ class SettingsActivity : AppCompatActivity() {
                 },
                 RelativeLink(getString(R.string.commonutils_rate_app)) { openApp(requireContext().packageName, false) },
             )
+            collectState(viewModel.dataTransfer) { renderDataTransferProgress(it) }
+            collectState(viewModel.dataTransfer, minActiveState = RESUMED) { if (it is DataTransfer.Result) onDataTransferResult(it) }
+            collectState(viewModel.invalidSudokuDeletion, minActiveState = RESUMED) {
+                if (it is InvalidSudokuDeletion.Result) onInvalidSudokuDeletionResult(it)
+            }
+        }
+
+        override fun onDestroyView() {
+            dismissDataTransferProgress()
+            super.onDestroyView()
         }
 
         private fun initPreferences() {
@@ -181,7 +189,7 @@ class SettingsActivity : AppCompatActivity() {
                 isChecked = viewModel.isDailyNotificationChecked
                 setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
                 onNewValue { applyDailyNotificationToggle(it) }
-                onClick {
+                onSingleLaunchClick {
                     isChecked = true
                     if (applyDailyNotificationToggle(true) == DailyNotificationToggleResult.Applied) {
                         val dialog =
@@ -195,22 +203,22 @@ class SettingsActivity : AppCompatActivity() {
                                 viewModel.dailySudokuNotificationMinute,
                                 is24HourFormat(requireContext()),
                             )
-                        dialog.show()
+                        dialog.showOnce(NOTIFICATION_TIME_PICKER_TAG)
                     }
                 }
             } ?: Log.e(TAG, "daily notification Preference not found")
         }
 
         internal fun initIntroPreference() {
-            findPreference<PreferenceScreen>("intro")?.onClick {
-                startActivity(
+            findPreference<PreferenceScreen>("intro")?.onSingleLaunchClick {
+                requireContext().singleLaunchActivity(
                     Intent(requireContext(), IntroActivity::class.java).putExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, true),
                 )
             }
         }
 
         internal fun initExportDataPreference() {
-            findPreference<PreferenceScreen>("exportData")?.onClick {
+            findPreference<PreferenceScreen>("exportData")?.onSingleLaunchClick {
                 exportActivityResultLauncher.launch(
                     Intent(ACTION_CREATE_DOCUMENT).apply {
                         addCategory(CATEGORY_OPENABLE)
@@ -222,7 +230,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         internal fun initImportDataPreference() {
-            findPreference<PreferenceScreen>("importData")?.onClick {
+            findPreference<PreferenceScreen>("importData")?.onSingleLaunchClick {
                 AlertDialog
                     .Builder(requireContext())
                     .setTitle(R.string.import_data)
@@ -230,9 +238,69 @@ class SettingsActivity : AppCompatActivity() {
                     .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
                         importActivityResultLauncher.launch("application/json")
-                    }.show()
+                    }.showOnce(IMPORT_DATA_DIALOG_TAG)
             }
         }
+
+        private fun renderDataTransferProgress(transfer: DataTransfer) {
+            when (transfer) {
+                is DataTransfer.Running -> showDataTransferProgress(transfer.toProgressUi())
+                DataTransfer.Idle, is DataTransfer.Result -> dismissDataTransferProgress()
+            }
+        }
+
+        private fun showDataTransferProgress(ui: DataTransferProgressUi) {
+            val dialog =
+                dataTransferProgressDialog ?: ProgressDialog(requireContext()).also {
+                    it.setCancelable(false)
+                    it.setProgressStyle(HORIZONTAL)
+                    dataTransferProgressDialog = it
+                }
+            dialog.setTitle(ui.title)
+            dialog.setMessage(getString(ui.message))
+            when (val indicator = ui.indicator) {
+                ProgressIndicator.Indeterminate -> {
+                    dialog.isIndeterminate = true
+                    dialog.max = 1
+                    dialog.progress = 0
+                }
+
+                is ProgressIndicator.Determinate -> {
+                    dialog.isIndeterminate = false
+                    dialog.max = indicator.total
+                    dialog.progress = indicator.done
+                }
+            }
+            dialog.showOnce(DATA_TRANSFER_PROGRESS_DIALOG_TAG)
+        }
+
+        private fun dismissDataTransferProgress() {
+            dataTransferProgressDialog?.dismiss()
+            dataTransferProgressDialog = null
+        }
+
+        private fun onDataTransferResult(result: DataTransfer.Result) {
+            when (result) {
+                is DataTransfer.Exported -> showExportResult(result.result)
+                is DataTransfer.Imported -> showImportResult(result.result)
+            }
+            viewModel.onDataTransferHandled(result)
+        }
+
+        private fun showExportResult(result: DataExportResult) {
+            AlertDialog
+                .Builder(requireContext())
+                .setTitle(R.string.export_data)
+                .setMessage(exportResultMessage(result))
+                .setPositiveButton(commonutilsR.string.commonutils_ok, null)
+                .showOnce(EXPORT_RESULT_DIALOG_TAG)
+        }
+
+        private fun exportResultMessage(result: DataExportResult): String =
+            when (result) {
+                DataExportResult.Written -> getString(R.string.export_data_success)
+                DataExportResult.WriteFailed -> getString(commonutilsR.string.commonutils_error_creating_file)
+            }
 
         private fun showImportResult(result: DataImportResult) {
             AlertDialog
@@ -240,7 +308,7 @@ class SettingsActivity : AppCompatActivity() {
                 .setTitle(R.string.import_data)
                 .setPositiveButton(commonutilsR.string.commonutils_ok, null)
                 .setMessage(importResultMessage(result))
-                .show()
+                .showOnce(IMPORT_RESULT_DIALOG_TAG)
         }
 
         private fun importResultMessage(result: DataImportResult): String =
@@ -263,7 +331,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
         internal fun initDeleteInvalidSudokusPreference() {
-            findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onClick {
+            findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onSingleLaunchClick {
                 val dialog =
                     AlertDialog
                         .Builder(requireContext())
@@ -271,19 +339,21 @@ class SettingsActivity : AppCompatActivity() {
                         .setMessage(R.string.delete_invalid_sudokus_summary)
                         .setNegativeButton(designR.string.oui_des_common_cancel, null)
                         .setPositiveButton(R.string.commonutils_delete, null)
-                        .create()
-                dialog.show()
+                        .showOnce(DELETE_INVALID_SUDOKUS_DIALOG_TAG) ?: return@onSingleLaunchClick
+                deleteInvalidSudokusDialog = dialog
                 dialog.getButton(BUTTON_POSITIVE).apply {
                     setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
-                    setOnClickListenerWithProgress { _, _ ->
-                        lifecycleScope.launch {
-                            viewModel.onDeleteInvalidSudokusConfirmed()
-                            delay(500.milliseconds)
-                            dialog.dismiss()
-                        }
-                    }
+                    setOnClickListenerWithProgress { _, _ -> viewModel.onDeleteInvalidSudokusConfirmed() }
                 }
             }
+        }
+
+        private fun onInvalidSudokuDeletionResult(result: InvalidSudokuDeletion.Result) {
+            when (result) {
+                InvalidSudokuDeletion.Finished -> deleteInvalidSudokusDialog?.dismiss()
+            }
+            deleteInvalidSudokusDialog = null
+            viewModel.onInvalidSudokuDeletionHandled(result)
         }
 
         private fun SeslSwitchPreferenceScreen.applyDailyNotificationToggle(enabled: Boolean): DailyNotificationToggleResult =
@@ -304,7 +374,7 @@ class SettingsActivity : AppCompatActivity() {
                                 .addFlags(FLAG_ACTIVITY_NEW_TASK)
                                 .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
                         // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
-                        startActivity(settingsIntent)
+                        requireContext().singleLaunchActivity(settingsIntent)
                         isChecked = false
                     }
                 }
@@ -325,6 +395,15 @@ class SettingsActivity : AppCompatActivity() {
                         },
                     ),
                 )
+        }
+
+        private companion object {
+            const val NOTIFICATION_TIME_PICKER_TAG = "notificationTimePicker"
+            const val IMPORT_DATA_DIALOG_TAG = "importData"
+            const val IMPORT_RESULT_DIALOG_TAG = "importResult"
+            const val EXPORT_RESULT_DIALOG_TAG = "exportResult"
+            const val DATA_TRANSFER_PROGRESS_DIALOG_TAG = "dataTransferProgress"
+            const val DELETE_INVALID_SUDOKUS_DIALOG_TAG = "deleteInvalidSudokus"
         }
     }
 }

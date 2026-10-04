@@ -26,36 +26,34 @@ import de.lemke.sudoku.domain.model.SudokuStatistics
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.receiveAsFlow
 
 data class TabStatisticsUiState(
     val statistics: SudokuStatistics? = null,
 )
-
-sealed interface TabStatisticsEvent {
-    data object ShowLoadError : TabStatisticsEvent
-}
 
 @HiltViewModel
 class TabStatisticsViewModel @Inject constructor(
     private val observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase,
     private val calculateStatistics: CalculateStatisticsUseCase,
 ) : ViewModel() {
+    /** True after a load failed until the screen reports the error shown. */
+    val loadFailed: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<TabStatisticsUiState> =
         observeSudokusAndStatisticsFilterFlags()
             .mapLatest { filterFlags -> TabStatisticsUiState(statistics = calculateStatistics(filterFlags)) }
             .catch { e ->
                 if (e is CancellationException) throw e
-                _events.send(TabStatisticsEvent.ShowLoadError)
+                loadFailed.value = true
             }.stateInViewModel(viewModelScope, TabStatisticsUiState())
 
-    private val _events = Channel<TabStatisticsEvent>(BUFFERED)
-    val events: Flow<TabStatisticsEvent> = _events.receiveAsFlow()
+    fun onLoadFailureHandled() {
+        loadFailed.value = false
+    }
 }

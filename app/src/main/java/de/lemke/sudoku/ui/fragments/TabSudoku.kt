@@ -21,15 +21,17 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.INVISIBLE
-import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.appcompat.widget.SeslSeekBar
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.collectState
+import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
@@ -41,7 +43,6 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
-import dev.oneuiproject.oneui.ktx.onSingleClick
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.launch
 
@@ -69,30 +70,22 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.sizeSeekbar.max = SudokuSize.entries.lastIndex
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
-        binding.newGameButton.onSingleClick {
-            binding.newSudokuProgressBar.visibility = VISIBLE
-            lifecycleScope.launch {
-                val sudoku =
-                    viewModel.createNewSudoku(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
-                binding.newGameButton.transformToActivity(
-                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
-                )
-                binding.newSudokuProgressBar.visibility = INVISIBLE
-            }
+        binding.newGameButton.onSingleLaunchClick {
+            viewModel.onNewGame(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
         }
-        binding.dailyButton.onSingleClick {
+        binding.dailyButton.onSingleLaunchClick {
             binding.dailyButton.transformToActivity(
                 Intent(requireActivity(), DailySudokuActivity::class.java),
                 "DailySudokuActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
-        binding.dailyAvailableButton.onSingleClick {
+        binding.dailyAvailableButton.onSingleLaunchClick {
             binding.dailyAvailableButton.transformToActivity(
                 Intent(requireActivity(), DailySudokuActivity::class.java),
                 "DailySudokuActivityTransition", // transitionNames should be unique within the view hierarchy
             )
         }
-        binding.levelsButton.onSingleClick {
+        binding.levelsButton.onSingleLaunchClick {
             binding.levelsButton.transformToActivity(
                 Intent(requireActivity(), SudokuLevelActivity::class.java),
                 "SudokuLevelActivityTransition", // transitionNames should be unique within the view hierarchy
@@ -130,6 +123,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 }
             },
         )
+        collectState(viewModel.newGame) { binding.newSudokuProgressBar.isInvisible = it != NewGame.Generating }
+        collectState(viewModel.newGame, minActiveState = RESUMED) { if (it is NewGame.Result) onNewGameResult(it) }
     }
 
     override fun onResume() {
@@ -140,6 +135,18 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     override fun onHiddenChanged(hidden: Boolean) {
         super.onHiddenChanged(hidden)
         if (!hidden) refresh()
+    }
+
+    private fun onNewGameResult(result: NewGame.Result) {
+        val handled =
+            when (result) {
+                is NewGame.Created -> {
+                    binding.newGameButton.transformToActivity(
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, result.sudokuId.value),
+                    )
+                }
+            }
+        if (handled) viewModel.onNewGameHandled(result)
     }
 
     private fun refresh() {
@@ -154,7 +161,7 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                         sudoku.size.getLocalString(resources),
                         sudoku.difficulty.getLocalString(resources),
                     )
-                binding.continueGameButton.onSingleClick {
+                binding.continueGameButton.onSingleLaunchClick {
                     binding.continueGameButton.transformToActivity(
                         Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
                     )

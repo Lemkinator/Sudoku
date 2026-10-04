@@ -30,6 +30,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.di.ClockModule
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
@@ -62,6 +63,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -106,6 +108,9 @@ class DailySudokuListRefreshTest {
 
     @Inject
     lateinit var observeDailySudokus: ObserveDailySudokusUseCase
+
+    @Inject
+    lateinit var database: AppDatabase
 
     private val sudokuId = SudokuId.generate()
 
@@ -200,7 +205,27 @@ class DailySudokuListRefreshTest {
         }
     }
 
+    @Test
+    fun `an unreadable daily sudoku shows the load error once and marks it handled`() {
+        save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
+        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
+            idle()
+
+            ShadowToast.shownToastCount() shouldBe 1
+            ShadowToast.getTextOfLatestToast() shouldBe "Failed to load daily sudokus"
+            scenario.onActivity { activity -> activity.viewModel.loadFailed.value shouldBe false }
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            idle()
+
+            ShadowToast.shownToastCount() shouldBe 1
+        }
+    }
+
     private fun shownSudoku(viewModel: DailySudokuViewModel): Sudoku =
+
         viewModel.state.value.sudokus
             .filterIsInstance<SudokuItem>()
             .single()

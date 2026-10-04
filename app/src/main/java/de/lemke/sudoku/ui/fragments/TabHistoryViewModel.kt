@@ -30,18 +30,22 @@ import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-sealed interface TabHistoryEvent {
-    data class RevealSudoku(val sudokuId: SudokuId) : TabHistoryEvent
+/** The deletion of the selected sudokus. The tab ends its action mode on a [Result] and then reports it handled. */
+sealed interface HistoryDeletion {
+    sealed interface Result : HistoryDeletion
 
-    data object ShowLoadError : TabHistoryEvent
+    data object Idle : HistoryDeletion
+
+    data object Running : HistoryDeletion
+
+    data object Finished : Result
 }
 
 @HiltViewModel
@@ -51,6 +55,14 @@ class TabHistoryViewModel @Inject constructor(
     private val deleteSudoku: DeleteSudokusUseCase,
 ) : ViewModel() {
     val errorLimit: StateFlow<Int> = userSettings.errorLimitFlow
+
+    /** True after a load failed until the screen reports the error shown. */
+    val loadFailed: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+
+    /** The sudoku the list scrolls to, until the screen reports it revealed. */
+    val reveal: StateFlow<SudokuId?>
+        field = MutableStateFlow<SudokuId?>(null)
 
     private var previousUpdates: Map<SudokuId, LocalDateTime>? = null
 
@@ -62,15 +74,34 @@ class TabHistoryViewModel @Inject constructor(
                 previousUpdates = sudokus.associate { it.id to it.updated }
                 emit(newHistory)
                 if (previous != null) {
-                    sudokus.firstOrNull { previous[it.id] != it.updated }?.let { _events.send(TabHistoryEvent.RevealSudoku(it.id)) }
+                    sudokus.firstOrNull { previous[it.id] != it.updated }?.let { reveal.value = it.id }
                 }
             }.catch { e ->
                 if (e is CancellationException) throw e
-                _events.send(TabHistoryEvent.ShowLoadError)
+                loadFailed.value = true
             }.stateInViewModel(viewModelScope, emptyList())
 
-    private val _events = Channel<TabHistoryEvent>(BUFFERED)
-    val events: Flow<TabHistoryEvent> = _events.receiveAsFlow()
+    val deletion: StateFlow<HistoryDeletion>
+        field = MutableStateFlow<HistoryDeletion>(HistoryDeletion.Idle)
 
-    suspend fun deleteSelectedSudokus(sudokus: List<Sudoku>) = deleteSudoku(sudokus)
+    fun onDeleteSelected(sudokus: List<Sudoku>) {
+        if (deletion.value == HistoryDeletion.Running) return
+        deletion.value = HistoryDeletion.Running
+        viewModelScope.launch {
+            deleteSudoku(sudokus)
+            deletion.value = HistoryDeletion.Finished
+        }
+    }
+
+    fun onDeletionHandled(result: HistoryDeletion.Result) {
+        deletion.update { if (it == result) HistoryDeletion.Idle else it }
+    }
+
+    fun onLoadFailureHandled() {
+        loadFailed.value = false
+    }
+
+    fun onRevealHandled(sudokuId: SudokuId) {
+        reveal.update { if (it == sudokuId) null else it }
+    }
 }

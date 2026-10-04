@@ -23,16 +23,20 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import javax.inject.Inject
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-sealed interface IntroEvent {
-    data object AdvanceOnboarding : IntroEvent
+/** The answer to the notifications question. The activity acts on a [Result] and then reports it handled. */
+sealed interface NotificationChoice {
+    sealed interface Result : NotificationChoice
 
-    data object RequestNotificationPermission : IntroEvent
+    data object Pending : NotificationChoice
+
+    data object RequestPermission : Result
+
+    data object Saved : Result
 }
 
 @HiltViewModel
@@ -43,8 +47,8 @@ class IntroViewModel @Inject constructor(
 ) : ViewModel() {
     val openedFromSettings: Boolean = savedStateHandle[IntroActivity.KEY_OPENED_FROM_SETTINGS] ?: false
 
-    private val _events = Channel<IntroEvent>(BUFFERED)
-    val events: Flow<IntroEvent> = _events.receiveAsFlow()
+    val notificationChoice: StateFlow<NotificationChoice>
+        field = MutableStateFlow<NotificationChoice>(NotificationChoice.Pending)
 
     fun onNotificationsDeclined() = setNotificationsEnabledAndAdvance(false)
 
@@ -52,16 +56,20 @@ class IntroViewModel @Inject constructor(
         if (isNotificationPermissionGranted()) {
             setNotificationsEnabledAndAdvance(true)
         } else {
-            viewModelScope.launch { _events.send(IntroEvent.RequestNotificationPermission) }
+            notificationChoice.value = NotificationChoice.RequestPermission
         }
     }
 
     fun onNotificationPermissionResult(isGranted: Boolean) = setNotificationsEnabledAndAdvance(isGranted)
 
+    fun onNotificationChoiceHandled(result: NotificationChoice.Result) {
+        notificationChoice.update { if (it == result) NotificationChoice.Pending else it }
+    }
+
     private fun setNotificationsEnabledAndAdvance(enabled: Boolean) {
         viewModelScope.launch {
             setDailyNotificationEnabled(enabled)
-            _events.send(IntroEvent.AdvanceOnboarding)
+            notificationChoice.value = NotificationChoice.Saved
         }
     }
 }

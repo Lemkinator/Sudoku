@@ -17,12 +17,14 @@
 package de.lemke.sudoku.ui
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -37,11 +39,17 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.GamesSignInModule
+import de.lemke.sudoku.ui.utils.FakePlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.PlayGamesScreen
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -94,6 +102,12 @@ class MainActivityGamesSignInTest {
             override fun getClient(activity: Activity): GamesSignInClient = fakeClient
         }
 
+    private val fakeIntentProvider = FakePlayGamesIntentProvider()
+
+    @BindValue
+    @JvmField
+    val playGamesIntentProvider: PlayGamesIntentProvider = fakeIntentProvider
+
     @Inject
     lateinit var settings: SettingsRepository
 
@@ -112,14 +126,12 @@ class MainActivityGamesSignInTest {
     }
 
     private fun clickAchievements(activity: MainActivity) {
-        android.os.SystemClock.sleep(601L)
         val item =
             activity.binding.navigationView.findMenuItem(R.id.achievements_dest) as androidx.appcompat.view.menu.MenuItemImpl
         item.invoke()
     }
 
     private fun clickLeaderboards(activity: MainActivity) {
-        android.os.SystemClock.sleep(601L)
         val item =
             activity.binding.navigationView.findMenuItem(R.id.leaderboards_dest) as androidx.appcompat.view.menu.MenuItemImpl
         item.invoke()
@@ -176,6 +188,31 @@ class MainActivityGamesSignInTest {
         }
 
     @Test
+    fun `an isAuthenticated check that hangs for 10 s ends silently and admits the next tap`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns TaskCompletionSource<AuthenticationResult>().task
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+            verify(exactly = 0) { fakeClient.signIn() }
+            ShadowToast.shownToastCount() shouldBe 0
+            clickAchievements(activity)
+            verify(exactly = 2) { fakeClient.isAuthenticated() }
+        }
+
+    @Test
+    fun `tapping achievements_dest twice signs in once`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            every { fakeClient.signIn() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            clickAchievements(activity)
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            verify(exactly = 1) { fakeClient.isAuthenticated() }
+            verify(exactly = 1) { fakeClient.signIn() }
+            ShadowToast.shownToastCount() shouldBe 1
+        }
+
+    @Test
     fun `leaderboards_dest opens leaderboards directly when already authenticated`() =
         launch { activity ->
             every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
@@ -223,5 +260,35 @@ class MainActivityGamesSignInTest {
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
             verify(exactly = 1) { fakeClient.signIn() }
+        }
+
+    @Test
+    fun `a failed achievements intent fetch ends silently and admits the next tap`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeIntentProvider.results += Tasks.forException<Intent>(RuntimeException("no network"))
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            shadowOf(activity).peekNextStartedActivityForResult().shouldBeNull()
+            ShadowToast.getLatestToast().shouldBeNull()
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS, PlayGamesScreen.ACHIEVEMENTS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
+        }
+
+    @Test
+    fun `a leaderboards intent fetch that hangs for 10 s ends silently and admits the next tap`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeIntentProvider.results += TaskCompletionSource<Intent>().task
+            clickLeaderboards(activity)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+            shadowOf(activity).peekNextStartedActivityForResult().shouldBeNull()
+            ShadowToast.shownToastCount() shouldBe 0
+            clickLeaderboards(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS, PlayGamesScreen.LEADERBOARDS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 }

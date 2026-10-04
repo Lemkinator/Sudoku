@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui.fragments
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -25,8 +26,24 @@ import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** The generation of a new sudoku. The fragment opens a [Result] and then reports it handled. */
+sealed interface NewGame {
+    sealed interface Result : NewGame
+
+    data object Idle : NewGame
+
+    data object Generating : NewGame
+
+    data class Created(val sudokuId: SudokuId) : Result
+}
 
 @HiltViewModel
 class TabSudokuViewModel @Inject constructor(
@@ -48,13 +65,24 @@ class TabSudokuViewModel @Inject constructor(
             userSettings.sizeSliderValue = value
         }
 
-    suspend fun createNewSudoku(
+    val newGame: StateFlow<NewGame>
+        field = MutableStateFlow<NewGame>(NewGame.Idle)
+
+    fun onNewGame(
         size: SudokuSize,
         difficulty: Difficulty,
-    ): Sudoku {
-        val sudoku = generateSudoku(size, difficulty)
-        saveSudoku(sudoku)
-        return sudoku
+    ) {
+        if (newGame.value != NewGame.Idle) return
+        newGame.value = NewGame.Generating
+        viewModelScope.launch {
+            val sudoku = generateSudoku(size, difficulty)
+            saveSudoku(sudoku)
+            newGame.value = NewGame.Created(sudoku.id)
+        }
+    }
+
+    fun onNewGameHandled(result: NewGame.Result) {
+        newGame.update { if (it == result) NewGame.Idle else it }
     }
 
     suspend fun getContinuableSudoku(): Sudoku? {

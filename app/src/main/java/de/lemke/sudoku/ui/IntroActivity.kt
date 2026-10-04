@@ -41,8 +41,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.advanceOnboarding
-import de.lemke.commonutils.ui.utils.collectEvents
+import de.lemke.commonutils.ui.utils.collectState
+import de.lemke.commonutils.ui.utils.onSingleLaunchClick
+import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.showOnce
+import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
 import de.lemke.sudoku.domain.model.GameListener
@@ -96,7 +100,7 @@ class IntroActivity : AppCompatActivity() {
     internal val viewModel: IntroViewModel by viewModels()
 
     private val requestPermissionLauncher =
-        registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+        registerForSingleLaunchResult(RequestPermission()) { isGranted: Boolean ->
             viewModel.onNotificationPermissionResult(isGranted)
         }
 
@@ -109,16 +113,8 @@ class IntroActivity : AppCompatActivity() {
         binding = ActivityIntroBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setCustomBackAnimation(binding.root)
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                IntroEvent.AdvanceOnboarding -> {
-                    advanceOnboarding()
-                }
-
-                IntroEvent.RequestNotificationPermission -> {
-                    if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-                }
-            }
+        collectState(viewModel.notificationChoice, minActiveState = RESUMED) {
+            if (it is NotificationChoice.Result) onNotificationChoice(it)
         }
 
         val typedValue = TypedValue()
@@ -126,7 +122,7 @@ class IntroActivity : AppCompatActivity() {
         colorPrimary = typedValue.data
 
         initSudoku()
-        binding.introContinueButton.setOnClickListener { showNotificationsDialogOrFinish() }
+        binding.introContinueButton.onSingleLaunchClick { showNotificationsDialogOrFinish() }
         binding.introNextButton.setOnClickListener { nextIntroStep() }
         binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
         nextIntroStep()
@@ -136,7 +132,7 @@ class IntroActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem) =
         when (item.itemId) {
-            R.id.menu_skip -> showNotificationsDialogOrFinish().let { true }
+            R.id.menu_skip -> singleLaunchMenuItem { showNotificationsDialogOrFinish() }
             else -> super.onOptionsItemSelected(item)
         }
 
@@ -623,6 +619,19 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 
+    private fun onNotificationChoice(result: NotificationChoice.Result) {
+        when (result) {
+            NotificationChoice.Saved -> {
+                advanceOnboarding()
+            }
+
+            NotificationChoice.RequestPermission -> {
+                if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+            }
+        }
+        viewModel.onNotificationChoiceHandled(result)
+    }
+
     private fun showNotificationsDialogOrFinish() {
         if (!viewModel.openedFromSettings) notificationsDialog() else finishAfterTransition()
     }
@@ -638,13 +647,13 @@ class IntroActivity : AppCompatActivity() {
                 }.setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
                     viewModel.onNotificationsAccepted()
                 }.setCancelable(false)
-                .create()
-        dialog.show()
+                .showOnce(NOTIFICATIONS_DIALOG_TAG) ?: return
         dialog.getButton(BUTTON_NEGATIVE).setTextColor(getColor(designR.color.oui_des_functional_red_color))
     }
 
     companion object {
         const val KEY_OPENED_FROM_SETTINGS = "openedFromSettings"
+        private const val NOTIFICATIONS_DIALOG_TAG = "notifications"
     }
 
     inner class SudokuGameListener : GameListener {

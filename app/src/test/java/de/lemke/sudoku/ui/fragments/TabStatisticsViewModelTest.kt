@@ -128,7 +128,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
             }
         }
 
-        should("init keeps no statistics and emits ShowLoadError when observeSudokusAndStatisticsFilterFlags throws") {
+        should("init keeps no statistics and reports loadFailed when observeSudokusAndStatisticsFilterFlags throws") {
             every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw IllegalStateException("observe failed") }
 
             val viewModel = newViewModel()
@@ -136,12 +136,10 @@ class TabStatisticsViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe TabStatisticsUiState()
             }
-            viewModel.events.test {
-                awaitItem() shouldBe TabStatisticsEvent.ShowLoadError
-            }
+            viewModel.loadFailed.value shouldBe true
         }
 
-        should("init keeps no statistics and emits ShowLoadError when calculateStatistics throws") {
+        should("init keeps no statistics and reports loadFailed when calculateStatistics throws") {
             every { observeSudokusAndStatisticsFilterFlags() } returns flowOf(emptyList())
             coEvery { calculateStatistics(emptyList()) } throws RuntimeException("calculate failed")
 
@@ -150,9 +148,18 @@ class TabStatisticsViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe TabStatisticsUiState()
             }
-            viewModel.events.test {
-                awaitItem() shouldBe TabStatisticsEvent.ShowLoadError
-            }
+            viewModel.loadFailed.value shouldBe true
+        }
+
+        should("onLoadFailureHandled clears a reported load failure") {
+            every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw IllegalStateException("observe failed") }
+            val viewModel = newViewModel()
+            viewModel.state.test { expectMostRecentItem() shouldBe TabStatisticsUiState() }
+            viewModel.loadFailed.value shouldBe true
+
+            viewModel.onLoadFailureHandled()
+
+            viewModel.loadFailed.value shouldBe false
         }
 
         should("init does not treat CancellationException as a load failure") {
@@ -163,7 +170,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe TabStatisticsUiState()
             }
-            viewModel.events.test { expectNoEvents() }
+            viewModel.loadFailed.value shouldBe false
         }
     },
 )

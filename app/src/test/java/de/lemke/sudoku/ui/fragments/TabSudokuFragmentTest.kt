@@ -16,11 +16,13 @@
 
 package de.lemke.sudoku.ui.fragments
 
+import android.content.Intent
 import android.os.Looper
-import android.os.SystemClock
 import android.view.View
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -34,6 +36,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DispatchersModule
@@ -51,7 +54,9 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.MainActivity
+import de.lemke.sudoku.ui.PausableDispatcher
 import de.lemke.sudoku.ui.SudokuActivity
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -63,7 +68,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -83,10 +87,12 @@ class TabSudokuFragmentTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
+    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Main)
+
     @BindValue
     @DefaultDispatcher
     @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
+    val testDefaultDispatcher: CoroutineDispatcher = pausableDefaultDispatcher
 
     @BindValue
     @IoDispatcher
@@ -174,13 +180,11 @@ class TabSudokuFragmentTest {
     }
 
     private fun click(view: View) {
-        SystemClock.sleep(601L)
         view.performClick()
         shadowOf(Looper.getMainLooper()).idle()
     }
 
     private fun doubleClick(view: View) {
-        SystemClock.sleep(601L)
         view.performClick()
         view.performClick()
         shadowOf(Looper.getMainLooper()).idle()
@@ -193,6 +197,75 @@ class TabSudokuFragmentTest {
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
+        }
+
+    @Test
+    fun `a sudoku generated across a recreation opens from the recreated activity`() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+            pausableDefaultDispatcher.pause()
+            scenario.onActivity { activity -> activity.findViewById<View>(R.id.newGameButton).performClick() }
+            scenario.recreate()
+            pausableDefaultDispatcher.resume()
+            shadowOf(Looper.getMainLooper()).idle()
+            val generated = runBlocking { getAllSudokus() }.single()
+            scenario.onActivity { activity ->
+                activity.supportFragmentManager.fragments.size shouldBe 3
+                val started = shadowOf(activity).nextStartedActivity
+                started.component?.className shouldBe SudokuActivity::class.java.name
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+        }
+    }
+
+    @Test
+    fun `a new sudoku created while a launch is pending opens once the activity resumes again`() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+            lateinit var viewModel: TabSudokuViewModel
+            scenario.onActivity { activity ->
+                activity.singleLaunchActivity(Intent(activity, SudokuLevelActivity::class.java)) shouldBe true
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabSudoku>()
+                        .first()
+                viewModel = ViewModelProvider(fragment)[TabSudokuViewModel::class.java]
+                viewModel.onNewGame(SudokuSize.FOUR, Difficulty.VERY_EASY)
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+            val generated = runBlocking { getAllSudokus() }.single()
+            scenario.onActivity { activity ->
+                shadowOf(activity).nextStartedActivity.component?.className shouldBe SudokuLevelActivity::class.java.name
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.newGame.value shouldBe NewGame.Created(generated.id)
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.onActivity { activity ->
+                val started = shadowOf(activity).nextStartedActivity
+                started.component?.className shouldBe SudokuActivity::class.java.name
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.newGame.value shouldBe NewGame.Idle
+        }
+    }
+
+    @Test
+    fun `the progress bar shows while a new sudoku generates`() =
+        launch { fragment ->
+            val progressBar = fragment.requireView().findViewById<View>(R.id.newSudokuProgressBar)
+            pausableDefaultDispatcher.pause()
+            fragment.requireView().findViewById<View>(R.id.newGameButton).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            progressBar.isVisible.shouldBeTrue()
+            pausableDefaultDispatcher.resume()
+            shadowOf(Looper.getMainLooper()).idle()
+            progressBar.isVisible.shouldBeFalse()
         }
 
     @Test
@@ -369,7 +442,7 @@ class TabSudokuFragmentTest {
     }
 
     @Test
-    fun `double-clicking newGameButton is debounced to a single game`() =
+    fun `double-clicking newGameButton starts a single game`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.newGameButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -378,7 +451,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking dailyButton is debounced to a single navigation`() =
+    fun `double-clicking dailyButton navigates once`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.dailyButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -386,7 +459,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking dailyAvailableButton is debounced to a single navigation`() =
+    fun `double-clicking dailyAvailableButton navigates once`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.dailyAvailableButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -394,7 +467,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking levelsButton is debounced to a single navigation`() =
+    fun `double-clicking levelsButton navigates once`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.levelsButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -402,7 +475,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking continueGameButton is debounced to a single navigation`() {
+    fun `double-clicking continueGameButton navigates once`() {
         runBlocking { saveSudoku(formulaicSudoku()) }
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.continueGameButton))

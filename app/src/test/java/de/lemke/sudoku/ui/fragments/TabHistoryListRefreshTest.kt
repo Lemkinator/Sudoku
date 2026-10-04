@@ -224,7 +224,7 @@ class TabHistoryListRefreshTest {
     }
 
     @Test
-    fun `a sudoku whose timestamp becomes unreadable shows the history load error`() {
+    fun `a sudoku whose timestamp becomes unreadable shows the history load error once and marks it handled`() {
         save(olderSudoku())
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
@@ -240,6 +240,14 @@ class TabHistoryListRefreshTest {
             idle()
 
             ShadowToast.showedToast("Failed to load sudoku history") shouldBe true
+            scenario.onActivity { activity -> historyViewModel(activity).loadFailed.value shouldBe false }
+            val shownToasts = ShadowToast.shownToastCount()
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            idle()
+
+            ShadowToast.shownToastCount() shouldBe shownToasts
         }
     }
 

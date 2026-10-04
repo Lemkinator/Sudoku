@@ -18,65 +18,55 @@ package de.lemke.sudoku.domain
 
 import android.content.Context
 import android.net.Uri
-import androidx.appcompat.app.AlertDialog
-import dagger.hilt.android.qualifiers.ActivityContext
+import android.util.Log
+import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.sudokuToExport
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
+import de.lemke.sudoku.domain.model.DataExportResult
+import de.lemke.sudoku.domain.model.ExportProgress
 import io.kjson.stringifyJSON
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import de.lemke.commonutils.R as commonutilsR
 
 class ExportDataUseCase @Inject constructor(
-    @param:ActivityContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val getAllSudokus: GetAllSudokusUseCase,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
-    @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(destination: Uri): Unit =
-        withContext(mainDispatcher) {
-            val dialog = ProgressDialog(context)
-            dialog.setCancelable(false)
-            dialog.isIndeterminate = true
-            dialog.max = 1
-            dialog.setProgressStyle(HORIZONTAL)
-            dialog.setTitle(R.string.export_data)
-            dialog.setMessage(context.getString(R.string.export_data_ongoing))
-            dialog.show()
-            withContext(ioDispatcher) {
-                val sudokus = getAllSudokus()
-                withContext(mainDispatcher) {
-                    dialog.isIndeterminate = false
-                    dialog.max = sudokus.size
-                    dialog.progress = 0
+    suspend operator fun invoke(
+        destination: Uri,
+        onProgress: (ExportProgress) -> Unit,
+    ): DataExportResult =
+        withContext(ioDispatcher) {
+            onProgress(ExportProgress.Reading)
+            val sudokus = getAllSudokus()
+            onProgress(ExportProgress.Converting(done = 0, total = sudokus.size))
+            val exportSudokus =
+                sudokus.mapIndexed { index, sudoku ->
+                    sudokuToExport(sudoku).also { onProgress(ExportProgress.Converting(done = index + 1, total = sudokus.size)) }
                 }
-                val exportSudokus =
-                    sudokus.map { sudoku ->
-                        withContext(mainDispatcher) { dialog.incrementProgressBy(1) }
-                        sudokuToExport(sudoku)
-                    }
-                withContext(mainDispatcher) {
-                    dialog.isIndeterminate = true
-                    dialog.max = 1
-                    dialog.setMessage(context.getString(R.string.export_data_ongoing_writing_file))
+            onProgress(ExportProgress.Writing)
+            write(exportSudokus.stringifyJSON(), destination)
+        }
+
+    private fun write(
+        content: String,
+        destination: Uri,
+    ): DataExportResult =
+        runCatching {
+            when (val stream = context.contentResolver.openOutputStream(destination)) {
+                null -> {
+                    DataExportResult.WriteFailed
                 }
-                val exportString = exportSudokus.stringifyJSON()
-                context.contentResolver
-                    .openOutputStream(destination)!!
-                    .bufferedWriter()
-                    .use { bufferedWriter -> bufferedWriter.write(exportString) }
+
+                else -> {
+                    stream.writer().use { writer -> writer.write(content) }
+                    DataExportResult.Written
+                }
             }
-            dialog.dismiss()
-            AlertDialog
-                .Builder(context)
-                .setTitle(R.string.export_data)
-                .setMessage(context.getString(R.string.export_data_success))
-                .setPositiveButton(commonutilsR.string.commonutils_ok, null)
-                .show()
+        }.getOrElse { e ->
+            Log.e("ExportDataUseCase", "Error when writing the export file:", e)
+            DataExportResult.WriteFailed
         }
 }

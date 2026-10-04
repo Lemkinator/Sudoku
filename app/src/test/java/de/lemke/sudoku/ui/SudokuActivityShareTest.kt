@@ -22,6 +22,7 @@ import android.os.Looper
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.IntentCompat
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -36,6 +37,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokuExport
@@ -85,10 +87,12 @@ class SudokuActivityShareTest {
     @JvmField
     val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
 
+    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO)
+
     @BindValue
     @IoDispatcher
     @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
+    val testIoDispatcher: CoroutineDispatcher = pausableIoDispatcher
 
     @BindValue
     @MainDispatcher
@@ -199,6 +203,106 @@ class SudokuActivityShareTest {
             val started = shadowOf(activity).nextStartedActivity
             started.action shouldBe Intent.ACTION_CHOOSER
         }
+
+    @Test
+    fun `selecting share twice shows one share dialog`() =
+        launch(formulaicSudoku(SudokuSize.FOUR)) { activity ->
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share)) shouldBe true
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share)) shouldBe true
+            ShadowDialog.getShownDialogs().count { it.isShowing } shouldBe 1
+        }
+
+    @Test
+    fun `tapping the share button twice starts one share chooser`() =
+        launch(formulaicSudoku(SudokuSize.FOUR)) { activity ->
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share))
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(R.id.radioButtonText)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+            shadowOf(activity).nextStartedActivity.action shouldBe Intent.ACTION_CHOOSER
+            shadowOf(activity).nextStartedActivity shouldBe null
+        }
+
+    @Test
+    fun `tapping the share button twice for the current board shares one sudoku file`() =
+        launch(levelSudokuWithAnEntry()) { activity ->
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share))
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(R.id.radioButtonCurrent)
+            pausableIoDispatcher.pause()
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            pausableIoDispatcher.resume()
+            awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+            sharedSudoku(activity).fields[1].value shouldBe 2
+            shadowOf(activity).nextStartedActivity shouldBe null
+            dialog.isShowing shouldBe false
+        }
+
+    @Test
+    fun `a sudoku file written across a recreation is shared from the recreated activity`() {
+        val sudoku = levelSudokuWithAnEntry()
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.userSettings.animationsEnabled = false
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share))
+                val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+                dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(R.id.radioButtonCurrent)
+                pausableIoDispatcher.pause()
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            }
+            scenario.recreate()
+            pausableIoDispatcher.resume()
+            scenario.onActivity { activity ->
+                awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+                sharedSudoku(activity).fields[1].value shouldBe 2
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+        }
+    }
+
+    @Test
+    fun `a sudoku file written while a launch is pending is shared once the activity resumes again`() {
+        val sudoku = levelSudokuWithAnEntry()
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            lateinit var viewModel: SudokuViewModel
+            scenario.onActivity { activity ->
+                activity.userSettings.animationsEnabled = false
+                viewModel = activity.viewModel
+                activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
+                viewModel.onShare(activity.sudoku.getInitialSudoku())
+            }
+            awaitMainLooperIdleUntil { viewModel.share.value is SudokuShare.File }
+            val file = viewModel.share.value as SudokuShare.File
+            scenario.onActivity { activity ->
+                shadowOf(activity).nextStartedActivity.component?.className shouldBe MainActivity::class.java.name
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.share.value shouldBe file
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.onActivity { activity ->
+                val chooser = shadowOf(activity).nextStartedActivity
+                chooser.action shouldBe Intent.ACTION_CHOOSER
+                val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
+                send.type shouldBe "application/sudoku"
+                IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java) shouldBe file.uri
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+            viewModel.share.value shouldBe SudokuShare.Idle
+        }
+    }
 
     @Test
     fun `sharing the initial board shares a normal sudoku file without the player's entries`() =

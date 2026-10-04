@@ -20,7 +20,6 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.ProviderInfo
 import android.net.Uri
-import android.os.Looper
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.database.AppDatabase
@@ -32,13 +31,13 @@ import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.DataImportResult
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.ImportProgress
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -54,11 +53,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowContentResolver
-import org.robolectric.shadows.ShadowDialog
-import de.lemke.commonutils.R as commonutilsR
 
 /** `DocumentFile.fromSingleUri` resolves its checks only through a registered ContentProvider, not `file://`. */
 @RunWith(RobolectricTestRunner::class)
@@ -67,9 +63,8 @@ class ImportDataUseCaseTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    // An Application context never gets the manifest theme, and AppCompat dialogs refuse to inflate without it.
-    private val context: Context =
-        ApplicationProvider.getApplicationContext<Context>().apply { setTheme(commonutilsR.style.CommonUtils_AppTheme) }
+    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val progress = mutableListOf<ImportProgress>()
     private lateinit var database: AppDatabase
     private lateinit var sudokusRepository: SudokusRepository
     private lateinit var useCase: ImportDataUseCase
@@ -85,7 +80,7 @@ class ImportDataUseCaseTest {
                 .setTransactionExecutor(directExecutor)
                 .build()
         sudokusRepository = SudokusRepository(database.sudokuDao())
-        useCase = ImportDataUseCase(context, sudokusRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+        useCase = ImportDataUseCase(context, sudokusRepository, UnconfinedTestDispatcher())
     }
 
     @After
@@ -145,7 +140,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(sudoku1), sudokuToExport(sudoku2)).stringifyJSON()
         val uri = registerDocument("import.valid", json)
 
-        runTest { useCase(uri) shouldBe DataImportResult.Imported(skippedCount = 0) }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.Imported(skippedCount = 0) }
 
         val saved = runBlocking { sudokusRepository.getAllSudokus() }
         saved.map { it.id.value }.toSet() shouldBe setOf(sudoku1.id.value, sudoku2.id.value)
@@ -157,15 +152,31 @@ class ImportDataUseCaseTest {
         val imported2 = saved.single { it.id == sudoku2.id }
         imported2.size shouldBe sudoku2.size
         imported2.difficulty shouldBe sudoku2.difficulty
+        progress shouldBe
+            listOf(
+                ImportProgress.Reading,
+                ImportProgress.Parsing(done = 0, total = 2),
+                ImportProgress.Parsing(done = 1, total = 2),
+                ImportProgress.Parsing(done = 2, total = 2),
+                ImportProgress.Saving(done = 0, total = 2),
+                ImportProgress.Saving(done = 1, total = 2),
+                ImportProgress.Saving(done = 2, total = 2),
+            )
     }
 
     @Test
     fun `succeeds without saving anything for an empty export list`() {
         val uri = registerDocument("import.empty", "[]")
 
-        runTest { useCase(uri) shouldBe DataImportResult.Imported(skippedCount = 0) }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.Imported(skippedCount = 0) }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
+        progress shouldBe
+            listOf(
+                ImportProgress.Reading,
+                ImportProgress.Parsing(done = 0, total = 0),
+                ImportProgress.Saving(done = 0, total = 0),
+            )
     }
 
     @Test
@@ -177,13 +188,13 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(valid4), size5, sudokuToExport(valid9), size0).stringifyJSON()
         val uri = registerDocument("import.skipped", json)
 
-        runTest { useCase(uri) shouldBe DataImportResult.Imported(skippedCount = 2) }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.Imported(skippedCount = 2) }
 
         runBlocking { sudokusRepository.getAllSudokus() }.map { it.id.value }.toSet() shouldBe setOf(valid4.id.value, valid9.id.value)
     }
 
     @Test
-    fun `counts a single unsupported entry as one skipped and dismisses the progress dialog`() {
+    fun `counts a single unsupported entry as one skipped and reports saving only the supported one`() {
         val json =
             listOf(
                 sudokuToExport(testSudoku(size = SudokuSize.SIXTEEN)),
@@ -191,20 +202,28 @@ class ImportDataUseCaseTest {
             ).stringifyJSON()
         val uri = registerDocument("import.oneskipped", json)
 
-        runTest { useCase(uri) shouldBe DataImportResult.Imported(skippedCount = 1) }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.Imported(skippedCount = 1) }
 
         runBlocking { sudokusRepository.getAllSudokus() }.map { it.size } shouldBe listOf(SudokuSize.SIXTEEN)
-        shadowOf(Looper.getMainLooper()).idle()
-        ShadowDialog.getLatestDialog().isShowing.shouldBeFalse()
+        progress shouldBe
+            listOf(
+                ImportProgress.Reading,
+                ImportProgress.Parsing(done = 0, total = 2),
+                ImportProgress.Parsing(done = 1, total = 2),
+                ImportProgress.Parsing(done = 2, total = 2),
+                ImportProgress.Saving(done = 0, total = 1),
+                ImportProgress.Saving(done = 1, total = 1),
+            )
     }
 
     @Test
     fun `returns InvalidJson when the JSON does not match the export schema`() {
         val uri = registerDocument("import.badschema", "{}")
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
+        progress shouldBe listOf(ImportProgress.Reading)
     }
 
     @Test
@@ -212,9 +231,10 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.wrongmime", json, mimeType = "text/plain")
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidFile }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidFile }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
+        progress shouldBe listOf(ImportProgress.Reading)
     }
 
     @Test
@@ -223,7 +243,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.nomime", json, mimeType = null)
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidFile }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidFile }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }
@@ -233,9 +253,9 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
         val failingRepository = repositoryFailingInsertWith(RuntimeException("boom"))
-        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher())
 
-        runTest { throwingUseCase(uri) shouldBe DataImportResult.InvalidJson }
+        runTest { throwingUseCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }
@@ -245,7 +265,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.providerbug", json, openFailure = UnsupportedOperationException("provider bug"))
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }
@@ -254,7 +274,7 @@ class ImportDataUseCaseTest {
     fun `returns InvalidJson when the document is not parseable JSON`() {
         val uri = registerDocument("import.malformed", "[{not json")
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }
@@ -264,7 +284,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.denied", json, openFailure = SecurityException("Permission Denial"))
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }
@@ -274,7 +294,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.nocontent", json, hasContent = false)
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidJson }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }
@@ -284,9 +304,9 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.cancelled", json)
         val failingRepository = repositoryFailingInsertWith(CancellationException())
-        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher(), UnconfinedTestDispatcher())
+        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher())
 
-        shouldThrow<CancellationException> { runTest { throwingUseCase(uri) } }
+        shouldThrow<CancellationException> { runTest { throwingUseCase(uri) { progress += it } } }
     }
 
     @Test
@@ -294,7 +314,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.missing", json, exists = false)
 
-        runTest { useCase(uri) shouldBe DataImportResult.InvalidFile }
+        runTest { useCase(uri) { progress += it } shouldBe DataImportResult.InvalidFile }
 
         runBlocking { sudokusRepository.getAllSudokus() }.shouldBeEmpty()
     }

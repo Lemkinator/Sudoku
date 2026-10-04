@@ -19,6 +19,7 @@ package de.lemke.sudoku.ui.fragments
 import android.os.Bundle
 import android.os.Looper
 import androidx.appcompat.view.menu.MenuBuilder
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -34,7 +35,11 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
 import de.lemke.sudoku.R
+import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -49,6 +54,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import dev.oneuiproject.oneui.layout.ToolbarLayout
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -57,6 +63,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,6 +77,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDialog
 
 /**
  * `seslStartLongPressMultiSelection()` NPEs under Robolectric, and `ToolbarLayout` hides its `actionModeListener`.
@@ -100,6 +108,24 @@ class TabHistoryActionModeTest {
     @JvmField
     val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
+    private var deleteGate = CompletableDeferred(Unit)
+    private var deleteCalls = 0
+    private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
+    private val sudokuDao = database.sudokuDao()
+
+    @BindValue
+    @JvmField
+    val sudokusRepository: SudokusRepository =
+        SudokusRepository(
+            object : SudokuDao by sudokuDao {
+                override suspend fun delete(vararg sudokus: SudokuDb) {
+                    deleteCalls++
+                    deleteGate.await()
+                    sudokuDao.delete(*sudokus)
+                }
+            },
+        )
+
     @Inject
     lateinit var settings: SettingsRepository
 
@@ -126,6 +152,7 @@ class TabHistoryActionModeTest {
     fun tearDown() {
         restoreReflectedField?.invoke()
         restoreReflectedField = null
+        database.close()
     }
 
     private fun historySudoku(): Sudoku {
@@ -198,6 +225,75 @@ class TabHistoryActionModeTest {
     }
 
     @Test
+    fun `tapping delete twice deletes the selection once and ends action mode`() {
+        val first = historySudoku()
+        val second = historySudoku()
+        runBlocking {
+            saveSudoku(first)
+            saveSudoku(second)
+        }
+        launch { fragment ->
+            val drawerLayout = fragment.requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
+            fragment.launchActionMode()
+            shadowOf(Looper.getMainLooper()).idle()
+            val listener = actionModeListenerOf(drawerLayout)
+            listener.onSelectAll(true)
+            deleteGate = CompletableDeferred()
+            deleteCalls = 0
+
+            listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+            listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            drawerLayout.isActionMode.shouldBeTrue()
+            val progressDialog = ShadowDialog.getLatestDialog() as ProgressDialog
+            progressDialog.isShowing.shouldBeTrue()
+
+            deleteGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            deleteCalls shouldBe 2
+            drawerLayout.isActionMode.shouldBeFalse()
+            fragment.sudokuListAdapter.isActionMode.shouldBeFalse()
+            progressDialog.isShowing.shouldBeFalse()
+            runBlocking { getAllSudokus() }.shouldBeEmpty()
+        }
+    }
+
+    @Test
+    fun `leaving and returning to the app during a deletion keeps one progress dialog and dismisses it when the deletion ends`() {
+        runBlocking { saveSudoku(historySudoku()) }
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.onTabItemSelected(0) }
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.onActivity { activity ->
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabHistory>()
+                        .first()
+                fragment.launchActionMode()
+                shadowOf(Looper.getMainLooper()).idle()
+                val listener = actionModeListenerOf(activity.findViewById(R.id.drawerLayout))
+                listener.onSelectAll(true)
+                deleteGate = CompletableDeferred()
+                listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+            }
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+            deleteGate.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
+            progressDialogs.size shouldBe 1
+            progressDialogs.single().isShowing.shouldBeFalse()
+            runBlocking { getAllSudokus() }.shouldBeEmpty()
+        }
+    }
+
+    @Test
     fun `an unrecognized action mode menu item is ignored`() {
         val sudoku = historySudoku()
         runBlocking { saveSudoku(sudoku) }
@@ -228,6 +324,22 @@ class TabHistoryActionModeTest {
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
             started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+        }
+    }
+
+    @Test
+    fun `clicking an item twice outside action mode opens one SudokuActivity`() {
+        val sudoku = historySudoku()
+        runBlocking { saveSudoku(sudoku) }
+        launch { fragment ->
+            val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            val activity = shadowOf(fragment.requireActivity())
+            activity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+            activity.nextStartedActivity shouldBe null
         }
     }
 

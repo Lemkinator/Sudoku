@@ -25,14 +25,13 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.restoreSearchAndActionMode
 import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
+import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
@@ -58,7 +57,6 @@ import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.BottomTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -74,7 +72,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         )
     }
     private val viewModel: TabHistoryViewModel by viewModels()
-    private var pendingReveal: SudokuId? = null
+    private var deleteProgressDialog: ProgressDialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -97,16 +95,11 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         collectState(viewModel.sudokuHistory, minActiveState = RESUMED) { history ->
             updateRecyclerView(history)
         }
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                is TabHistoryEvent.RevealSudoku -> {
-                    pendingReveal = event.sudokuId
-                    revealPending()
-                }
-
-                TabHistoryEvent.ShowLoadError -> {
-                    toast(R.string.error_loading_sudoku_history_failed)
-                }
+        collectState(viewModel.reveal, minActiveState = RESUMED) { revealPending() }
+        collectState(viewModel.loadFailed, minActiveState = RESUMED) { failed ->
+            if (failed) {
+                toast(R.string.error_loading_sudoku_history_failed)
+                viewModel.onLoadFailureHandled()
             }
         }
         collectState(viewModel.errorLimit) { limit ->
@@ -115,6 +108,13 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 sudokuListAdapter.notifyItemRangeChanged(0, sudokuListAdapter.itemCount)
             }
         }
+        collectState(viewModel.deletion) { renderDeleteProgress(it) }
+        collectState(viewModel.deletion, minActiveState = RESUMED) { if (it is HistoryDeletion.Result) onDeletionResult(it) }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        dismissDeleteProgress()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -150,9 +150,9 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     }
 
     private fun revealPending() {
-        val sudokuId = pendingReveal ?: return
-        if (sudokuListAdapter.currentList != viewModel.sudokuHistory.value) return
-        pendingReveal = null
+        val sudokuId = viewModel.reveal.value ?: return
+        if (!isResumed || sudokuListAdapter.currentList != viewModel.sudokuHistory.value) return
+        viewModel.onRevealHandled(sudokuId)
         val position = sudokuListAdapter.revealPositionOf(sudokuId)
         if (position != NO_POSITION) {
             (binding.sudokuHistoryList.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, 0)
@@ -189,20 +189,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             onSelectMenuItem = { menuItem ->
                 when (menuItem.itemId) {
                     R.id.menuButtonDelete -> {
-                        val dialog = ProgressDialog(requireContext())
-                        dialog.setProgressStyle(CIRCLE)
-                        dialog.setCancelable(false)
-                        dialog.show()
-                        lifecycleScope.launch {
-                            viewModel.deleteSelectedSudokus(
-                                viewModel.sudokuHistory.value
-                                    .filterIsInstance<SudokuItem>()
-                                    .filter { it.stableId in sudokuListAdapter.getSelectedIds() }
-                                    .map { it.sudoku },
-                            )
-                            drawerLayout.endActionMode()
-                            dialog.dismiss()
-                        }
+                        deleteSelectedSudokus()
                         true
                     }
 
@@ -214,5 +201,48 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             onSelectAll = { isChecked: Boolean -> sudokuListAdapter.onToggleSelectAll(isChecked) },
             allSelectorStateFlow = allSelectorStateFlow,
         )
+    }
+
+    private fun deleteSelectedSudokus() {
+        val selectedIds = sudokuListAdapter.getSelectedIds()
+        val selectedSudokus =
+            viewModel.sudokuHistory.value
+                .filterIsInstance<SudokuItem>()
+                .filter { it.stableId in selectedIds }
+                .map { it.sudoku }
+        viewModel.onDeleteSelected(selectedSudokus)
+    }
+
+    private fun renderDeleteProgress(deletion: HistoryDeletion) {
+        when (deletion) {
+            HistoryDeletion.Running -> showDeleteProgress()
+            HistoryDeletion.Idle, HistoryDeletion.Finished -> dismissDeleteProgress()
+        }
+    }
+
+    private fun showDeleteProgress() {
+        if (deleteProgressDialog != null) return
+        deleteProgressDialog =
+            ProgressDialog(requireContext()).apply {
+                setProgressStyle(CIRCLE)
+                setCancelable(false)
+                showOnce(DELETE_PROGRESS_DIALOG_TAG)
+            }
+    }
+
+    private fun dismissDeleteProgress() {
+        deleteProgressDialog?.dismiss()
+        deleteProgressDialog = null
+    }
+
+    private fun onDeletionResult(result: HistoryDeletion.Result) {
+        when (result) {
+            HistoryDeletion.Finished -> drawerLayout.endActionMode()
+        }
+        viewModel.onDeletionHandled(result)
+    }
+
+    private companion object {
+        const val DELETE_PROGRESS_DIALOG_TAG = "deleteProgress"
     }
 }

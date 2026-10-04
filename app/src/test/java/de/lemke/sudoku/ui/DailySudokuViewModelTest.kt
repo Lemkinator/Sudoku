@@ -108,10 +108,10 @@ class DailySudokuViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe DailySudokuUiState(sudokus = items, isLoading = false)
             }
-            viewModel.events.test { expectNoEvents() }
+            viewModel.loadFailed.value shouldBe false
         }
 
-        should("init sets isLoading false and emits ShowLoadError when initDailySudokus throws") {
+        should("init sets isLoading false and reports loadFailed when initDailySudokus throws") {
             coEvery { initDailySudokus(any()) } throws RuntimeException("init failed")
 
             val viewModel = newViewModel()
@@ -119,13 +119,10 @@ class DailySudokuViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe DailySudokuUiState(isLoading = false)
             }
-            viewModel.events.test {
-                awaitItem() shouldBe DailySudokuEvent.ShowLoadError
-                expectNoEvents()
-            }
+            viewModel.loadFailed.value shouldBe true
         }
 
-        should("init sets isLoading false and emits ShowLoadError when observeDailySudokus throws") {
+        should("init sets isLoading false and reports loadFailed when observeDailySudokus throws") {
             every { observeDailySudokus(any()) } returns flow { throw IllegalStateException("observe failed") }
 
             val viewModel = newViewModel()
@@ -133,13 +130,21 @@ class DailySudokuViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe DailySudokuUiState(isLoading = false)
             }
-            viewModel.events.test {
-                awaitItem() shouldBe DailySudokuEvent.ShowLoadError
-                expectNoEvents()
-            }
+            viewModel.loadFailed.value shouldBe true
         }
 
-        should("init does not treat CancellationException as a load failure: no isLoading flip, no ShowLoadError event") {
+        should("onLoadFailureHandled clears a reported load failure") {
+            coEvery { initDailySudokus(any()) } throws RuntimeException("init failed")
+            val viewModel = newViewModel()
+            viewModel.state.test { expectMostRecentItem() shouldBe DailySudokuUiState(isLoading = false) }
+            viewModel.loadFailed.value shouldBe true
+
+            viewModel.onLoadFailureHandled()
+
+            viewModel.loadFailed.value shouldBe false
+        }
+
+        should("init does not treat CancellationException as a load failure: no isLoading flip, no loadFailed") {
             coEvery { initDailySudokus(any()) } throws CancellationException("cancelled")
 
             val viewModel = newViewModel()
@@ -147,7 +152,7 @@ class DailySudokuViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem() shouldBe DailySudokuUiState()
             }
-            viewModel.events.test { expectNoEvents() }
+            viewModel.loadFailed.value shouldBe false
         }
 
         should("dailyShowUncompleted round-trips through the real UserSettings") {

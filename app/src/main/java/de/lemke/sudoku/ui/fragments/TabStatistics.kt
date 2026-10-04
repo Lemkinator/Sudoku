@@ -30,7 +30,6 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
@@ -90,9 +89,10 @@ class TabStatistics : Fragment() {
                 }
             }
         }
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                TabStatisticsEvent.ShowLoadError -> toast(R.string.error_loading_statistics_failed)
+        collectState(viewModel.loadFailed, minActiveState = RESUMED) { failed ->
+            if (failed) {
+                toast(R.string.error_loading_statistics_failed)
+                viewModel.onLoadFailureHandled()
             }
         }
     }

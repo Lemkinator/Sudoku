@@ -26,11 +26,9 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
@@ -49,14 +47,13 @@ import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
 import dev.oneuiproject.oneui.utils.ItemDecorRule.NONE
 import dev.oneuiproject.oneui.utils.SemItemDecoration
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SudokuLevelTab : Fragment() {
     internal lateinit var binding: FragmentTabLevelBinding
     internal val viewModel: SudokuLevelTabViewModel by viewModels()
     internal val sudokuListAdapter: SudokuListAdapter by lazy { SudokuListAdapter(requireContext(), MODE_LEVEL_ERROR_LIMIT, LEVEL) }
-    private var pendingReveal: SudokuId? = null
+    private var levelStartView: View? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,33 +72,41 @@ class SudokuLevelTab : Fragment() {
             binding.sudokuLevelsRecycler.isVisible = !state.isLoading
             binding.tabLevelProgressBar.isVisible = state.isLoading || state.isGeneratingNextLevel
         }
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                is SudokuLevelTabEvent.RevealSudoku -> {
-                    pendingReveal = event.sudokuId
-                    revealPending()
-                }
-
-                SudokuLevelTabEvent.ShowLoadError -> {
-                    toast(R.string.error_loading_sudoku_level_failed)
-                }
-
-                SudokuLevelTabEvent.ShowStartError -> {
-                    toast(R.string.error_starting_sudoku_level_failed)
-                }
+        collectState(viewModel.reveal, minActiveState = RESUMED) { revealPending() }
+        collectState(viewModel.loadFailed, minActiveState = RESUMED) { failed ->
+            if (failed) {
+                toast(R.string.error_loading_sudoku_level_failed)
+                viewModel.onLoadFailureHandled()
             }
         }
+        collectState(viewModel.levelStart, minActiveState = RESUMED) { if (it is LevelStart.Result) onLevelStartResult(it) }
     }
 
-    override fun onResume() {
-        super.onResume()
-        viewModel.onTabResumed()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        levelStartView = null
+    }
+
+    private fun onLevelStartResult(result: LevelStart.Result) {
+        val handled =
+            when (result) {
+                is LevelStart.Open -> openSudoku(result.sudokuId)
+                LevelStart.Failed -> true.also { toast(R.string.error_starting_sudoku_level_failed) }
+            }
+        if (!handled) return
+        levelStartView = null
+        viewModel.onLevelStartHandled(result)
+    }
+
+    private fun openSudoku(sudokuId: SudokuId): Boolean {
+        val intent = Intent(requireContext(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        return requireActivity().transformToActivity(levelStartView, intent)
     }
 
     private fun revealPending() {
-        val sudokuId = pendingReveal ?: return
-        if (sudokuListAdapter.currentList != viewModel.state.value.sudokuLevel) return
-        pendingReveal = null
+        val sudokuId = viewModel.reveal.value ?: return
+        if (!isResumed || sudokuListAdapter.currentList != viewModel.state.value.sudokuLevel) return
+        viewModel.onRevealHandled(sudokuId)
         val position = sudokuListAdapter.revealPositionOf(sudokuId)
         if (position != NO_POSITION) binding.sudokuLevelsRecycler.smoothScrollToPosition(position)
     }
@@ -118,13 +123,9 @@ class SudokuLevelTab : Fragment() {
 
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
-            if (sudokuListItem is SudokuItem) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    if (!viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)) return@launch
-                    viewHolder.itemView.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
-                    )
-                }
+            if (sudokuListItem is SudokuItem && viewModel.levelStart.value != LevelStart.Running) {
+                levelStartView = viewHolder.itemView
+                viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)
             }
         }
     }
