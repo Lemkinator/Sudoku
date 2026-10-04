@@ -237,7 +237,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     private fun onDeletionResult(result: HistoryDeletion.Result) {
         when (result) {
-            HistoryDeletion.Finished -> if (drawerLayout.isActionMode) drawerLayout.endActionMode()
+            HistoryDeletion.Finished -> drawerLayout.endActionMode()
         }
         viewModel.onDeletionHandled(result)
     }

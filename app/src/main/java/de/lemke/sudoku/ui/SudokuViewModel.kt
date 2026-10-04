@@ -102,7 +102,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onRestart() {
-        val sudoku = (game.value as? SudokuGame.Playing)?.sudoku ?: return
+        val sudoku = (game.value as? SudokuGame.Playing ?: return).sudoku
         game.value = SudokuGame.Restarting
         sudoku.reset()
         viewModelScope.launch {
@@ -112,7 +112,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onFollowUp(followUp: FollowUp) {
-        val completed = (game.value as? SudokuGame.Playing)?.sudoku?.takeIf { it.completed } ?: return
+        val completed = (game.value as? SudokuGame.Playing ?: return).sudoku.takeIf { it.completed } ?: return
         game.value = SudokuGame.Generating
         viewModelScope.launch {
             val next =

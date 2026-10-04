@@ -41,6 +41,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.app.DialogCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.CREATED
 import androidx.lifecycle.Lifecycle.State.RESUMED
@@ -716,17 +717,14 @@ class SudokuActivity : AppCompatActivity() {
         pauseGame()
         dialog.findViewById<TextView>(R.id.shareStatistics)?.text = sudoku.getLocalStatisticsString(resources)
         dialog.getButton(BUTTON_POSITIVE).setOnClickListenerWithProgress { _, _ ->
-            val content = dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.checkedRadioButtonId?.let(ShareContent::fromRadioButtonId)
+            val radioGroup = DialogCompat.requireViewById(dialog, R.id.shareRadioGroup) as RadioGroup
+            val content = ShareContent.fromRadioButtonId(radioGroup.checkedRadioButtonId)
             singleLaunch { share(content) }
         }
     }
 
-    private fun share(content: ShareContent?) {
+    private fun share(content: ShareContent) {
         when (content) {
-            null -> {
-                shareDialog?.dismiss()
-            }
-
             ShareContent.STATISTICS -> {
                 singleLaunchActivity(Intent.createChooser(statisticsShareIntent(), getString(R.string.share_sudoku)))
                 shareDialog?.dismiss()
@@ -837,6 +835,6 @@ private enum class ShareContent(
     companion object {
         fun fromRadioButtonId(
             @IdRes id: Int,
-        ): ShareContent? = entries.firstOrNull { it.radioButtonId == id }
+        ): ShareContent = entries.first { it.radioButtonId == id }
     }
 }
