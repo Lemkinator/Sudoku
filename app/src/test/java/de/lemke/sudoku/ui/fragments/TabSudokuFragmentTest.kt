@@ -50,7 +50,9 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.MainActivity
+import de.lemke.sudoku.ui.PausableDispatcher
 import de.lemke.sudoku.ui.SudokuActivity
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -62,7 +64,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -82,10 +83,12 @@ class TabSudokuFragmentTest {
     @get:Rule(order = 0)
     val hiltRule = HiltAndroidRule(this)
 
+    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Main)
+
     @BindValue
     @DefaultDispatcher
     @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
+    val testDefaultDispatcher: CoroutineDispatcher = pausableDefaultDispatcher
 
     @BindValue
     @IoDispatcher
@@ -190,6 +193,38 @@ class TabSudokuFragmentTest {
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
+        }
+
+    @Test
+    fun `a sudoku generated across a recreation opens from the recreated activity`() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idle()
+            pausableDefaultDispatcher.pause()
+            scenario.onActivity { activity -> activity.findViewById<View>(R.id.newGameButton).performClick() }
+            scenario.recreate()
+            pausableDefaultDispatcher.resume()
+            shadowOf(Looper.getMainLooper()).idle()
+            val generated = runBlocking { getAllSudokus() }.single()
+            scenario.onActivity { activity ->
+                val started = shadowOf(activity).nextStartedActivity
+                started.component?.className shouldBe SudokuActivity::class.java.name
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
+                shadowOf(activity).nextStartedActivity shouldBe null
+            }
+        }
+    }
+
+    @Test
+    fun `the progress bar shows while a new sudoku generates`() =
+        launch { fragment ->
+            val progressBar = fragment.requireView().findViewById<View>(R.id.newSudokuProgressBar)
+            pausableDefaultDispatcher.pause()
+            fragment.requireView().findViewById<View>(R.id.newGameButton).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            progressBar.isVisible.shouldBeTrue()
+            pausableDefaultDispatcher.resume()
+            shadowOf(Looper.getMainLooper()).idle()
+            progressBar.isVisible.shouldBeFalse()
         }
 
     @Test

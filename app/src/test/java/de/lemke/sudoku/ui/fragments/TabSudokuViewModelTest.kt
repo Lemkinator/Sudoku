@@ -36,6 +36,7 @@ import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -84,17 +85,76 @@ class TabSudokuViewModelTest : ShouldSpec(
             userSettings.sizeSliderValue shouldBe 2
         }
 
-        should("createNewSudoku generates then saves the sudoku, in order, and returns it") {
+        should("onNewGame generates then saves the sudoku, in order, and reports it created") {
             val sudoku = testSudoku()
             coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
 
-            val result = viewModel.createNewSudoku(SudokuSize.NINE, Difficulty.HARD)
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
 
-            result shouldBe sudoku
+            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
             coVerify(ordering = Ordering.ORDERED) {
                 generateSudoku(SudokuSize.NINE, Difficulty.HARD)
                 saveSudoku(sudoku)
             }
+        }
+
+        should("onNewGame reports generating until the sudoku is saved") {
+            val generated = CompletableDeferred<Sudoku>()
+            coEvery { generateSudoku(SudokuSize.FOUR, Difficulty.EASY) } coAnswers { generated.await() }
+
+            viewModel.onNewGame(SudokuSize.FOUR, Difficulty.EASY)
+
+            viewModel.newGame.value shouldBe NewGame.Generating
+            coVerify(exactly = 0) { saveSudoku(any()) }
+            val sudoku = testSudoku(SudokuSize.FOUR)
+            generated.complete(sudoku)
+            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
+        }
+
+        should("a second onNewGame while generating generates once") {
+            val generated = CompletableDeferred<Sudoku>()
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } coAnswers { generated.await() }
+
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+            generated.complete(testSudoku())
+
+            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.HARD) }
+            coVerify(exactly = 1) { saveSudoku(any()) }
+        }
+
+        should("onNewGame while a created sudoku is not handled yet keeps that sudoku") {
+            val sudoku = testSudoku()
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+
+            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
+            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.HARD) }
+        }
+
+        should("onNewGameHandled returns to idle, so the next onNewGame generates again") {
+            val first = testSudoku()
+            val second = testSudoku()
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returnsMany listOf(first, second)
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+
+            viewModel.onNewGameHandled(NewGame.Created(first.id))
+
+            viewModel.newGame.value shouldBe NewGame.Idle
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+            viewModel.newGame.value shouldBe NewGame.Created(second.id)
+        }
+
+        should("onNewGameHandled for another sudoku keeps the pending one") {
+            val sudoku = testSudoku()
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
+            viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+
+            viewModel.onNewGameHandled(NewGame.Created(testSudoku().id))
+
+            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
         }
 
         should("getContinuableSudoku returns null when getRecentSudoku finds nothing") {

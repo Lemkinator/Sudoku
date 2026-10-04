@@ -102,7 +102,9 @@ import dev.oneuiproject.oneui.design.R as designR
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     internal lateinit var binding: ActivityMainBinding
-    private val fragmentsInstance: List<Fragment> = listOf(TabHistory(), TabSudoku(), TabStatistics())
+    private val fragmentsInstance: List<Fragment> by lazy {
+        MainTab.entries.map { tab -> supportFragmentManager.findFragmentByTag(tab.name) ?: tab.create() }
+    }
     private var selectedPosition = 0
     private var isUIReady = false
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForSingleLaunchResult(StartActivityForResult()) {}
@@ -318,7 +320,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun initFragments() {
         val transaction: FragmentTransaction = supportFragmentManager.beginTransaction()
-        for (fragment in fragmentsInstance) transaction.add(R.id.fragmentContainer, fragment)
+        MainTab.entries.zip(fragmentsInstance).forEach { (tab, fragment) ->
+            if (!fragment.isAdded) transaction.add(R.id.fragmentContainer, fragment, tab.name)
+        }
         transaction.commitNowAllowingStateLoss()
         onTabItemSelected(1)
     }
@@ -342,6 +346,15 @@ class MainActivity : AppCompatActivity() {
         private const val IMPORT_PROGRESS_DIALOG_TAG = "importProgress"
         private const val STATISTICS_FILTER_DIALOG_TAG = "statisticsFilter"
     }
+}
+
+/** A bottom tab of [MainActivity], in tab order; its name is the tag of its fragment. */
+private enum class MainTab(
+    val create: () -> Fragment,
+) {
+    HISTORY(::TabHistory),
+    SUDOKU(::TabSudoku),
+    STATISTICS(::TabStatistics),
 }
 
 internal fun DialogStatisticsFilterBinding.initFilterDialog(settings: UserSettings) {

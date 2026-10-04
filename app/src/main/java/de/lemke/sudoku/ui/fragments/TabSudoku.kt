@@ -21,17 +21,17 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.INVISIBLE
-import android.view.View.VISIBLE
 import android.view.ViewGroup
 import androidx.appcompat.widget.SeslSeekBar
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
-import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabSudokuBinding
@@ -70,7 +70,9 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         binding.sizeSeekbar.max = SudokuSize.entries.lastIndex
         binding.difficultySeekbar.setSeamless(true)
         binding.difficultySeekbar.max = Difficulty.max
-        binding.newGameButton.setOnClickListener { startNewGame() }
+        binding.newGameButton.onSingleLaunchClick {
+            viewModel.onNewGame(binding.sizeSeekbar.sudokuSize, Difficulty.fromInt(binding.difficultySeekbar.progress))
+        }
         binding.dailyButton.onSingleLaunchClick {
             binding.dailyButton.transformToActivity(
                 Intent(requireActivity(), DailySudokuActivity::class.java),
@@ -121,6 +123,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 }
             },
         )
+        collectState(viewModel.newGame) { binding.newSudokuProgressBar.isInvisible = it != NewGame.Generating }
+        collectState(viewModel.newGame, minActiveState = RESUMED) { if (it is NewGame.Result) onNewGameResult(it) }
     }
 
     override fun onResume() {
@@ -133,21 +137,16 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
         if (!hidden) refresh()
     }
 
-    private fun startNewGame() {
-        val size = binding.sizeSeekbar.sudokuSize
-        val difficulty = Difficulty.fromInt(binding.difficultySeekbar.progress)
-        singleLaunchSuspending(
-            work = {
-                binding.newSudokuProgressBar.visibility = VISIBLE
-                viewModel.createNewSudoku(size, difficulty)
-            },
-            then = { sudoku ->
-                binding.newGameButton.transformToActivity(
-                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
-                )
-                binding.newSudokuProgressBar.visibility = INVISIBLE
-            },
-        )
+    private fun onNewGameResult(result: NewGame.Result) {
+        val handled =
+            when (result) {
+                is NewGame.Created -> {
+                    binding.newGameButton.transformToActivity(
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, result.sudokuId.value),
+                    )
+                }
+            }
+        if (handled) viewModel.onNewGameHandled(result)
     }
 
     private fun refresh() {
