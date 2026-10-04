@@ -21,8 +21,10 @@ import android.R.anim.fade_out
 import android.R.anim.slide_in_left
 import android.R.anim.slide_out_right
 import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
 import android.graphics.Typeface
 import android.graphics.Typeface.NORMAL
+import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 import android.os.Bundle
@@ -43,6 +45,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
+import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.games.PlayGames
@@ -51,6 +54,7 @@ import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
+import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.configureCommonUtilsSplashScreen
 import de.lemke.commonutils.ui.utils.onSingleLaunchItemSelected
 import de.lemke.commonutils.ui.utils.onboardIfNeeded
@@ -108,8 +112,9 @@ class MainActivity : AppCompatActivity() {
     }
     private var selectedPosition = 0
     private var isUIReady = false
+    private var importProgressDialog: ProgressDialog? = null
     private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForSingleLaunchResult(StartActivityForResult()) {}
-    private val viewModel: MainViewModel by viewModels()
+    internal val viewModel: MainViewModel by viewModels()
 
     @Inject
     lateinit var userSettings: UserSettings
@@ -137,6 +142,11 @@ class MainActivity : AppCompatActivity() {
         openMain()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        dismissImportProgress()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.menu_filter, menu).let { true }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
@@ -156,27 +166,56 @@ class MainActivity : AppCompatActivity() {
         initTabs()
         initFragments()
         NotificationManagerCompat.from(this).cancelAll()
+        intent.openedFileUri()?.let(viewModel::onFileOpened)
+        collectState(viewModel.importedSudoku) { renderImportProgress(it) }
+        collectState(viewModel.importedSudoku, minActiveState = RESUMED) { if (it is ImportedSudoku.Result) onImportedSudokuResult(it) }
         lifecycleScope.launch {
             isUIReady = true
-            checkImportedSudoku()
             applyPlayGamesSync(viewModel.onScreenReady())
         }
     }
 
-    private suspend fun checkImportedSudoku() {
-        if (intent != null && intent.data != null) {
-            val dialog = ProgressDialog(this)
-            dialog.setProgressStyle(CIRCLE)
-            dialog.setCancelable(false)
-            dialog.showOnce(IMPORT_PROGRESS_DIALOG_TAG)
-            val sudoku = viewModel.handleImportedSudoku(intent.data)
-            if (sudoku != null) {
-                transformToActivity(R.id.newGameButton, Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value))
-            } else {
-                toast(R.string.error_import_failed)
-            }
-            dialog.dismiss()
+    /** The opened file, unless the system relaunched the task from recents with the original intent. */
+    private fun Intent.openedFileUri(): Uri? = data?.takeIf { flags and FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0 }
+
+    private fun renderImportProgress(importedSudoku: ImportedSudoku) {
+        when (importedSudoku) {
+            ImportedSudoku.Importing -> showImportProgress()
+            ImportedSudoku.Idle, is ImportedSudoku.Imported, ImportedSudoku.Failed -> dismissImportProgress()
         }
+    }
+
+    private fun showImportProgress() {
+        if (importProgressDialog != null) return
+        importProgressDialog =
+            ProgressDialog(this).apply {
+                setProgressStyle(CIRCLE)
+                setCancelable(false)
+                showOnce(IMPORT_PROGRESS_DIALOG_TAG)
+            }
+    }
+
+    private fun dismissImportProgress() {
+        importProgressDialog?.dismiss()
+        importProgressDialog = null
+    }
+
+    private fun onImportedSudokuResult(result: ImportedSudoku.Result) {
+        val handled =
+            when (result) {
+                is ImportedSudoku.Imported -> {
+                    transformToActivity(
+                        R.id.newGameButton,
+                        Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, result.sudokuId.value),
+                    )
+                }
+
+                ImportedSudoku.Failed -> {
+                    toast(R.string.error_import_failed)
+                    true
+                }
+            }
+        if (handled) viewModel.onImportedSudokuHandled(result)
     }
 
     private fun setupCommonUtilsActivities() {

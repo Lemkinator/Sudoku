@@ -21,6 +21,7 @@ import android.net.Uri
 import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatCheckBox
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -37,6 +38,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -87,10 +89,12 @@ class MainActivityMenuTest {
     @JvmField
     val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
 
+    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO)
+
     @BindValue
     @IoDispatcher
     @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
+    val testIoDispatcher: CoroutineDispatcher = pausableIoDispatcher
 
     @BindValue
     @MainDispatcher
@@ -323,7 +327,7 @@ class MainActivityMenuTest {
 
     // endregion
 
-    // region checkImportedSudoku
+    // region opened file import
 
     @Test
     fun `launching with an unresolvable import uri shows the import-failed toast`() {
@@ -338,9 +342,7 @@ class MainActivityMenuTest {
         }
     }
 
-    @Test
-    fun `launching with a resolvable import uri opens the imported sudoku`() {
-        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+    private fun withImportFile(block: (file: File, sudoku: Sudoku) -> Unit) {
         val size = SudokuSize.FOUR
         val sudoku =
             Sudoku.create(
@@ -356,6 +358,25 @@ class MainActivityMenuTest {
         val file = File.createTempFile("main-activity-import", ".json")
         file.writeText(sudokuToExport(sudoku).stringifyJSON())
         try {
+            block(file, sudoku)
+        } finally {
+            file.delete()
+        }
+    }
+
+    private fun ActivityScenario<MainActivity>.idleUntilImportFinished() {
+        val deadline = System.nanoTime() + IMPORT_TIMEOUT_NANOS
+        var finished = false
+        while (!finished && System.nanoTime() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            onActivity { activity -> finished = activity.viewModel.importedSudoku.value != ImportedSudoku.Importing }
+        }
+    }
+
+    @Test
+    fun `launching with a resolvable import uri opens the imported sudoku`() =
+        withImportFile { file, sudoku ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
             launch(intent) { activity ->
                 shadowOf(Looper.getMainLooper()).idle()
@@ -364,10 +385,75 @@ class MainActivityMenuTest {
                 started.component?.className shouldBe SudokuActivity::class.java.name
                 started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
             }
-        } finally {
-            file.delete()
         }
-    }
+
+    @Test
+    fun `a recreated activity does not import the opened file again`() =
+        withImportFile { file, sudoku ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
+            ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+                shadowOf(Looper.getMainLooper()).idle()
+                scenario.onActivity { activity ->
+                    shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+                }
+                scenario.recreate()
+                shadowOf(Looper.getMainLooper()).idle()
+                scenario.onActivity { activity ->
+                    shadowOf(activity).nextStartedActivity shouldBe null
+                    org.robolectric.shadows.ShadowToast
+                        .shownToastCount() shouldBe 0
+                }
+            }
+        }
+
+    @Test
+    fun `a relaunch from recents does not import the opened file again`() =
+        withImportFile { file, _ ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            val intent =
+                Intent(context, MainActivity::class.java)
+                    .setData(Uri.fromFile(file))
+                    .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+            launch(intent) { activity ->
+                shadowOf(Looper.getMainLooper()).idle()
+                shadowOf(activity).nextStartedActivity shouldBe null
+                org.robolectric.shadows.ShadowToast
+                    .shownToastCount() shouldBe 0
+            }
+        }
+
+    @Test
+    fun `an import result while paused opens the sudoku on resume`() =
+        withImportFile { file, sudoku ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
+            pausableIoDispatcher.pause()
+            ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+                scenario.onActivity { activity -> activity.singleLaunchActivity(Intent(activity, SettingsActivity::class.java)) }
+                pausableIoDispatcher.resume()
+                scenario.idleUntilImportFinished()
+                scenario.onActivity { activity ->
+                    val shadowActivity = shadowOf(activity)
+                    shadowActivity.nextStartedActivity?.component?.className shouldBe SettingsActivity::class.java.name
+                    shadowActivity.nextStartedActivity shouldBe null
+                    activity.viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(sudoku.id)
+                }
+                scenario.moveToState(Lifecycle.State.STARTED)
+                scenario.moveToState(Lifecycle.State.RESUMED)
+                shadowOf(Looper.getMainLooper()).idle()
+                scenario.onActivity { activity ->
+                    val shadowActivity = shadowOf(activity)
+                    shadowActivity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+                    shadowActivity.nextStartedActivity shouldBe null
+                    activity.viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
+                }
+            }
+        }
 
     // endregion
+
+    private companion object {
+        const val IMPORT_TIMEOUT_NANOS = 10_000_000_000L
+    }
 }
