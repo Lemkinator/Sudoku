@@ -21,11 +21,16 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import de.lemke.sudoku.ui.utils.DefaultGamesSignInProvider
+import de.lemke.sudoku.ui.utils.DefaultPlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class GamesSignInModule {
     @Binds
     abstract fun bindGamesSignInProvider(impl: DefaultGamesSignInProvider): GamesSignInProvider
+
+    @Binds
+    abstract fun bindPlayGamesIntentProvider(impl: DefaultPlayGamesIntentProvider): PlayGamesIntentProvider
 }

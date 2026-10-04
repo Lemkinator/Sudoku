@@ -89,6 +89,7 @@ import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.PlayGamesScreen
 import de.lemke.sudoku.ui.utils.PlayGamesScreenLaunch
 import de.lemke.sudoku.ui.utils.applyPlayGamesSync
@@ -115,6 +116,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var gamesSignInProvider: GamesSignInProvider
+
+    @Inject
+    lateinit var playGamesIntentProvider: PlayGamesIntentProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -242,7 +246,7 @@ class MainActivity : AppCompatActivity() {
     private fun openPlayGamesScreen(screen: PlayGamesScreen) {
         val client = gamesSignInProvider.getClient(this)
         singleLaunchSuspending(
-            work = { preparePlayGamesScreen(client, screen) },
+            work = { preparePlayGamesScreen(client, playGamesIntentProvider, screen) },
             then = { launch ->
                 when (launch) {
                     is PlayGamesScreenLaunch.Ready -> {

@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -38,7 +39,11 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.GamesSignInModule
+import de.lemke.sudoku.ui.utils.FakePlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.PlayGamesScreen
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.mockk.every
@@ -96,6 +101,12 @@ class MainActivityGamesSignInTest {
         object : GamesSignInProvider {
             override fun getClient(activity: Activity): GamesSignInClient = fakeClient
         }
+
+    private val fakeIntentProvider = FakePlayGamesIntentProvider()
+
+    @BindValue
+    @JvmField
+    val playGamesIntentProvider: PlayGamesIntentProvider = fakeIntentProvider
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -249,5 +260,35 @@ class MainActivityGamesSignInTest {
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
             verify(exactly = 1) { fakeClient.signIn() }
+        }
+
+    @Test
+    fun `a failed achievements intent fetch ends silently and admits the next tap`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeIntentProvider.results += Tasks.forException<Intent>(RuntimeException("no network"))
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            shadowOf(activity).peekNextStartedActivityForResult().shouldBeNull()
+            ShadowToast.getLatestToast().shouldBeNull()
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS, PlayGamesScreen.ACHIEVEMENTS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
+        }
+
+    @Test
+    fun `a leaderboards intent fetch that hangs for 10 s ends silently and admits the next tap`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeIntentProvider.results += TaskCompletionSource<Intent>().task
+            clickLeaderboards(activity)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+            shadowOf(activity).peekNextStartedActivityForResult().shouldBeNull()
+            ShadowToast.shownToastCount() shouldBe 0
+            clickLeaderboards(activity)
+            shadowOf(Looper.getMainLooper()).idle()
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS, PlayGamesScreen.LEADERBOARDS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 }

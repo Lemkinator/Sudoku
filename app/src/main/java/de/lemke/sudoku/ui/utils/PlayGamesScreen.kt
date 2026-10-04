@@ -20,7 +20,6 @@ import android.app.Activity
 import android.content.Intent
 import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.GamesSignInClient
-import com.google.android.gms.games.PlayGames
 import com.google.android.gms.tasks.Task
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
@@ -33,13 +32,6 @@ private val SILENT_TASK_TIMEOUT = 10.seconds
 enum class PlayGamesScreen {
     ACHIEVEMENTS,
     LEADERBOARDS,
-    ;
-
-    fun intent(activity: Activity): Task<Intent> =
-        when (this) {
-            ACHIEVEMENTS -> PlayGames.getAchievementsClient(activity).achievementsIntent
-            LEADERBOARDS -> PlayGames.getLeaderboardsClient(activity).allLeaderboardsIntent
-        }
 }
 
 /** The outcome of preparing a [PlayGamesScreen] for launch. */
@@ -54,19 +46,20 @@ sealed interface PlayGamesScreenLaunch {
 }
 
 /**
- * Signs in to Play Games if needed and fetches the intent of [screen].
+ * Signs in to Play Games if needed and fetches the intent of [screen] from [intentProvider].
  *
  * The silent authentication check and the intent fetch give up after [SILENT_TASK_TIMEOUT] and end
  * [PlayGamesScreenLaunch.Unavailable]; the interactive sign-in waits for the user.
  */
 suspend fun Activity.preparePlayGamesScreen(
     client: GamesSignInClient,
+    intentProvider: PlayGamesIntentProvider,
     screen: PlayGamesScreen,
 ): PlayGamesScreenLaunch {
     val check = client.isAuthenticated.silentCompletionOrNull() ?: return PlayGamesScreenLaunch.Unavailable
     return if (check.authenticated || client.signIn().awaitCompletion().authenticated) {
-        screen
-            .intent(this)
+        intentProvider
+            .getIntent(this, screen)
             .silentCompletionOrNull()
             ?.resultOrNull()
             ?.let(PlayGamesScreenLaunch::Ready) ?: PlayGamesScreenLaunch.Unavailable
