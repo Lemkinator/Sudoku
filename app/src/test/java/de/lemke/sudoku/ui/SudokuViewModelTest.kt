@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.net.Uri
+import androidx.lifecycle.SavedStateHandle
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -25,16 +26,33 @@ import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.PlayGamesSync
+import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.Ordering
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+
+private fun testSudoku(
+    size: SudokuSize = SudokuSize.FOUR,
+    difficulty: Difficulty = Difficulty.EASY,
+    modeLevel: Int = Sudoku.MODE_NORMAL,
+): Sudoku =
+    Sudoku.create(
+        size = size,
+        difficulty = difficulty,
+        modeLevel = modeLevel,
+        fields = MutableList(size.cellCount) { index -> Field(Position.create(index, size), solution = 1, value = 1, given = index == 0) },
+    )
 
 class SudokuViewModelTest : ShouldSpec(
     {
@@ -45,92 +63,218 @@ class SudokuViewModelTest : ShouldSpec(
         val saveSudoku = mockk<SaveSudokuUseCase>(relaxUnitFun = true)
         val shareSudoku = mockk<ShareSudokuUseCase>()
         val calculatePlayGamesSync = mockk<CalculatePlayGamesSyncUseCase>()
-        lateinit var viewModel: SudokuViewModel
+
+        fun viewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()): SudokuViewModel =
+            SudokuViewModel(
+                savedStateHandle,
+                getSudoku,
+                generateSudoku,
+                generateSudokuLevel,
+                getMaxSudokuLevel,
+                saveSudoku,
+                shareSudoku,
+                calculatePlayGamesSync,
+            )
+
+        fun playing(
+            sudoku: Sudoku,
+            savedStateHandle: SavedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.id.value)),
+        ): SudokuViewModel {
+            coEvery { getSudoku(sudoku.id) } returns sudoku
+            return viewModel(savedStateHandle).also { it.onGameStarted(SudokuGame.Ready(sudoku)) }
+        }
 
         beforeEach {
             clearMocks(getSudoku, generateSudoku, generateSudokuLevel, getMaxSudokuLevel, saveSudoku, shareSudoku, calculatePlayGamesSync)
-            viewModel =
-                SudokuViewModel(
-                    getSudoku,
-                    generateSudoku,
-                    generateSudokuLevel,
-                    getMaxSudokuLevel,
-                    saveSudoku,
-                    shareSudoku,
-                    calculatePlayGamesSync,
-                )
         }
 
-        should("loadSudoku delegates to getSudoku and returns its result") {
-            val id = SudokuId("id-1")
-            val sudoku = mockk<Sudoku>()
-            coEvery { getSudoku(id) } returns sudoku
-            viewModel.loadSudoku(id) shouldBe sudoku
-            coVerify(exactly = 1) { getSudoku(id) }
+        should("the sudoku of the passed id is ready to start") {
+            val sudoku = testSudoku()
+            coEvery { getSudoku(sudoku.id) } returns sudoku
+
+            val viewModel = viewModel(SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.id.value)))
+
+            viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
         }
 
-        should("loadSudoku returns null when getSudoku finds nothing") {
-            val id = SudokuId("id-2")
-            coEvery { getSudoku(id) } returns null
-            viewModel.loadSudoku(id) shouldBe null
+        should("a passed id without a saved sudoku is not found") {
+            coEvery { getSudoku(SudokuId("missing")) } returns null
+
+            val viewModel = viewModel(SavedStateHandle(mapOf(KEY_SUDOKU_ID to "missing")))
+
+            viewModel.game.value shouldBe SudokuGame.NotFound
         }
 
-        should("generateNewSudoku delegates to generateSudoku and returns its result") {
-            val sudoku = mockk<Sudoku>()
-            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.MEDIUM) } returns sudoku
-            viewModel.generateNewSudoku(SudokuSize.NINE, Difficulty.MEDIUM) shouldBe sudoku
-            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.MEDIUM) }
+        should("a missing id is not found without a lookup") {
+            val viewModel = viewModel()
+
+            viewModel.game.value shouldBe SudokuGame.NotFound
+            coVerify(exactly = 0) { getSudoku(any()) }
         }
 
-        should("generateNextLevelSudoku delegates to generateSudokuLevel and returns its result") {
-            val sudoku = mockk<Sudoku>()
-            coEvery { generateSudokuLevel(SudokuSize.FOUR, 3) } returns sudoku
-            viewModel.generateNextLevelSudoku(SudokuSize.FOUR, 3) shouldBe sudoku
-            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 3) }
+        should("onGameStarted moves the ready sudoku to playing") {
+            val sudoku = testSudoku()
+
+            playing(sudoku).game.value shouldBe SudokuGame.Playing(sudoku)
+        }
+
+        should("onGameStarted for another sudoku keeps the ready one") {
+            val sudoku = testSudoku()
+            coEvery { getSudoku(sudoku.id) } returns sudoku
+            val viewModel = viewModel(SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.id.value)))
+
+            viewModel.onGameStarted(SudokuGame.Ready(testSudoku()))
+
+            viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
+        }
+
+        should("onRestart clears the entries, saves the whole sudoku and makes it ready again") {
+            val sudoku = testSudoku()
+            val viewModel = playing(sudoku)
+
+            viewModel.onRestart()
+
+            sudoku.fields.count { it.value == null } shouldBe 15
+            coVerify(exactly = 1) { saveSudoku(sudoku, false) }
+            viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
+        }
+
+        should("onRestart reports restarting until the sudoku is saved, and a second restart saves once") {
+            val sudoku = testSudoku()
+            val viewModel = playing(sudoku)
+            val saved = CompletableDeferred<Unit>()
+            coEvery { saveSudoku(sudoku, false) } coAnswers { saved.await() }
+
+            viewModel.onRestart()
+            viewModel.onRestart()
+
+            viewModel.game.value shouldBe SudokuGame.Restarting
+            saved.complete(Unit)
+            viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
+            coVerify(exactly = 1) { saveSudoku(sudoku, false) }
+        }
+
+        should("onRestart before a sudoku plays does nothing") {
+            val viewModel = viewModel()
+
+            viewModel.onRestart()
+
+            viewModel.game.value shouldBe SudokuGame.NotFound
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+        }
+
+        should("a new game follows with the size and difficulty of the completed sudoku and becomes the current one") {
+            val completed = testSudoku(SudokuSize.NINE, Difficulty.HARD)
+            val next = testSudoku(SudokuSize.NINE, Difficulty.HARD)
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            val viewModel = playing(completed, savedStateHandle)
+            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns next
+
+            viewModel.onFollowUp(FollowUp.NEW_GAME)
+
+            viewModel.game.value shouldBe SudokuGame.Ready(next)
+            savedStateHandle.get<String>(KEY_SUDOKU_ID) shouldBe next.id.value
+            coVerify(ordering = Ordering.ORDERED) {
+                generateSudoku(SudokuSize.NINE, Difficulty.HARD)
+                saveSudoku(next, false)
+            }
+        }
+
+        should("the next level follows the completed level") {
+            val completed = testSudoku(SudokuSize.FOUR, modeLevel = 7)
+            val next = testSudoku(SudokuSize.FOUR, modeLevel = 8)
+            val viewModel = playing(completed)
+            coEvery { generateSudokuLevel(SudokuSize.FOUR, 8) } returns next
+
+            viewModel.onFollowUp(FollowUp.NEXT_LEVEL)
+
+            viewModel.game.value shouldBe SudokuGame.Ready(next)
+            coVerify(exactly = 1) { saveSudoku(next, false) }
+        }
+
+        should("a follow-up of an unfinished sudoku does nothing") {
+            val unfinished = testSudoku().apply { fields[1].value = null }
+            val viewModel = playing(unfinished)
+
+            viewModel.onFollowUp(FollowUp.NEW_GAME)
+
+            viewModel.game.value shouldBe SudokuGame.Playing(unfinished)
+            coVerify(exactly = 0) { generateSudoku(any(), any()) }
+        }
+
+        should("a second follow-up while one generates generates once") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            val generated = CompletableDeferred<Sudoku>()
+            coEvery { generateSudoku(SudokuSize.FOUR, Difficulty.EASY) } coAnswers { generated.await() }
+
+            viewModel.onFollowUp(FollowUp.NEW_GAME)
+            viewModel.onFollowUp(FollowUp.NEW_GAME)
+
+            viewModel.game.value shouldBe SudokuGame.Generating
+            val next = testSudoku()
+            generated.complete(next)
+            viewModel.game.value shouldBe SudokuGame.Ready(next)
+            coVerify(exactly = 1) { generateSudoku(SudokuSize.FOUR, Difficulty.EASY) }
+        }
+
+        should("onShare writes the sudoku file and reports it, and a second share while it runs writes once") {
+            val viewModel = viewModel()
+            val sudoku = testSudoku()
+            val uri = mockk<Uri>()
+            val written = CompletableDeferred<Uri>()
+            coEvery { shareSudoku(sudoku) } coAnswers { written.await() }
+
+            viewModel.onShare(sudoku)
+            viewModel.onShare(sudoku)
+
+            viewModel.share.value shouldBe SudokuShare.Running
+            written.complete(uri)
+            viewModel.share.value shouldBe SudokuShare.File(uri)
+            coVerify(exactly = 1) { shareSudoku(sudoku) }
+        }
+
+        should("onShareHandled returns to idle, and a stale handled call keeps the pending file") {
+            val viewModel = viewModel()
+            val sudoku = testSudoku()
+            val uri = mockk<Uri>()
+            coEvery { shareSudoku(sudoku) } returns uri
+            viewModel.onShare(sudoku)
+
+            viewModel.onShareHandled(SudokuShare.File(mockk()))
+            viewModel.share.value shouldBe SudokuShare.File(uri)
+            viewModel.onShareHandled(SudokuShare.File(uri))
+            viewModel.share.value shouldBe SudokuShare.Idle
         }
 
         should("isMaxSudokuLevel returns true when getMaxSudokuLevel equals the given level") {
             coEvery { getMaxSudokuLevel(SudokuSize.NINE) } returns 5
-            viewModel.isMaxSudokuLevel(SudokuSize.NINE, 5) shouldBe true
+            viewModel().isMaxSudokuLevel(SudokuSize.NINE, 5) shouldBe true
         }
 
         should("isMaxSudokuLevel returns false when getMaxSudokuLevel differs from the given level") {
             coEvery { getMaxSudokuLevel(SudokuSize.NINE) } returns 5
-            viewModel.isMaxSudokuLevel(SudokuSize.NINE, 4) shouldBe false
+            viewModel().isMaxSudokuLevel(SudokuSize.NINE, 4) shouldBe false
         }
 
-        should("saveSudokuProgress delegates to saveSudoku with onlyUpdate defaulting to false") {
-            val sudoku = mockk<Sudoku>()
-            viewModel.saveSudokuProgress(sudoku)
-            coVerify(exactly = 1) { saveSudoku(sudoku, false) }
-        }
-
-        should("saveSudokuProgress delegates to saveSudoku with an explicit onlyUpdate = true") {
-            val sudoku = mockk<Sudoku>()
-            viewModel.saveSudokuProgress(sudoku, onlyUpdate = true)
+        should("saveSudokuProgress updates the saved sudoku") {
+            val sudoku = testSudoku()
+            viewModel().saveSudokuProgress(sudoku)
             coVerify(exactly = 1) { saveSudoku(sudoku, true) }
-        }
-
-        should("exportSudoku delegates to shareSudoku and returns its result") {
-            val sudoku = mockk<Sudoku>()
-            val uri = mockk<Uri>()
-            coEvery { shareSudoku(sudoku) } returns uri
-            viewModel.exportSudoku(sudoku) shouldBe uri
-            coVerify(exactly = 1) { shareSudoku(sudoku) }
         }
 
         should("syncPlayGames delegates to calculatePlayGamesSync with sudoku defaulting to null") {
             val sync = mockk<PlayGamesSync>()
             coEvery { calculatePlayGamesSync(null) } returns sync
-            viewModel.syncPlayGames() shouldBe sync
+            viewModel().syncPlayGames() shouldBe sync
             coVerify(exactly = 1) { calculatePlayGamesSync(null) }
         }
 
         should("syncPlayGames delegates to calculatePlayGamesSync with an explicit sudoku") {
-            val sudoku = mockk<Sudoku>()
+            val sudoku = testSudoku()
             val sync = mockk<PlayGamesSync>()
             coEvery { calculatePlayGamesSync(sudoku) } returns sync
-            viewModel.syncPlayGames(sudoku) shouldBe sync
+            viewModel().syncPlayGames(sudoku) shouldBe sync
             coVerify(exactly = 1) { calculatePlayGamesSync(sudoku) }
         }
     },
