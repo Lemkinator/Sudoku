@@ -23,6 +23,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -43,6 +44,7 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -172,6 +174,18 @@ class MainActivityGamesSignInTest {
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
             verify(exactly = 1) { fakeClient.signIn() }
+        }
+
+    @Test
+    fun `an isAuthenticated check that hangs for 10 s ends silently and admits the next tap`() =
+        launch { activity ->
+            every { fakeClient.isAuthenticated() } returns TaskCompletionSource<AuthenticationResult>().task
+            clickAchievements(activity)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+            verify(exactly = 0) { fakeClient.signIn() }
+            ShadowToast.shownToastCount() shouldBe 0
+            clickAchievements(activity)
+            verify(exactly = 2) { fakeClient.isAuthenticated() }
         }
 
     @Test

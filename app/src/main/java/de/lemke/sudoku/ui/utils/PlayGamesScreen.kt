@@ -18,6 +18,7 @@ package de.lemke.sudoku.ui.utils
 
 import android.app.Activity
 import android.content.Intent
+import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.tasks.Task
@@ -55,23 +56,30 @@ sealed interface PlayGamesScreenLaunch {
 /**
  * Signs in to Play Games if needed and fetches the intent of [screen].
  *
- * The silent authentication check and the intent fetch give up after [SILENT_TASK_TIMEOUT]; the interactive sign-in
- * waits for the user.
+ * The silent authentication check and the intent fetch give up after [SILENT_TASK_TIMEOUT] and end
+ * [PlayGamesScreenLaunch.Unavailable]; the interactive sign-in waits for the user.
  */
 suspend fun Activity.preparePlayGamesScreen(
     client: GamesSignInClient,
     screen: PlayGamesScreen,
 ): PlayGamesScreenLaunch {
-    val authenticated =
-        client.isAuthenticated.silentResultOrNull()?.isAuthenticated == true ||
-            client.signIn().resultOrNull()?.isAuthenticated == true
-    if (!authenticated) return PlayGamesScreenLaunch.SignInFailed
-    return screen.intent(this).silentResultOrNull()?.let(PlayGamesScreenLaunch::Ready) ?: PlayGamesScreenLaunch.Unavailable
+    val check = client.isAuthenticated.silentCompletionOrNull() ?: return PlayGamesScreenLaunch.Unavailable
+    return if (check.authenticated || client.signIn().awaitCompletion().authenticated) {
+        screen
+            .intent(this)
+            .silentCompletionOrNull()
+            ?.resultOrNull()
+            ?.let(PlayGamesScreenLaunch::Ready) ?: PlayGamesScreenLaunch.Unavailable
+    } else {
+        PlayGamesScreenLaunch.SignInFailed
+    }
 }
 
-private suspend fun <T> Task<T>.silentResultOrNull(): T? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { resultOrNull() }
+private val Task<AuthenticationResult>.authenticated: Boolean get() = resultOrNull()?.isAuthenticated == true
 
-private suspend fun <T> Task<T>.resultOrNull(): T? =
-    suspendCancellableCoroutine { continuation ->
-        addOnCompleteListener { task -> continuation.resume(task.takeIf { it.isSuccessful }?.result) }
-    }
+private suspend fun <T> Task<T>.silentCompletionOrNull(): Task<T>? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { awaitCompletion() }
+
+private suspend fun <T> Task<T>.awaitCompletion(): Task<T> =
+    suspendCancellableCoroutine { continuation -> addOnCompleteListener { task -> continuation.resume(task) } }
+
+private fun <T> Task<T>.resultOrNull(): T? = takeIf { it.isSuccessful }?.result
