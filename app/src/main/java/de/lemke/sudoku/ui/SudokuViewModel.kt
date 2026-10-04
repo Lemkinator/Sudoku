@@ -33,6 +33,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -83,6 +84,8 @@ sealed interface SudokuCompletion {
         val sudoku: Sudoku,
         val followUp: FollowUp?,
     ) : Result
+
+    data object Failed : Result
 }
 
 @HiltViewModel
@@ -167,9 +170,9 @@ class SudokuViewModel @Inject constructor(
         completion.value = SudokuCompletion.Running
         wrapUp =
             viewModelScope.launch {
-                saveSudokuProgress(completed)
-                completion.value = SudokuCompletion.Summary(completed, followUpOf(completed))
-                playGamesSync.value = calculatePlayGamesSync(completed)
+                val result = summaryOf(completed)
+                completion.value = result
+                if (result is SudokuCompletion.Summary) playGamesSync.value = playGamesSyncOf(completed)
             }
     }
 
@@ -182,6 +185,16 @@ class SudokuViewModel @Inject constructor(
     }
 
     suspend fun saveSudokuProgress(sudoku: Sudoku) = saveSudoku(sudoku, onlyUpdate = true)
+
+    private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result =
+        runCatching<SudokuCompletion.Result> {
+            saveSudokuProgress(completed)
+            SudokuCompletion.Summary(completed, followUpOf(completed))
+        }.getOrElse { e -> if (e is CancellationException) throw e else SudokuCompletion.Failed }
+
+    private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =
+        runCatching { calculatePlayGamesSync(completed) }
+            .getOrElse { e -> if (e is CancellationException) throw e else PlayGamesSync() }
 
     private suspend fun followUpOf(completed: Sudoku): FollowUp? =
         when {

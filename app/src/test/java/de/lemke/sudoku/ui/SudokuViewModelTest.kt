@@ -40,6 +40,7 @@ import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 
 private fun testSudoku(
@@ -384,6 +385,51 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.playGamesSync.value shouldBe null
             sync.complete(PlayGamesSync(achievementUnlocks = listOf(7)))
             viewModel.playGamesSync.value shouldBe PlayGamesSync(achievementUnlocks = listOf(7))
+        }
+
+        should("onCompleted reports a failed save without a Play Games sync") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { saveSudoku(completed, true) } throws IllegalStateException("disk full")
+
+            viewModel.onCompleted()
+
+            viewModel.completion.value shouldBe SudokuCompletion.Failed
+            viewModel.playGamesSync.value shouldBe null
+            coVerify(exactly = 0) { calculatePlayGamesSync(any()) }
+        }
+
+        should("onCompleted keeps the summary and syncs nothing when the Play Games sync calculation fails") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { calculatePlayGamesSync(completed) } throws IllegalStateException("query failed")
+
+            viewModel.onCompleted()
+
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+            viewModel.playGamesSync.value shouldBe PlayGamesSync()
+        }
+
+        should("onCompleted rethrows a cancellation of the save and leaves the completion running") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { saveSudoku(completed, true) } throws CancellationException()
+
+            viewModel.onCompleted()
+
+            viewModel.completion.value shouldBe SudokuCompletion.Running
+            coVerify(exactly = 0) { calculatePlayGamesSync(any()) }
+        }
+
+        should("onCompleted rethrows a cancellation of the Play Games sync calculation and syncs nothing") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { calculatePlayGamesSync(completed) } throws CancellationException()
+
+            viewModel.onCompleted()
+
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+            viewModel.playGamesSync.value shouldBe null
         }
 
         should("onCompleted of an unfinished sudoku does nothing") {

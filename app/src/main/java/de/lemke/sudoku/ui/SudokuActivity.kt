@@ -332,6 +332,10 @@ class SudokuActivity : AppCompatActivity() {
                 }
                 dialog.showOnce(COMPLETED_DIALOG_TAG)
             }
+
+            SudokuCompletion.Failed -> {
+                toast(R.string.error_saving_sudoku_failed)
+            }
         }
         viewModel.onCompletionHandled(result)
     }

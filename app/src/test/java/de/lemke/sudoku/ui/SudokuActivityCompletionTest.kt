@@ -33,6 +33,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -45,9 +46,12 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.coEvery
+import io.mockk.mockk
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,6 +67,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -92,8 +97,12 @@ class SudokuActivityCompletionTest {
     @Inject
     lateinit var settings: SettingsRepository
 
+    @BindValue
+    @JvmField
+    val saveSudoku: SaveSudokuUseCase = mockk()
+
     @Inject
-    lateinit var saveSudoku: SaveSudokuUseCase
+    lateinit var sudokusRepository: SudokusRepository
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
@@ -101,6 +110,7 @@ class SudokuActivityCompletionTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        coEvery { saveSudoku(any(), any()) } coAnswers { sudokusRepository.saveSudoku(firstArg(), secondArg()) }
         settings.bypassOobe()
         // Robolectric skips the Play Games SDK's auto-init ContentProvider.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
@@ -217,6 +227,28 @@ class SudokuActivityCompletionTest {
         completeBoard(sudokuId) {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isShown shouldBe false
+        }
+    }
+
+    @Test
+    fun `a failed save of a completed sudoku shows an error toast instead of the completion dialog`() {
+        val sudoku = almostSolvedSudoku(SudokuId.generate()).apply { fields[0].value = fields[0].solution }
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            coEvery { saveSudoku(sudoku, true) } throws IllegalStateException("disk full")
+
+            scenario.onActivity { activity -> activity.viewModel.onCompleted() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+
+            scenario.onActivity { activity ->
+                ShadowToast.getTextOfLatestToast() shouldBe activity.getString(R.string.error_saving_sudoku_failed)
+                ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().shouldBeEmpty()
+                activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+                activity.viewModel.playGamesSync.value shouldBe null
+            }
         }
     }
 }

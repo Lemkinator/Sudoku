@@ -237,6 +237,7 @@
     <string name="error_loading_daily_sudokus_failed">Tägliche Sudokus konnten nicht geladen werden</string>
     <string name="error_loading_sudoku_level_failed">Sudoku-Level konnten nicht geladen werden</string>
     <string name="error_starting_sudoku_level_failed">Level konnte nicht gestartet werden</string>
+    <string name="error_saving_sudoku_failed">Sudoku konnte nicht gespeichert werden</string>
     <string name="error_loading_sudoku_history_failed">Sudoku-Verlauf konnte nicht geladen werden</string>
     <string name="error_loading_statistics_failed">Statistiken konnten nicht geladen werden</string>
 
