@@ -28,7 +28,6 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.recyclerview.widget.LinearLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
@@ -66,9 +65,10 @@ class DailySudokuActivity : AppCompatActivity() {
             sudokuListAdapter.submitList(state.sudokus)
             binding.dailySudokuRecycler.isVisible = !state.isLoading
         }
-        collectEvents(viewModel.events, minActiveState = RESUMED) { event ->
-            when (event) {
-                DailySudokuEvent.ShowLoadError -> toast(R.string.error_loading_daily_sudokus_failed)
+        collectState(viewModel.loadFailed, minActiveState = RESUMED) { failed ->
+            if (failed) {
+                toast(R.string.error_loading_daily_sudokus_failed)
+                viewModel.onLoadFailureHandled()
             }
         }
     }

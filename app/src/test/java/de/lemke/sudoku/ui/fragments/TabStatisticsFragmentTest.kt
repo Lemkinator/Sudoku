@@ -17,6 +17,8 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Looper
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -31,6 +33,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -61,6 +64,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -92,6 +96,9 @@ class TabStatisticsFragmentTest {
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
+
+    @Inject
+    lateinit var database: AppDatabase
 
     @Before
     fun setup() {
@@ -224,6 +231,37 @@ class TabStatisticsFragmentTest {
         insertedCount shouldBeGreaterThan 0
         changedCalled.shouldBeFalse()
         controller.pause().stop().destroy()
+    }
+
+    @Test
+    fun `an unreadable sudoku shows the statistics load error once and marks it handled`() {
+        runBlocking { saveSudoku(startedSudoku()) }
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { it.onTabItemSelected(2) }
+            shadowOf(Looper.getMainLooper()).idle()
+            ShadowToast.showedToast("Failed to load statistics") shouldBe false
+
+            // Room notifies its observers when a transaction ends, never after a raw write alone.
+            database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
+            shadowOf(Looper.getMainLooper()).idle()
+
+            ShadowToast.showedToast("Failed to load statistics") shouldBe true
+
+            scenario.onActivity { activity ->
+                val fragment =
+                    activity.supportFragmentManager.fragments
+                        .filterIsInstance<TabStatistics>()
+                        .first()
+                ViewModelProvider(fragment)[TabStatisticsViewModel::class.java].loadFailed.value shouldBe false
+            }
+            val shownToasts = ShadowToast.shownToastCount()
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            ShadowToast.shownToastCount() shouldBe shownToasts
+        }
     }
 
     @Test

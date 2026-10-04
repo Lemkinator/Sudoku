@@ -30,24 +30,17 @@ import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
 
 data class DailySudokuUiState(
     val sudokus: List<SudokuListItem> = emptyList(),
     val isLoading: Boolean = true,
 )
-
-sealed interface DailySudokuEvent {
-    data object ShowLoadError : DailySudokuEvent
-}
 
 @HiltViewModel
 class DailySudokuViewModel @Inject constructor(
@@ -56,6 +49,10 @@ class DailySudokuViewModel @Inject constructor(
     private val observeDailySudokus: ObserveDailySudokusUseCase,
     private val clock: Clock,
 ) : ViewModel() {
+    /** True after a load failed until the screen reports the error shown. */
+    val loadFailed: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+
     val state: StateFlow<DailySudokuUiState> =
         flow {
             if (dailySudokusInitialized.await()) {
@@ -66,11 +63,8 @@ class DailySudokuViewModel @Inject constructor(
         }.catch { e ->
             if (e is CancellationException) throw e
             emit(state.value.copy(isLoading = false))
-            _events.send(DailySudokuEvent.ShowLoadError)
+            loadFailed.value = true
         }.stateInViewModel(viewModelScope, DailySudokuUiState())
-
-    private val _events = Channel<DailySudokuEvent>(BUFFERED)
-    val events: Flow<DailySudokuEvent> = _events.receiveAsFlow()
 
     var dailyShowUncompleted: Boolean
         get() = userSettings.dailyShowUncompleted
@@ -85,7 +79,11 @@ class DailySudokuViewModel @Inject constructor(
             runCatching { initDailySudokus(today) }
                 .onFailure { e ->
                     if (e is CancellationException) throw e
-                    _events.send(DailySudokuEvent.ShowLoadError)
+                    loadFailed.value = true
                 }.isSuccess
         }
+
+    fun onLoadFailureHandled() {
+        loadFailed.value = false
+    }
 }
