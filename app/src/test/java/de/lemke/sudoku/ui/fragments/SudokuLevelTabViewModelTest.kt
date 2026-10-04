@@ -528,32 +528,6 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
         }
 
-        should("a start requested while the next level is still saving is refused") {
-            runTest {
-                val nextLevel = testSudoku(modeLevel = 2)
-                val saveGate = CompletableDeferred<Unit>()
-                every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
-                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
-                coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
-                coEvery { saveSudoku(nextLevel) } coAnswers { saveGate.await() }
-                val viewModel = newViewModel()
-
-                viewModel.state.test {
-                    expectMostRecentItem().hasNextLevelToStart shouldBe true
-                    val firstStart = async { viewModel.confirmSudokuStart(0, nextLevel) }
-                    runCurrent()
-
-                    viewModel.confirmSudokuStart(0, nextLevel) shouldBe false
-                    viewModel.confirmSudokuStart(1, testSudoku(completed = true)) shouldBe false
-
-                    saveGate.complete(Unit)
-                    firstStart.await() shouldBe true
-                }
-
-                coVerify(exactly = 1) { saveSudoku(nextLevel) }
-            }
-        }
-
         should("a failed next-level save refuses the start, emits ShowStartError and allows another start") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
@@ -594,14 +568,11 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("a confirmed start refuses further starts until the tab resumes") {
+        should("a repeated start of a saved level is confirmed every time") {
             val level = testSudoku(modeLevel = 1)
             val viewModel = newViewModel()
 
             viewModel.confirmSudokuStart(1, level) shouldBe true
-            viewModel.confirmSudokuStart(1, level) shouldBe false
-            viewModel.onTabResumed()
-
             viewModel.confirmSudokuStart(1, level) shouldBe true
         }
     },

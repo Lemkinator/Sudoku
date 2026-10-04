@@ -28,6 +28,7 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
@@ -82,7 +83,7 @@ class SudokuListAdapter(
         when (viewType) {
             SudokuItem.VIEW_TYPE -> {
                 ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.sudoku_list_item, parent, false), false).apply {
-                    itemView.setOnClickListener {
+                    itemView.onSingleLaunchClick {
                         bindingAdapterPosition.let {
                             onClickItem?.invoke(it, currentList[it], this@apply)
                         }

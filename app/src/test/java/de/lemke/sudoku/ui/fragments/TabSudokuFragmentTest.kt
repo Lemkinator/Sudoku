@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Looper
-import android.os.SystemClock
 import android.view.View
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
@@ -174,13 +173,11 @@ class TabSudokuFragmentTest {
     }
 
     private fun click(view: View) {
-        SystemClock.sleep(601L)
         view.performClick()
         shadowOf(Looper.getMainLooper()).idle()
     }
 
     private fun doubleClick(view: View) {
-        SystemClock.sleep(601L)
         view.performClick()
         view.performClick()
         shadowOf(Looper.getMainLooper()).idle()
@@ -369,7 +366,7 @@ class TabSudokuFragmentTest {
     }
 
     @Test
-    fun `double-clicking newGameButton is debounced to a single game`() =
+    fun `double-clicking newGameButton starts a single game`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.newGameButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -378,7 +375,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking dailyButton is debounced to a single navigation`() =
+    fun `double-clicking dailyButton navigates once`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.dailyButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -386,7 +383,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking dailyAvailableButton is debounced to a single navigation`() =
+    fun `double-clicking dailyAvailableButton navigates once`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.dailyAvailableButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -394,7 +391,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking levelsButton is debounced to a single navigation`() =
+    fun `double-clicking levelsButton navigates once`() =
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.levelsButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
@@ -402,7 +399,7 @@ class TabSudokuFragmentTest {
         }
 
     @Test
-    fun `double-clicking continueGameButton is debounced to a single navigation`() {
+    fun `double-clicking continueGameButton navigates once`() {
         runBlocking { saveSudoku(formulaicSudoku()) }
         launch { fragment ->
             doubleClick(fragment.requireView().findViewById(R.id.continueGameButton))

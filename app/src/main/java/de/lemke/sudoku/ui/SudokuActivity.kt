@@ -35,6 +35,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.activity.viewModels
+import androidx.annotation.IdRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
@@ -47,6 +48,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
+import de.lemke.commonutils.ui.utils.showOnce
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
+import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
+import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformTo
 import de.lemke.sudoku.R
@@ -185,7 +190,7 @@ class SudokuActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.menu_pause_play -> (if (sudoku.resumed) pauseGame() else resumeGame()).let { true }
             R.id.menu_reset -> restartGame().let { true }
-            R.id.menu_share -> shareDialog().let { true }
+            R.id.menu_share -> singleLaunchMenuItem { shareDialog() }
             else -> super.onOptionsItemSelected(item)
         }
 
@@ -293,27 +298,27 @@ class SudokuActivity : AppCompatActivity() {
                 viewModel.isMaxSudokuLevel(sudoku.size, sudoku.modeLevel)
             ) {
                 dialog.setPositiveButton(R.string.next_level) { _, _ ->
-                    lifecycleScope.launch {
-                        loadingDialog.show()
-                        val nextSudokuLevel = viewModel.generateNextLevelSudoku(sudoku.size, level = sudoku.modeLevel + 1)
-                        viewModel.saveSudokuProgress(nextSudokuLevel)
-                        initSudoku(nextSudokuLevel)
-                    }
+                    startFollowUpSudoku { viewModel.generateNextLevelSudoku(sudoku.size, level = sudoku.modeLevel + 1) }
                 }
             } else if (sudoku.isNormalSudoku) {
                 dialog.setPositiveButton(R.string.new_game) { _, _ ->
-                    lifecycleScope.launch {
-                        loadingDialog.show()
-                        val newSudoku = viewModel.generateNewSudoku(sudoku.size, sudoku.difficulty)
-                        viewModel.saveSudokuProgress(newSudoku)
-                        initSudoku(newSudoku)
-                    }
+                    startFollowUpSudoku { viewModel.generateNewSudoku(sudoku.size, sudoku.difficulty) }
                 }
             }
-            dialog.show()
+            dialog.showOnce(COMPLETED_DIALOG_TAG)
             applyPlayGamesSync(viewModel.syncPlayGames(sudoku))
             showInAppReviewIfPossible(userSettings)
         }
+    }
+
+    private fun startFollowUpSudoku(generate: suspend () -> Sudoku) {
+        singleLaunchSuspending(
+            work = {
+                loadingDialog.showOnce(LOADING_DIALOG_TAG)
+                generate().also { viewModel.saveSudokuProgress(it) }
+            },
+            then = { initSudoku(it) },
+        )
     }
 
     private fun checkErrorLimit(): Boolean {
@@ -336,18 +341,20 @@ class SudokuActivity : AppCompatActivity() {
                 .setMessage(getString(R.string.error_limit_reached, errorLimit))
                 .setPositiveButton(R.string.restart) { _, _ -> restartGame() }
                 .setNeutralButton(commonutilsR.string.commonutils_ok, null)
-                .show()
+                .showOnce(GAME_OVER_DIALOG_TAG)
             return true
         }
         return false
     }
 
     private fun restartGame() {
-        sudoku.reset()
-        lifecycleScope.launch {
-            viewModel.saveSudokuProgress(sudoku)
-            initSudoku(sudoku)
-        }
+        singleLaunchSuspending(
+            work = {
+                sudoku.reset()
+                viewModel.saveSudokuProgress(sudoku)
+            },
+            then = { initSudoku(sudoku) },
+        )
     }
 
     internal fun select(newSelected: Int?) {
@@ -697,7 +704,6 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun shareDialog() {
-        pauseGame()
         val dialog =
             AlertDialog
                 .Builder(this)
@@ -705,42 +711,49 @@ class SudokuActivity : AppCompatActivity() {
                 .setView(R.layout.dialog_share)
                 .setPositiveButton(R.string.commonutils_share, null)
                 .setNegativeButton(designR.string.oui_des_common_cancel, null)
-                .create()
-        dialog.show()
+                .showOnce(SHARE_DIALOG_TAG) ?: return
+        pauseGame()
         dialog.findViewById<TextView>(R.id.shareStatistics)?.text = sudoku.getLocalStatisticsString(resources)
         dialog.getButton(BUTTON_POSITIVE).setOnClickListenerWithProgress { _, _ ->
-            lifecycleScope.launch {
-                when (dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.checkedRadioButtonId) {
-                    R.id.radioButtonText -> shareStats()
-                    R.id.radioButtonInitial -> shareGame(sudoku.getInitialSudoku())
-                    R.id.radioButtonCurrent -> shareGame(sudoku.copy(sudokuId = SudokuId.generate(), modeLevel = MODE_NORMAL))
-                }
-                dialog.dismiss()
-            }
+            val content = dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.checkedRadioButtonId?.let(ShareContent::fromRadioButtonId)
+            singleLaunchSuspending(
+                work = { content?.let { shareIntent(it) } },
+                then = { intent ->
+                    intent?.let { singleLaunchActivity(Intent.createChooser(it, getString(R.string.share_sudoku))) }
+                    dialog.dismiss()
+                },
+            )
         }
     }
 
-    private fun shareStats() {
-        val sendIntent = Intent(ACTION_SEND)
-        sendIntent.type = "text/plain"
-        sendIntent.putExtra(EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
-        sendIntent.putExtra(EXTRA_TITLE, getString(R.string.share_sudoku))
-        sendIntent.flags = FLAG_GRANT_READ_URI_PERMISSION
-        startActivity(Intent.createChooser(sendIntent, getString(R.string.share_sudoku)))
-    }
+    private suspend fun shareIntent(content: ShareContent): Intent =
+        when (content) {
+            ShareContent.STATISTICS -> statisticsShareIntent()
+            ShareContent.INITIAL_GAME -> gameShareIntent(sudoku.getInitialSudoku())
+            ShareContent.CURRENT_GAME -> gameShareIntent(sudoku.copy(sudokuId = SudokuId.generate(), modeLevel = MODE_NORMAL))
+        }
 
-    private suspend fun shareGame(sudoku: Sudoku) {
+    private fun statisticsShareIntent(): Intent =
+        Intent(ACTION_SEND)
+            .setType("text/plain")
+            .putExtra(EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
+            .putExtra(EXTRA_TITLE, getString(R.string.share_sudoku))
+            .setFlags(FLAG_GRANT_READ_URI_PERMISSION)
+
+    private suspend fun gameShareIntent(sudoku: Sudoku): Intent {
         PlayGames.getAchievementsClient(this@SudokuActivity).unlock(getString(R.string.achievement_share_sudoku))
-        val uri = viewModel.exportSudoku(sudoku)
-        val shareIntent = Intent(ACTION_SEND)
-        shareIntent.type = "application/sudoku"
-        shareIntent.addFlags(FLAG_GRANT_READ_URI_PERMISSION)
-        shareIntent.putExtra(EXTRA_STREAM, uri)
-        startActivity(Intent.createChooser(shareIntent, getString(R.string.share_sudoku)))
+        return Intent(ACTION_SEND)
+            .setType("application/sudoku")
+            .addFlags(FLAG_GRANT_READ_URI_PERMISSION)
+            .putExtra(EXTRA_STREAM, viewModel.exportSudoku(sudoku))
     }
 
     companion object {
         const val KEY_SUDOKU_ID = "key_sudoku_id"
+        private const val LOADING_DIALOG_TAG = "loading"
+        private const val COMPLETED_DIALOG_TAG = "completed"
+        private const val GAME_OVER_DIALOG_TAG = "gameOver"
+        private const val SHARE_DIALOG_TAG = "share"
 
         private val digitKeyButtonIndex: Map<Int, Int> =
             listOf(
@@ -790,5 +803,21 @@ class SudokuActivity : AppCompatActivity() {
         override fun onTimeChanged() {
             lifecycleScope.launch { setSubtitle() }
         }
+    }
+}
+
+/** What the share dialog shares, one per radio button. */
+private enum class ShareContent(
+    @param:IdRes val radioButtonId: Int,
+) {
+    STATISTICS(R.id.radioButtonText),
+    INITIAL_GAME(R.id.radioButtonInitial),
+    CURRENT_GAME(R.id.radioButtonCurrent),
+    ;
+
+    companion object {
+        fun fromRadioButtonId(
+            @IdRes id: Int,
+        ): ShareContent? = entries.firstOrNull { it.radioButtonId == id }
     }
 }

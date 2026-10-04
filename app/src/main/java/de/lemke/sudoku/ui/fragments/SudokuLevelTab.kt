@@ -26,12 +26,12 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
+import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
@@ -49,7 +49,6 @@ import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.ALL
 import dev.oneuiproject.oneui.utils.ItemDecorRule.NONE
 import dev.oneuiproject.oneui.utils.SemItemDecoration
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SudokuLevelTab : Fragment() {
@@ -93,11 +92,6 @@ class SudokuLevelTab : Fragment() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        viewModel.onTabResumed()
-    }
-
     private fun revealPending() {
         val sudokuId = pendingReveal ?: return
         if (sudokuListAdapter.currentList != viewModel.state.value.sudokuLevel) return
@@ -119,12 +113,15 @@ class SudokuLevelTab : Fragment() {
     private fun SudokuListAdapter.setupOnClickListeners() {
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuItem) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    if (!viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)) return@launch
-                    viewHolder.itemView.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
-                    )
-                }
+                singleLaunchSuspending(
+                    work = { viewModel.confirmSudokuStart(position, sudokuListItem.sudoku) },
+                    then = { confirmed ->
+                        if (confirmed) {
+                            val intent = Intent(requireActivity(), SudokuActivity::class.java)
+                            viewHolder.itemView.transformToActivity(intent.putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value))
+                        }
+                    },
+                )
             }
         }
     }

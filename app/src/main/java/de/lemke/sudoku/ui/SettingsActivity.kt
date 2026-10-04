@@ -50,10 +50,15 @@ import androidx.preference.SeslSwitchPreferenceScreen
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
+import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.commonutils.ui.utils.openApp
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
+import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.shareApp
+import de.lemke.commonutils.ui.utils.showOnce
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
+import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toSafeFileName
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
@@ -63,7 +68,6 @@ import de.lemke.sudoku.domain.ExportDataUseCase
 import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.model.DataImportResult
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
-import dev.oneuiproject.oneui.ktx.onClick
 import dev.oneuiproject.oneui.ktx.onNewValue
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import dev.oneuiproject.oneui.widget.RelativeLink
@@ -109,7 +113,7 @@ class SettingsActivity : AppCompatActivity() {
         lateinit var importData: ImportDataUseCase
 
         private val requestPermissionLauncher =
-            registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
+            registerForSingleLaunchResult(RequestPermission()) { isGranted: Boolean ->
                 viewModel.onNotificationPermissionResult(isGranted)
                 findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")?.isChecked =
                     viewModel.isDailyNotificationChecked
@@ -127,13 +131,13 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
             exportActivityResultLauncher =
-                registerForActivityResult(StartActivityForResult()) { result ->
+                registerForSingleLaunchResult(StartActivityForResult()) { result ->
                     if (result.resultCode == RESULT_OK && result.data?.data != null) {
                         lifecycleScope.launch { exportData(result.data!!.data!!) }
                     }
                 }
             importActivityResultLauncher =
-                registerForActivityResult(GetContent()) { uri: Uri? ->
+                registerForSingleLaunchResult(GetContent()) { uri: Uri? ->
                     if (uri == null) {
                         toast(R.string.error_no_file_selected)
                     } else {
@@ -181,7 +185,7 @@ class SettingsActivity : AppCompatActivity() {
                 isChecked = viewModel.isDailyNotificationChecked
                 setDailyNotificationPrefTime(viewModel.dailySudokuNotificationHour, viewModel.dailySudokuNotificationMinute)
                 onNewValue { applyDailyNotificationToggle(it) }
-                onClick {
+                onSingleLaunchClick {
                     isChecked = true
                     if (applyDailyNotificationToggle(true) == DailyNotificationToggleResult.Applied) {
                         val dialog =
@@ -195,22 +199,22 @@ class SettingsActivity : AppCompatActivity() {
                                 viewModel.dailySudokuNotificationMinute,
                                 is24HourFormat(requireContext()),
                             )
-                        dialog.show()
+                        dialog.showOnce(NOTIFICATION_TIME_PICKER_TAG)
                     }
                 }
             } ?: Log.e(TAG, "daily notification Preference not found")
         }
 
         internal fun initIntroPreference() {
-            findPreference<PreferenceScreen>("intro")?.onClick {
-                startActivity(
+            findPreference<PreferenceScreen>("intro")?.onSingleLaunchClick {
+                requireContext().singleLaunchActivity(
                     Intent(requireContext(), IntroActivity::class.java).putExtra(IntroActivity.KEY_OPENED_FROM_SETTINGS, true),
                 )
             }
         }
 
         internal fun initExportDataPreference() {
-            findPreference<PreferenceScreen>("exportData")?.onClick {
+            findPreference<PreferenceScreen>("exportData")?.onSingleLaunchClick {
                 exportActivityResultLauncher.launch(
                     Intent(ACTION_CREATE_DOCUMENT).apply {
                         addCategory(CATEGORY_OPENABLE)
@@ -222,7 +226,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         internal fun initImportDataPreference() {
-            findPreference<PreferenceScreen>("importData")?.onClick {
+            findPreference<PreferenceScreen>("importData")?.onSingleLaunchClick {
                 AlertDialog
                     .Builder(requireContext())
                     .setTitle(R.string.import_data)
@@ -230,7 +234,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
                         importActivityResultLauncher.launch("application/json")
-                    }.show()
+                    }.showOnce(IMPORT_DATA_DIALOG_TAG)
             }
         }
 
@@ -240,7 +244,7 @@ class SettingsActivity : AppCompatActivity() {
                 .setTitle(R.string.import_data)
                 .setPositiveButton(commonutilsR.string.commonutils_ok, null)
                 .setMessage(importResultMessage(result))
-                .show()
+                .showOnce(IMPORT_RESULT_DIALOG_TAG)
         }
 
         private fun importResultMessage(result: DataImportResult): String =
@@ -263,7 +267,7 @@ class SettingsActivity : AppCompatActivity() {
             }
 
         internal fun initDeleteInvalidSudokusPreference() {
-            findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onClick {
+            findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onSingleLaunchClick {
                 val dialog =
                     AlertDialog
                         .Builder(requireContext())
@@ -271,16 +275,17 @@ class SettingsActivity : AppCompatActivity() {
                         .setMessage(R.string.delete_invalid_sudokus_summary)
                         .setNegativeButton(designR.string.oui_des_common_cancel, null)
                         .setPositiveButton(R.string.commonutils_delete, null)
-                        .create()
-                dialog.show()
+                        .showOnce(DELETE_INVALID_SUDOKUS_DIALOG_TAG) ?: return@onSingleLaunchClick
                 dialog.getButton(BUTTON_POSITIVE).apply {
                     setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
                     setOnClickListenerWithProgress { _, _ ->
-                        lifecycleScope.launch {
-                            viewModel.onDeleteInvalidSudokusConfirmed()
-                            delay(500.milliseconds)
-                            dialog.dismiss()
-                        }
+                        singleLaunchSuspending(
+                            work = {
+                                viewModel.onDeleteInvalidSudokusConfirmed()
+                                delay(500.milliseconds)
+                            },
+                            then = { dialog.dismiss() },
+                        )
                     }
                 }
             }
@@ -304,7 +309,7 @@ class SettingsActivity : AppCompatActivity() {
                                 .addFlags(FLAG_ACTIVITY_NEW_TASK)
                                 .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
                         // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
-                        startActivity(settingsIntent)
+                        requireContext().singleLaunchActivity(settingsIntent)
                         isChecked = false
                     }
                 }
@@ -325,6 +330,13 @@ class SettingsActivity : AppCompatActivity() {
                         },
                     ),
                 )
+        }
+
+        private companion object {
+            const val NOTIFICATION_TIME_PICKER_TAG = "notificationTimePicker"
+            const val IMPORT_DATA_DIALOG_TAG = "importData"
+            const val IMPORT_RESULT_DIALOG_TAG = "importResult"
+            const val DELETE_INVALID_SUDOKUS_DIALOG_TAG = "deleteInvalidSudokus"
         }
     }
 }

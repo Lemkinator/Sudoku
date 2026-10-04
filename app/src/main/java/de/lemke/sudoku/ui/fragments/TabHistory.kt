@@ -25,7 +25,6 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,6 +32,8 @@ import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.restoreSearchAndActionMode
 import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
+import de.lemke.commonutils.ui.utils.showOnce
+import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.R
@@ -58,7 +59,6 @@ import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
 import dev.oneuiproject.oneui.widget.BottomTabLayout
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -189,20 +189,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             onSelectMenuItem = { menuItem ->
                 when (menuItem.itemId) {
                     R.id.menuButtonDelete -> {
-                        val dialog = ProgressDialog(requireContext())
-                        dialog.setProgressStyle(CIRCLE)
-                        dialog.setCancelable(false)
-                        dialog.show()
-                        lifecycleScope.launch {
-                            viewModel.deleteSelectedSudokus(
-                                viewModel.sudokuHistory.value
-                                    .filterIsInstance<SudokuItem>()
-                                    .filter { it.stableId in sudokuListAdapter.getSelectedIds() }
-                                    .map { it.sudoku },
-                            )
-                            drawerLayout.endActionMode()
-                            dialog.dismiss()
-                        }
+                        deleteSelectedSudokus()
                         true
                     }
 
@@ -214,5 +201,31 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             onSelectAll = { isChecked: Boolean -> sudokuListAdapter.onToggleSelectAll(isChecked) },
             allSelectorStateFlow = allSelectorStateFlow,
         )
+    }
+
+    private fun deleteSelectedSudokus() {
+        val selectedIds = sudokuListAdapter.getSelectedIds()
+        val selectedSudokus =
+            viewModel.sudokuHistory.value
+                .filterIsInstance<SudokuItem>()
+                .filter { it.stableId in selectedIds }
+                .map { it.sudoku }
+        val dialog = ProgressDialog(requireContext())
+        dialog.setProgressStyle(CIRCLE)
+        dialog.setCancelable(false)
+        singleLaunchSuspending(
+            work = {
+                dialog.showOnce(DELETE_PROGRESS_DIALOG_TAG)
+                viewModel.deleteSelectedSudokus(selectedSudokus)
+            },
+            then = {
+                drawerLayout.endActionMode()
+                dialog.dismiss()
+            },
+        )
+    }
+
+    private companion object {
+        const val DELETE_PROGRESS_DIALOG_TAG = "deleteProgress"
     }
 }

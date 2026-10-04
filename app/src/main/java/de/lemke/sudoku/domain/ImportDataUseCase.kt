@@ -23,6 +23,7 @@ import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ActivityContext
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokusRepository
@@ -37,6 +38,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
+
+private const val IMPORT_PROGRESS_DIALOG_TAG = "importProgress"
 
 class ImportDataUseCase @Inject constructor(
     @param:ActivityContext private val context: Context,
@@ -53,7 +56,7 @@ class ImportDataUseCase @Inject constructor(
             progressDialog.setTitle(R.string.import_data)
             progressDialog.setMessage(context.getString(R.string.import_data_ongoing))
             progressDialog.setProgressStyle(HORIZONTAL)
-            progressDialog.show()
+            progressDialog.showOnce(IMPORT_PROGRESS_DIALOG_TAG)
             val result =
                 withContext(ioDispatcher) {
                     val importFile = DocumentFile.fromSingleUri(context, origin)

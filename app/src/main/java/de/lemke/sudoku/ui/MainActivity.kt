@@ -38,7 +38,6 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
 import androidx.core.app.ActivityOptionsCompat.makeCustomAnimation
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -46,23 +45,25 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.games.AuthenticationResult
-import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGames
-import com.google.android.gms.tasks.Task
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.configureCommonUtilsSplashScreen
-import de.lemke.commonutils.ui.utils.onNavigationSingleClick
+import de.lemke.commonutils.ui.utils.onSingleLaunchItemSelected
 import de.lemke.commonutils.ui.utils.onboardIfNeeded
 import de.lemke.commonutils.ui.utils.openURL
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationFrom
+import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutActivity
 import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.setupHeaderAndNavRail
+import de.lemke.commonutils.ui.utils.showOnce
+import de.lemke.commonutils.ui.utils.singleLaunchActivity
+import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
+import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.sudoku.BuildConfig
@@ -88,7 +89,10 @@ import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.PlayGamesScreen
+import de.lemke.sudoku.ui.utils.PlayGamesScreenLaunch
 import de.lemke.sudoku.ui.utils.applyPlayGamesSync
+import de.lemke.sudoku.ui.utils.preparePlayGamesScreen
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import javax.inject.Inject
@@ -101,7 +105,7 @@ class MainActivity : AppCompatActivity() {
     private val fragmentsInstance: List<Fragment> = listOf(TabHistory(), TabSudoku(), TabStatistics())
     private var selectedPosition = 0
     private var isUIReady = false
-    private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForActivityResult(StartActivityForResult()) {}
+    private val playGamesActivityResultLauncher: ActivityResultLauncher<Intent> = registerForSingleLaunchResult(StartActivityForResult()) {}
     private val viewModel: MainViewModel by viewModels()
 
     @Inject
@@ -136,7 +140,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
-            R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
+            R.id.menu_item_filter -> singleLaunchMenuItem { showStatisticsFilterDialog() }
             else -> super.onOptionsItemSelected(item)
         }
 
@@ -158,12 +162,10 @@ class MainActivity : AppCompatActivity() {
             val dialog = ProgressDialog(this)
             dialog.setProgressStyle(CIRCLE)
             dialog.setCancelable(false)
-            dialog.show()
+            dialog.showOnce(IMPORT_PROGRESS_DIALOG_TAG)
             val sudoku = viewModel.handleImportedSudoku(intent.data)
             if (sudoku != null) {
-                findViewById<AppCompatButton?>(R.id.newGameButton)?.transformToActivity(
-                    Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
-                ) ?: startActivity(Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value))
+                transformToActivity(R.id.newGameButton, Intent(this, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value))
             } else {
                 toast(R.string.error_import_failed)
             }
@@ -214,51 +216,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initDrawer() {
         binding.navigationView.findMenuItem(R.id.leaks_dest)?.isVisible = BuildConfig.DEBUG
-        val gamesSignInClient = gamesSignInProvider.getClient(this)
-        binding.navigationView.onNavigationSingleClick { item ->
-            when (item.itemId) {
-                R.id.achievements_dest -> {
-                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) {
-                            openAchievements()
-                        } else {
-                            signInPlayGames(gamesSignInClient) { openAchievements() }
-                        }
-                    }
-                }
-
-                R.id.leaderboards_dest -> {
-                    gamesSignInClient.isAuthenticated.addOnCompleteListener { isAuthenticatedTask: Task<AuthenticationResult> ->
-                        if (isAuthenticatedTask.isSuccessful && isAuthenticatedTask.result.isAuthenticated) {
-                            openLeaderboards()
-                        } else {
-                            signInPlayGames(gamesSignInClient) { openLeaderboards() }
-                        }
-                    }
-                }
-
-                R.id.about_app_dest -> {
-                    findViewById<View>(R.id.about_app_dest).transformToActivity(CommonUtilsAboutActivity::class.java)
-                }
-
-                R.id.about_me_dest -> {
-                    findViewById<View>(R.id.about_me_dest).transformToActivity(CommonUtilsAboutMeActivity::class.java)
-                }
-
-                R.id.settings_dest -> {
-                    findViewById<View>(R.id.settings_dest).transformToActivity(SettingsActivity::class.java)
-                }
-
-                R.id.leaks_dest -> {
-                    openLeakCanary(this)
-                }
-
-                else -> {
-                    return@onNavigationSingleClick false
-                }
-            }
-            true
-        }
+        binding.navigationView.onSingleLaunchItemSelected(::onNavigationItemSelected)
         binding.drawerLayout.apply {
             setTitle(getString(R.string.app_name))
             setupHeaderAndNavRail(getString(R.string.about_app))
@@ -266,28 +224,40 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun signInPlayGames(
-        gamesSignInClient: GamesSignInClient,
-        onSuccess: () -> Unit = {},
-    ) {
-        gamesSignInClient.signIn().addOnCompleteListener { signInTask: Task<AuthenticationResult> ->
-            if (signInTask.isSuccessful && signInTask.result.isAuthenticated) {
-                onSuccess()
-            } else {
-                toast(R.string.error_sign_in_failed)
-            }
+    private fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.achievements_dest -> openPlayGamesScreen(PlayGamesScreen.ACHIEVEMENTS)
+            R.id.leaderboards_dest -> openPlayGamesScreen(PlayGamesScreen.LEADERBOARDS)
+            R.id.about_app_dest -> transformToActivity(R.id.about_app_dest, CommonUtilsAboutActivity::class.java)
+            R.id.about_me_dest -> transformToActivity(R.id.about_me_dest, CommonUtilsAboutMeActivity::class.java)
+            R.id.settings_dest -> transformToActivity(R.id.settings_dest, SettingsActivity::class.java)
+            R.id.leaks_dest -> openLeakCanary(this)
+            else -> return false
         }
+        return true
     }
 
-    private fun openLeaderboards() =
-        PlayGames.getLeaderboardsClient(this).allLeaderboardsIntent.addOnSuccessListener { intent ->
-            playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
-        }
+    private fun openPlayGamesScreen(screen: PlayGamesScreen) {
+        val client = gamesSignInProvider.getClient(this)
+        singleLaunchSuspending(
+            work = { preparePlayGamesScreen(client, screen) },
+            then = { launch ->
+                when (launch) {
+                    is PlayGamesScreenLaunch.Ready -> {
+                        playGamesActivityResultLauncher.launch(launch.intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
+                    }
 
-    private fun openAchievements() =
-        PlayGames.getAchievementsClient(this).achievementsIntent.addOnSuccessListener { intent ->
-            playGamesActivityResultLauncher.launch(intent, makeCustomAnimation(this, slide_in_left, slide_out_right))
-        }
+                    PlayGamesScreenLaunch.SignInFailed -> {
+                        toast(R.string.error_sign_in_failed)
+                    }
+
+                    PlayGamesScreenLaunch.Unavailable -> {
+                        Unit
+                    }
+                }
+            },
+        )
+    }
 
     private fun initTabs() {
         binding.bottomTab.addOnTabSelectedListener(
@@ -341,7 +311,7 @@ class MainActivity : AppCompatActivity() {
                 setPositiveButton(getString(designR.string.oui_des_common_apply)) { _, _ ->
                     updateFilterSettings(dialogBinding, userSettings)
                 }
-                show()
+                showOnce(STATISTICS_FILTER_DIALOG_TAG)
             }
         }
     }
@@ -366,6 +336,11 @@ class MainActivity : AppCompatActivity() {
             if (newTab?.isSelected == false) newTab.select()
         }
         invalidateOptionsMenu()
+    }
+
+    companion object {
+        private const val IMPORT_PROGRESS_DIALOG_TAG = "importProgress"
+        private const val STATISTICS_FILTER_DIALOG_TAG = "statisticsFilter"
     }
 }
 

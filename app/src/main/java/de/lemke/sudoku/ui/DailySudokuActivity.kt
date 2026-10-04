@@ -32,6 +32,7 @@ import de.lemke.commonutils.ui.utils.collectEvents
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationBetween
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformToActivity
 import de.lemke.commonutils.ui.widget.InfoBottomSheet.Companion.showInfoBottomSheet
@@ -89,11 +90,13 @@ class DailySudokuActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
             R.id.menuitem_daily_sudoku_info -> {
-                showInfoBottomSheet(
-                    titleResId = R.string.daily_sudoku,
-                    messageResId = R.string.daily_sudoku_info_message,
-                    textGravity = START,
-                ).let { true }
+                singleLaunchMenuItem {
+                    showInfoBottomSheet(
+                        titleResId = R.string.daily_sudoku,
+                        messageResId = R.string.daily_sudoku_info_message,
+                        textGravity = START,
+                    )
+                }
             }
 
             R.id.menuitem_show_all_sudokus -> {

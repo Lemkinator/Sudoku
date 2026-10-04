@@ -22,6 +22,7 @@ import androidx.appcompat.app.AlertDialog
 import dagger.hilt.android.qualifiers.ActivityContext
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.sudokuToExport
 import dev.oneuiproject.oneui.dialog.ProgressDialog
@@ -31,6 +32,9 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import de.lemke.commonutils.R as commonutilsR
+
+private const val EXPORT_PROGRESS_DIALOG_TAG = "exportProgress"
+private const val EXPORT_SUCCESS_DIALOG_TAG = "exportSuccess"
 
 class ExportDataUseCase @Inject constructor(
     @param:ActivityContext private val context: Context,
@@ -47,7 +51,7 @@ class ExportDataUseCase @Inject constructor(
             dialog.setProgressStyle(HORIZONTAL)
             dialog.setTitle(R.string.export_data)
             dialog.setMessage(context.getString(R.string.export_data_ongoing))
-            dialog.show()
+            dialog.showOnce(EXPORT_PROGRESS_DIALOG_TAG)
             withContext(ioDispatcher) {
                 val sudokus = getAllSudokus()
                 withContext(mainDispatcher) {
@@ -77,6 +81,6 @@ class ExportDataUseCase @Inject constructor(
                 .setTitle(R.string.export_data)
                 .setMessage(context.getString(R.string.export_data_success))
                 .setPositiveButton(commonutilsR.string.commonutils_ok, null)
-                .show()
+                .showOnce(EXPORT_SUCCESS_DIALOG_TAG)
         }
 }

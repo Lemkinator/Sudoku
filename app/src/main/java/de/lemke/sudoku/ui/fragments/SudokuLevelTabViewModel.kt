@@ -99,7 +99,6 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private var nextLevelSudoku: Sudoku? = null
     private var revealedNextLevelId: SudokuId? = null
-    private var sudokuStarting = false
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
@@ -146,12 +145,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     suspend fun confirmSudokuStart(
         position: Int,
         sudoku: Sudoku,
-    ): Boolean {
-        if (sudokuStarting) return false
-        sudokuStarting = true
-        if (position == 0 && state.value.hasNextLevelToStart) sudokuStarting = saveNextLevel(sudoku)
-        return sudokuStarting
-    }
+    ): Boolean = position != 0 || !state.value.hasNextLevelToStart || saveNextLevel(sudoku)
 
     private suspend fun saveNextLevel(sudoku: Sudoku): Boolean {
         val saveResult =
@@ -164,15 +158,8 @@ class SudokuLevelTabViewModel @Inject constructor(
                     }
                 }.await()
         val saveFailure = saveResult.exceptionOrNull()
-        if (saveFailure is CancellationException) {
-            sudokuStarting = false
-            throw saveFailure
-        }
+        if (saveFailure is CancellationException) throw saveFailure
         if (saveFailure != null) _events.send(SudokuLevelTabEvent.ShowStartError)
         return saveResult.getOrDefault(false)
-    }
-
-    fun onTabResumed() {
-        sudokuStarting = false
     }
 }
