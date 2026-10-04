@@ -325,7 +325,7 @@ class SudokuActivity : AppCompatActivity() {
                     AlertDialog
                         .Builder(this@SudokuActivity)
                         .setTitle(R.string.completed_title)
-                        .setMessage(sudoku.getLocalStatisticsString(resources))
+                        .setMessage(result.sudoku.getLocalStatisticsString(resources))
                         .setNeutralButton(commonutilsR.string.commonutils_ok, null)
                 result.followUp?.let { followUp ->
                     dialog.setPositiveButton(followUp.buttonText) { _, _ -> singleLaunch { viewModel.onFollowUp(followUp) } }

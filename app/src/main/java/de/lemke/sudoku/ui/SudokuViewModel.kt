@@ -78,7 +78,10 @@ sealed interface SudokuCompletion {
 
     data object Running : SudokuCompletion
 
-    data class Summary(val followUp: FollowUp?) : Result
+    data class Summary(
+        val sudoku: Sudoku,
+        val followUp: FollowUp?,
+    ) : Result
 }
 
 @HiltViewModel
@@ -159,7 +162,7 @@ class SudokuViewModel @Inject constructor(
         completion.value = SudokuCompletion.Running
         viewModelScope.launch {
             saveSudokuProgress(completed)
-            completion.value = SudokuCompletion.Summary(followUpOf(completed))
+            completion.value = SudokuCompletion.Summary(completed, followUpOf(completed))
             playGamesSync.value = calculatePlayGamesSync(completed)
         }
     }

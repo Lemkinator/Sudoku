@@ -262,7 +262,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEXT_LEVEL)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEXT_LEVEL)
             viewModel.playGamesSync.value shouldBe sync
             coVerify(ordering = Ordering.ORDERED) {
                 saveSudoku(completed, true)
@@ -279,7 +279,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(null)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, null)
         }
 
         should("onCompleted offers a new game for a normal sudoku without a level lookup") {
@@ -289,7 +289,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
             coVerify(exactly = 0) { getMaxSudokuLevel(any()) }
         }
 
@@ -300,7 +300,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(null)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, null)
             coVerify(exactly = 0) { getMaxSudokuLevel(any()) }
         }
 
@@ -316,7 +316,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.completion.value shouldBe SudokuCompletion.Running
             saved.complete(Unit)
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
             coVerify(exactly = 1) { saveSudoku(completed, true) }
             coVerify(exactly = 1) { calculatePlayGamesSync(completed) }
         }
@@ -329,7 +329,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onCompleted()
 
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
             viewModel.playGamesSync.value shouldBe null
             sync.complete(PlayGamesSync(achievementUnlocks = listOf(7)))
             viewModel.playGamesSync.value shouldBe PlayGamesSync(achievementUnlocks = listOf(7))
@@ -351,9 +351,9 @@ class SudokuViewModelTest : ShouldSpec(
             coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
             viewModel.onCompleted()
 
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(null))
-            viewModel.completion.value shouldBe SudokuCompletion.Summary(FollowUp.NEW_GAME)
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(FollowUp.NEW_GAME))
+            viewModel.onCompletionHandled(SudokuCompletion.Summary(completed, null))
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+            viewModel.onCompletionHandled(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
             viewModel.completion.value shouldBe SudokuCompletion.Idle
         }
 
