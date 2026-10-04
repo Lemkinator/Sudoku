@@ -35,6 +35,7 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -46,6 +47,7 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import dev.oneuiproject.oneui.dialog.ProgressDialog
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -109,7 +111,13 @@ class SudokuActivityCompletionTest {
     @JvmField
     val getMaxSudokuLevel: GetMaxSudokuLevelUseCase = mockk()
 
+    @BindValue
+    @JvmField
+    val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase = mockk()
+
     private var maxLevelRead = CompletableDeferred(Unit)
+
+    private var syncCalculated = CompletableDeferred(Unit)
 
     @Inject
     lateinit var sudokusRepository: SudokusRepository
@@ -124,6 +132,10 @@ class SudokuActivityCompletionTest {
         coEvery { getMaxSudokuLevel(any()) } coAnswers {
             maxLevelRead.await()
             sudokusRepository.getMaxSudokuLevel(firstArg())
+        }
+        coEvery { calculatePlayGamesSync(any()) } coAnswers {
+            syncCalculated.await()
+            CalculatePlayGamesSyncUseCase(getAllSudokus, testDefaultDispatcher)(firstArg())
         }
         settings.bypassOobe()
         // Robolectric skips the Play Games SDK's auto-init ContentProvider.
@@ -297,5 +309,44 @@ class SudokuActivityCompletionTest {
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
             coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
         }
+    }
+
+    @Test
+    fun `a restart after the completion dialog shows the loading dialog until the Play Games sync is calculated`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { saveSudoku(almostSolvedSudoku(sudokuId)) }
+        syncCalculated = CompletableDeferred()
+        completeBoard(sudokuId) { activity ->
+            (ShadowDialog.getLatestDialog() as AlertDialog).dismiss()
+
+            activity.viewModel.onRestart()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            activity.viewModel.game.value shouldBe SudokuGame.Restarting
+            val loadingDialog = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().single()
+            loadingDialog.isShowing shouldBe true
+            syncCalculated.complete(Unit)
+            awaitUntil { activity.viewModel.game.value is SudokuGame.Playing }
+            loadingDialog.isShowing shouldBe false
+            activity.sudoku.completed shouldBe false
+        }
+    }
+
+    // The Play Games sync and the restart save run on a real background dispatcher that idle() does not wait for.
+    private fun awaitUntil(condition: () -> Boolean) {
+        repeat(AWAIT_ATTEMPTS) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (condition()) {
+                shadowOf(Looper.getMainLooper()).idle()
+                return
+            }
+            Thread.sleep(AWAIT_STEP_MS)
+        }
+        error("condition not met within ${AWAIT_ATTEMPTS * AWAIT_STEP_MS} ms")
+    }
+
+    private companion object {
+        const val AWAIT_ATTEMPTS = 200
+        const val AWAIT_STEP_MS = 25L
     }
 }
