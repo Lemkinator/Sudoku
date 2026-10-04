@@ -103,7 +103,7 @@ class ExportDataUseCaseTest {
 
             val result = useCase(Uri.fromFile(destinationFile)) { progress += it }
 
-            result shouldBe DataExportResult.Exported
+            result shouldBe DataExportResult.Written
             val exported = destinationFile.readText().parseJSON<List<SudokuExport>>()
             exported shouldBe sudokus.map { sudokuToExport(it) }
         }

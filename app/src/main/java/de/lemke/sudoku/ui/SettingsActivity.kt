@@ -298,7 +298,7 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun exportResultMessage(result: DataExportResult): String =
             when (result) {
-                DataExportResult.Exported -> getString(R.string.export_data_success)
+                DataExportResult.Written -> getString(R.string.export_data_success)
                 DataExportResult.WriteFailed -> getString(commonutilsR.string.commonutils_error_creating_file)
             }
 

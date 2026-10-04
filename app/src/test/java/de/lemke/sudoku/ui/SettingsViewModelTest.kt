@@ -88,7 +88,7 @@ class SettingsViewModelTest : ShouldSpec(
                 importData,
             )
 
-        fun exportSteps(result: DataExportResult = DataExportResult.Exported): Channel<ExportProgress> =
+        fun exportSteps(result: DataExportResult = DataExportResult.Written): Channel<ExportProgress> =
             Channel<ExportProgress>().also { steps ->
                 coEvery { exportData(exportUri, any()) } coAnswers {
                     val onProgress = secondArg<(ExportProgress) -> Unit>()
@@ -301,7 +301,7 @@ class SettingsViewModelTest : ShouldSpec(
                     steps.close()
                     runCurrent()
 
-                    settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.Exported)
+                    settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.Written)
                 }
             }
 
@@ -395,7 +395,7 @@ class SettingsViewModelTest : ShouldSpec(
                     settingsViewModel.onExportDestinationPicked(exportUri)
                     runCurrent()
 
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
 
                     settingsViewModel.dataTransfer.value shouldBe DataTransfer.Idle
                 }
@@ -408,7 +408,7 @@ class SettingsViewModelTest : ShouldSpec(
                     settingsViewModel.onImportFilePicked(importUri)
                     runCurrent()
 
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
 
                     settingsViewModel.dataTransfer.value shouldBe DataTransfer.Imported(DataImportResult.Imported(skippedCount = 0))
                 }
@@ -421,11 +421,11 @@ class SettingsViewModelTest : ShouldSpec(
                     val settingsViewModel = newViewModel()
                     settingsViewModel.onExportDestinationPicked(exportUri)
                     runCurrent()
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
                     settingsViewModel.onImportFilePicked(importUri)
                     runCurrent()
 
-                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Exported))
+                    settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
 
                     settingsViewModel.dataTransfer.value shouldBe DataTransfer.Importing(ImportProgress.Reading)
                     steps.close()

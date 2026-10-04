@@ -62,7 +62,7 @@ class ExportDataUseCase @Inject constructor(
 
                 else -> {
                     stream.bufferedWriter().use { bufferedWriter -> bufferedWriter.write(content) }
-                    DataExportResult.Exported
+                    DataExportResult.Written
                 }
             }
         }.getOrElse { e ->

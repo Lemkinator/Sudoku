@@ -17,7 +17,7 @@
 package de.lemke.sudoku.domain.model
 
 sealed interface DataExportResult {
-    data object Exported : DataExportResult
+    data object Written : DataExportResult
 
     data object WriteFailed : DataExportResult
 }
