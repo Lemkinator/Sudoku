@@ -36,6 +36,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -50,10 +51,13 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.clearMocks
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import java.time.Duration
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -101,6 +105,12 @@ class SudokuActivityCompletionTest {
     @JvmField
     val saveSudoku: SaveSudokuUseCase = mockk()
 
+    @BindValue
+    @JvmField
+    val getMaxSudokuLevel: GetMaxSudokuLevelUseCase = mockk()
+
+    private var maxLevelRead = CompletableDeferred(Unit)
+
     @Inject
     lateinit var sudokusRepository: SudokusRepository
 
@@ -111,6 +121,10 @@ class SudokuActivityCompletionTest {
     fun setup() {
         hiltRule.inject()
         coEvery { saveSudoku(any(), any()) } coAnswers { sudokusRepository.saveSudoku(firstArg(), secondArg()) }
+        coEvery { getMaxSudokuLevel(any()) } coAnswers {
+            maxLevelRead.await()
+            sudokusRepository.getMaxSudokuLevel(firstArg())
+        }
         settings.bypassOobe()
         // Robolectric skips the Play Games SDK's auto-init ContentProvider.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
@@ -249,6 +263,39 @@ class SudokuActivityCompletionTest {
                 activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
                 activity.viewModel.playGamesSync.value shouldBe null
             }
+        }
+    }
+
+    @Test
+    fun `recreating the activity while the completion runs shows one dialog after one wrap-up`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1)) }
+        maxLevelRead = CompletableDeferred()
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.select(0)
+                activity.select(activity.sudoku.itemCount)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
+            scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Running }
+            coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
+            clearMocks(saveSudoku, answers = false)
+
+            scenario.recreate()
+            maxLevelRead.complete(Unit)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            shadowOf(Looper.getMainLooper()).idle()
+
+            scenario.onActivity { activity ->
+                val dialogs = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>()
+                dialogs.size shouldBe 1
+                dialogs.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe activity.getString(R.string.next_level)
+                activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+            }
+            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
         }
     }
 }
