@@ -37,7 +37,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
-import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.viewModels
@@ -66,8 +65,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySettingsBinding
 import de.lemke.sudoku.domain.model.DataImportResult
-import de.lemke.sudoku.domain.model.ExportProgress
-import de.lemke.sudoku.domain.model.ImportProgress
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.HORIZONTAL
 import dev.oneuiproject.oneui.ktx.addRelativeLinksCard
@@ -246,66 +243,33 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun renderDataTransferProgress(transfer: DataTransfer) {
             when (transfer) {
-                is DataTransfer.Exporting -> {
-                    when (val progress = transfer.progress) {
-                        ExportProgress.Reading -> {
-                            showDataTransferProgress(R.string.export_data, R.string.export_data_ongoing)
-                        }
-
-                        is ExportProgress.Converting -> {
-                            showDataTransferProgress(R.string.export_data, R.string.export_data_ongoing, progress.done, progress.total)
-                        }
-
-                        ExportProgress.Writing -> {
-                            showDataTransferProgress(R.string.export_data, R.string.export_data_ongoing_writing_file)
-                        }
-                    }
-                }
-
-                is DataTransfer.Importing -> {
-                    when (val progress = transfer.progress) {
-                        ImportProgress.Reading -> {
-                            showDataTransferProgress(R.string.import_data, R.string.import_data_ongoing)
-                        }
-
-                        is ImportProgress.Parsing -> {
-                            showDataTransferProgress(R.string.import_data, R.string.import_data_ongoing, progress.done, progress.total)
-                        }
-
-                        is ImportProgress.Saving -> {
-                            showDataTransferProgress(
-                                R.string.import_data,
-                                R.string.import_data_ongoing_processing,
-                                progress.done,
-                                progress.total,
-                            )
-                        }
-                    }
-                }
-
-                DataTransfer.Idle, is DataTransfer.Result -> {
-                    dismissDataTransferProgress()
-                }
+                is DataTransfer.Running -> showDataTransferProgress(transfer.toProgressUi())
+                DataTransfer.Idle, is DataTransfer.Result -> dismissDataTransferProgress()
             }
         }
 
-        private fun showDataTransferProgress(
-            @StringRes title: Int,
-            @StringRes message: Int,
-            done: Int? = null,
-            total: Int = 1,
-        ) {
+        private fun showDataTransferProgress(ui: DataTransferProgressUi) {
             val dialog =
                 dataTransferProgressDialog ?: ProgressDialog(requireContext()).also {
                     it.setCancelable(false)
                     it.setProgressStyle(HORIZONTAL)
                     dataTransferProgressDialog = it
                 }
-            dialog.setTitle(title)
-            dialog.setMessage(getString(message))
-            dialog.isIndeterminate = done == null
-            dialog.max = total
-            dialog.progress = done ?: 0
+            dialog.setTitle(ui.title)
+            dialog.setMessage(getString(ui.message))
+            when (val indicator = ui.indicator) {
+                ProgressIndicator.Indeterminate -> {
+                    dialog.isIndeterminate = true
+                    dialog.max = 1
+                    dialog.progress = 0
+                }
+
+                is ProgressIndicator.Determinate -> {
+                    dialog.isIndeterminate = false
+                    dialog.max = indicator.total
+                    dialog.progress = indicator.done
+                }
+            }
             dialog.showOnce(DATA_TRANSFER_PROGRESS_DIALOG_TAG)
         }
 
