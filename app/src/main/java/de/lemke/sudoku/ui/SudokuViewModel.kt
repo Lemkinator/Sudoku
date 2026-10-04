@@ -33,6 +33,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -108,6 +109,8 @@ class SudokuViewModel @Inject constructor(
     val playGamesSync: StateFlow<PlayGamesSync?>
         field = MutableStateFlow<PlayGamesSync?>(null)
 
+    private var wrapUp: Job? = null
+
     init {
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
         if (id == null) {
@@ -122,10 +125,12 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onRestart() {
+        if (completion.value != SudokuCompletion.Idle) return
         val sudoku = (game.value as? SudokuGame.Playing ?: return).sudoku
         game.value = SudokuGame.Restarting
-        sudoku.reset()
         viewModelScope.launch {
+            wrapUp?.join()
+            sudoku.reset()
             saveSudoku(sudoku)
             game.value = SudokuGame.Ready(sudoku)
         }
@@ -160,11 +165,12 @@ class SudokuViewModel @Inject constructor(
         val completed = (game.value as? SudokuGame.Playing)?.sudoku?.takeIf { it.completed }
         if (completed == null || completion.value != SudokuCompletion.Idle) return
         completion.value = SudokuCompletion.Running
-        viewModelScope.launch {
-            saveSudokuProgress(completed)
-            completion.value = SudokuCompletion.Summary(completed, followUpOf(completed))
-            playGamesSync.value = calculatePlayGamesSync(completed)
-        }
+        wrapUp =
+            viewModelScope.launch {
+                saveSudokuProgress(completed)
+                completion.value = SudokuCompletion.Summary(completed, followUpOf(completed))
+                playGamesSync.value = calculatePlayGamesSync(completed)
+            }
     }
 
     fun onCompletionHandled(result: SudokuCompletion.Result) {

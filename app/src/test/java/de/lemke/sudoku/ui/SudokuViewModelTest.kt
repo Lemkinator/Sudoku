@@ -163,6 +163,57 @@ class SudokuViewModelTest : ShouldSpec(
             coVerify(exactly = 0) { saveSudoku(any(), any()) }
         }
 
+        should("onRestart while the completed sudoku is saved keeps it and the pending wrap-up") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            val saved = CompletableDeferred<Unit>()
+            coEvery { saveSudoku(completed, true) } coAnswers { saved.await() }
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            viewModel.onCompleted()
+
+            viewModel.onRestart()
+
+            viewModel.game.value shouldBe SudokuGame.Playing(completed)
+            completed.completed shouldBe true
+            saved.complete(Unit)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+            coVerify(exactly = 0) { saveSudoku(completed, false) }
+        }
+
+        should("onRestart while the completion summary is pending keeps the completed sudoku") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            viewModel.onCompleted()
+
+            viewModel.onRestart()
+
+            viewModel.game.value shouldBe SudokuGame.Playing(completed)
+            completed.completed shouldBe true
+            coVerify(exactly = 0) { saveSudoku(completed, false) }
+        }
+
+        should("onRestart during the Play Games sync resets the sudoku only once the sync is calculated") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            val sync = CompletableDeferred<PlayGamesSync>()
+            coEvery { calculatePlayGamesSync(completed) } coAnswers { sync.await() }
+            viewModel.onCompleted()
+            viewModel.onCompletionHandled(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
+
+            viewModel.onRestart()
+
+            viewModel.game.value shouldBe SudokuGame.Restarting
+            completed.completed shouldBe true
+            sync.complete(PlayGamesSync())
+            completed.completed shouldBe false
+            viewModel.game.value shouldBe SudokuGame.Ready(completed)
+            coVerify(ordering = Ordering.ORDERED) {
+                calculatePlayGamesSync(completed)
+                saveSudoku(completed, false)
+            }
+        }
+
         should("a new game follows with the size and difficulty of the completed sudoku and becomes the current one") {
             val completed = testSudoku(SudokuSize.NINE, Difficulty.HARD)
             val next = testSudoku(SudokuSize.NINE, Difficulty.HARD)
