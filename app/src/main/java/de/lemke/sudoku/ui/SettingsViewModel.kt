@@ -19,6 +19,7 @@ package de.lemke.sudoku.ui
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
+import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.TIRAMISU
 import androidx.core.app.NotificationManagerCompat
@@ -31,9 +32,19 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
+import de.lemke.sudoku.domain.ExportDataUseCase
+import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import de.lemke.sudoku.domain.model.DataImportResult
+import de.lemke.sudoku.domain.model.ExportProgress
+import de.lemke.sudoku.domain.model.ImportProgress
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface DailyNotificationToggleResult {
@@ -44,6 +55,40 @@ sealed interface DailyNotificationToggleResult {
     data object SystemNotificationsDisabled : DailyNotificationToggleResult
 }
 
+/** The deletion of invalid sudokus. The screen closes its dialog on a [Result] and then reports it handled. */
+sealed interface InvalidSudokuDeletion {
+    sealed interface Result : InvalidSudokuDeletion
+
+    data object Idle : InvalidSudokuDeletion
+
+    data object Running : InvalidSudokuDeletion
+
+    data object Finished : Result
+}
+
+/** An export or import of all sudokus. The screen shows the progress of a [Running] one and a [Result], then reports it handled. */
+sealed interface DataTransfer {
+    sealed interface Running : DataTransfer
+
+    sealed interface Result : DataTransfer
+
+    data object Idle : DataTransfer
+
+    data class Exporting(
+        val progress: ExportProgress,
+    ) : Running
+
+    data class Importing(
+        val progress: ImportProgress,
+    ) : Running
+
+    data object Exported : Result
+
+    data class Imported(
+        val result: DataImportResult,
+    ) : Result
+}
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
@@ -51,7 +96,15 @@ class SettingsViewModel @Inject constructor(
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
     private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
+    private val exportData: ExportDataUseCase,
+    private val importData: ImportDataUseCase,
 ) : ViewModel() {
+    val invalidSudokuDeletion: StateFlow<InvalidSudokuDeletion>
+        field = MutableStateFlow<InvalidSudokuDeletion>(InvalidSudokuDeletion.Idle)
+
+    val dataTransfer: StateFlow<DataTransfer>
+        field = MutableStateFlow<DataTransfer>(DataTransfer.Idle)
+
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
 
@@ -90,7 +143,43 @@ class SettingsViewModel @Inject constructor(
         setDailySudokuNotification(true)
     }
 
-    suspend fun onDeleteInvalidSudokusConfirmed() = deleteInvalidSudokus()
+    fun onDeleteInvalidSudokusConfirmed() {
+        if (invalidSudokuDeletion.value == InvalidSudokuDeletion.Running) return
+        invalidSudokuDeletion.value = InvalidSudokuDeletion.Running
+        viewModelScope.launch {
+            deleteInvalidSudokus()
+            delay(MIN_INVALID_SUDOKU_DELETION_DURATION)
+            invalidSudokuDeletion.value = InvalidSudokuDeletion.Finished
+        }
+    }
+
+    fun onInvalidSudokuDeletionHandled(result: InvalidSudokuDeletion.Result) {
+        invalidSudokuDeletion.update { if (it == result) InvalidSudokuDeletion.Idle else it }
+    }
+
+    fun onExportDestinationPicked(uri: Uri) =
+        startDataTransfer(DataTransfer.Exporting(ExportProgress.Reading)) {
+            exportData(uri) { dataTransfer.value = DataTransfer.Exporting(it) }
+            DataTransfer.Exported
+        }
+
+    fun onImportFilePicked(uri: Uri) =
+        startDataTransfer(DataTransfer.Importing(ImportProgress.Reading)) {
+            DataTransfer.Imported(importData(uri) { dataTransfer.value = DataTransfer.Importing(it) })
+        }
+
+    fun onDataTransferHandled(result: DataTransfer.Result) {
+        dataTransfer.update { if (it == result) DataTransfer.Idle else it }
+    }
+
+    private fun startDataTransfer(
+        running: DataTransfer.Running,
+        work: suspend () -> DataTransfer.Result,
+    ) {
+        if (dataTransfer.value is DataTransfer.Running) return
+        dataTransfer.value = running
+        viewModelScope.launch { dataTransfer.value = work() }
+    }
 
     private fun setDailySudokuNotification(enabled: Boolean) {
         viewModelScope.launch { setDailyNotificationEnabled(enabled) }
@@ -105,5 +194,9 @@ class SettingsViewModel @Inject constructor(
             SDK_INT >= TIRAMISU -> ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_GRANTED
             else -> true
         }
+    }
+
+    private companion object {
+        val MIN_INVALID_SUDOKU_DELETION_DURATION = 500.milliseconds
     }
 }

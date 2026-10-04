@@ -44,8 +44,12 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuExport
+import de.lemke.sudoku.data.database.SudokuWithFields
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.FakeDocumentProvider
@@ -55,6 +59,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import dev.oneuiproject.oneui.dialog.ProgressDialog
 import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -64,9 +69,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import java.io.File
 import java.time.Duration
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -81,6 +88,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowContentResolver
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
+import dev.oneuiproject.oneui.design.R as designR
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -106,6 +114,23 @@ class SettingsFragmentTest {
     @MainDispatcher
     @JvmField
     val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+
+    private var getAllGate = CompletableDeferred(Unit)
+    private var getAllCalls = 0
+    private val sudokuDao = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext()).sudokuDao()
+
+    @BindValue
+    @JvmField
+    val sudokusRepository: SudokusRepository =
+        SudokusRepository(
+            object : SudokuDao by sudokuDao {
+                override suspend fun getAll(): List<SudokuWithFields> {
+                    getAllCalls++
+                    getAllGate.await()
+                    return sudokuDao.getAll()
+                }
+            },
+        )
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -309,6 +334,45 @@ class SettingsFragmentTest {
             }
         }
 
+    private fun pickExportDestination(
+        fragment: SettingsActivity.SettingsFragment,
+        destination: Uri,
+    ) {
+        val pref = fragment.pref<PreferenceScreen>("exportData")
+        pref.onPreferenceClickListener?.onPreferenceClick(pref)
+        val shadowActivity = shadowOf(fragment.requireActivity())
+        val started = shadowActivity.peekNextStartedActivityForResult()!!
+        shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent().apply { data = destination })
+        shadowOf(Looper.getMainLooper()).idle()
+    }
+
+    @Test
+    fun `exportData shows the progress dialog while the export runs and the success dialog once it finished`() =
+        launch { fragment ->
+            val destinationFile = File.createTempFile("settings-fragment-export", ".json")
+            try {
+                getAllGate = CompletableDeferred()
+
+                pickExportDestination(fragment, Uri.fromFile(destinationFile))
+
+                val progressDialog = ShadowDialog.getLatestDialog().shouldBeInstanceOf<ProgressDialog>()
+                progressDialog.isShowing.shouldBeTrue()
+                progressDialog.findViewById<TextView>(designR.id.message)?.text?.toString() shouldBe
+                    fragment.getString(R.string.export_data_ongoing)
+
+                getAllGate.complete(Unit)
+                shadowOf(Looper.getMainLooper()).idle()
+
+                progressDialog.isShowing.shouldBeFalse()
+                val successDialog = ShadowDialog.getLatestDialog() as AlertDialog
+                successDialog.isShowing.shouldBeTrue()
+                successDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe
+                    fragment.getString(R.string.export_data_success)
+            } finally {
+                destinationFile.delete()
+            }
+        }
+
     @Test
     fun `importData's result callback shows an error toast when no file was selected`() =
         launch { fragment ->
@@ -447,6 +511,26 @@ class SettingsFragmentTest {
             val dialog = ShadowDialog.getLatestDialog()
             dialog.shouldNotBeNull()
             dialog.isShowing.shouldBeTrue()
+        }
+
+    @Test
+    fun `tapping the deleteInvalidSudokus delete button twice deletes once and dismisses once the deletion finished`() =
+        launch { fragment ->
+            val pref = fragment.pref<PreferenceScreen>("deleteInvalidSudokus")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            val deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+
+            deleteButton.performClick()
+            deleteButton.performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            getAllCalls shouldBe 1
+            dialog.isShowing.shouldBeTrue()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            shadowOf(Looper.getMainLooper()).idle()
+            dialog.isShowing.shouldBeFalse()
+            getAllCalls shouldBe 1
         }
 
     @Test
