@@ -322,6 +322,50 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
+    fun `recreating the activity while the completion dialog shows dismisses it without running a follow-up again`() {
+        mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+        every { any<Activity>().applyPlayGamesSync(any()) } just Runs
+        var reviewRequested = false
+        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers { reviewRequested = true }
+        try {
+            val sudokuId = SudokuId.generate()
+            runBlocking { saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1)) }
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+            ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.select(0)
+                    activity.select(activity.sudoku.itemCount)
+                }
+                awaitUntil { reviewRequested && ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().isNotEmpty() }
+                val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
+                dialog.isShowing shouldBe true
+
+                scenario.recreate()
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+                shadowOf(Looper.getMainLooper()).idle()
+
+                dialog.isShowing shouldBe false
+                scenario.onActivity { activity ->
+                    ShadowDialog
+                        .getShownDialogs()
+                        .filterIsInstance<AlertDialog>()
+                        .filter { it.isShowing }
+                        .shouldBeEmpty()
+                    activity.sudoku.id shouldBe sudokuId
+                    activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+                }
+                verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
+                verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
+                coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
+                coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
+            }
+        } finally {
+            unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+        }
+    }
+
+    @Test
     fun `a restart after the completion dialog waits without a loading dialog until the Play Games sync is calculated`() {
         val sudokuId = SudokuId.generate()
         runBlocking { saveSudoku(almostSolvedSudoku(sudokuId)) }

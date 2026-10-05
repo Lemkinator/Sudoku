@@ -99,6 +99,7 @@ class SudokuActivity : AppCompatActivity() {
     internal lateinit var binding: ActivitySudokuBinding
     private lateinit var loadingDialog: ProgressDialog
     private var shareDialog: AlertDialog? = null
+    private var completionDialog: AlertDialog? = null
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -160,6 +161,7 @@ class SudokuActivity : AppCompatActivity() {
     override fun onDestroy() {
         loadingDialog.dismiss()
         shareDialog?.dismiss()
+        completionDialog?.dismiss()
         super.onDestroy()
     }
 
@@ -330,7 +332,7 @@ class SudokuActivity : AppCompatActivity() {
                 result.followUp?.let { followUp ->
                     dialog.setPositiveButton(followUp.buttonText) { _, _ -> singleLaunch { viewModel.onFollowUp(followUp) } }
                 }
-                dialog.showOnce(COMPLETED_DIALOG_TAG)
+                dialog.showOnce(COMPLETED_DIALOG_TAG)?.let { completionDialog = it }
             }
 
             SudokuCompletion.Failed -> {
