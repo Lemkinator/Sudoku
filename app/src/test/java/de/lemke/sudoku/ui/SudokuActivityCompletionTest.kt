@@ -45,6 +45,7 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -56,6 +57,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
@@ -362,6 +364,31 @@ class SudokuActivityCompletionTest {
             }
         } finally {
             unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+        }
+    }
+
+    @Test
+    fun `recreating the activity while the game-over dialog shows dismisses it without restarting the sudoku`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1).copy(errorsMade = MODE_LEVEL_ERROR_LIMIT)) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
+            dialog.isShowing shouldBe true
+
+            scenario.recreate()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            shadowOf(Looper.getMainLooper()).idle()
+
+            dialog.isShowing shouldBe false
+            scenario.onActivity { activity ->
+                activity.sudoku.id shouldBe sudokuId
+                activity.sudoku.errorsMade shouldBe MODE_LEVEL_ERROR_LIMIT
+                activity.viewModel.game.value
+                    .shouldBeInstanceOf<SudokuGame.Playing>()
+            }
         }
     }
 

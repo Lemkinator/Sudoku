@@ -100,6 +100,7 @@ class SudokuActivity : AppCompatActivity() {
     private lateinit var loadingDialog: ProgressDialog
     private var shareDialog: AlertDialog? = null
     private var completionDialog: AlertDialog? = null
+    private var gameOverDialog: AlertDialog? = null
     lateinit var sudoku: Sudoku
     lateinit var gameAdapter: SudokuViewAdapter
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
@@ -162,6 +163,7 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog.dismiss()
         shareDialog?.dismiss()
         completionDialog?.dismiss()
+        gameOverDialog?.dismiss()
         super.onDestroy()
     }
 
@@ -369,6 +371,7 @@ class SudokuActivity : AppCompatActivity() {
                 .setPositiveButton(R.string.restart) { _, _ -> singleLaunch { viewModel.onRestart() } }
                 .setNeutralButton(commonutilsR.string.commonutils_ok, null)
                 .showOnce(GAME_OVER_DIALOG_TAG)
+                ?.let { gameOverDialog = it }
             return true
         }
         return false
