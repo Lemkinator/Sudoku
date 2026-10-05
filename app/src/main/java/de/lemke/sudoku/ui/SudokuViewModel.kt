@@ -31,9 +31,11 @@ import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -71,6 +73,22 @@ sealed interface SudokuShare {
     data class File(val uri: Uri) : Result
 }
 
+/** The wrap-up of the completed sudoku. The activity shows a [Result] and then reports it handled. */
+sealed interface SudokuCompletion {
+    sealed interface Result : SudokuCompletion
+
+    data object Idle : SudokuCompletion
+
+    data object Running : SudokuCompletion
+
+    data class Summary(
+        val sudoku: Sudoku,
+        val followUp: FollowUp?,
+    ) : Result
+
+    data object Failed : Result
+}
+
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
@@ -88,6 +106,15 @@ class SudokuViewModel @Inject constructor(
     val share: StateFlow<SudokuShare>
         field = MutableStateFlow<SudokuShare>(SudokuShare.Idle)
 
+    val completion: StateFlow<SudokuCompletion>
+        field = MutableStateFlow<SudokuCompletion>(SudokuCompletion.Idle)
+
+    /** The Play Games sync of the completed sudoku. The activity applies it and then reports it handled. */
+    val playGamesSync: StateFlow<PlayGamesSync?>
+        field = MutableStateFlow<PlayGamesSync?>(null)
+
+    private var wrapUp: Job? = null
+
     init {
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
         if (id == null) {
@@ -102,10 +129,12 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onRestart() {
+        if (completion.value != SudokuCompletion.Idle) return
         val sudoku = (game.value as? SudokuGame.Playing ?: return).sudoku
         game.value = SudokuGame.Restarting
-        sudoku.reset()
         viewModelScope.launch {
+            wrapUp?.join()
+            sudoku.reset()
             saveSudoku(sudoku)
             game.value = SudokuGame.Ready(sudoku)
         }
@@ -136,12 +165,50 @@ class SudokuViewModel @Inject constructor(
         share.update { if (it == result) SudokuShare.Idle else it }
     }
 
-    suspend fun isMaxSudokuLevel(
-        size: SudokuSize,
-        level: Int,
-    ): Boolean = getMaxSudokuLevel(size) == level
+    fun onCompleted() {
+        val playing = game.value as? SudokuGame.Playing
+        if (playing == null || !playing.sudoku.completed || completion.value != SudokuCompletion.Idle) return
+        val completed = playing.sudoku
+        completion.value = SudokuCompletion.Running
+        wrapUp =
+            viewModelScope.launch {
+                val result = summaryOf(completed)
+                completion.value = result
+                if (result is SudokuCompletion.Summary) playGamesSync.value = playGamesSyncOf(completed)
+            }
+    }
+
+    fun onCompletionHandled(result: SudokuCompletion.Result) {
+        completion.update { if (it == result) SudokuCompletion.Idle else it }
+    }
+
+    fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
+        playGamesSync.update { if (it == sync) null else it }
+    }
 
     suspend fun saveSudokuProgress(sudoku: Sudoku) = saveSudoku(sudoku, onlyUpdate = true)
 
-    suspend fun syncPlayGames(sudoku: Sudoku? = null): PlayGamesSync = calculatePlayGamesSync(sudoku)
+    private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
+        val saved = orOnFailure(false) { saveSudokuProgress(completed).let { true } }
+        return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
+    }
+
+    private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =
+        orOnFailure(PlayGamesSync()) { calculatePlayGamesSync(completed) }
+
+    private suspend inline fun <T> orOnFailure(
+        fallback: T,
+        block: () -> T,
+    ): T =
+        runCatching(block).getOrElse {
+            currentCoroutineContext().ensureActive()
+            fallback
+        }
+
+    private suspend fun followUpOf(completed: Sudoku): FollowUp? =
+        when {
+            completed.isSudokuLevel -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.size) == completed.modeLevel }
+            completed.isNormalSudoku -> FollowUp.NEW_GAME
+            else -> null
+        }
 }
