@@ -19,6 +19,7 @@ package de.lemke.sudoku.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Looper
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.test.core.app.ActivityScenario
@@ -368,7 +369,7 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `recreating the activity while the game-over dialog shows dismisses it without restarting the sudoku`() {
+    fun `recreating the activity while the game-over dialog shows replaces it with one new one without a restart`() {
         val sudokuId = SudokuId.generate()
         runBlocking { saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1).copy(errorsMade = MODE_LEVEL_ERROR_LIMIT)) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
@@ -383,6 +384,9 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idle()
 
             dialog.isShowing shouldBe false
+            val newDialog = (ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>() - dialog).single()
+            newDialog.isShowing shouldBe true
+            newDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error limit reached (3)."
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudokuId
                 activity.sudoku.errorsMade shouldBe MODE_LEVEL_ERROR_LIMIT
