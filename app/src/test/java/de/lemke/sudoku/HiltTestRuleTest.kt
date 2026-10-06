@@ -16,8 +16,13 @@
 
 package de.lemke.sudoku
 
+import androidx.test.core.app.ApplicationProvider
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EarlyEntryPoint
+import dagger.hilt.android.EarlyEntryPoints
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import dagger.hilt.components.SingletonComponent
 import de.lemke.sudoku.data.database.AppDatabase
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
@@ -37,6 +42,12 @@ import org.junit.runner.RunWith
 import org.junit.runners.model.Statement
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+
+@EarlyEntryPoint
+@InstallIn(SingletonComponent::class)
+interface HiltTestRuleTestEntryPoint {
+    fun database(): AppDatabase
+}
 
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
@@ -108,6 +119,30 @@ class HiltTestRuleTest {
                 val failure = runCatching { base.evaluate() }.exceptionOrNull()
                 verify(failure)
             }
+        }
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+@Config(application = HiltTestApplication::class, sdk = [36])
+class HiltTestRuleEarlyEntryPointTest {
+    @get:Rule(order = 0)
+    val outcome = HiltTestRuleTest.OutcomeRule()
+
+    @get:Rule(order = 1)
+    val closeTestDatabases = HiltTestRule.closeDatabasesRule()
+
+    @Test
+    fun `closes the early entry point database after the test`() {
+        val database =
+            EarlyEntryPoints
+                .get(ApplicationProvider.getApplicationContext<HiltTestApplication>(), HiltTestRuleTestEntryPoint::class.java)
+                .database()
+        database.openHelper.writableDatabase
+        database.isOpen shouldBe true
+        outcome.verify = { failure ->
+            failure.shouldBeNull()
+            database.isOpen shouldBe false
         }
     }
 }
