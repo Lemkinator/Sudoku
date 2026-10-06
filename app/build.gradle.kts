@@ -224,6 +224,7 @@ dependencies {
 
     testFixturesImplementation(libs.bundles.room)
     testFixturesImplementation(libs.hilt.android.testing)
+    testFixturesImplementation(libs.junit4)
     testFixturesImplementation(libs.coroutines.test)
     testFixturesImplementation(testFixtures(libs.common.utils))
     kspTestFixtures(libs.hilt.compiler)

@@ -28,6 +28,7 @@ import dagger.hilt.android.EarlyEntryPoint
 import dagger.hilt.android.EarlyEntryPoints
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.components.SingletonComponent
+import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
@@ -46,6 +47,7 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -71,6 +73,9 @@ interface AlarmReceiverTestEntryPoint {
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class AlarmReceiverTest {
+    @get:Rule
+    val closeTestDatabases = HiltTestRule.closeDatabasesRule()
+
     private val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
     private val graph = EarlyEntryPoints.get(context, AlarmReceiverTestEntryPoint::class.java)
     private val notificationManager = shadowOf(context.getSystemService(NotificationManager::class.java))

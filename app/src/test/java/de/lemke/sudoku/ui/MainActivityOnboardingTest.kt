@@ -17,10 +17,10 @@
 package de.lemke.sudoku.ui
 
 import android.os.Looper
-import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.ui.activity.CommonUtilsOOBEActivity
+import de.lemke.sudoku.HiltTestRule
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -38,7 +38,7 @@ import org.robolectric.annotation.Config
 @Config(application = HiltTestApplication::class, sdk = [36])
 class MainActivityOnboardingTest {
     @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    val hiltRule = HiltTestRule(this)
 
     @Test
     fun `onCreate redirects to onboarding and returns early on first launch`() {

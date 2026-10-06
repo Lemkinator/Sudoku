@@ -19,14 +19,23 @@ package de.lemke.sudoku
 import com.lemonappdev.konsist.api.KoModifier
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.declaration.KoClassDeclaration
+import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import com.lemonappdev.konsist.api.declaration.KoFunctionDeclaration
 import com.lemonappdev.konsist.api.declaration.KoInitBlockDeclaration
 import com.lemonappdev.konsist.api.declaration.KoInterfaceDeclaration
 import com.lemonappdev.konsist.api.declaration.KoObjectDeclaration
 import com.lemonappdev.konsist.api.declaration.KoPropertyDeclaration
+import com.lemonappdev.konsist.api.ext.list.withAnnotationOf
+import com.lemonappdev.konsist.api.ext.list.withoutAnnotationOf
 import com.lemonappdev.konsist.api.verify.assertTrue
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.assertLaunchLatchConventions
 import io.kotest.core.spec.style.ShouldSpec
+import org.junit.Rule
+import org.junit.rules.RuleChain
+import org.robolectric.annotation.Config
 
 class CodingConventionsTest : ShouldSpec() {
     private val codeScope = Konsist.scopeFromProduction()
@@ -34,6 +43,101 @@ class CodingConventionsTest : ShouldSpec() {
     init {
         should("launch activities and show dialogs only through the launch latch") {
             codeScope.assertLaunchLatchConventions(extraShowReceivers = setOf("Transaction"))
+        }
+        should("hilt tests declare exactly one outermost HiltTestRule and no raw HiltAndroidRule") {
+            val ruleName = HiltTestRule::class.simpleName!!
+            val rulePackage = HiltTestRule::class.java.packageName
+            val ruleQualifiedName = "$rulePackage.$ruleName"
+            val directConstruction =
+                Regex("""^(${Regex.escape("$rulePackage.")})?${Regex.escape(ruleName)}\((testInstance\s*=\s*)?this\)$""")
+            val forbiddenRuleTypes = setOf(HiltAndroidRule::class.qualifiedName!!, RuleChain::class.qualifiedName!!)
+            Konsist
+                .scopeFromTest()
+                .classes()
+                .withAnnotationOf(HiltAndroidTest::class)
+                .assertTrue(
+                    additionalMessage =
+                        "Declare `@get:Rule(order = 0) val hiltRule = $ruleName(this)` ($ruleQualifiedName) as the only " +
+                            "Hilt rule, ordered before every other rule. A RuleChain-wrapped, aliased or raw HiltAndroidRule " +
+                            "is not allowed.",
+                    testName = this.testCase.name.toString(),
+                ) { koClass ->
+                    val file = koClass.containingFile
+                    val resolvesToFixture =
+                        file.packagee?.name == rulePackage || file.hasImport { it.name == ruleQualifiedName }
+                    val properties = koClass.properties(includeNested = false)
+                    val hiltRule =
+                        properties
+                            .filter { property ->
+                                val typeText = property.type?.text
+                                val initializer = property.value?.trim()
+                                val byType = typeText == ruleQualifiedName || (typeText == ruleName && resolvesToFixture)
+                                val byInitializer =
+                                    initializer != null &&
+                                        directConstruction.matches(initializer) &&
+                                        (initializer.startsWith(ruleQualifiedName) || resolvesToFixture)
+                                byType || byInitializer
+                            }.singleOrNull()
+                    val hiltOrder = hiltRule?.explicitRuleOrder()
+                    val otherRuleOrders = properties.filter { it != hiltRule }.mapNotNull { it.ruleOrder() }
+                    val outermost =
+                        when {
+                            hiltOrder == null -> false
+                            koClass.fullyQualifiedName == HiltTestRuleTest::class.qualifiedName -> true
+                            otherRuleOrders.isEmpty() -> hiltOrder == 0
+                            else -> otherRuleOrders.all { hiltOrder < it }
+                        }
+                    outermost &&
+                        !file.hasImport { it.name == HiltAndroidRule::class.qualifiedName } &&
+                        properties.none { property ->
+                            listOfNotNull(property.type?.text, property.value).any { text ->
+                                file.resolveReferences(text).any(forbiddenRuleTypes::contains)
+                            }
+                        }
+                }
+        }
+        should("early entry point tests declare the database close rule") {
+            val ruleName = HiltTestRule::class.simpleName!!
+            val rulePackage = HiltTestRule::class.java.packageName
+            val ruleQualifiedName = "$rulePackage.$ruleName"
+            val applicationName = HiltTestApplication::class.simpleName!!
+            val applicationQualifiedName = HiltTestApplication::class.qualifiedName!!
+            val closeRuleCall =
+                Regex("""^(${Regex.escape("$rulePackage.")})?${Regex.escape(ruleName)}\.closeDatabasesRule\(\)$""")
+            Konsist
+                .scopeFromTest()
+                .classes()
+                .withAnnotationOf(Config::class)
+                .withoutAnnotationOf(HiltAndroidTest::class)
+                .filter { koClass ->
+                    koClass.annotations
+                        .filter { it.name.substringAfterLast('.') == Config::class.simpleName }
+                        .flatMap { it.arguments }
+                        .any { argument ->
+                            argument.name == "application" &&
+                                argument.value
+                                    ?.trim()
+                                    ?.removeSuffix("::class")
+                                    ?.trim() in
+                                setOf(applicationName, applicationQualifiedName)
+                        }
+                }.assertTrue(
+                    additionalMessage =
+                        "A test that runs on $applicationName without @HiltAndroidTest declares " +
+                            "`@get:Rule val closeTestDatabases = $ruleName.closeDatabasesRule()` ($ruleQualifiedName).",
+                    testName = this.testCase.name.toString(),
+                ) { koClass ->
+                    val file = koClass.containingFile
+                    val resolvesToFixture =
+                        file.packagee?.name == rulePackage || file.hasImport { it.name == ruleQualifiedName }
+                    koClass.properties(includeNested = false).any { property ->
+                        val initializer = property.value?.trim()
+                        property.hasAnnotation { it.name == "Rule" } &&
+                            initializer != null &&
+                            closeRuleCall.matches(initializer) &&
+                            (initializer.startsWith(ruleQualifiedName) || resolvesToFixture)
+                    }
+                }
         }
         should("properties declared before functions in class body") {
             codeScope
@@ -151,3 +255,33 @@ class CodingConventionsTest : ShouldSpec() {
         }
     }
 }
+
+private val identifierChain = Regex("""[A-Za-z_]\w*(\.[A-Za-z_]\w*)*""")
+
+private fun KoPropertyDeclaration.explicitRuleOrder(): Int? =
+    annotations
+        .firstOrNull { it.name == "Rule" }
+        ?.arguments
+        ?.firstOrNull { it.name == "order" || it.name.isEmpty() }
+        ?.value
+        ?.trim()
+        ?.toIntOrNull()
+
+private fun KoPropertyDeclaration.ruleOrder(): Int? =
+    if (hasAnnotation { it.name == "Rule" }) explicitRuleOrder() ?: Rule.DEFAULT_ORDER else null
+
+private fun KoFileDeclaration.resolveReferences(text: String): Set<String> =
+    identifierChain
+        .findAll(text)
+        .flatMap { match ->
+            val segments = match.value.split('.')
+            val head = segments.first()
+            val heads =
+                imports.filter { !it.isWildcard && (it.alias?.name ?: it.name.substringAfterLast('.')) == head }.map { it.name } +
+                    imports.filter { it.isWildcard }.map { "${it.name}.$head" } +
+                    listOfNotNull(packagee?.name?.let { "$it.$head" }) +
+                    head
+            heads.flatMap { resolvedHead ->
+                segments.indices.map { last -> (listOf(resolvedHead) + segments.subList(1, last + 1)).joinToString(".") }
+            }
+        }.toSet()

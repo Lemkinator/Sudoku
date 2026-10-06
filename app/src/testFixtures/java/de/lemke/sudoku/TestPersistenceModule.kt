@@ -53,6 +53,7 @@ object TestPersistenceModule {
             .setQueryExecutor(directExecutor)
             .setTransactionExecutor(directExecutor)
             .build()
+            .let(HiltTestRule::closeAfterTest)
 
     @Provides
     fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()

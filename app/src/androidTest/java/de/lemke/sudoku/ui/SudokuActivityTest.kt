@@ -22,10 +22,10 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
@@ -45,7 +45,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SudokuActivityTest {
     @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    val hiltRule = HiltTestRule(this)
 
     @Inject
     lateinit var settings: SettingsRepository
