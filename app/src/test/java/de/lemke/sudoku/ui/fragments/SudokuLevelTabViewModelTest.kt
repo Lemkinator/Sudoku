@@ -557,6 +557,48 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.reveal.value shouldBe nextLevel.id
         }
 
+        should("a next-level start refused after the level list failed reloads the list, which then shows the saved level") {
+            runTest {
+                val completedItem = SudokuItem(testSudoku(completed = true), "1")
+                val nextLevel = testSudoku(modeLevel = 2)
+                val listFailure = CompletableDeferred<Unit>()
+                every { observeSudokuLevel(SudokuSize.FOUR) } returns
+                    flow {
+                        emit(listOf(completedItem))
+                        listFailure.await()
+                        throw IllegalStateException("observe failed")
+                    } andThen flowOf(listOf(SudokuItem(nextLevel, "2"), completedItem))
+                coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 1
+                coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns nextLevel
+                val viewModel = newViewModel()
+
+                viewModel.state.test {
+                    advanceUntilIdle()
+                    expectMostRecentItem().hasNextLevelToStart shouldBe true
+                    coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 2
+                    listFailure.complete(Unit)
+                    advanceUntilIdle()
+                    viewModel.loadFailed.value shouldBe true
+                    viewModel.onLoadFailureHandled()
+
+                    viewModel.confirmSudokuStart(0, nextLevel)
+                    advanceUntilIdle()
+
+                    expectMostRecentItem() shouldBe
+                        SudokuLevelTabUiState(
+                            sudokuLevel = listOf(SudokuItem(nextLevel, "2"), completedItem),
+                            isLoading = false,
+                            isGeneratingNextLevel = false,
+                            hasNextLevelToStart = false,
+                        )
+                }
+                viewModel.levelStart.value shouldBe LevelStart.Idle
+                viewModel.loadFailed.value shouldBe false
+                coVerify(exactly = 0) { saveSudoku(any(), any()) }
+                verify(exactly = 2) { observeSudokuLevel(SudokuSize.FOUR) }
+            }
+        }
+
         should("a failed next-level save ends the start as failed and keeps the next level reveal pending") {
             val nextLevel = testSudoku(modeLevel = 2)
             every { observeSudokuLevel(SudokuSize.FOUR) } returns flowOf(listOf(SudokuItem(testSudoku(completed = true), "1")))
