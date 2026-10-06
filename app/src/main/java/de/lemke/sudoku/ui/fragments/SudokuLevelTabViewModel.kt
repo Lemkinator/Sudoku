@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.flow.update
@@ -89,14 +90,13 @@ class SudokuLevelTabViewModel @Inject constructor(
     val reveal: StateFlow<SudokuId?>
         field = MutableStateFlow<SudokuId?>(null)
 
+    private val levelListReloads = MutableStateFlow(0)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<SudokuLevelTabUiState> =
-        flow {
-            if (levelInitialized.await()) emitAll(levelStates()) else emit(SudokuLevelTabUiState(isLoading = false))
-        }.catch { e ->
-            if (e is CancellationException) throw e
-            emit(state.value.copy(isLoading = false, isGeneratingNextLevel = false))
-            loadFailed.value = true
-        }.stateInViewModel(viewModelScope, SudokuLevelTabUiState())
+        levelListReloads
+            .flatMapLatest { levelList() }
+            .stateInViewModel(viewModelScope, SudokuLevelTabUiState())
 
     val levelStart: StateFlow<LevelStart>
         field = MutableStateFlow<LevelStart>(LevelStart.Idle)
@@ -112,6 +112,15 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private var nextLevelSudoku: Sudoku? = null
     private var revealedNextLevelId: SudokuId? = null
+
+    private fun levelList(): Flow<SudokuLevelTabUiState> =
+        flow {
+            if (levelInitialized.await()) emitAll(levelStates()) else emit(SudokuLevelTabUiState(isLoading = false))
+        }.catch { e ->
+            if (e is CancellationException) throw e
+            emit(state.value.copy(isLoading = false, isGeneratingNextLevel = false))
+            loadFailed.value = true
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
@@ -177,8 +186,13 @@ class SudokuLevelTabViewModel @Inject constructor(
             val levelUnsaved = getMaxSudokuLevel(size) < sudoku.modeLevel
             if (levelUnsaved) saveSudoku(sudoku)
             levelUnsaved
-        }.map { levelUnsaved -> if (levelUnsaved) LevelStart.Open(sudoku.id) else LevelStart.Idle }
+        }.map { levelUnsaved -> if (levelUnsaved) LevelStart.Open(sudoku.id) else refuseSavedLevel() }
             .getOrElse { e -> if (e is CancellationException) throw e else LevelStart.Failed }
+
+    private fun refuseSavedLevel(): LevelStart {
+        levelListReloads.update { it + 1 }
+        return LevelStart.Idle
+    }
 
     fun onLoadFailureHandled() {
         loadFailed.value = false
