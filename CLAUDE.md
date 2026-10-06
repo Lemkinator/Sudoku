@@ -108,6 +108,7 @@ with common-utils' `stateInViewModel(viewModelScope, initialValue)`. It shares v
 timeout, so Room queries run only while the screen collects. The upstream restarts on every return after that timeout. One-time init
 steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a `viewModelScope.async` that the upstream awaits. A
 `catch` ahead of `stateInViewModel` sets the screen's `loadFailed` state once per failed run; the next return retries.
+A refused next-level start (its level is already saved) also restarts the level list query.
 `SudokuViewModel` owns the played sudoku (`SudokuGame`) and keeps its id in the `SavedStateHandle`, so a restart or a
 follow-up game survives recreation.
 
