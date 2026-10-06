@@ -31,11 +31,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import dagger.hilt.android.testing.BindValue
-import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
@@ -63,7 +63,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SudokuLevelActivityTest {
     @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    val hiltRule = HiltTestRule(this)
 
     @BindValue
     @JvmField

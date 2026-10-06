@@ -28,7 +28,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.testing.BindValue
-import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
@@ -40,6 +39,7 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
+import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -84,7 +84,7 @@ import org.robolectric.shadows.ShadowDialog
 @Config(application = HiltTestApplication::class, sdk = [36])
 class MainActivityMenuTest {
     @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    val hiltRule = HiltTestRule(this)
 
     @BindValue
     @DefaultDispatcher

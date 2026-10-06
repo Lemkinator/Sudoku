@@ -24,7 +24,6 @@ import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.BindValue
-import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
@@ -33,6 +32,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.di.DispatchersModule
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -55,7 +55,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class MainActivityScreenshotTest {
     @get:Rule(order = 0)
-    val hiltRule = HiltAndroidRule(this)
+    val hiltRule = HiltTestRule(this)
 
     @BindValue
     @DefaultDispatcher
