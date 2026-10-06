@@ -149,8 +149,9 @@ Four tools run as part of `./gradlew build`:
   `onSingleLaunchItemSelected`, `singleLaunchSuspending`); show dialogs with `showOnce(tag)`.
   It also requires every `@HiltAndroidTest` to declare exactly one `@get:Rule(order = 0) val hiltRule = HiltTestRule(this)`
   (testFixtures), ordered before every other rule, and no raw `HiltAndroidRule`. `HiltTestRule` runs `HiltAndroidRule`,
-  exposes `inject()`, and closes each in-memory `AppDatabase` the test built. A test that reads the database through an
-  early entry point declares `HiltTestRule.closeDatabasesRule()` instead.
+  exposes `inject()`, and closes each in-memory `AppDatabase` the test built. A class whose `@Config` sets
+  `application = HiltTestApplication::class` without `@HiltAndroidTest`, such as an early-entry-point test, declares a
+  `@get:Rule` property initialized with `HiltTestRule.closeDatabasesRule()` instead.
 
 **ktlint rule overrides** — two rules disabled in `.editorconfig` to match
 community practice (NowInAndroid, Pokedex both use the inline form):

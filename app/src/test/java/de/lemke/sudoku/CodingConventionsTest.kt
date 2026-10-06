@@ -26,13 +26,16 @@ import com.lemonappdev.konsist.api.declaration.KoInterfaceDeclaration
 import com.lemonappdev.konsist.api.declaration.KoObjectDeclaration
 import com.lemonappdev.konsist.api.declaration.KoPropertyDeclaration
 import com.lemonappdev.konsist.api.ext.list.withAnnotationOf
+import com.lemonappdev.konsist.api.ext.list.withoutAnnotationOf
 import com.lemonappdev.konsist.api.verify.assertTrue
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.assertLaunchLatchConventions
 import io.kotest.core.spec.style.ShouldSpec
 import org.junit.Rule
 import org.junit.rules.RuleChain
+import org.robolectric.annotation.Config
 
 class CodingConventionsTest : ShouldSpec() {
     private val codeScope = Konsist.scopeFromProduction()
@@ -91,6 +94,49 @@ class CodingConventionsTest : ShouldSpec() {
                                 file.resolveReferences(text).any(forbiddenRuleTypes::contains)
                             }
                         }
+                }
+        }
+        should("early entry point tests declare the database close rule") {
+            val ruleName = HiltTestRule::class.simpleName!!
+            val rulePackage = HiltTestRule::class.java.packageName
+            val ruleQualifiedName = "$rulePackage.$ruleName"
+            val applicationName = HiltTestApplication::class.simpleName!!
+            val applicationQualifiedName = HiltTestApplication::class.qualifiedName!!
+            val closeRuleCall =
+                Regex("""^(${Regex.escape("$rulePackage.")})?${Regex.escape(ruleName)}\.closeDatabasesRule\(\)$""")
+            Konsist
+                .scopeFromTest()
+                .classes()
+                .withAnnotationOf(Config::class)
+                .withoutAnnotationOf(HiltAndroidTest::class)
+                .filter { koClass ->
+                    koClass.annotations
+                        .filter { it.name.substringAfterLast('.') == Config::class.simpleName }
+                        .flatMap { it.arguments }
+                        .any { argument ->
+                            argument.name == "application" &&
+                                argument.value
+                                    ?.trim()
+                                    ?.removeSuffix("::class")
+                                    ?.trim() in
+                                setOf(applicationName, applicationQualifiedName)
+                        }
+                }.assertTrue(
+                    additionalMessage =
+                        "A test that runs on $applicationName without @HiltAndroidTest declares " +
+                            "`@get:Rule val closeTestDatabases = $ruleName.closeDatabasesRule()` ($ruleQualifiedName).",
+                    testName = this.testCase.name.toString(),
+                ) { koClass ->
+                    val file = koClass.containingFile
+                    val resolvesToFixture =
+                        file.packagee?.name == rulePackage || file.hasImport { it.name == ruleQualifiedName }
+                    koClass.properties(includeNested = false).any { property ->
+                        val initializer = property.value?.trim()
+                        property.hasAnnotation { it.name == "Rule" } &&
+                            initializer != null &&
+                            closeRuleCall.matches(initializer) &&
+                            (initializer.startsWith(ruleQualifiedName) || resolvesToFixture)
+                    }
                 }
         }
         should("properties declared before functions in class body") {
