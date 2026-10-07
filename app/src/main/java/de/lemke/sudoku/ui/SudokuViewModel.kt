@@ -32,6 +32,7 @@ import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import java.io.Serializable
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -73,7 +74,10 @@ sealed interface SudokuShare {
     data class File(val uri: Uri) : Result
 }
 
-/** The wrap-up of the completed sudoku. The activity shows a [Result] and then reports it handled. */
+/**
+ * The wrap-up of the completed sudoku. The activity shows a [Summary] until the player dismisses it, and reports a
+ * [Failed] wrap-up handled once it showed it.
+ */
 sealed interface SudokuCompletion {
     sealed interface Result : SudokuCompletion
 
@@ -88,6 +92,17 @@ sealed interface SudokuCompletion {
 
     data object Failed : Result
 }
+
+/** A shown completion summary the player has not dismissed yet, kept in the saved state. */
+private data class PendingSummary(
+    val followUp: FollowUp?,
+) : Serializable {
+    private companion object {
+        private const val serialVersionUID: Long = 1
+    }
+}
+
+private const val KEY_PENDING_SUMMARY = "pending_summary"
 
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
@@ -120,7 +135,11 @@ class SudokuViewModel @Inject constructor(
         if (id == null) {
             game.value = SudokuGame.NotFound
         } else {
-            viewModelScope.launch { game.value = getSudoku(SudokuId(id))?.let(SudokuGame::Ready) ?: SudokuGame.NotFound }
+            viewModelScope.launch {
+                val sudoku = getSudoku(SudokuId(id))
+                game.value = sudoku?.let(SudokuGame::Ready) ?: SudokuGame.NotFound
+                restorePendingSummary(sudoku)
+            }
         }
     }
 
@@ -172,14 +191,26 @@ class SudokuViewModel @Inject constructor(
         completion.value = SudokuCompletion.Running
         wrapUp =
             viewModelScope.launch {
-                val result = summaryOf(completed)
-                completion.value = result
-                if (result is SudokuCompletion.Summary) playGamesSync.value = playGamesSyncOf(completed)
+                when (val result = summaryOf(completed)) {
+                    is SudokuCompletion.Summary -> {
+                        savedStateHandle[KEY_PENDING_SUMMARY] = PendingSummary(result.followUp)
+                        completion.value = result
+                        playGamesSync.value = playGamesSyncOf(completed)
+                    }
+
+                    SudokuCompletion.Failed -> {
+                        completion.value = result
+                    }
+                }
             }
     }
 
-    fun onCompletionHandled(result: SudokuCompletion.Result) {
-        completion.update { if (it == result) SudokuCompletion.Idle else it }
+    fun onCompletionDismissed(summary: SudokuCompletion.Summary) {
+        if (completion.compareAndSet(summary, SudokuCompletion.Idle)) savedStateHandle.remove<PendingSummary>(KEY_PENDING_SUMMARY)
+    }
+
+    fun onCompletionHandled(failure: SudokuCompletion.Failed) {
+        completion.compareAndSet(failure, SudokuCompletion.Idle)
     }
 
     fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
@@ -199,6 +230,15 @@ class SudokuViewModel @Inject constructor(
     private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
         val saved = orOnFailure(false) { saveSudokuProgress(completed).await().let { true } }
         return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
+    }
+
+    private fun restorePendingSummary(sudoku: Sudoku?) {
+        val pending = savedStateHandle.get<PendingSummary>(KEY_PENDING_SUMMARY) ?: return
+        if (sudoku?.completed == true) {
+            completion.value = SudokuCompletion.Summary(sudoku, pending.followUp)
+        } else {
+            savedStateHandle.remove<PendingSummary>(KEY_PENDING_SUMMARY)
+        }
     }
 
     private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =

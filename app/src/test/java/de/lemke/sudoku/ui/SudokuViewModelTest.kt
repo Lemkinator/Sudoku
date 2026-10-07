@@ -67,6 +67,8 @@ private fun testSudoku(
         fields = MutableList(size.cellCount) { index -> Field(Position.create(index, size), solution = 1, value = 1, given = index == 0) },
     )
 
+private fun SavedStateHandle.restoredAfterProcessDeath(): SavedStateHandle = SavedStateHandle(keys().associateWith { get<Any>(it) })
+
 private fun MockKMatcherScope.rowsOf(sudoku: Sudoku): SudokuWithFields = match { it.sudoku.id == sudoku.id.value }
 
 class SudokuViewModelTest : ShouldSpec(
@@ -222,7 +224,7 @@ class SudokuViewModelTest : ShouldSpec(
             val sync = CompletableDeferred<PlayGamesSync>()
             coEvery { calculatePlayGamesSync(completed) } coAnswers { sync.await() }
             viewModel.onCompleted()
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
+            viewModel.onCompletionDismissed(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
 
             viewModel.onRestart()
 
@@ -577,16 +579,109 @@ class SudokuViewModelTest : ShouldSpec(
             coVerify(exactly = 0) { sudokusRepository.saveSudokuRows(any(), any()) }
         }
 
-        should("onCompletionHandled returns to idle, and a stale handled call keeps the pending summary") {
+        should("the summary stays until it is dismissed, and a stale dismissal keeps it") {
             val completed = testSudoku()
-            val viewModel = playing(completed)
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            val viewModel = playing(completed, savedStateHandle)
             coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
             viewModel.onCompleted()
 
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(completed, null))
+            viewModel.onCompletionDismissed(SudokuCompletion.Summary(completed, null))
             viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
-            viewModel.onCompletionHandled(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
+            viewModel.onCompletionDismissed(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
             viewModel.completion.value shouldBe SudokuCompletion.Idle
+            savedStateHandle.keys() shouldBe setOf(KEY_SUDOKU_ID)
+        }
+
+        should("onCompletionHandled returns a failed wrap-up to idle") {
+            val completed = testSudoku()
+            val viewModel = playing(completed)
+            coEvery { sudokusRepository.saveSudokuRows(rowsOf(completed), true) } throws IllegalStateException("disk full")
+            viewModel.onCompleted()
+
+            viewModel.onCompletionHandled(SudokuCompletion.Failed)
+
+            viewModel.completion.value shouldBe SudokuCompletion.Idle
+        }
+
+        should("a summary pending at process death shows again with its follow-up once the completed sudoku loads") {
+            val completed = testSudoku(SudokuSize.NINE, modeLevel = 5)
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { getMaxSudokuLevel(SudokuSize.NINE) } returns 5
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync(achievementUnlocks = listOf(7))
+            playing(completed, savedStateHandle).onCompleted()
+
+            val restored = viewModel(savedStateHandle.restoredAfterProcessDeath())
+
+            restored.game.value shouldBe SudokuGame.Ready(completed)
+            restored.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEXT_LEVEL)
+            restored.playGamesSync.value shouldBe null
+            coVerify(exactly = 1) { calculatePlayGamesSync(completed) }
+            coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.NINE) }
+        }
+
+        should("a summary without a follow-up pending at process death shows again without one") {
+            val completed = testSudoku(modeLevel = Sudoku.MODE_DAILY)
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            playing(completed, savedStateHandle).onCompleted()
+
+            viewModel(savedStateHandle.restoredAfterProcessDeath()).completion.value shouldBe SudokuCompletion.Summary(completed, null)
+        }
+
+        should("a dismissed summary does not show again after process death") {
+            val completed = testSudoku()
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            val viewModel = playing(completed, savedStateHandle)
+            viewModel.onCompleted()
+            viewModel.onCompletionDismissed(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
+
+            viewModel(savedStateHandle.restoredAfterProcessDeath()).completion.value shouldBe SudokuCompletion.Idle
+        }
+
+        should("dismissing the summary for its follow-up leaves only the next sudoku in the saved state") {
+            val completed = testSudoku()
+            val next = testSudoku().apply { fields[1].value = null }
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            coEvery { generateSudoku(SudokuSize.FOUR, Difficulty.EASY) } returns next
+            val viewModel = playing(completed, savedStateHandle)
+            viewModel.onCompleted()
+
+            viewModel.onCompletionDismissed(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
+            viewModel.onFollowUp(FollowUp.NEW_GAME)
+
+            viewModel.completion.value shouldBe SudokuCompletion.Idle
+            viewModel.game.value shouldBe SudokuGame.Ready(next)
+            savedStateHandle.keys() shouldBe setOf(KEY_SUDOKU_ID)
+            savedStateHandle.get<String>(KEY_SUDOKU_ID) shouldBe next.id.value
+        }
+
+        should("process death while the completed sudoku is saved shows no summary after the restore") {
+            val completed = testSudoku()
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { sudokusRepository.saveSudokuRows(rowsOf(completed), true) } coAnswers { CompletableDeferred<Unit>().await() }
+            val viewModel = playing(completed, savedStateHandle)
+            viewModel.onCompleted()
+            viewModel.completion.value shouldBe SudokuCompletion.Running
+
+            val restored = viewModel(savedStateHandle.restoredAfterProcessDeath())
+
+            restored.game.value shouldBe SudokuGame.Ready(completed)
+            restored.completion.value shouldBe SudokuCompletion.Idle
+        }
+
+        should("a pending summary of a sudoku that no longer loads completed is dropped") {
+            val completed = testSudoku()
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            playing(completed, savedStateHandle).onCompleted()
+            val restoredState = savedStateHandle.restoredAfterProcessDeath()
+            completed.fields[1].value = null
+
+            viewModel(restoredState).completion.value shouldBe SudokuCompletion.Idle
+            restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID)
         }
 
         should("onPlayGamesSyncHandled clears the sync, and a stale handled call keeps the pending one") {

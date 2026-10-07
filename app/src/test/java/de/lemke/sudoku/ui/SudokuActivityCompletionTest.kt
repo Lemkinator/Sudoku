@@ -217,7 +217,7 @@ class SudokuActivityCompletionTest {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog?
             dialog.shouldNotBeNull()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "New Game"
-            activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+            activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEW_GAME)
             activity.viewModel.playGamesSync.value shouldBe null
         }
     }
@@ -232,6 +232,7 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             shadowOf(Looper.getMainLooper()).idle()
             activity.sudoku.id shouldNotBe sudokuId
+            activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
         }
     }
 
@@ -325,7 +326,7 @@ class SudokuActivityCompletionTest {
                 val dialogs = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>()
                 dialogs.size shouldBe 1
                 dialogs.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "Next level"
-                activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+                activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEXT_LEVEL)
             }
             verify(exactly = 0) { queueSudokuSave(any(), any()) }
             coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
@@ -333,7 +334,7 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `recreating the activity while the completion dialog shows dismisses it without running a follow-up again`() {
+    fun `recreating the activity while the completion dialog shows reshows it once without a second wrap-up`() {
         mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
         every { any<Activity>().applyPlayGamesSync(any()) } just Runs
         var reviewRequested = false
@@ -358,13 +359,11 @@ class SudokuActivityCompletionTest {
 
                 dialog.isShowing shouldBe false
                 scenario.onActivity { activity ->
-                    ShadowDialog
-                        .getShownDialogs()
-                        .filterIsInstance<AlertDialog>()
-                        .filter { it.isShowing }
-                        .shouldBeEmpty()
+                    val reshown = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().filter { it.isShowing }
+                    reshown.size shouldBe 1
+                    reshown.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "Next level"
                     activity.sudoku.id shouldBe sudokuId
-                    activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+                    activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEXT_LEVEL)
                 }
                 verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
                 verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
@@ -373,6 +372,51 @@ class SudokuActivityCompletionTest {
             }
         } finally {
             unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+        }
+    }
+
+    @Test
+    fun `OK closes the completion dialog for good, also after a recreate`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.select(0)
+                activity.select(activity.sudoku.itemCount)
+            }
+            awaitUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
+            val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
+
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            scenario.recreate()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+
+            dialog.isShowing shouldBe false
+            ShadowDialog
+                .getShownDialogs()
+                .filterIsInstance<AlertDialog>()
+                .filter { it.isShowing }
+                .shouldBeEmpty()
+            scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Idle }
+        }
+    }
+
+    @Test
+    fun `back on the completion dialog closes it for good`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        completeBoard(sudokuId) { activity ->
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+
+            dialog.onBackPressedDispatcher.onBackPressed()
+            shadowOf(Looper.getMainLooper()).idle()
+
+            dialog.isShowing shouldBe false
+            activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
+            activity.sudoku.id shouldBe sudokuId
         }
     }
 
@@ -405,12 +449,13 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `a restart after the completion dialog waits without a loading dialog until the Play Games sync is calculated`() {
+    fun `a restart after OK on the completion dialog waits without a loading dialog until the Play Games sync is calculated`() {
         val sudokuId = SudokuId.generate()
         runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
         syncCalculated = CompletableDeferred()
         completeBoard(sudokuId) { activity ->
-            (ShadowDialog.getLatestDialog() as AlertDialog).dismiss()
+            (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
 
             activity.viewModel.onRestart()
             shadowOf(Looper.getMainLooper()).idle()
@@ -443,7 +488,9 @@ class SudokuActivityCompletionTest {
                     activity.select(activity.sudoku.itemCount)
                 }
                 shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
-                scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Idle }
+                scenario.onActivity { activity ->
+                    activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEW_GAME)
+                }
                 coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
 
                 scenario.recreate()
