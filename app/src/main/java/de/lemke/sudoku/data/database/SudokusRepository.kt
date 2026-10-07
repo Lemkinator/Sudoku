@@ -54,7 +54,7 @@ class SudokusRepository @Inject constructor(
 
     suspend fun saveSudokuRows(
         rows: SudokuWithFields,
-        onlyUpdate: Boolean = false,
+        onlyUpdate: Boolean,
     ) {
         if (!onlyUpdate) replacedBy(rows.sudoku)?.let { sudokuDao.delete(it) }
         sudokuDao.insert(rows.sudoku, rows.fields)
@@ -80,5 +80,5 @@ class SudokusRepository @Inject constructor(
             else -> {
                 null
             }
-        }?.takeIf { sudokuFromDb(it) != null }?.sudoku?.takeIf { it.id != sudoku.id }
+        }?.takeIf { it.sudoku.id != sudoku.id && sudokuFromDb(it) != null }?.sudoku
 }
