@@ -22,6 +22,7 @@ import android.os.Looper
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -401,6 +402,33 @@ class SudokuActivityCompletionTest {
                 .filterIsInstance<AlertDialog>()
                 .filter { it.isShowing }
                 .shouldBeEmpty()
+            scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Idle }
+        }
+    }
+
+    @Test
+    fun `pausing and resuming while the completion dialog shows keeps that one dialog, and OK still closes it`() {
+        val sudokuId = SudokuId.generate()
+        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity { activity ->
+                activity.select(0)
+                activity.select(activity.sudoku.itemCount)
+            }
+            awaitUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
+            val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
+
+            scenario.moveToState(Lifecycle.State.STARTED)
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            shadowOf(Looper.getMainLooper()).idle()
+
+            ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>() shouldBe listOf(dialog)
+            dialog.isShowing shouldBe true
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
+            shadowOf(Looper.getMainLooper()).idle()
+            dialog.isShowing shouldBe false
             scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Idle }
         }
     }

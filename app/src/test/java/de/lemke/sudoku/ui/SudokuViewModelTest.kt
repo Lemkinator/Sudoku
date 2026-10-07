@@ -684,6 +684,21 @@ class SudokuViewModelTest : ShouldSpec(
             restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID)
         }
 
+        should("a pending summary of a sudoku that no longer exists is dropped") {
+            val completed = testSudoku()
+            val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+            coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+            playing(completed, savedStateHandle).onCompleted()
+            val restoredState = savedStateHandle.restoredAfterProcessDeath()
+            coEvery { getSudoku(completed.id) } returns null
+
+            val restored = viewModel(restoredState)
+
+            restored.game.value shouldBe SudokuGame.NotFound
+            restored.completion.value shouldBe SudokuCompletion.Idle
+            restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID)
+        }
+
         should("onPlayGamesSyncHandled clears the sync, and a stale handled call keeps the pending one") {
             val completed = testSudoku()
             val viewModel = playing(completed)
