@@ -60,7 +60,7 @@ class QueueSudokuSaveUseCase @Inject constructor(
     /** Queues [sudoku] like [invoke] for a caller that does not await the save, and logs a failed save. */
     fun launch(
         sudoku: Sudoku,
-        onlyUpdate: Boolean = false,
+        onlyUpdate: Boolean,
     ) {
         invoke(sudoku, onlyUpdate).invokeOnCompletion { cause ->
             if (cause != null && cause !is CancellationException) Log.e(TAG, "Saving sudoku failed", cause)
