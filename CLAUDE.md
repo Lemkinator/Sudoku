@@ -110,7 +110,9 @@ steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a 
 `catch` ahead of `stateInViewModel` sets the screen's `loadFailed` state once per failed run; the next return retries.
 A refused next-level start (its level is already saved) also restarts the level list query.
 `SudokuViewModel` owns the played sudoku (`SudokuGame`) and keeps its id in the `SavedStateHandle`, so a restart or a
-follow-up game survives recreation.
+follow-up game survives recreation. Every write of the played sudoku goes through `QueueSudokuSaveUseCase`: it maps
+the rows on the calling thread and runs the writes one after another in `@ApplicationScope`, so a closing screen
+cannot cancel a save. The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
 
 ## Notable Dependencies
 
