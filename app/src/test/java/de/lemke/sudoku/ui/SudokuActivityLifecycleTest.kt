@@ -33,6 +33,7 @@ import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -96,6 +97,9 @@ class SudokuActivityLifecycleTest {
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
+
+    @Inject
+    lateinit var sudokusRepository: SudokusRepository
 
     @Before
     fun setup() {
@@ -229,6 +233,38 @@ class SudokuActivityLifecycleTest {
                         android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 ) shouldNotBe 0
             }
+        }
+    }
+
+    // endregion
+
+    // region saving
+
+    @Test
+    fun `placing a value saves it`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.select(1)
+            activity.select(activity.sudoku.itemCount)
+
+            runBlocking { sudokusRepository.getSudokuById(activity.sudoku.id) }.shouldNotBeNull()[1].value shouldBe 1
+        }
+
+    @Test
+    fun `pausing the activity saves the elapsed time`() {
+        val sudoku = formulaicSudoku()
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity {
+                it.userSettings.animationsEnabled = false
+                it.sudoku.stopTimer()
+                it.sudoku.seconds = 42
+            }
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+
+            runBlocking { sudokusRepository.getSudokuById(sudoku.id) }.shouldNotBeNull().seconds shouldBe 42
         }
     }
 

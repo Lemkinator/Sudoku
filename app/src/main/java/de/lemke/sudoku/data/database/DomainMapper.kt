@@ -72,6 +72,9 @@ fun sudokuToDb(sudoku: Sudoku): SudokuDb =
         errorsMade = sudoku.errorsMade,
     )
 
+fun sudokuWithFieldsToDb(sudoku: Sudoku): SudokuWithFields =
+    SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = sudoku.fields.map { fieldToDb(it, sudoku.id) })
+
 fun fieldFromDb(fieldDb: FieldDb?): Field? {
     val size = fieldDb?.let { SudokuSize.fromValueOrNull(it.gameSize) }
     return if (fieldDb?.solution == null || size == null) {

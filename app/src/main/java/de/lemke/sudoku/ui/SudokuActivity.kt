@@ -298,7 +298,7 @@ class SudokuActivity : AppCompatActivity() {
         menuPausePlayVisible = true
         invalidateOptionsMenu()
         if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
-        lifecycleScope.launch { viewModel.saveSudokuProgress(sudoku) }
+        viewModel.onPaused()
     }
 
     private fun animateGameButtonsVisibility(visible: Boolean) {
@@ -325,23 +325,31 @@ class SudokuActivity : AppCompatActivity() {
     private fun onCompletionResult(result: SudokuCompletion.Result) {
         when (result) {
             is SudokuCompletion.Summary -> {
-                val dialog =
-                    AlertDialog
-                        .Builder(this@SudokuActivity)
-                        .setTitle(R.string.completed_title)
-                        .setMessage(result.sudoku.getLocalStatisticsString(resources))
-                        .setNeutralButton(commonutilsR.string.commonutils_ok, null)
-                result.followUp?.let { followUp ->
-                    dialog.setPositiveButton(followUp.buttonText) { _, _ -> singleLaunch { viewModel.onFollowUp(followUp) } }
-                }
-                dialog.showOnce(COMPLETED_DIALOG_TAG)?.let { completionDialog = it }
+                showCompletionSummary(result)
             }
 
-            SudokuCompletion.Failed -> {
+            is SudokuCompletion.Failed -> {
                 toast(R.string.error_saving_sudoku_failed)
+                viewModel.onCompletionHandled(result)
             }
         }
-        viewModel.onCompletionHandled(result)
+    }
+
+    private fun showCompletionSummary(summary: SudokuCompletion.Summary) {
+        val dialog =
+            AlertDialog
+                .Builder(this@SudokuActivity)
+                .setTitle(R.string.completed_title)
+                .setMessage(summary.sudoku.getLocalStatisticsString(resources))
+                .setNeutralButton(commonutilsR.string.commonutils_ok) { _, _ -> viewModel.onCompletionDismissed(summary) }
+                .setOnCancelListener { viewModel.onCompletionDismissed(summary) }
+        summary.followUp?.let { followUp ->
+            dialog.setPositiveButton(followUp.buttonText) { _, _ ->
+                viewModel.onCompletionDismissed(summary)
+                singleLaunch { viewModel.onFollowUp(followUp) }
+            }
+        }
+        dialog.showOnce(COMPLETED_DIALOG_TAG)?.let { completionDialog = it }
     }
 
     private fun onPlayGamesSync(sync: PlayGamesSync) {
@@ -821,7 +829,7 @@ class SudokuActivity : AppCompatActivity() {
             gameAdapter.updateFieldView(position.index)
             checkAnyNumberCompleted()
             checkRowColumnBlockCompleted(position)
-            lifecycleScope.launch { viewModel.saveSudokuProgress(sudoku) }
+            viewModel.onProgressChanged()
         }
 
         override fun onCompleted(position: Position) {
