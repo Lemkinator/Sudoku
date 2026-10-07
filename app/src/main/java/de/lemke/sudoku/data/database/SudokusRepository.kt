@@ -80,5 +80,5 @@ class SudokusRepository @Inject constructor(
             else -> {
                 null
             }
-        }?.sudoku?.takeIf { it.id != sudoku.id }
+        }?.takeIf { sudokuFromDb(it) != null }?.sudoku?.takeIf { it.id != sudoku.id }
 }
