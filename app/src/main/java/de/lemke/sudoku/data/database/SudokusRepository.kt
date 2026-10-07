@@ -17,9 +17,9 @@
 package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.map
 
@@ -50,14 +50,14 @@ class SudokusRepository @Inject constructor(
     suspend fun saveSudoku(
         sudoku: Sudoku,
         onlyUpdate: Boolean = false,
+    ) = saveSudokuRows(sudokuWithFieldsToDb(sudoku), onlyUpdate)
+
+    suspend fun saveSudokuRows(
+        rows: SudokuWithFields,
+        onlyUpdate: Boolean = false,
     ) {
-        if (!onlyUpdate) {
-            when {
-                sudoku.isDailySudoku -> getDailySudoku(sudoku.created.toLocalDate())?.let { if (it.id != sudoku.id) deleteSudoku(it) }
-                sudoku.isSudokuLevel -> getSudokuLevel(sudoku.size, sudoku.modeLevel)?.let { if (it.id != sudoku.id) deleteSudoku(it) }
-            }
-        }
-        sudokuDao.insert(sudokuToDb(sudoku), sudoku.fields.map { fieldToDb(it, sudoku.id) })
+        if (!onlyUpdate) replacedBy(rows.sudoku)?.let { sudokuDao.delete(it) }
+        sudokuDao.insert(rows.sudoku, rows.fields)
     }
 
     suspend fun getMaxSudokuLevel(size: SudokuSize): Int = sudokuDao.getMaxSudokuLevel(size.value) ?: 0
@@ -67,11 +67,18 @@ class SudokusRepository @Inject constructor(
         if (invalidRows.isNotEmpty()) sudokuDao.delete(*invalidRows.map { it.sudoku }.toTypedArray())
     }
 
-    private suspend fun getSudokuLevel(
-        size: SudokuSize,
-        level: Int,
-    ): Sudoku? = sudokuFromDb(sudokuDao.getSudokuLevel(size.value, level))
+    private suspend fun replacedBy(sudoku: SudokuDb): SudokuDb? =
+        when {
+            sudoku.modeLevel == MODE_DAILY -> {
+                sudokuDao.getDailySudokus().firstOrNull { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
+            }
 
-    private suspend fun getDailySudoku(date: LocalDate): Sudoku? =
-        sudokuFromDb(sudokuDao.getDailySudokus().firstOrNull { it.sudoku.created.toLocalDate() == date })
+            sudoku.modeLevel > 0 -> {
+                sudokuDao.getSudokuLevel(sudoku.size, sudoku.modeLevel)
+            }
+
+            else -> {
+                null
+            }
+        }?.sudoku?.takeIf { it.id != sudoku.id }
 }

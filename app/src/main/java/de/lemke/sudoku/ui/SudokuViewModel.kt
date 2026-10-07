@@ -26,7 +26,7 @@ import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
-import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
@@ -96,7 +96,7 @@ class SudokuViewModel @Inject constructor(
     private val generateSudoku: GenerateSudokuUseCase,
     private val generateSudokuLevel: GenerateSudokuLevelUseCase,
     private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
-    private val saveSudoku: SaveSudokuUseCase,
+    private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
 ) : ViewModel() {
@@ -135,7 +135,7 @@ class SudokuViewModel @Inject constructor(
         viewModelScope.launch {
             wrapUp?.join()
             sudoku.reset()
-            saveSudoku(sudoku)
+            queueSudokuSave(sudoku).await()
             game.value = SudokuGame.Ready(sudoku)
         }
     }
@@ -149,7 +149,7 @@ class SudokuViewModel @Inject constructor(
                     FollowUp.NEW_GAME -> generateSudoku(completed.size, completed.difficulty)
                     FollowUp.NEXT_LEVEL -> generateSudokuLevel(completed.size, completed.modeLevel + 1)
                 }
-            saveSudoku(next)
+            queueSudokuSave(next).await()
             savedStateHandle[KEY_SUDOKU_ID] = next.id.value
             game.value = SudokuGame.Ready(next)
         }
@@ -186,10 +186,18 @@ class SudokuViewModel @Inject constructor(
         playGamesSync.update { if (it == sync) null else it }
     }
 
-    suspend fun saveSudokuProgress(sudoku: Sudoku) = saveSudoku(sudoku, onlyUpdate = true)
+    fun onPaused() = savePlayingSudokuProgress()
+
+    fun onProgressChanged() = savePlayingSudokuProgress()
+
+    private fun savePlayingSudokuProgress() {
+        (game.value as? SudokuGame.Playing)?.let { saveSudokuProgress(it.sudoku) }
+    }
+
+    private fun saveSudokuProgress(sudoku: Sudoku) = queueSudokuSave(sudoku, onlyUpdate = true)
 
     private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
-        val saved = orOnFailure(false) { saveSudokuProgress(completed).let { true } }
+        val saved = orOnFailure(false) { saveSudokuProgress(completed).await().let { true } }
         return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
     }
 

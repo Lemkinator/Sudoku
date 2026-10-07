@@ -298,7 +298,7 @@ class SudokuActivity : AppCompatActivity() {
         menuPausePlayVisible = true
         invalidateOptionsMenu()
         if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
-        lifecycleScope.launch { viewModel.saveSudokuProgress(sudoku) }
+        viewModel.onPaused()
     }
 
     private fun animateGameButtonsVisibility(visible: Boolean) {
@@ -821,7 +821,7 @@ class SudokuActivity : AppCompatActivity() {
             gameAdapter.updateFieldView(position.index)
             checkAnyNumberCompleted()
             checkRowColumnBlockCompleted(position)
-            lifecycleScope.launch { viewModel.saveSudokuProgress(sudoku) }
+            viewModel.onProgressChanged()
         }
 
         override fun onCompleted(position: Position) {

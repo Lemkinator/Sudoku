@@ -100,9 +100,8 @@ class DomainMapperTest : ShouldSpec(
 
         should("sudokuFromDb round-trips a valid sudoku") {
             val sudoku = sudoku()
-            val sudokuWithFields = SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = sudoku.fields.map { fieldToDb(it, sudoku.id) })
 
-            val restored = sudokuFromDb(sudokuWithFields)
+            val restored = sudokuFromDb(sudokuWithFieldsToDb(sudoku))
 
             restored.shouldNotBeNull()
             restored.id shouldBe sudoku.id
