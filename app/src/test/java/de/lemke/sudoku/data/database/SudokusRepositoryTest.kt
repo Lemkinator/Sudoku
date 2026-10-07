@@ -240,6 +240,47 @@ class SudokusRepositoryTest {
         }
 
     @Test
+    fun `saveSudoku replaces the readable level sudoku behind an unreadable one for the same size and level`() =
+        runTest {
+            val unreadable = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            database.sudokuDao().insert(
+                sudokuToDb(unreadable),
+                unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) },
+            )
+            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 3))
+
+            val third = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            repository.saveSudoku(third)
+
+            database
+                .sudokuDao()
+                .getAll()
+                .map { it.sudoku.id }
+                .toSet() shouldBe setOf(unreadable.id.value, third.id.value)
+        }
+
+    @Test
+    fun `saveSudoku replaces the readable daily sudoku behind an unreadable one for the same day`() =
+        runTest {
+            val day = LocalDateTime.of(2026, 3, 14, 12, 0)
+            val unreadable = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
+            database.sudokuDao().insert(
+                sudokuToDb(unreadable),
+                unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) },
+            )
+            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY, created = day.minusSeconds(1)))
+
+            val third = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
+            repository.saveSudoku(third)
+
+            database
+                .sudokuDao()
+                .getAll()
+                .map { it.sudoku.id }
+                .toSet() shouldBe setOf(unreadable.id.value, third.id.value)
+        }
+
+    @Test
     fun `saveSudoku does not delete the daily sudoku being updated`() =
         runTest {
             val daily = sudoku(modeLevel = Sudoku.MODE_DAILY)

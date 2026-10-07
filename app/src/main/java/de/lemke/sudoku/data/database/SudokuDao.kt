@@ -63,10 +63,10 @@ interface SudokuDao {
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE size = :size AND modeLevel = :level")
-    suspend fun getSudokuLevel(
+    suspend fun getSudokuLevels(
         size: Int,
         level: Int,
-    ): SudokuWithFields?
+    ): List<SudokuWithFields>
 
     @Query("SELECT MAX(modeLevel) FROM sudoku WHERE size = :size AND modeLevel > 0")
     suspend fun getMaxSudokuLevel(size: Int): Int?

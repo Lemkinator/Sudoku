@@ -70,15 +70,15 @@ class SudokusRepository @Inject constructor(
     private suspend fun replacedBy(sudoku: SudokuDb): SudokuDb? =
         when {
             sudoku.modeLevel == MODE_DAILY -> {
-                sudokuDao.getDailySudokus().firstOrNull { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
+                sudokuDao.getDailySudokus().filter { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
             }
 
             sudoku.modeLevel > 0 -> {
-                sudokuDao.getSudokuLevel(sudoku.size, sudoku.modeLevel)
+                sudokuDao.getSudokuLevels(sudoku.size, sudoku.modeLevel)
             }
 
             else -> {
-                null
+                emptyList()
             }
-        }?.takeIf { it.sudoku.id != sudoku.id && sudokuFromDb(it) != null }?.sudoku
+        }.firstOrNull { sudokuFromDb(it) != null }?.takeIf { it.sudoku.id != sudoku.id }?.sudoku
 }
