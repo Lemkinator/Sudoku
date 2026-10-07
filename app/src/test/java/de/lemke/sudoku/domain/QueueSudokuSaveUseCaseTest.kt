@@ -16,6 +16,8 @@
 
 package de.lemke.sudoku.domain
 
+import android.app.Application
+import android.util.Log
 import de.lemke.sudoku.data.database.SudokuWithFields
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
@@ -23,17 +25,24 @@ import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
-import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 
 private fun testSudoku(): Sudoku =
     Sudoku.create(
@@ -44,25 +53,30 @@ private fun testSudoku(): Sudoku =
     )
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class QueueSudokuSaveUseCaseTest : ShouldSpec(
-    {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val saved = mutableListOf<Pair<Int?, Boolean>>()
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class, sdk = [36])
+class QueueSudokuSaveUseCaseTest {
+    private val sudokusRepository = mockk<SudokusRepository>()
+    private val saved = mutableListOf<Pair<Int?, Boolean>>()
 
-        fun queue(): QueueSudokuSaveUseCase {
-            val dispatcher = UnconfinedTestDispatcher()
-            return QueueSudokuSaveUseCase(sudokusRepository, CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
+    private fun queue(): QueueSudokuSaveUseCase {
+        val dispatcher = UnconfinedTestDispatcher()
+        return QueueSudokuSaveUseCase(sudokusRepository, CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
+    }
+
+    private fun failureLogs(): List<ShadowLog.LogItem> = ShadowLog.getLogsForTag("QueueSudokuSaveUseCase").filter { it.type == Log.ERROR }
+
+    @Before
+    fun setUp() {
+        ShadowLog.reset()
+        coEvery { sudokusRepository.saveSudokuRows(any(), any()) } coAnswers {
+            saved += firstArg<SudokuWithFields>().fields[0].value to secondArg<Boolean>()
         }
+    }
 
-        beforeEach {
-            clearMocks(sudokusRepository)
-            saved.clear()
-            coEvery { sudokusRepository.saveSudokuRows(any(), any()) } coAnswers {
-                saved += firstArg<SudokuWithFields>().fields[0].value to secondArg<Boolean>()
-            }
-        }
-
-        should("save the rows of the sudoku at the time it was queued") {
+    @Test
+    fun `save the rows of the sudoku at the time it was queued`() =
+        runTest {
             val sudoku = testSudoku()
             val gate = CompletableDeferred<Unit>()
             val queueSudokuSave = queue()
@@ -77,9 +91,12 @@ class QueueSudokuSaveUseCaseTest : ShouldSpec(
 
             save.await()
             saved shouldBe listOf(null to true)
+            failureLogs().shouldBeEmpty()
         }
 
-        should("start a save only after every earlier one finished") {
+    @Test
+    fun `start a save only after every earlier one finished`() =
+        runTest {
             val sudoku = testSudoku()
             val gate = CompletableDeferred<Unit>()
             val queueSudokuSave = queue()
@@ -98,7 +115,9 @@ class QueueSudokuSaveUseCaseTest : ShouldSpec(
             saved shouldBe listOf(null to true, 1 to false)
         }
 
-        should("fail only the failed save and run the next one") {
+    @Test
+    fun `fail only the failed save and run the next one, leaving the failure to the awaiting caller`() =
+        runTest {
             val sudoku = testSudoku()
             val queueSudokuSave = queue()
             coEvery { sudokusRepository.saveSudokuRows(any(), true) } throws IllegalStateException("disk full")
@@ -108,6 +127,44 @@ class QueueSudokuSaveUseCaseTest : ShouldSpec(
 
             failed.getCompletionExceptionOrNull().shouldBeInstanceOf<IllegalStateException>()
             saved shouldBe listOf(null to false)
+            failureLogs().shouldBeEmpty()
         }
-    },
-)
+
+    @Test
+    fun `launch saves the rows after every earlier save`() {
+        val sudoku = testSudoku()
+        val gate = CompletableDeferred<Unit>()
+        val queueSudokuSave = queue()
+        coEvery { sudokusRepository.saveSudokuRows(any(), false) } coAnswers {
+            gate.await()
+            saved += firstArg<SudokuWithFields>().fields[0].value to false
+        }
+
+        queueSudokuSave(sudoku)
+        sudoku.fields[0].value = 1
+        queueSudokuSave.launch(sudoku, onlyUpdate = true)
+        gate.complete(Unit)
+
+        saved shouldBe listOf(null to false, 1 to true)
+        failureLogs().shouldBeEmpty()
+    }
+
+    @Test
+    fun `launch logs a failed save`() {
+        val disk = IllegalStateException("disk full")
+        coEvery { sudokusRepository.saveSudokuRows(any(), true) } throws disk
+
+        queue().launch(testSudoku(), onlyUpdate = true)
+
+        failureLogs().map { it.msg to it.throwable } shouldBe listOf("Saving sudoku failed" to disk)
+    }
+
+    @Test
+    fun `launch logs no failure for a cancelled save`() {
+        coEvery { sudokusRepository.saveSudokuRows(any(), true) } throws CancellationException("closed")
+
+        queue().launch(testSudoku(), onlyUpdate = true)
+
+        failureLogs().shouldBeEmpty()
+    }
+}

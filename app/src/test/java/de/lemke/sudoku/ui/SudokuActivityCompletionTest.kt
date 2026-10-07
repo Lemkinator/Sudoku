@@ -149,6 +149,7 @@ class SudokuActivityCompletionTest {
         hiltRule.inject()
         val queue = QueueSudokuSaveUseCase(sudokusRepository, applicationScope, testDefaultDispatcher)
         every { queueSudokuSave(any(), any()) } answers { queue(firstArg(), secondArg()) }
+        every { queueSudokuSave.launch(any(), any()) } answers { queue.launch(firstArg(), secondArg()) }
         coEvery { getMaxSudokuLevel(any()) } coAnswers {
             maxLevelRead.await()
             sudokusRepository.getMaxSudokuLevel(firstArg())

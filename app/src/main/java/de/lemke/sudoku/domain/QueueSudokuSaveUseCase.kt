@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.domain
 
+import android.util.Log
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
@@ -23,6 +24,7 @@ import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -53,5 +55,19 @@ class QueueSudokuSaveUseCase @Inject constructor(
                     sudokusRepository.saveSudokuRows(rows, onlyUpdate)
                 }.also { lastSave = it }
         }
+    }
+
+    /** Queues [sudoku] like [invoke] for a caller that does not await the save, and logs a failed save. */
+    fun launch(
+        sudoku: Sudoku,
+        onlyUpdate: Boolean = false,
+    ) {
+        invoke(sudoku, onlyUpdate).invokeOnCompletion { cause ->
+            if (cause != null && cause !is CancellationException) Log.e(TAG, "Saving sudoku failed", cause)
+        }
+    }
+
+    private companion object {
+        private const val TAG = "QueueSudokuSaveUseCase"
     }
 }

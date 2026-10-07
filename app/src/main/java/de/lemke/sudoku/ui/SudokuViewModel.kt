@@ -222,13 +222,11 @@ class SudokuViewModel @Inject constructor(
     fun onProgressChanged() = savePlayingSudokuProgress()
 
     private fun savePlayingSudokuProgress() {
-        (game.value as? SudokuGame.Playing)?.let { saveSudokuProgress(it.sudoku) }
+        (game.value as? SudokuGame.Playing)?.let { queueSudokuSave.launch(it.sudoku, onlyUpdate = true) }
     }
 
-    private fun saveSudokuProgress(sudoku: Sudoku) = queueSudokuSave(sudoku, onlyUpdate = true)
-
     private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
-        val saved = orOnFailure(false) { saveSudokuProgress(completed).await().let { true } }
+        val saved = orOnFailure(false) { queueSudokuSave(completed, onlyUpdate = true).await().let { true } }
         return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
     }
 

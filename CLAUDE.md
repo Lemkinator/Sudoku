@@ -112,7 +112,8 @@ A refused next-level start (its level is already saved) also restarts the level 
 `SudokuViewModel` owns the played sudoku (`SudokuGame`) and keeps its id in the `SavedStateHandle`, so a restart or a
 follow-up game survives recreation. Every write of the played sudoku goes through `QueueSudokuSaveUseCase`: it maps
 the rows on the calling thread and runs the writes one after another in `@ApplicationScope`, so a closing screen
-cannot cancel a save. The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
+cannot cancel a save. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
+The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
 
 ## Notable Dependencies
 
