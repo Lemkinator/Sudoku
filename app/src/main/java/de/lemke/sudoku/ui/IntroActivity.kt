@@ -629,7 +629,11 @@ class IntroActivity : AppCompatActivity() {
                 }
 
                 NotificationChoice.RequestPermission -> {
-                    SDK_INT < Build.VERSION_CODES.TIRAMISU || requestPermissionLauncher.tryLaunch(POST_NOTIFICATIONS)
+                    if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        requestPermissionLauncher.tryLaunch(POST_NOTIFICATIONS)
+                    } else {
+                        true.also { viewModel.onNotificationPermissionResult(isGranted = true) }
+                    }
                 }
             }
         if (settled) viewModel.onNotificationChoiceHandled(result)

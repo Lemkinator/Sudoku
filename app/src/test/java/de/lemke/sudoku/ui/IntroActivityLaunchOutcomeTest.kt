@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.app.AlarmManager
+import android.content.Context
 import android.content.DialogInterface.BUTTON_NEGATIVE
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
@@ -66,17 +67,8 @@ class IntroActivityLaunchOutcomeTest {
     @After
     fun tearDown() = setupOnboarding()
 
-    /** The intent OOBE received from the main activity's first launch, retargeted at the intro step. */
-    private fun onboardingIntroIntent(): Intent {
-        val main = Robolectric.buildActivity(MainActivity::class.java).create()
-        idle()
-        val oobe = shadowOf(main.get()).nextStartedActivity.shouldNotBeNull()
-        main.destroy()
-        return Intent(oobe).setClass(context, IntroActivity::class.java)
-    }
-
     private fun launchIntro(block: (ActivityController<IntroActivity>) -> Unit) {
-        val controller = Robolectric.buildActivity(IntroActivity::class.java, onboardingIntroIntent()).setup()
+        val controller = Robolectric.buildActivity(IntroActivity::class.java, onboardingIntroIntent(context)).setup()
         idle()
         try {
             block(controller)
@@ -187,4 +179,16 @@ class IntroActivityLaunchOutcomeTest {
             trigger.get(Calendar.MINUTE) shouldBe 0
             activity.shouldHaveStartedMainActivity()
         }
+}
+
+/**
+ * The intent OOBE received from the main activity's first launch, retargeted at the intro step.
+ * Needs `setupOnboarding(listOf(IntroActivity::class.java))` and settings that still show OOBE.
+ */
+internal fun onboardingIntroIntent(context: Context): Intent {
+    val main = Robolectric.buildActivity(MainActivity::class.java).create()
+    shadowOf(Looper.getMainLooper()).idle()
+    val oobe = shadowOf(main.get()).nextStartedActivity.shouldNotBeNull()
+    main.destroy()
+    return Intent(oobe).setClass(context, IntroActivity::class.java)
 }

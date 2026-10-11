@@ -19,17 +19,22 @@ package de.lemke.sudoku.ui
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.os.Looper
 import androidx.appcompat.app.AlertDialog
+import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.ui.utils.setupOnboarding
 import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications
+import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
 import de.lemke.sudoku.di.DailyNotificationsModule
-import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,7 +45,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 
-/** API 32 has no runtime notification permission, so the intro has nothing to request. */
+/** API 32 has no runtime notification permission, so it counts as granted. */
 @UninstallModules(DailyNotificationsModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
@@ -55,12 +60,20 @@ class IntroActivityLegacyPermissionTest {
     @JvmField
     val dailyNotifications: DailyNotifications = fakeDailyNotifications
 
+    private val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+
     @Before
-    fun setup() = hiltRule.inject()
+    fun setup() {
+        hiltRule.inject()
+        setupOnboarding(listOf(IntroActivity::class.java))
+    }
+
+    @After
+    fun tearDown() = setupOnboarding()
 
     @Test
-    fun `a permission request below API 33 launches nothing and is handled`() {
-        val controller = Robolectric.buildActivity(IntroActivity::class.java).setup()
+    fun `accepting notifications below API 33 saves them as granted and advances without a permission request`() {
+        val controller = Robolectric.buildActivity(IntroActivity::class.java, onboardingIntroIntent(context)).setup()
         try {
             val activity = controller.get()
             activity.binding.introContinueButton.performClick()
@@ -69,9 +82,14 @@ class IntroActivityLegacyPermissionTest {
             shadowOf(Looper.getMainLooper()).idle()
 
             shadowOf(activity).lastRequestedPermission.shouldBeNull()
+            fakeDailyNotifications.scheduled shouldBe AlarmTime(hour = 9, minute = 0)
+            shadowOf(activity)
+                .nextStartedActivity
+                .shouldNotBeNull()
+                .component
+                ?.className shouldBe "de.lemke.sudoku.ui.MainActivity"
+            activity.isFinishing.shouldBeTrue()
             activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
-            fakeDailyNotifications.scheduled.shouldBeNull()
-            activity.isFinishing.shouldBeFalse()
         } finally {
             controller.pause().stop().destroy()
         }
