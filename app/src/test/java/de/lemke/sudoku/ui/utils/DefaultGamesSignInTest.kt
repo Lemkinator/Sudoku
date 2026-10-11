@@ -30,9 +30,8 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 
-private val AUTHENTICATED: AuthenticationResult = listOf(AuthenticationResult.zza, AuthenticationResult.zzb).first { it.isAuthenticated }
-private val NOT_AUTHENTICATED: AuthenticationResult =
-    listOf(AuthenticationResult.zza, AuthenticationResult.zzb).first { !it.isAuthenticated }
+private val AUTHENTICATED: AuthenticationResult = mockk { every { isAuthenticated } returns true }
+private val NOT_AUTHENTICATED: AuthenticationResult = mockk { every { isAuthenticated } returns false }
 
 class DefaultGamesSignInTest : ShouldSpec(
     {
