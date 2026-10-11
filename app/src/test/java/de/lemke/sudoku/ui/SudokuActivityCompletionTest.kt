@@ -336,10 +336,8 @@ class SudokuActivityCompletionTest {
     fun `recreating the activity while the completion dialog shows reshows it once without a second wrap-up`() {
         mockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         var reviewRequested = false
-        var syncsAppliedBeforeReview: Int? = null
         every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers {
             reviewRequested = true
-            syncsAppliedBeforeReview = fakePlayGamesSyncApplier.applied.size
         }
         try {
             val sudokuId = SudokuId.generate()
