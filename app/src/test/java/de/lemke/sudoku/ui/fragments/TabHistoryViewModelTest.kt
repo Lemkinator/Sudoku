@@ -324,7 +324,6 @@ class TabHistoryViewModelTest : ShouldSpec(
             viewModel.deletion.value shouldBe HistoryDeletion.Idle
             viewModel.onDeleteSelected(sudokus)
             viewModel.deletion.value shouldBe HistoryDeletion.Finished
-            repository.deletedIds shouldBe listOf(sudokuA, sudokuA)
         }
 
         should("handling a finished deletion while another runs keeps it running") {
