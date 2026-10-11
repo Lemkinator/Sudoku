@@ -115,6 +115,87 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
+    fun `getAllSudokus orders by updated descending`() =
+        runTest {
+            val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val oldest = sudoku(modeLevel = 1, updated = LocalDateTime.of(2026, 3, 13, 12, 0))
+            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            repository.saveSudoku(middle)
+            repository.saveSudoku(oldest)
+            repository.saveSudoku(newest)
+
+            repository.getAllSudokus().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+        }
+
+    @Test
+    fun `observeAllSudokus orders by updated descending`() =
+        runTest {
+            val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val oldest = sudoku(modeLevel = 1, updated = LocalDateTime.of(2026, 3, 13, 12, 0))
+            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            repository.saveSudoku(middle)
+            repository.saveSudoku(oldest)
+            repository.saveSudoku(newest)
+
+            repository.observeAllSudokus().test {
+                awaitItem().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+            }
+        }
+
+    @Test
+    fun `observeAllNormalSudokus orders by updated descending`() =
+        runTest {
+            val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val oldest = sudoku(updated = LocalDateTime.of(2026, 3, 13, 12, 0))
+            val newest = sudoku(updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            repository.saveSudoku(middle)
+            repository.saveSudoku(oldest)
+            repository.saveSudoku(newest)
+
+            repository.observeAllNormalSudokus().test {
+                awaitItem().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+            }
+        }
+
+    @Test
+    fun `getDailySudokus orders by created descending`() =
+        runTest {
+            val middle = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val oldest =
+                sudoku(
+                    modeLevel = Sudoku.MODE_DAILY,
+                    created = LocalDateTime.of(2026, 3, 13, 12, 0),
+                    updated = LocalDateTime.of(2026, 3, 20, 12, 0),
+                )
+            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 15, 12, 0))
+            repository.saveSudoku(middle)
+            repository.saveSudoku(oldest)
+            repository.saveSudoku(newest)
+
+            repository.getDailySudokus().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+        }
+
+    @Test
+    fun `observeDailySudokus orders by created descending`() =
+        runTest {
+            val middle = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val oldest =
+                sudoku(
+                    modeLevel = Sudoku.MODE_DAILY,
+                    created = LocalDateTime.of(2026, 3, 13, 12, 0),
+                    updated = LocalDateTime.of(2026, 3, 20, 12, 0),
+                )
+            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 15, 12, 0))
+            repository.saveSudoku(middle)
+            repository.saveSudoku(oldest)
+            repository.saveSudoku(newest)
+
+            repository.observeDailySudokus().test {
+                awaitItem().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+            }
+        }
+
+    @Test
     fun `getDailySudokus returns only daily sudokus`() =
         runTest {
             repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
