@@ -40,9 +40,11 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.GamesSignInModule
 import de.lemke.sudoku.ui.utils.FakePlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.FakePlayGamesSyncApplier
 import de.lemke.sudoku.ui.utils.GamesSignInProvider
 import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.PlayGamesScreen
+import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -107,6 +109,10 @@ class MainActivityGamesSignInTest {
     @BindValue
     @JvmField
     val playGamesIntentProvider: PlayGamesIntentProvider = fakeIntentProvider
+
+    @BindValue
+    @JvmField
+    val playGamesSyncApplier: PlayGamesSyncApplier = FakePlayGamesSyncApplier()
 
     @Inject
     lateinit var settings: SettingsRepository

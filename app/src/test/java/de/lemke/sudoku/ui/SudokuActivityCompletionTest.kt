@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import android.widget.TextView
@@ -40,6 +39,7 @@ import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.di.GamesSignInModule
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
@@ -53,7 +53,12 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
-import de.lemke.sudoku.ui.utils.applyPlayGamesSync
+import de.lemke.sudoku.ui.utils.DefaultGamesSignInProvider
+import de.lemke.sudoku.ui.utils.DefaultPlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.FakePlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -61,17 +66,14 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.Runs
 import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
-import io.mockk.verifyOrder
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
@@ -93,7 +95,7 @@ import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
+@UninstallModules(DispatchersModule::class, GamesSignInModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -130,6 +132,20 @@ class SudokuActivityCompletionTest {
     @BindValue
     @JvmField
     val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase = mockk()
+
+    private val fakePlayGamesSyncApplier = FakePlayGamesSyncApplier()
+
+    @BindValue
+    @JvmField
+    val playGamesSyncApplier: PlayGamesSyncApplier = fakePlayGamesSyncApplier
+
+    @BindValue
+    @JvmField
+    val gamesSignInProvider: GamesSignInProvider = DefaultGamesSignInProvider()
+
+    @BindValue
+    @JvmField
+    val playGamesIntentProvider: PlayGamesIntentProvider = DefaultPlayGamesIntentProvider()
 
     private var maxLevelRead = CompletableDeferred(Unit)
 
@@ -337,10 +353,13 @@ class SudokuActivityCompletionTest {
 
     @Test
     fun `recreating the activity while the completion dialog shows reshows it once without a second wrap-up`() {
-        mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
-        every { any<Activity>().applyPlayGamesSync(any()) } just Runs
+        mockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         var reviewRequested = false
-        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers { reviewRequested = true }
+        var syncsAppliedBeforeReview: Int? = null
+        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers {
+            reviewRequested = true
+            syncsAppliedBeforeReview = fakePlayGamesSyncApplier.applied.size
+        }
         try {
             val sudokuId = SudokuId.generate()
             runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1)) }
@@ -367,13 +386,13 @@ class SudokuActivityCompletionTest {
                     activity.sudoku.id shouldBe sudokuId
                     activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEXT_LEVEL)
                 }
-                verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
+                fakePlayGamesSyncApplier.applied.size shouldBe 1
                 verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
                 coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
                 coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
             }
         } finally {
-            unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+            unmockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         }
     }
 
@@ -501,10 +520,13 @@ class SudokuActivityCompletionTest {
 
     @Test
     fun `recreating the activity while the Play Games sync is calculated applies it once, then asks for the in-app review`() {
-        mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
-        every { any<Activity>().applyPlayGamesSync(any()) } just Runs
+        mockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         var reviewRequested = false
-        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers { reviewRequested = true }
+        var syncsAppliedBeforeReview: Int? = null
+        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers {
+            reviewRequested = true
+            syncsAppliedBeforeReview = fakePlayGamesSyncApplier.applied.size
+        }
         try {
             val sudokuId = SudokuId.generate()
             runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
@@ -527,16 +549,13 @@ class SudokuActivityCompletionTest {
                 awaitUntil { reviewRequested }
 
                 scenario.onActivity { activity -> activity.viewModel.playGamesSync.value shouldBe null }
-                verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
+                fakePlayGamesSyncApplier.applied.size shouldBe 1
+                syncsAppliedBeforeReview shouldBe 1
                 verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
-                verifyOrder {
-                    any<Activity>().applyPlayGamesSync(any())
-                    any<AppCompatActivity>().showInAppReviewIfPossible(any())
-                }
                 coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
             }
         } finally {
-            unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+            unmockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         }
     }
 

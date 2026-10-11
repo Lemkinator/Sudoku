@@ -19,12 +19,25 @@ package de.lemke.sudoku.ui.utils
 import android.app.Activity
 import com.google.android.gms.games.PlayGames
 import de.lemke.sudoku.domain.model.PlayGamesSync
+import javax.inject.Inject
 
-/** Performs the actual `PlayGames` client calls described by [sync]; requires an [Activity] for the Play Games UI overlays. */
-fun Activity.applyPlayGamesSync(sync: PlayGamesSync) {
-    val achievements = PlayGames.getAchievementsClient(this)
-    val leaderboards = PlayGames.getLeaderboardsClient(this)
-    sync.leaderboardScores.forEach { (leaderboardId, score) -> leaderboards.submitScore(getString(leaderboardId), score) }
-    sync.achievementUnlocks.forEach { achievementId -> achievements.unlock(getString(achievementId)) }
-    sync.achievementIncrements.forEach { (achievementId, amount) -> achievements.increment(getString(achievementId), amount) }
+/** Performs the `PlayGames` client calls described by a [PlayGamesSync]; needs an [Activity] for the Play Games UI overlays. */
+interface PlayGamesSyncApplier {
+    fun apply(
+        activity: Activity,
+        sync: PlayGamesSync,
+    )
+}
+
+class DefaultPlayGamesSyncApplier @Inject constructor() : PlayGamesSyncApplier {
+    override fun apply(
+        activity: Activity,
+        sync: PlayGamesSync,
+    ) {
+        val achievements = PlayGames.getAchievementsClient(activity)
+        val leaderboards = PlayGames.getLeaderboardsClient(activity)
+        sync.leaderboardScores.forEach { (leaderboardId, score) -> leaderboards.submitScore(activity.getString(leaderboardId), score) }
+        sync.achievementUnlocks.forEach { achievementId -> achievements.unlock(activity.getString(achievementId)) }
+        sync.achievementIncrements.forEach { (achievementId, amount) -> achievements.increment(activity.getString(achievementId), amount) }
+    }
 }
