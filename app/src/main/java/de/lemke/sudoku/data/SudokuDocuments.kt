@@ -49,11 +49,10 @@ interface SudokuDocuments {
 class DefaultSudokuDocuments @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) : SudokuDocuments {
-    override fun readText(uri: Uri): String =
-        context.contentResolver
-            .openInputStream(uri)
-            ?.bufferedReader()
-            ?.use { it.readText() } ?: throw FileNotFoundException("No content for $uri")
+    override fun readText(uri: Uri): String {
+        val stream = context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content for $uri")
+        return stream.reader().use { it.readText() }
+    }
 
     override fun writeText(
         uri: Uri,
@@ -73,10 +72,11 @@ class DefaultSudokuDocuments @Inject constructor(
     override fun readAsset(path: String): String =
         context.assets
             .open(path)
-            .bufferedReader()
+            .reader()
             .use { it.readText() }
 
-    override fun describe(uri: Uri): DocumentInfo =
-        DocumentFile.fromSingleUri(context, uri)?.let { DocumentInfo(exists = it.exists(), readable = it.canRead(), mimeType = it.type) }
-            ?: DocumentInfo(exists = false, readable = false, mimeType = null)
+    override fun describe(uri: Uri): DocumentInfo {
+        val document = DocumentFile.fromSingleUri(context, uri) ?: return DocumentInfo(exists = false, readable = false, mimeType = null)
+        return DocumentInfo(exists = document.exists(), readable = document.canRead(), mimeType = document.type)
+    }
 }

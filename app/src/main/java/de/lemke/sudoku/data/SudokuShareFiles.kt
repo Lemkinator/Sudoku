@@ -47,8 +47,8 @@ class DefaultSudokuShareFiles @Inject constructor(
         val uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider", file)
         context.contentResolver
             .openOutputStream(uri)!!
-            .bufferedWriter()
-            .use { bufferedWriter -> bufferedWriter.write(json) }
+            .writer()
+            .use { writer -> writer.write(json) }
         return uri
     }
 }
