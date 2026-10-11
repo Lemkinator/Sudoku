@@ -63,6 +63,12 @@ class DefaultGamesSignInTest : ShouldSpec(
             DefaultGamesSignIn().signIn(activity).result.shouldBeTrue()
         }
 
+        should("report a declined sign-in of the activity's client as not authenticated") {
+            every { client.signIn() } returns Tasks.forResult(NOT_AUTHENTICATED)
+
+            DefaultGamesSignIn().signIn(activity).result.shouldBeFalse()
+        }
+
         should("fail the sign-in task when the client's sign-in fails") {
             every { client.signIn() } returns Tasks.forException(IllegalStateException("no network"))
 

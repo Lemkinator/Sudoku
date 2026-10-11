@@ -370,10 +370,11 @@ class SudokuActivityLifecycleTest {
     fun `onPrepareOptionsMenu skips the game items a menu does not hold`() =
         launch(formulaicSudoku()) { activity ->
             val menu = RoboMenu(activity)
+            val share = menu.add(0, R.id.menu_share, 0, "Share").apply { isVisible = false }
 
             activity.onPrepareOptionsMenu(menu).shouldBeTrue()
 
-            menu.size() shouldBe 0
+            share.isVisible.shouldBeFalse()
         }
 
     // endregion
