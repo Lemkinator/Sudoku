@@ -16,26 +16,19 @@
 
 package de.lemke.sudoku.domain
 
-import android.content.Context
+import de.lemke.sudoku.data.FakeDailyNotifications
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.mockk.mockk
 
-/**
- * [IsNotificationPermissionGrantedUseCase] evaluates `SDK_INT < TIRAMISU || ContextCompat.checkSelfPermission(...)`.
- * On a plain JVM unit test (no Robolectric, per this task's pure-JVM Kotest style) `Build.VERSION.SDK_INT` resolves
- * to the android.jar stub's default of `0`, so the `SDK_INT < TIRAMISU` check is always true and the
- * `checkSelfPermission` branch is permanently unreachable here — same precedent as
- * [de.lemke.sudoku.ui.SettingsViewModelTest]'s doc comment for `systemNotificationsEnabled`. Exercising the
- * permission-check branch is out of scope for this pure-JVM test; see the task report.
- */
 class IsNotificationPermissionGrantedUseCaseTest : ShouldSpec(
     {
-        val context = mockk<Context>(relaxed = true)
-        val useCase = IsNotificationPermissionGrantedUseCase(context)
+        should("report a granted notification permission") {
+            IsNotificationPermissionGrantedUseCase(FakeDailyNotifications(permissionGranted = true))().shouldBeTrue()
+        }
 
-        should("returns true because SDK_INT is always below TIRAMISU on the plain JVM") {
-            useCase().shouldBeTrue()
+        should("report a denied notification permission") {
+            IsNotificationPermissionGrantedUseCase(FakeDailyNotifications(permissionGranted = false))().shouldBeFalse()
         }
     },
 )

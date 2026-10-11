@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.domain
+package de.lemke.sudoku.data
 
 import android.Manifest
 import android.app.AlarmManager
 import android.app.Application
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.UserSettings
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -32,8 +31,6 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId
 import java.util.Calendar
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -42,45 +39,42 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
-class SendDailyNotificationUseCaseTest {
+class DefaultDailyNotificationsTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
 
     private val fixedNow = Instant.parse("2026-06-15T12:00:00Z")
     private val clock = Clock.fixed(fixedNow, ZoneId.systemDefault())
-    private val useCase = SendDailyNotificationUseCase(context, userSettings, clock)
+    private val dailyNotifications = DefaultDailyNotifications(context, clock)
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     private val channelId get() = context.getString(R.string.daily_sudoku_notification_channel_id)
     private val notificationId = 5
 
     @Test
-    fun `invoke posts a notification when permission is granted`() {
+    fun `post posts a notification when permission is granted`() {
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-        useCase()
+        dailyNotifications.post()
 
         shadowOf(notificationManager).getNotification(notificationId).shouldNotBeNull()
         notificationManager.getNotificationChannel(channelId).shouldNotBeNull()
     }
 
     @Test
-    fun `invoke creates the channel but skips the notification when permission is denied`() {
+    fun `post creates the channel but skips the notification when permission is denied`() {
         shadowOf(context as Application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
 
-        useCase()
+        dailyNotifications.post()
 
         shadowOf(notificationManager).getNotification(notificationId).shouldBeNull()
         notificationManager.getNotificationChannel(channelId).shouldNotBeNull()
     }
 
     @Test
-    fun `setDailySudokuNotification true schedules an alarm later today when the configured time has not passed yet`() {
+    fun `schedule sets an alarm later today when the configured time has not passed yet`() {
         val now = Calendar.getInstance().apply { timeInMillis = clock.millis() }
-        userSettings.dailySudokuNotificationHour = 23
-        userSettings.dailySudokuNotificationMinute = 59
 
-        useCase.setDailySudokuNotification(true)
+        dailyNotifications.schedule(hour = 23, minute = 59)
 
         val scheduled = shadowOf(alarmManager).nextScheduledAlarm
         scheduled.shouldNotBeNull()
@@ -93,16 +87,14 @@ class SendDailyNotificationUseCaseTest {
     }
 
     @Test
-    fun `setDailySudokuNotification true rolls the alarm to tomorrow when the configured time already passed today`() {
+    fun `schedule rolls the alarm to tomorrow when the configured time already passed today`() {
         val tomorrow =
             Calendar.getInstance().apply {
                 timeInMillis = clock.millis()
                 add(Calendar.DATE, 1)
             }
-        userSettings.dailySudokuNotificationHour = 0
-        userSettings.dailySudokuNotificationMinute = 0
 
-        useCase.setDailySudokuNotification(true)
+        dailyNotifications.schedule(hour = 0, minute = 0)
 
         val scheduled = shadowOf(alarmManager).nextScheduledAlarm
         scheduled.shouldNotBeNull()
@@ -114,14 +106,52 @@ class SendDailyNotificationUseCaseTest {
     }
 
     @Test
-    fun `setDailySudokuNotification false cancels the scheduled alarm`() {
-        userSettings.dailySudokuNotificationHour = 12
-        userSettings.dailySudokuNotificationMinute = 0
-        useCase.setDailySudokuNotification(true)
+    fun `cancel removes the scheduled alarm`() {
+        dailyNotifications.schedule(hour = 12, minute = 0)
         shadowOf(alarmManager).nextScheduledAlarm.shouldNotBeNull()
 
-        useCase.setDailySudokuNotification(false)
+        dailyNotifications.cancel()
 
         shadowOf(alarmManager).nextScheduledAlarm.shouldBeNull()
+    }
+
+    @Test
+    fun `isPermissionGranted follows the POST_NOTIFICATIONS grant`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        dailyNotifications.isPermissionGranted() shouldBe true
+
+        shadowOf(context).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        dailyNotifications.isPermissionGranted() shouldBe false
+    }
+
+    @Test
+    fun `isBlocked is false while notifications, the channel and the permission are on`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        dailyNotifications.post()
+
+        dailyNotifications.isBlocked() shouldBe false
+    }
+
+    @Test
+    fun `isBlocked is true while the app's notifications are off`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        shadowOf(notificationManager).setNotificationsEnabled(false)
+
+        dailyNotifications.isBlocked() shouldBe true
+    }
+
+    @Test
+    fun `isBlocked is true while the daily channel is muted`() {
+        shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        notificationManager.createNotificationChannel(NotificationChannel(channelId, "Daily", NotificationManager.IMPORTANCE_NONE))
+
+        dailyNotifications.isBlocked() shouldBe true
+    }
+
+    @Test
+    fun `isBlocked is true while the permission is denied`() {
+        shadowOf(context as Application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+
+        dailyNotifications.isBlocked() shouldBe true
     }
 }

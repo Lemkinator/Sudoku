@@ -17,13 +17,14 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.data.FakeSharedPreferences
+import de.lemke.sudoku.data.FakeDailyNotifications
+import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
 import de.lemke.sudoku.data.UserSettings
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.mockk.clearMocks
-import io.mockk.mockk
-import io.mockk.verify
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -32,27 +33,29 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 class SetDailyNotificationEnabledUseCaseTest : ShouldSpec(
     {
         lateinit var userSettings: UserSettings
-        val sendDailyNotification = mockk<SendDailyNotificationUseCase>(relaxUnitFun = true)
+        lateinit var dailyNotifications: FakeDailyNotifications
         lateinit var useCase: SetDailyNotificationEnabledUseCase
 
         beforeEach {
-            clearMocks(sendDailyNotification)
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            useCase = SetDailyNotificationEnabledUseCase(userSettings, sendDailyNotification)
+            dailyNotifications = FakeDailyNotifications()
+            useCase = SetDailyNotificationEnabledUseCase(userSettings, SendDailyNotificationUseCase(dailyNotifications, userSettings))
         }
 
         should("writes true to userSettings and enables the daily notification") {
             useCase(true)
 
             userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
-            verify(exactly = 1) { sendDailyNotification.setDailySudokuNotification(enable = true) }
+            dailyNotifications.scheduled shouldBe AlarmTime(hour = 9, minute = 0)
         }
 
         should("writes false to userSettings and disables the daily notification") {
+            useCase(true)
+
             useCase(false)
 
             userSettings.dailySudokuNotificationEnabled.shouldBeFalse()
-            verify(exactly = 1) { sendDailyNotification.setDailySudokuNotification(enable = false) }
+            dailyNotifications.scheduled.shouldBeNull()
         }
     },
 )
