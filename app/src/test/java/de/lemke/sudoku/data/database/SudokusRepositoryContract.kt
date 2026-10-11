@@ -218,6 +218,17 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
+    fun `deleteSudoku of a sudoku that was never saved keeps the stored sudokus`() =
+        runTest {
+            val kept = sudoku()
+            repository.saveSudoku(kept)
+
+            repository.deleteSudoku(sudoku())
+
+            storedIds() shouldBe setOf(kept.id.value)
+        }
+
+    @Test
     fun `saveSudoku replaces the existing daily sudoku for the same day`() =
         runTest {
             val day = LocalDateTime.now()

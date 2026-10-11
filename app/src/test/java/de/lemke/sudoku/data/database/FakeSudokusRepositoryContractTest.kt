@@ -16,10 +16,27 @@
 
 package de.lemke.sudoku.data.database
 
+import de.lemke.sudoku.testSudoku
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
+import org.junit.Test
+
 class FakeSudokusRepositoryContractTest : SudokusRepositoryContract() {
     override val repository = FakeSudokusRepository()
 
     override suspend fun insertRows(rows: SudokuWithFields) = repository.insertRows(rows)
 
     override suspend fun storedIds(): Set<String> = repository.storedRows.map { it.sudoku.id }.toSet()
+
+    @Test
+    fun `deletedIds records only the sudokus a delete removed`() =
+        runTest {
+            val stored = testSudoku()
+            repository.saveSudoku(stored)
+
+            repository.deleteSudoku(testSudoku())
+            repository.deleteSudoku(stored)
+
+            repository.deletedIds shouldBe listOf(stored.id)
+        }
 }

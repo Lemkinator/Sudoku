@@ -23,6 +23,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -136,11 +137,13 @@ class FakeSudokusRepository : SudokusRepository {
     }
 
     private fun delete(ids: Set<String>) {
-        table.update { current ->
-            val kept = current.rows.filterNot { it.sudoku.id in ids }
-            if (kept.size == current.rows.size) current else Table(kept, current.writes + 1)
-        }
-        synchronized(recordedDeletions) { recordedDeletions += ids.map(::SudokuId) }
+        val before =
+            table.getAndUpdate { current ->
+                val kept = current.rows.filterNot { it.sudoku.id in ids }
+                if (kept.size == current.rows.size) current else Table(kept, current.writes + 1)
+            }
+        val removedIds = ids.filter { id -> before.rows.any { it.sudoku.id == id } }
+        synchronized(recordedDeletions) { recordedDeletions += removedIds.map(::SudokuId) }
     }
 
     private fun replacedBy(sudoku: SudokuDb): SudokuDb? =
