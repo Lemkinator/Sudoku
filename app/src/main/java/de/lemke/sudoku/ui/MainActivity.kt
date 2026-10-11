@@ -92,7 +92,7 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
-import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.GamesSignIn
 import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.PlayGamesScreen
 import de.lemke.sudoku.ui.utils.PlayGamesScreenLaunch
@@ -120,7 +120,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var userSettings: UserSettings
 
     @Inject
-    lateinit var gamesSignInProvider: GamesSignInProvider
+    lateinit var gamesSignIn: GamesSignIn
 
     @Inject
     lateinit var playGamesIntentProvider: PlayGamesIntentProvider
@@ -286,9 +286,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openPlayGamesScreen(screen: PlayGamesScreen) {
-        val client = gamesSignInProvider.getClient(this)
         singleLaunchSuspending(
-            work = { preparePlayGamesScreen(client, playGamesIntentProvider, screen) },
+            work = { preparePlayGamesScreen(gamesSignIn, playGamesIntentProvider, screen) },
             then = { launch ->
                 when (launch) {
                     is PlayGamesScreenLaunch.Ready -> {

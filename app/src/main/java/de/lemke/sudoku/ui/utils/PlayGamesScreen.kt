@@ -18,8 +18,6 @@ package de.lemke.sudoku.ui.utils
 
 import android.app.Activity
 import android.content.Intent
-import com.google.android.gms.games.AuthenticationResult
-import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.tasks.Task
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
@@ -52,12 +50,12 @@ sealed interface PlayGamesScreenLaunch {
  * [PlayGamesScreenLaunch.Unavailable]; the interactive sign-in waits for the user.
  */
 suspend fun Activity.preparePlayGamesScreen(
-    client: GamesSignInClient,
+    gamesSignIn: GamesSignIn,
     intentProvider: PlayGamesIntentProvider,
     screen: PlayGamesScreen,
 ): PlayGamesScreenLaunch {
-    val check = client.isAuthenticated.silentCompletionOrNull() ?: return PlayGamesScreenLaunch.Unavailable
-    return if (check.authenticated || client.signIn().awaitCompletion().authenticated) {
+    val check = gamesSignIn.isAuthenticated(this).silentCompletionOrNull() ?: return PlayGamesScreenLaunch.Unavailable
+    return if (check.authenticated || gamesSignIn.signIn(this).awaitCompletion().authenticated) {
         intentProvider
             .getIntent(this, screen)
             .silentCompletionOrNull()
@@ -68,7 +66,7 @@ suspend fun Activity.preparePlayGamesScreen(
     }
 }
 
-private val Task<AuthenticationResult>.authenticated: Boolean get() = resultOrNull()?.isAuthenticated == true
+private val Task<Boolean>.authenticated: Boolean get() = resultOrNull() == true
 
 private suspend fun <T> Task<T>.silentCompletionOrNull(): Task<T>? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { awaitCompletion() }
 

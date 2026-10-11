@@ -17,14 +17,28 @@
 package de.lemke.sudoku.ui.utils
 
 import android.app.Activity
-import com.google.android.gms.games.GamesSignInClient
+import com.google.android.gms.games.AuthenticationResult
 import com.google.android.gms.games.PlayGames
+import com.google.android.gms.tasks.Task
+import java.util.concurrent.Executor
 import javax.inject.Inject
 
-interface GamesSignInProvider {
-    fun getClient(activity: Activity): GamesSignInClient
+/** Checks and starts the Play Games sign-in; each task results in whether the player is signed in. */
+interface GamesSignIn {
+    fun isAuthenticated(activity: Activity): Task<Boolean>
+
+    fun signIn(activity: Activity): Task<Boolean>
 }
 
-class DefaultGamesSignInProvider @Inject constructor() : GamesSignInProvider {
-    override fun getClient(activity: Activity): GamesSignInClient = PlayGames.getGamesSignInClient(activity)
+class DefaultGamesSignIn @Inject constructor() : GamesSignIn {
+    override fun isAuthenticated(activity: Activity): Task<Boolean> =
+        PlayGames.getGamesSignInClient(activity).isAuthenticated.authenticated()
+
+    override fun signIn(activity: Activity): Task<Boolean> = PlayGames.getGamesSignInClient(activity).signIn().authenticated()
+
+    private fun Task<AuthenticationResult>.authenticated(): Task<Boolean> = continueWith(directExecutor) { it.result.isAuthenticated }
+
+    private companion object {
+        val directExecutor = Executor { it.run() }
+    }
 }
