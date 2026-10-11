@@ -110,20 +110,14 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `isDailyNotificationChecked is false and does not consult system state when dailySudokuNotificationEnabled is false`() {
+    fun `isDailyNotificationChecked is false when dailySudokuNotificationEnabled is false although system notifications are on`() {
         userSettings.dailySudokuNotificationEnabled = false
+        dailyNotifications.blocked = false
         viewModel.isDailyNotificationChecked.shouldBeFalse()
     }
 
     @Test
     fun `isDailyNotificationChecked is false when system notifications are disabled`() {
-        userSettings.dailySudokuNotificationEnabled = true
-        dailyNotifications.blocked = true
-        viewModel.isDailyNotificationChecked.shouldBeFalse()
-    }
-
-    @Test
-    fun `isDailyNotificationChecked is false when the notification channel's importance is IMPORTANCE_NONE`() {
         userSettings.dailySudokuNotificationEnabled = true
         dailyNotifications.blocked = true
         viewModel.isDailyNotificationChecked.shouldBeFalse()
