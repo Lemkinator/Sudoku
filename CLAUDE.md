@@ -80,8 +80,9 @@ de.lemke.sudoku/
 `Dispatchers.IO`/`.Default`/`.Main` directly in use cases.
 
 **Play Games:** the drawer's achievements and leaderboards run `preparePlayGamesScreen` in `singleLaunchSuspending`,
-because sign-in needs the Activity. Its silent authentication check and intent fetch give up after 10 s and end
-silently.
+because sign-in needs the Activity. It signs in through `GamesSignIn` and fetches the screen intent through
+`PlayGamesIntentProvider`. The silent authentication check and the intent fetch give up after 10 s and end silently.
+`PlayGamesSyncApplier` submits a calculated `PlayGamesSync`.
 
 **Domain models:** `Sudoku` (4×4/9×9/16×16), `Field` (cell with solution/value/notes), `Position` (row/col/block), `Difficulty` (
 VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`, `setHint()`, `errorLimitReached()`).
@@ -98,6 +99,12 @@ provides singleton `AppDatabase`; `DispatchersModule` provides `@IoDispatcher`/`
 CLAUDE.md convention).
 
 **Room:** Two entities (`SudokuDb`, `FieldDb`). Schema exported to `app/schemas/`. Bidirectional mappers in `data/database/`.
+Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the DAO code (`di/SudokusRepositoryModule.kt`).
+
+**Boundaries:** framework and Play Games calls sit behind interfaces with a `Default*` implementation bound in `di/`:
+`SudokuDocuments` (picked documents and assets), `SudokuShareFiles` (shared sudoku files), `DailyNotifications`
+(notification channel, alarm and permission state), `GamesSignIn`, `PlayGamesIntentProvider` and `PlayGamesSyncApplier`.
+Use cases and ViewModels take no `Context`.
 
 **Settings:** All user preferences stored via `UserSettings : SettingsRepository`, a SharedPreferences-backed implementation from the
 `common-utils` library, constructor-injected into ViewModels. `di/SettingsModule.kt` provides it via Hilt. Daily sudoku notifications
@@ -173,6 +180,15 @@ See the shared Robolectric/JUnit 5 policy in `A:\repo\android\CLAUDE.md`. This r
 JUnit 5 (Kotest runs on the JUnit 5 platform — see `ArchitectureTest.kt`); JUnit 4 +
 `junit-vintage-engine` is used only for tests that need Robolectric (screenshot tests, Hilt
 activities, Context-backed settings/use cases).
+
+## Test Doubles
+
+Tests run real use cases over fakes in `src/test`: `FakeSudokusRepository` (in-memory rows with the DAO orderings, recorded
+saves and deletions, suspend hooks to gate reads and writes), `FakeSudokuDocuments`, `FakeSudokuShareFiles`,
+`FakeDailyNotifications`, `FakeGamesSignIn`, `FakePlayGamesIntentProvider` and `FakePlayGamesSyncApplier`.
+`SudokusRepositoryContract` runs the same behavior tests over Room and the fake. Each `Default*` boundary has its own
+Robolectric or `mockkStatic(PlayGames::class)` test. MockK stays for `Uri` values, the Play Games statics and
+common-utils' `showInAppReviewIfPossible`.
 
 ## Settings in Tests
 
