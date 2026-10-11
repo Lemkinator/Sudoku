@@ -46,12 +46,14 @@ import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokuWithFields
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.FakeDocumentProvider
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -92,7 +94,7 @@ import dev.oneuiproject.oneui.design.R as designR
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
+@UninstallModules(DispatchersModule::class, SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -122,7 +124,7 @@ class SettingsFragmentTest {
     @BindValue
     @JvmField
     val sudokusRepository: SudokusRepository =
-        SudokusRepository(
+        DefaultSudokusRepository(
             object : SudokuDao by sudokuDao {
                 override suspend fun getAll(): List<SudokuWithFields> {
                     getAllCalls++

@@ -20,6 +20,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -55,7 +56,7 @@ class ObserveAllNormalSudokusUseCaseTest {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        sudokusRepository = SudokusRepository(database.sudokuDao())
+        sudokusRepository = DefaultSudokusRepository(database.sudokuDao())
         useCase = ObserveAllNormalSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
     }
 

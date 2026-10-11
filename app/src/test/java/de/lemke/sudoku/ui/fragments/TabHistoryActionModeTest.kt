@@ -37,10 +37,12 @@ import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuDb
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -85,7 +87,7 @@ import org.robolectric.shadows.ShadowDialog
  * sdk = 36: Robolectric's max supported SDK.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
+@UninstallModules(DispatchersModule::class, SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -116,7 +118,7 @@ class TabHistoryActionModeTest {
     @BindValue
     @JvmField
     val sudokusRepository: SudokusRepository =
-        SudokusRepository(
+        DefaultSudokusRepository(
             object : SudokuDao by sudokuDao {
                 override suspend fun delete(vararg sudokus: SudokuDb) {
                     deleteCalls++

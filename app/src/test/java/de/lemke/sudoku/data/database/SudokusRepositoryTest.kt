@@ -55,7 +55,7 @@ class SudokusRepositoryTest {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        repository = SudokusRepository(database.sudokuDao())
+        repository = DefaultSudokusRepository(database.sudokuDao())
     }
 
     @After

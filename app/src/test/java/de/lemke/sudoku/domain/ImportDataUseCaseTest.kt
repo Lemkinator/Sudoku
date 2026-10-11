@@ -23,6 +23,7 @@ import android.net.Uri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.FieldDb
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuDb
@@ -79,7 +80,7 @@ class ImportDataUseCaseTest {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        sudokusRepository = SudokusRepository(database.sudokuDao())
+        sudokusRepository = DefaultSudokusRepository(database.sudokuDao())
         useCase = ImportDataUseCase(context, sudokusRepository, UnconfinedTestDispatcher())
     }
 
@@ -124,7 +125,7 @@ class ImportDataUseCaseTest {
     }
 
     private fun repositoryFailingInsertWith(failure: Exception): SudokusRepository =
-        SudokusRepository(
+        DefaultSudokusRepository(
             object : SudokuDao by database.sudokuDao() {
                 override suspend fun insert(
                     sudoku: SudokuDb,
