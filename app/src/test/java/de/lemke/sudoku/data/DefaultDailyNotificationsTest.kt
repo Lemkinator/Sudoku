@@ -125,6 +125,22 @@ class DefaultDailyNotificationsTest {
     }
 
     @Test
+    @Config(sdk = [32])
+    fun `isPermissionGranted is true below Android 13 without a POST_NOTIFICATIONS grant`() {
+        shadowOf(context as Application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+
+        dailyNotifications.isPermissionGranted() shouldBe true
+    }
+
+    @Test
+    @Config(sdk = [32])
+    fun `isBlocked is false below Android 13 without a POST_NOTIFICATIONS grant`() {
+        shadowOf(context as Application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
+
+        dailyNotifications.isBlocked() shouldBe false
+    }
+
+    @Test
     fun `isBlocked is false while notifications, the channel and the permission are on`() {
         shadowOf(context as Application).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
         dailyNotifications.post()
