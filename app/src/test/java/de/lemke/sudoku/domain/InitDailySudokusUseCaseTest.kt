@@ -16,56 +16,63 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InitDailySudokusUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>(relaxUnitFun = true)
-        val saveSudoku = mockk<SaveSudokuUseCase>(relaxUnitFun = true)
-        val generateDailySudoku = mockk<GenerateDailySudokuUseCase>()
-        val useCase = InitDailySudokusUseCase(sudokusRepository, saveSudoku, generateDailySudoku, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: InitDailySudokusUseCase
         val date = LocalDate.of(2026, 1, 1)
 
-        beforeEach { clearMocks(sudokusRepository, saveSudoku, generateDailySudoku) }
+        beforeEach {
+            val dispatcher = UnconfinedTestDispatcher()
+            val clock = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC)
+            sudokusRepository = FakeSudokusRepository()
+            useCase =
+                InitDailySudokusUseCase(
+                    sudokusRepository,
+                    SaveSudokuUseCase(sudokusRepository, dispatcher),
+                    GenerateDailySudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), clock, dispatcher),
+                    dispatcher,
+                )
+        }
 
         should("generates and saves a new daily sudoku when none exists for the date") {
-            coEvery { sudokusRepository.getDailySudokus() } returns emptyList()
-            val generated = mockk<Sudoku>()
-            coEvery { generateDailySudoku() } returns generated
-
             useCase(date)
 
-            coVerify(exactly = 1) { generateDailySudoku() }
-            coVerify(exactly = 1) { saveSudoku(generated) }
+            sudokusRepository.saves.map { Triple(it.rows.sudoku.modeLevel, it.rows.sudoku.created, it.onlyUpdate) } shouldBe
+                listOf(Triple(Sudoku.MODE_DAILY, LocalDateTime.of(2026, 1, 1, 10, 0), false))
         }
 
         should("does nothing when a daily sudoku already exists for the date") {
             val existing =
-                Sudoku.create(
+                testSudoku(
                     size = SudokuSize.NINE,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),
-                    fields = mutableListOf(),
                 )
-            coEvery { sudokusRepository.getDailySudokus() } returns listOf(existing)
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(existing))
 
             useCase(date)
 
-            coVerify(exactly = 0) { generateDailySudoku() }
-            coVerify(exactly = 0) { saveSudoku(any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
     },
 )

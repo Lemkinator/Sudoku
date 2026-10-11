@@ -21,19 +21,20 @@ import android.content.Context
 import android.content.pm.ProviderInfo
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.ExportProgress
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
+import de.lemke.sudoku.testSudoku
 import io.kjson.parseJSON
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.mockk
 import java.io.File
 import java.io.FileNotFoundException
+import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -51,14 +52,15 @@ import org.robolectric.shadows.ShadowContentResolver
 class ExportDataUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val progress = mutableListOf<ExportProgress>()
-    private lateinit var getAllSudokus: GetAllSudokusUseCase
+    private lateinit var sudokusRepository: FakeSudokusRepository
     private lateinit var useCase: ExportDataUseCase
     private lateinit var destinationFile: File
 
     @Before
     fun setUp() {
-        getAllSudokus = mockk()
-        useCase = ExportDataUseCase(context, getAllSudokus, UnconfinedTestDispatcher())
+        val dispatcher = UnconfinedTestDispatcher()
+        sudokusRepository = FakeSudokusRepository()
+        useCase = ExportDataUseCase(context, GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
         destinationFile = File.createTempFile("export-data-use-case-test", ".json")
     }
 
@@ -82,8 +84,6 @@ class ExportDataUseCaseTest {
     @Test
     fun `writes an empty JSON array when there are no sudokus`() =
         runTest {
-            coEvery { getAllSudokus() } returns emptyList()
-
             useCase(Uri.fromFile(destinationFile)) { progress += it }
 
             destinationFile.readText().parseJSON<List<SudokuExport>>().shouldBeEmpty()
@@ -98,8 +98,12 @@ class ExportDataUseCaseTest {
     @Test
     fun `writes every sudoku as JSON that round-trips to the mapped export`() =
         runTest {
-            val sudokus = listOf(testLevelSudoku(size = SudokuSize.NINE), testLevelSudoku(size = SudokuSize.FOUR))
-            coEvery { getAllSudokus() } returns sudokus
+            val sudokus =
+                listOf(
+                    testSudoku(size = SudokuSize.NINE, created = LocalDateTime.of(2026, 1, 2, 10, 0)),
+                    testSudoku(size = SudokuSize.FOUR, created = LocalDateTime.of(2026, 1, 1, 10, 0)),
+                )
+            sudokus.forEach { sudokusRepository.saveSudoku(it) }
 
             val result = useCase(Uri.fromFile(destinationFile)) { progress += it }
 
@@ -111,7 +115,8 @@ class ExportDataUseCaseTest {
     @Test
     fun `reports reading, each converted sudoku and writing in order`() =
         runTest {
-            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.NINE), testLevelSudoku(size = SudokuSize.FOUR))
+            sudokusRepository.saveSudoku(testLevelSudoku(size = SudokuSize.NINE))
+            sudokusRepository.saveSudoku(testLevelSudoku(size = SudokuSize.FOUR))
 
             useCase(Uri.fromFile(destinationFile)) { progress += it }
 
@@ -128,7 +133,7 @@ class ExportDataUseCaseTest {
     @Test
     fun `returns WriteFailed when the provider opens no output stream`() =
         runTest {
-            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))
+            sudokusRepository.saveSudoku(testLevelSudoku(size = SudokuSize.FOUR))
             val destination = registerDestination("export.nostream", hasContent = false)
 
             useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
@@ -139,7 +144,7 @@ class ExportDataUseCaseTest {
     @Test
     fun `returns WriteFailed instead of crashing when the provider fails with an IOException`() =
         runTest {
-            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))
+            sudokusRepository.saveSudoku(testLevelSudoku(size = SudokuSize.FOUR))
             val destination = registerDestination("export.ioerror", openFailure = FileNotFoundException("document deleted"))
 
             useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
@@ -151,7 +156,7 @@ class ExportDataUseCaseTest {
     fun `returns WriteFailed instead of crashing when writing the content to the opened stream fails`() =
         runTest {
             // Larger than the writer's 8 KiB encoder buffer, so the write itself reaches the read-only descriptor.
-            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.SIXTEEN))
+            sudokusRepository.saveSudoku(testLevelSudoku(size = SudokuSize.SIXTEEN))
             val destination = registerDestination("export.readonly")
 
             useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed
@@ -162,7 +167,7 @@ class ExportDataUseCaseTest {
     @Test
     fun `returns WriteFailed instead of crashing when writing to the document is denied`() =
         runTest {
-            coEvery { getAllSudokus() } returns listOf(testLevelSudoku(size = SudokuSize.FOUR))
+            sudokusRepository.saveSudoku(testLevelSudoku(size = SudokuSize.FOUR))
             val destination = registerDestination("export.denied", openFailure = SecurityException("Permission Denial"))
 
             useCase(destination) { progress += it } shouldBe DataExportResult.WriteFailed

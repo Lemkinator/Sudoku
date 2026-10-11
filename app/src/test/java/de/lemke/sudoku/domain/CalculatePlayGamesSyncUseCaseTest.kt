@@ -17,24 +17,22 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
@@ -125,7 +123,7 @@ private val difficultyAchievementExpectations =
         Triple(EXPERT, R.string.achievement_10_sudokus_expert, R.string.achievement_50_sudokus_expert),
     )
 
-private fun testSudoku(
+private fun wonSudoku(
     difficulty: Difficulty = VERY_EASY,
     size: SudokuSize = SudokuSize.FOUR,
     modeLevel: Int = Sudoku.MODE_NORMAL,
@@ -136,29 +134,27 @@ private fun testSudoku(
     isChecklist: Boolean = false,
     isReverseChecklist: Boolean = false,
 ): Sudoku =
-    Sudoku.create(
-        size = size,
-        difficulty = difficulty,
-        modeLevel = modeLevel,
-        seconds = seconds,
-        eraserUsed = eraserUsed,
-        hintsUsed = hintsUsed,
-        notesMade = notesMade,
-        isChecklist = isChecklist,
-        isReverseChecklist = isReverseChecklist,
-        fields = mutableListOf(Field(position = Position.create(0, size), solution = 1, value = 1)),
-    )
+    testSudoku(size = size, modeLevel = modeLevel, difficulty = difficulty, completed = true).apply {
+        this.seconds = seconds
+        this.eraserUsed = eraserUsed
+        this.hintsUsed = hintsUsed
+        this.notesMade = notesMade
+        this.isChecklist = isChecklist
+        this.isReverseChecklist = isReverseChecklist
+    }
 
 @OptIn(ExperimentalCoroutinesApi::class)
+private fun calculatePlayGamesSyncOver(vararg sudokus: Sudoku): CalculatePlayGamesSyncUseCase {
+    val dispatcher = UnconfinedTestDispatcher()
+    val sudokusRepository = FakeSudokusRepository()
+    sudokus.forEach { sudokusRepository.insertRows(sudokuWithFieldsToDb(it)) }
+    return CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
+}
+
 class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
     {
-        val getAllSudokus = mockk<GetAllSudokusUseCase>()
-        val useCase = CalculatePlayGamesSyncUseCase(getAllSudokus, UnconfinedTestDispatcher())
-
-        beforeEach { clearMocks(getAllSudokus) }
-
         should("only submit base leaderboard scores, no unlocks or increments, when no sudoku just finished") {
-            coEvery { getAllSudokus() } returns listOf(testSudoku())
+            val useCase = calculatePlayGamesSyncOver(wonSudoku())
 
             val sync = useCase(null)
 
@@ -169,8 +165,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         }
 
         should("unlock the no-hints and eraser achievements but not the checklist ones for a plain win") {
-            val won = testSudoku(eraserUsed = true, hintsUsed = 0, notesMade = 0)
-            coEvery { getAllSudokus() } returns listOf(won)
+            val won = wonSudoku(eraserUsed = true, hintsUsed = 0, notesMade = 0)
+            val useCase = calculatePlayGamesSyncOver(won)
 
             val unlocks = useCase(won).achievementUnlocks
 
@@ -182,8 +178,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         }
 
         should("unlock the notes and checklist achievements when their flags are set") {
-            val sudoku = testSudoku(notesMade = 3, isChecklist = true, isReverseChecklist = true)
-            coEvery { getAllSudokus() } returns listOf(sudoku)
+            val sudoku = wonSudoku(notesMade = 3, isChecklist = true, isReverseChecklist = true)
+            val useCase = calculatePlayGamesSyncOver(sudoku)
 
             val unlocks = useCase(sudoku).achievementUnlocks
 
@@ -193,26 +189,26 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         }
 
         should("unlock the speed achievement only under its 10-second threshold") {
-            val fast = testSudoku(seconds = 9)
-            val slow = testSudoku(seconds = 10)
-            coEvery { getAllSudokus() } returns listOf(fast, slow)
+            val fast = wonSudoku(seconds = 9)
+            val slow = wonSudoku(seconds = 10)
+            val useCase = calculatePlayGamesSyncOver(fast, slow)
 
             useCase(fast).achievementUnlocks shouldContain R.string.achievement_i_am_speed
             useCase(slow).achievementUnlocks shouldNotContain R.string.achievement_i_am_speed
         }
 
         should("not unlock the no-hints achievement when a hint was used") {
-            val sudoku = testSudoku(hintsUsed = 1)
-            coEvery { getAllSudokus() } returns listOf(sudoku)
+            val sudoku = wonSudoku(hintsUsed = 1)
+            val useCase = calculatePlayGamesSyncOver(sudoku)
 
             useCase(sudoku).achievementUnlocks shouldNotContain R.string.achievement_no_hints
         }
 
         should("count only sudokus matching size, and matching both size and difficulty, for their respective win totals") {
-            val sudoku = testSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 42)
-            val sameSizeDifferentDifficulty = testSudoku(size = SudokuSize.NINE, difficulty = VERY_EASY)
-            val differentSize = testSudoku(size = SudokuSize.FOUR)
-            coEvery { getAllSudokus() } returns listOf(sudoku, sameSizeDifferentDifficulty, differentSize)
+            val sudoku = wonSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 42)
+            val sameSizeDifferentDifficulty = wonSudoku(size = SudokuSize.NINE, difficulty = VERY_EASY)
+            val differentSize = wonSudoku(size = SudokuSize.FOUR)
+            val useCase = calculatePlayGamesSyncOver(sudoku, sameSizeDifferentDifficulty, differentSize)
 
             val scores = useCase(sudoku).leaderboardScores.toMap()
 
@@ -221,16 +217,16 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         }
 
         should("submit the base scores, counting level sudokus only toward the level leaderboard of their size") {
-            coEvery { getAllSudokus() } returns
-                listOf(
-                    testSudoku(size = SudokuSize.FOUR, modeLevel = 1),
-                    testSudoku(size = SudokuSize.NINE, modeLevel = 1),
-                    testSudoku(size = SudokuSize.NINE, modeLevel = 2),
-                    testSudoku(size = SudokuSize.SIXTEEN, modeLevel = 1),
-                    testSudoku(size = SudokuSize.SIXTEEN, modeLevel = 2),
-                    testSudoku(size = SudokuSize.SIXTEEN, modeLevel = 3),
-                    testSudoku(size = SudokuSize.FOUR),
-                    testSudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY),
+            val useCase =
+                calculatePlayGamesSyncOver(
+                    wonSudoku(size = SudokuSize.FOUR, modeLevel = 1),
+                    wonSudoku(size = SudokuSize.NINE, modeLevel = 1),
+                    wonSudoku(size = SudokuSize.NINE, modeLevel = 2),
+                    wonSudoku(size = SudokuSize.SIXTEEN, modeLevel = 1),
+                    wonSudoku(size = SudokuSize.SIXTEEN, modeLevel = 2),
+                    wonSudoku(size = SudokuSize.SIXTEEN, modeLevel = 3),
+                    wonSudoku(size = SudokuSize.FOUR),
+                    wonSudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY),
                 )
 
             useCase(null).leaderboardScores shouldBe
@@ -245,8 +241,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("submit the time and win-count leaderboards of each size and difficulty pair") {
             sizeDifficultyExpectations.forEach { expected ->
-                val sudoku = testSudoku(size = expected.size, difficulty = expected.difficulty, seconds = 42)
-                coEvery { getAllSudokus() } returns listOf(sudoku)
+                val sudoku = wonSudoku(size = expected.size, difficulty = expected.difficulty, seconds = 42)
+                val useCase = calculatePlayGamesSyncOver(sudoku)
 
                 val scores = useCase(sudoku).leaderboardScores
 
@@ -259,8 +255,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("increment the 10 and 50 sudokus achievements and submit the wins leaderboard of each size") {
             sizeExpectations.forEach { expected ->
-                val sudoku = testSudoku(size = expected.size)
-                coEvery { getAllSudokus() } returns listOf(sudoku)
+                val sudoku = wonSudoku(size = expected.size)
+                val useCase = calculatePlayGamesSyncOver(sudoku)
 
                 val sync = useCase(sudoku)
 
@@ -274,9 +270,9 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("unlock the stopwatch achievement of each size only below its threshold") {
             sizeExpectations.forEach { expected ->
-                val fast = testSudoku(size = expected.size, seconds = expected.stopwatchSeconds - 1)
-                val slow = testSudoku(size = expected.size, seconds = expected.stopwatchSeconds)
-                coEvery { getAllSudokus() } returns listOf(fast, slow)
+                val fast = wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds - 1)
+                val slow = wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds)
+                val useCase = calculatePlayGamesSyncOver(fast, slow)
 
                 withClue(expected.size) {
                     useCase(fast).achievementUnlocks shouldContain expected.stopwatchAchievement
@@ -287,8 +283,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("increment the 10 and 50 sudokus achievements of each difficulty") {
             difficultyAchievementExpectations.forEach { (difficulty, achievement10, achievement50) ->
-                val sudoku = testSudoku(difficulty = difficulty)
-                coEvery { getAllSudokus() } returns listOf(sudoku)
+                val sudoku = wonSudoku(difficulty = difficulty)
+                val useCase = calculatePlayGamesSyncOver(sudoku)
 
                 val increments = useCase(sudoku).achievementIncrements
 
