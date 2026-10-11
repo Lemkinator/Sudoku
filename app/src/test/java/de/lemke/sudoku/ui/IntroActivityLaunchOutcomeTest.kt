@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.content.DialogInterface.BUTTON_NEGATIVE
+import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
 import android.os.Looper
 import androidx.appcompat.app.AlertDialog
@@ -149,5 +150,30 @@ class IntroActivityLaunchOutcomeTest {
 
             ShadowDialog.getLatestDialog() shouldBe question
             activity.shouldHaveStartedMainActivity()
+        }
+
+    @Test
+    fun `a dropped permission request keeps the choice pending and retries it on the next resume`() =
+        launchIntro { controller ->
+            val activity = controller.get()
+            shadowOf(context).denyPermissions("android.permission.POST_NOTIFICATIONS")
+            activity.binding.introContinueButton.performClick()
+            activity.closeLaunchLatch()
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            dialog.getButton(BUTTON_POSITIVE).performClick()
+            idle()
+
+            shadowOf(activity).lastRequestedPermission.shouldBeNull()
+            activity.viewModel.notificationChoice.value shouldBe NotificationChoice.RequestPermission
+
+            controller.pause().resume()
+            idle()
+
+            shadowOf(activity)
+                .lastRequestedPermission
+                .shouldNotBeNull()
+                .requestedPermissions
+                .toList() shouldBe listOf("android.permission.POST_NOTIFICATIONS")
+            activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
         }
 }

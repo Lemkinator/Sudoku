@@ -41,6 +41,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.LaunchOutcome
+import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
 import de.lemke.commonutils.ui.utils.advanceOnboarding
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
@@ -100,7 +101,7 @@ class IntroActivity : AppCompatActivity() {
     internal var notesEnabled = false
     internal val viewModel: IntroViewModel by viewModels()
 
-    private val requestPermissionLauncher =
+    private val requestPermissionLauncher: SingleLaunchResultLauncher<String> =
         registerForSingleLaunchResult(RequestPermission()) { isGranted: Boolean ->
             viewModel.onNotificationPermissionResult(isGranted)
         }
@@ -628,8 +629,7 @@ class IntroActivity : AppCompatActivity() {
                 }
 
                 NotificationChoice.RequestPermission -> {
-                    if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
-                    true
+                    SDK_INT < Build.VERSION_CODES.TIRAMISU || requestPermissionLauncher.tryLaunch(POST_NOTIFICATIONS)
                 }
             }
         if (settled) viewModel.onNotificationChoiceHandled(result)
