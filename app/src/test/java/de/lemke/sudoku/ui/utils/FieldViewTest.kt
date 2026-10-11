@@ -35,7 +35,6 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.mockk.mockk
 import java.util.Timer
 import org.junit.Before
 import org.junit.Test
@@ -86,11 +85,13 @@ private fun fourByFourSudoku(): Sudoku {
 class FieldViewTest {
     private lateinit var context: AppCompatActivity
     private lateinit var sudoku: Sudoku
+    private lateinit var adapter: SudokuViewAdapter
 
     @Before
     fun setUp() {
         context = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
         sudoku = fourByFourSudoku()
+        adapter = SudokuViewAdapter(context, sudoku)
     }
 
     private fun awaitInflated(fieldView: FieldView) {
@@ -107,7 +108,7 @@ class FieldViewTest {
         // performLongClick() falls through to View.showContextMenu(), which NPEs without a parent.
         FrameLayout(context).addView(fieldView)
         awaitInflated(fieldView)
-        fieldView.init(sudoku, index, mockk(relaxed = true))
+        fieldView.init(sudoku, index, adapter)
         return fieldView
     }
 
@@ -119,7 +120,7 @@ class FieldViewTest {
         val sentinel = ColorDrawable(Color.MAGENTA)
         fieldView.foreground = sentinel
 
-        fieldView.init(sudoku, GIVEN_INDEX, mockk(relaxed = true))
+        fieldView.init(sudoku, GIVEN_INDEX, adapter)
 
         fieldView.foreground shouldBe sentinel
     }
@@ -344,7 +345,7 @@ class FieldViewTest {
         val fieldView = FieldView(context)
         FrameLayout(context).addView(fieldView)
 
-        fieldView.init(sudoku, PLAIN_INDEX, mockk(relaxed = true))
+        fieldView.init(sudoku, PLAIN_INDEX, adapter)
 
         fieldView.foreground.shouldBeNull()
         fieldView.field.value shouldBe 2
@@ -357,7 +358,7 @@ class FieldViewTest {
     fun `update called before the async inflate completes is a safe no-op on the text views`() {
         val fieldView = FieldView(context)
         FrameLayout(context).addView(fieldView)
-        fieldView.init(sudoku, PLAIN_INDEX, mockk(relaxed = true))
+        fieldView.init(sudoku, PLAIN_INDEX, adapter)
         fieldView.fieldViewValue.shouldBeNull()
 
         fieldView.update()
