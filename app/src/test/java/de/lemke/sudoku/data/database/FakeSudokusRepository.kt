@@ -24,11 +24,14 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 
 /**
  * Keeps [SudokuWithFields] rows in memory in insertion order and answers with the DAO's orderings.
- * Records every landed save in [saves] and every deleted id in [deletedIds].
+ * Records every landed save in [saves], every deleted id in [deletedIds], every observe call in [observeCalls]
+ * and counts the collectors of observed flows in [activeObservers].
  */
 class FakeSudokusRepository : SudokusRepository {
     data class Save(
@@ -44,23 +47,33 @@ class FakeSudokusRepository : SudokusRepository {
     val deletedIds: List<SudokuId> get() = synchronized(recordedDeletions) { recordedDeletions.toList() }
     val storedRows: List<SudokuWithFields> get() = rows.value
 
+    var observeCalls = 0
+        private set
+    var activeObservers = 0
+        private set
+
+    var observed: (Flow<List<Sudoku>>) -> Flow<List<Sudoku>> = { it }
     var beforeSave: suspend (Save) -> Unit = {}
+    var beforeDelete: suspend (SudokuId) -> Unit = {}
     var beforeGetMaxSudokuLevel: suspend () -> Unit = {}
     var beforeGetAllSudokus: suspend () -> Unit = {}
     var saveFailure: Throwable? = null
+
+    /** Stores [sudokus] without recording a save. */
+    fun store(vararg sudokus: Sudoku) = sudokus.forEach { insertRows(sudokuWithFieldsToDb(it)) }
 
     /** Stores [sudokuWithFields] as given, like a raw DAO insert, so a test can add an unreadable row. */
     fun insertRows(sudokuWithFields: SudokuWithFields) {
         rows.update { current -> current.filterNot { it.sudoku.id == sudokuWithFields.sudoku.id } + sudokuWithFields }
     }
 
-    override fun observeAllSudokus(): Flow<List<Sudoku>> = rows.map { it.byUpdatedDescending().readable() }
+    override fun observeAllSudokus(): Flow<List<Sudoku>> = observe { it.byUpdatedDescending() }
 
-    override fun observeAllNormalSudokus(): Flow<List<Sudoku>> = rows.map { it.normal().byUpdatedDescending().readable() }
+    override fun observeAllNormalSudokus(): Flow<List<Sudoku>> = observe { it.normal().byUpdatedDescending() }
 
-    override fun observeSudokuLevel(size: SudokuSize): Flow<List<Sudoku>> = rows.map { it.levels(size).readable() }
+    override fun observeSudokuLevel(size: SudokuSize): Flow<List<Sudoku>> = observe { it.levels(size) }
 
-    override fun observeDailySudokus(): Flow<List<Sudoku>> = rows.map { it.dailies().readable() }
+    override fun observeDailySudokus(): Flow<List<Sudoku>> = observe { it.dailies() }
 
     override suspend fun getAllSudokus(): List<Sudoku> {
         beforeGetAllSudokus()
@@ -76,7 +89,10 @@ class FakeSudokusRepository : SudokusRepository {
     override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? =
         sudokuFromDb(rows.value.firstOrNull { it.sudoku.id == sudokuId.value })
 
-    override suspend fun deleteSudoku(sudoku: Sudoku) = delete(setOf(sudoku.id.value))
+    override suspend fun deleteSudoku(sudoku: Sudoku) {
+        beforeDelete(sudoku.id)
+        delete(setOf(sudoku.id.value))
+    }
 
     override suspend fun saveSudokuRows(
         rows: SudokuWithFields,
@@ -102,6 +118,13 @@ class FakeSudokusRepository : SudokusRepository {
                 .map { it.sudoku.id }
                 .toSet()
         if (invalidIds.isNotEmpty()) delete(invalidIds)
+    }
+
+    private fun observe(query: (List<SudokuWithFields>) -> List<SudokuWithFields>): Flow<List<Sudoku>> {
+        observeCalls++
+        return observed(rows.map { query(it).readable() })
+            .onStart { activeObservers++ }
+            .onCompletion { activeObservers-- }
     }
 
     private fun delete(ids: Set<String>) {
