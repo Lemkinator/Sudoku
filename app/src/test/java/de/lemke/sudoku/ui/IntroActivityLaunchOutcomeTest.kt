@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.ui
 
+import android.app.AlarmManager
 import android.content.DialogInterface.BUTTON_NEGATIVE
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
@@ -33,6 +34,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
+import java.util.Calendar
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -153,7 +155,7 @@ class IntroActivityLaunchOutcomeTest {
         }
 
     @Test
-    fun `a dropped permission request keeps the choice pending and retries it on the next resume`() =
+    fun `a dropped permission request stays pending, retries on the next resume, and its grant then advances`() =
         launchIntro { controller ->
             val activity = controller.get()
             shadowOf(context).denyPermissions("android.permission.POST_NOTIFICATIONS")
@@ -169,11 +171,20 @@ class IntroActivityLaunchOutcomeTest {
             controller.pause().resume()
             idle()
 
-            shadowOf(activity)
-                .lastRequestedPermission
-                .shouldNotBeNull()
-                .requestedPermissions
-                .toList() shouldBe listOf("android.permission.POST_NOTIFICATIONS")
+            val request = shadowOf(activity).lastRequestedPermission.shouldNotBeNull()
+            request.requestedPermissions.toList() shouldBe listOf("android.permission.POST_NOTIFICATIONS")
             activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
+
+            val alarms = shadowOf(context.getSystemService(AlarmManager::class.java))
+            alarms.peekNextScheduledAlarm().shouldBeNull()
+
+            activity.activityResultRegistry.dispatchResult(request.requestCode, true)
+            idle()
+
+            val alarm = alarms.peekNextScheduledAlarm().shouldNotBeNull()
+            val trigger = Calendar.getInstance().apply { timeInMillis = alarm.triggerAtMs }
+            trigger.get(Calendar.HOUR_OF_DAY) shouldBe 9
+            trigger.get(Calendar.MINUTE) shouldBe 0
+            activity.shouldHaveStartedMainActivity()
         }
 }
