@@ -16,33 +16,33 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.mockk
+import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GetRecentlyUpdatedNormalSudokuUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val useCase = GetRecentlyUpdatedNormalSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: GetRecentlyUpdatedNormalSudokuUseCase
 
-        beforeEach { clearMocks(sudokusRepository) }
+        beforeEach {
+            sudokusRepository = FakeSudokusRepository()
+            useCase = GetRecentlyUpdatedNormalSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        }
 
         should("returns null when the repository has no recently updated normal sudoku") {
-            coEvery { sudokusRepository.getRecentlyUpdatedNormalSudoku() } returns null
-
             useCase() shouldBe null
         }
 
         should("passes through the repository's recently updated normal sudoku") {
-            val sudoku = mockk<Sudoku>()
-            coEvery { sudokusRepository.getRecentlyUpdatedNormalSudoku() } returns sudoku
+            val sudoku = testSudoku(created = LocalDateTime.of(2026, 1, 2, 10, 0))
+            sudokusRepository.saveSudoku(testSudoku(created = LocalDateTime.of(2026, 1, 1, 10, 0)))
+            sudokusRepository.saveSudoku(sudoku)
 
             useCase() shouldBe sudoku
         }

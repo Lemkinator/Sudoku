@@ -16,18 +16,11 @@
 
 package de.lemke.sudoku.domain
 
-import android.Manifest.permission.POST_NOTIFICATIONS
-import android.content.Context
-import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.os.Build.VERSION.SDK_INT
-import android.os.Build.VERSION_CODES.TIRAMISU
-import androidx.core.content.ContextCompat
-import dagger.hilt.android.qualifiers.ApplicationContext
+import de.lemke.sudoku.data.DailyNotifications
 import javax.inject.Inject
 
 class IsNotificationPermissionGrantedUseCase @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val dailyNotifications: DailyNotifications,
 ) {
-    operator fun invoke(): Boolean =
-        SDK_INT < TIRAMISU || ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_GRANTED
+    operator fun invoke(): Boolean = dailyNotifications.isPermissionGranted()
 }

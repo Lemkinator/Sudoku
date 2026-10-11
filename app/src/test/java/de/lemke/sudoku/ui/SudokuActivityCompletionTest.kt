@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import android.widget.TextView
@@ -37,13 +36,12 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
 import de.lemke.sudoku.HiltTestRule
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.di.DispatchersModule
-import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.di.GamesSignInModule
+import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
-import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
-import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Position
@@ -53,7 +51,12 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
-import de.lemke.sudoku.ui.utils.applyPlayGamesSync
+import de.lemke.sudoku.ui.utils.DefaultGamesSignIn
+import de.lemke.sudoku.ui.utils.DefaultPlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.FakePlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.GamesSignIn
+import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -61,22 +64,15 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.mockk.Runs
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
-import io.mockk.verifyOrder
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -93,7 +89,7 @@ import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
+@UninstallModules(DispatchersModule::class, GamesSignInModule::class, SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -119,45 +115,47 @@ class SudokuActivityCompletionTest {
     @Inject
     lateinit var settings: SettingsRepository
 
-    @BindValue
-    @JvmField
-    val queueSudokuSave: QueueSudokuSaveUseCase = mockk()
+    private val fakeSudokusRepository = FakeSudokusRepository()
 
     @BindValue
     @JvmField
-    val getMaxSudokuLevel: GetMaxSudokuLevelUseCase = mockk()
+    val sudokusRepository: SudokusRepository = fakeSudokusRepository
+
+    private val fakePlayGamesSyncApplier = FakePlayGamesSyncApplier()
 
     @BindValue
     @JvmField
-    val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase = mockk()
+    val playGamesSyncApplier: PlayGamesSyncApplier = fakePlayGamesSyncApplier
+
+    @BindValue
+    @JvmField
+    val gamesSignIn: GamesSignIn = DefaultGamesSignIn()
+
+    @BindValue
+    @JvmField
+    val playGamesIntentProvider: PlayGamesIntentProvider = DefaultPlayGamesIntentProvider()
 
     private var maxLevelRead = CompletableDeferred(Unit)
 
     private var syncCalculated = CompletableDeferred(Unit)
 
-    @Inject
-    lateinit var sudokusRepository: SudokusRepository
+    private val maxLevelReads = AtomicInteger()
+
+    private val syncCalculations = AtomicInteger()
 
     @Inject
     lateinit var getAllSudokus: GetAllSudokusUseCase
 
-    @Inject
-    @ApplicationScope
-    lateinit var applicationScope: CoroutineScope
-
     @Before
     fun setup() {
         hiltRule.inject()
-        val queue = QueueSudokuSaveUseCase(sudokusRepository, applicationScope, testDefaultDispatcher)
-        every { queueSudokuSave(any(), any()) } answers { queue(firstArg(), secondArg()) }
-        every { queueSudokuSave.launch(any(), any()) } answers { queue.launch(firstArg(), secondArg()) }
-        coEvery { getMaxSudokuLevel(any()) } coAnswers {
+        fakeSudokusRepository.beforeGetMaxSudokuLevel = {
+            maxLevelReads.incrementAndGet()
             maxLevelRead.await()
-            sudokusRepository.getMaxSudokuLevel(firstArg())
         }
-        coEvery { calculatePlayGamesSync(any()) } coAnswers {
+        fakeSudokusRepository.beforeGetAllSudokus = {
+            syncCalculations.incrementAndGet()
             syncCalculated.await()
-            CalculatePlayGamesSyncUseCase(getAllSudokus, testDefaultDispatcher)(firstArg())
         }
         settings.bypassOobe()
         // Robolectric skips the Play Games SDK's auto-init ContentProvider.
@@ -214,7 +212,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `completing a normal sudoku with animations enabled shows the completion dialog`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog?
             dialog.shouldNotBeNull()
@@ -227,7 +225,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `clicking new game on a completed normal sudoku's dialog starts a fresh one`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
@@ -241,7 +239,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `clicking new game twice on a completed normal sudoku's dialog starts one fresh sudoku`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         completeBoard(sudokuId) { activity ->
             val newGameButton = (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)
             newGameButton.performClick()
@@ -256,7 +254,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `completing the max level of a sudoku level's dialog offers the next level`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1))
         completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
@@ -269,10 +267,10 @@ class SudokuActivityCompletionTest {
     @Test
     fun `completing a level below the max level offers no follow-up`() {
         val sudokuId = SudokuId.generate()
-        runBlocking {
-            sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1))
-            sudokusRepository.saveSudoku(almostSolvedSudoku(SudokuId.generate(), modeLevel = 2))
-        }
+        fakeSudokusRepository.store(
+            almostSolvedSudoku(sudokuId, modeLevel = 1),
+            almostSolvedSudoku(SudokuId.generate(), modeLevel = 2),
+        )
         completeBoard(sudokuId) {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).isShown shouldBe false
@@ -282,13 +280,12 @@ class SudokuActivityCompletionTest {
     @Test
     fun `a failed save of a completed sudoku shows an error toast instead of the completion dialog`() {
         val sudoku = almostSolvedSudoku(SudokuId.generate()).apply { fields[0].value = fields[0].solution }
-        runBlocking { sudokusRepository.saveSudoku(sudoku) }
+        fakeSudokusRepository.store(sudoku)
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            every { queueSudokuSave(sudoku, true) } returns
-                CompletableDeferred<Unit>().apply { completeExceptionally(IllegalStateException("disk full")) }
+            fakeSudokusRepository.saveFailure = IllegalStateException("disk full")
 
             scenario.onActivity { activity -> activity.viewModel.onCompleted() }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
@@ -305,7 +302,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `recreating the activity while the completion runs shows one dialog after one wrap-up`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1))
         maxLevelRead = CompletableDeferred()
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
@@ -316,8 +313,8 @@ class SudokuActivityCompletionTest {
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Running }
-            coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
-            clearMocks(queueSudokuSave, answers = false)
+            maxLevelReads.get() shouldBe 1
+            val savesBeforeRecreate = fakeSudokusRepository.saves
 
             scenario.recreate()
             maxLevelRead.complete(Unit)
@@ -330,20 +327,21 @@ class SudokuActivityCompletionTest {
                 dialogs.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "Next level"
                 activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEXT_LEVEL)
             }
-            verify(exactly = 0) { queueSudokuSave(any(), any()) }
-            coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
+            fakeSudokusRepository.saves shouldBe savesBeforeRecreate
+            maxLevelReads.get() shouldBe 1
         }
     }
 
     @Test
     fun `recreating the activity while the completion dialog shows reshows it once without a second wrap-up`() {
-        mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
-        every { any<Activity>().applyPlayGamesSync(any()) } just Runs
+        mockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         var reviewRequested = false
-        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers { reviewRequested = true }
+        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers {
+            reviewRequested = true
+        }
         try {
             val sudokuId = SudokuId.generate()
-            runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1)) }
+            fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1))
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
             ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
@@ -367,20 +365,20 @@ class SudokuActivityCompletionTest {
                     activity.sudoku.id shouldBe sudokuId
                     activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEXT_LEVEL)
                 }
-                verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
+                fakePlayGamesSyncApplier.applied.size shouldBe 1
                 verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
-                coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
-                coVerify(exactly = 1) { getMaxSudokuLevel(SudokuSize.FOUR) }
+                syncCalculations.get() shouldBe 1
+                maxLevelReads.get() shouldBe 1
             }
         } finally {
-            unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+            unmockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         }
     }
 
     @Test
     fun `OK closes the completion dialog for good, also after a recreate`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
@@ -409,7 +407,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `pausing and resuming while the completion dialog shows keeps that one dialog, and OK still closes it`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
@@ -436,7 +434,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `back on the completion dialog closes it for good`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
 
@@ -452,7 +450,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `recreating the activity while the game-over dialog shows replaces it with one new one without a restart`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId, modeLevel = 1).copy(errorsMade = MODE_LEVEL_ERROR_LIMIT)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1).copy(errorsMade = MODE_LEVEL_ERROR_LIMIT))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
@@ -480,7 +478,7 @@ class SudokuActivityCompletionTest {
     @Test
     fun `a restart after OK on the completion dialog waits without a loading dialog until the Play Games sync is calculated`() {
         val sudokuId = SudokuId.generate()
-        runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         syncCalculated = CompletableDeferred()
         completeBoard(sudokuId) { activity ->
             (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
@@ -501,13 +499,16 @@ class SudokuActivityCompletionTest {
 
     @Test
     fun `recreating the activity while the Play Games sync is calculated applies it once, then asks for the in-app review`() {
-        mockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
-        every { any<Activity>().applyPlayGamesSync(any()) } just Runs
+        mockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         var reviewRequested = false
-        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers { reviewRequested = true }
+        var syncsAppliedBeforeReview: Int? = null
+        every { any<AppCompatActivity>().showInAppReviewIfPossible(any()) } answers {
+            reviewRequested = true
+            syncsAppliedBeforeReview = fakePlayGamesSyncApplier.applied.size
+        }
         try {
             val sudokuId = SudokuId.generate()
-            runBlocking { sudokusRepository.saveSudoku(almostSolvedSudoku(sudokuId)) }
+            fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
             syncCalculated = CompletableDeferred()
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
@@ -520,23 +521,20 @@ class SudokuActivityCompletionTest {
                 scenario.onActivity { activity ->
                     activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEW_GAME)
                 }
-                coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
+                syncCalculations.get() shouldBe 1
 
                 scenario.recreate()
                 syncCalculated.complete(Unit)
                 awaitUntil { reviewRequested }
 
                 scenario.onActivity { activity -> activity.viewModel.playGamesSync.value shouldBe null }
-                verify(exactly = 1) { any<Activity>().applyPlayGamesSync(any()) }
+                fakePlayGamesSyncApplier.applied.size shouldBe 1
+                syncsAppliedBeforeReview shouldBe 1
                 verify(exactly = 1) { any<AppCompatActivity>().showInAppReviewIfPossible(any()) }
-                verifyOrder {
-                    any<Activity>().applyPlayGamesSync(any())
-                    any<AppCompatActivity>().showInAppReviewIfPossible(any())
-                }
-                coVerify(exactly = 1) { calculatePlayGamesSync(any()) }
+                syncCalculations.get() shouldBe 1
             }
         } finally {
-            unmockkStatic(Activity::applyPlayGamesSync, AppCompatActivity::showInAppReviewIfPossible)
+            unmockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         }
     }
 

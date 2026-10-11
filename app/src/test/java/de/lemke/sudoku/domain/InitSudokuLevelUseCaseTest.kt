@@ -16,62 +16,51 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testLevelSudoku
 import io.kotest.core.spec.style.ShouldSpec
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InitSudokuLevelUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>(relaxUnitFun = true)
-        val generateSudokuLevel = mockk<GenerateSudokuLevelUseCase>()
-        val getMaxSudokuLevel = mockk<GetMaxSudokuLevelUseCase>()
-        val useCase = InitSudokuLevelUseCase(sudokusRepository, generateSudokuLevel, getMaxSudokuLevel, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: InitSudokuLevelUseCase
 
-        beforeEach { clearMocks(sudokusRepository, generateSudokuLevel, getMaxSudokuLevel) }
+        beforeEach {
+            val dispatcher = UnconfinedTestDispatcher()
+            sudokusRepository = FakeSudokusRepository()
+            useCase =
+                InitSudokuLevelUseCase(
+                    sudokusRepository,
+                    GenerateSudokuLevelUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), dispatcher),
+                    GetMaxSudokuLevelUseCase(sudokusRepository, dispatcher),
+                    dispatcher,
+                )
+        }
 
         should("generates nothing when every level up to max already exists") {
-            val existing =
-                (1..3).map { level ->
-                    Sudoku.create(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = level, fields = mutableListOf())
-                }
-            coEvery { sudokusRepository.getSudokuLevel(SudokuSize.FOUR) } returns existing
-            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 3
+            (1..3).forEach { level -> sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level))) }
 
             useCase(SudokuSize.FOUR)
 
-            coVerify(exactly = 0) { generateSudokuLevel(any(), any()) }
-            coVerify(exactly = 0) { sudokusRepository.saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
         should("generates and saves exactly the missing levels") {
-            val existing =
-                listOf(
-                    Sudoku.create(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = 1, fields = mutableListOf()),
-                    Sudoku.create(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = 3, fields = mutableListOf()),
-                )
-            coEvery { sudokusRepository.getSudokuLevel(SudokuSize.FOUR) } returns existing
-            coEvery { getMaxSudokuLevel(SudokuSize.FOUR) } returns 4
-            val level2 = mockk<Sudoku>()
-            val level4 = mockk<Sudoku>()
-            coEvery { generateSudokuLevel(SudokuSize.FOUR, 2) } returns level2
-            coEvery { generateSudokuLevel(SudokuSize.FOUR, 4) } returns level4
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level = 1)))
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level = 3)))
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level = 4)).copy(fields = emptyList()))
 
             useCase(SudokuSize.FOUR)
 
-            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 2) }
-            coVerify(exactly = 1) { generateSudokuLevel(SudokuSize.FOUR, 4) }
-            coVerify(exactly = 1) { sudokusRepository.saveSudoku(level2, false) }
-            coVerify(exactly = 1) { sudokusRepository.saveSudoku(level4, false) }
-            coVerify(exactly = 2) { generateSudokuLevel(any(), any()) }
+            sudokusRepository.saves.map { Triple(it.rows.sudoku.size, it.rows.sudoku.modeLevel, it.onlyUpdate) } shouldBe
+                listOf(Triple(4, 2, false), Triple(4, 4, false))
         }
     },
 )

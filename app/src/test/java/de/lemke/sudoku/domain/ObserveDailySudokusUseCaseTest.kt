@@ -19,35 +19,19 @@ package de.lemke.sudoku.domain
 import app.cash.turbine.test
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.monthAndYear
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.every
-import io.mockk.mockk
 import java.time.LocalDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-
-private fun dailySudoku(
-    created: LocalDateTime,
-    completed: Boolean,
-): Sudoku =
-    Sudoku.create(
-        size = SudokuSize.NINE,
-        difficulty = VERY_EASY,
-        modeLevel = Sudoku.MODE_DAILY,
-        created = created,
-        fields = mutableListOf(Field(position = Position.create(0, SudokuSize.NINE), solution = 1, value = if (completed) 1 else null)),
-    )
 
 private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =
     map {
@@ -60,21 +44,34 @@ private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObserveDailySudokusUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
+        lateinit var sudokusRepository: FakeSudokusRepository
         lateinit var userSettings: UserSettings
         lateinit var useCase: ObserveDailySudokusUseCase
 
         val today = LocalDateTime.of(2026, 2, 15, 10, 0)
         val todayDate = today.toLocalDate()
-        val completedThisMonth = dailySudoku(created = LocalDateTime.of(2026, 2, 5, 9, 0), completed = true)
-        val uncompletedToday = dailySudoku(created = today, completed = false)
-        val uncompletedLastMonth = dailySudoku(created = LocalDateTime.of(2026, 1, 20, 9, 0), completed = false)
+        val completedThisMonth =
+            testSudoku(
+                size = SudokuSize.NINE,
+                modeLevel = Sudoku.MODE_DAILY,
+                difficulty = VERY_EASY,
+                created = LocalDateTime.of(2026, 2, 5, 9, 0),
+                completed = true,
+            )
+        val uncompletedToday = testSudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY, difficulty = VERY_EASY, created = today)
+        val uncompletedLastMonth =
+            testSudoku(
+                size = SudokuSize.NINE,
+                modeLevel = Sudoku.MODE_DAILY,
+                difficulty = VERY_EASY,
+                created = LocalDateTime.of(2026, 1, 20, 9, 0),
+            )
 
         beforeEach {
+            sudokusRepository = FakeSudokusRepository()
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
             useCase = ObserveDailySudokusUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
-            every { sudokusRepository.observeDailySudokus() } returns
-                flowOf(listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth))
+            listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth).forEach { sudokusRepository.saveSudoku(it) }
         }
 
         should("show every daily sudoku, including old uncompleted ones, when dailyShowUncompleted is on") {

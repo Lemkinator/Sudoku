@@ -16,19 +16,16 @@
 
 package de.lemke.sudoku.domain
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
-import androidx.documentfile.provider.DocumentFile
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.sudoku.data.SudokuDocuments
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.DataImportResult
 import de.lemke.sudoku.domain.model.ImportProgress
 import io.kjson.parseJSON
-import java.io.FileNotFoundException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,7 +33,7 @@ import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
 
 class ImportDataUseCase @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val sudokuDocuments: SudokuDocuments,
     private val sudokusRepository: SudokusRepository,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
@@ -46,9 +43,9 @@ class ImportDataUseCase @Inject constructor(
     ): DataImportResult =
         withContext(ioDispatcher) {
             onProgress(ImportProgress.Reading)
-            val importFile = DocumentFile.fromSingleUri(context, origin)
-            if (importFile != null && importFile.exists() && importFile.canRead() && importFile.type == "application/json") {
-                importJson(importFile, onProgress)
+            val document = sudokuDocuments.describe(origin)
+            if (document.exists && document.readable && document.mimeType == "application/json") {
+                importJson(origin, onProgress)
             } else {
                 DataImportResult.InvalidFile
             }
@@ -56,22 +53,12 @@ class ImportDataUseCase @Inject constructor(
 
     @Suppress("TooGenericExceptionCaught")
     private suspend fun importJson(
-        jsonFile: DocumentFile,
+        origin: Uri,
         onProgress: (ImportProgress) -> Unit,
     ): DataImportResult =
         try {
-            val schema =
-                JSONSchema.parse(
-                    context.assets
-                        .open("schemas/sudoku_list.json")
-                        .bufferedReader()
-                        .use { it.readText() },
-                )
-            val json =
-                context.contentResolver
-                    .openInputStream(jsonFile.uri)
-                    ?.bufferedReader()
-                    ?.use { it.readText() } ?: throw FileNotFoundException("No content for ${jsonFile.uri}")
+            val schema = JSONSchema.parse(sudokuDocuments.readAsset("schemas/sudoku_list.json"))
+            val json = sudokuDocuments.readText(origin)
             val output = schema.validateBasic(json)
             output.errors?.forEach { Log.e("ImportDataUseCase", "${it.error} - ${it.instanceLocation}") }
             if (output.errors.isNullOrEmpty()) {

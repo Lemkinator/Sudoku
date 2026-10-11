@@ -16,15 +16,13 @@
 
 package de.lemke.sudoku.domain
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.sudoku.data.SudokuDocuments
 import de.lemke.sudoku.data.database.sudokuFromExport
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.parseJSON
-import java.io.FileNotFoundException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,7 +30,7 @@ import kotlinx.coroutines.withContext
 import net.pwall.json.schema.JSONSchema
 
 class ImportSudokuUseCase @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val sudokuDocuments: SudokuDocuments,
     private val saveSudoku: SaveSudokuUseCase,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
@@ -41,18 +39,8 @@ class ImportSudokuUseCase @Inject constructor(
         withContext(ioDispatcher) {
             if (uri == null) return@withContext null
             try {
-                val schema =
-                    JSONSchema.parse(
-                        context.assets
-                            .open("schemas/sudoku.json")
-                            .bufferedReader()
-                            .use { it.readText() },
-                    )
-                val json =
-                    context.contentResolver
-                        .openInputStream(uri)
-                        ?.bufferedReader()
-                        ?.use { it.readText() } ?: throw FileNotFoundException("No content for $uri")
+                val schema = JSONSchema.parse(sudokuDocuments.readAsset("schemas/sudoku.json"))
+                val json = sudokuDocuments.readText(uri)
                 val output = schema.validateBasic(json)
                 output.errors?.forEach { Log.e("ImportSudokuUseCase", "${it.error} - ${it.instanceLocation}") }
                 if (output.errors.isNullOrEmpty()) {

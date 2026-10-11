@@ -17,24 +17,26 @@
 package de.lemke.sudoku.ui
 
 import android.app.Application
+import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.FakeSudokuShareFiles
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.GenerateFieldsUseCase
+import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
+import de.lemke.sudoku.domain.GenerateSudokuUseCase
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
+import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.PlayGamesSync
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,27 +49,23 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class SudokuViewModelSavedStateTest {
-    private val completed =
-        Sudoku.create(
-            size = SudokuSize.FOUR,
-            difficulty = Difficulty.EASY,
-            modeLevel = Sudoku.MODE_NORMAL,
-            fields = MutableList(SudokuSize.FOUR.cellCount) { Field(Position.create(it, SudokuSize.FOUR), solution = 1, value = 1) },
-        )
-    private val getSudoku = mockk<GetSudokuUseCase>()
-    private val calculatePlayGamesSync = mockk<CalculatePlayGamesSyncUseCase>()
+    private val completed = testSudoku(completed = true)
+    private val repository = FakeSudokusRepository()
 
-    private fun viewModel(savedStateHandle: SavedStateHandle): SudokuViewModel =
-        SudokuViewModel(
+    private fun viewModel(savedStateHandle: SavedStateHandle): SudokuViewModel {
+        val dispatcher = Dispatchers.Main
+        val generateFields = GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator())
+        return SudokuViewModel(
             savedStateHandle,
-            getSudoku,
-            mockk(),
-            mockk(),
-            mockk(),
-            QueueSudokuSaveUseCase(mockk<SudokusRepository>(relaxUnitFun = true), CoroutineScope(SupervisorJob()), Dispatchers.Main),
-            mockk(),
-            calculatePlayGamesSync,
-        )
+            GetSudokuUseCase(repository, dispatcher),
+            GenerateSudokuUseCase(generateFields, dispatcher),
+            GenerateSudokuLevelUseCase(generateFields, dispatcher),
+            GetMaxSudokuLevelUseCase(repository, dispatcher),
+            QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
+            ShareSudokuUseCase(FakeSudokuShareFiles(Uri.EMPTY), dispatcher),
+            CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+        ).also { shadowOf(Looper.getMainLooper()).idle() }
+    }
 
     private fun Bundle.throughParcel(): Bundle {
         val parcel = Parcel.obtain()
@@ -82,8 +80,7 @@ class SudokuViewModelSavedStateTest {
 
     @Test
     fun `a pending summary survives a saved state written to a parcel and read back`() {
-        coEvery { getSudoku(completed.id) } returns completed
-        coEvery { calculatePlayGamesSync(completed) } returns PlayGamesSync()
+        repository.store(completed)
         val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
         val viewModel = viewModel(savedStateHandle)
         viewModel.onGameStarted(SudokuGame.Ready(completed))

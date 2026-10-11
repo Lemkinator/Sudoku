@@ -17,84 +17,194 @@
 package de.lemke.sudoku.ui.fragments
 
 import app.cash.turbine.test
+import de.lemke.commonutils.data.FakeSharedPreferences
+import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculateStatisticsUseCase
 import de.lemke.sudoku.domain.ObserveSudokusAndStatisticsFilterFlagsUseCase
+import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.SudokuStatistics
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
+import java.time.LocalDateTime
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
+private val NEW_YEAR_NOON = LocalDateTime.of(2026, 1, 1, 12, 0)
+
+private fun wonSudoku(): Sudoku =
+    testSudoku(sudokuId = SudokuId("won"), created = NEW_YEAR_NOON, completed = true).apply {
+        seconds = 90
+        errorsMade = 1
+        notesMade = 2
+    }
+
+private fun startedSudoku(): Sudoku =
+    testSudoku(sudokuId = SudokuId("started"), created = NEW_YEAR_NOON.plusDays(1)).apply {
+        seconds = 30
+        hintsUsed = 2
+        eraserUsed = true
+    }
+
+private val noStatistics =
+    SudokuStatistics(
+        gamesStarted = 0,
+        gamesCompleted = 0,
+        winRate = 0,
+        bestTimeSudoku = null,
+        averageTime = -1,
+        winsWithoutErrors = 0,
+        mostErrors = 0,
+        averageErrors = 0,
+        winsWithoutHints = 0,
+        mostHints = 0,
+        averageHints = 0,
+        winsWithoutNotes = 0,
+        mostNotes = 0,
+        averageNotes = 0,
+        mostGamesStartedDifficulty = null,
+        mostGamesWonDifficulty = null,
+        mostGamesStartedSize = null,
+        mostGamesWonSize = null,
+        currentGameStreak = 0,
+        bestGameStreak = 0,
+        totalSecondsPlayed = 0L,
+        hintUsageRate = 0f,
+        notesUsageRate = 0f,
+        eraserUsageRate = 0f,
+        perfectGames = 0,
+    )
+
+private val wonStatistics =
+    SudokuStatistics(
+        gamesStarted = 1,
+        gamesCompleted = 1,
+        winRate = 100,
+        bestTimeSudoku = wonSudoku(),
+        averageTime = 90,
+        winsWithoutErrors = 0,
+        mostErrors = 1,
+        averageErrors = 1,
+        winsWithoutHints = 1,
+        mostHints = 0,
+        averageHints = 0,
+        winsWithoutNotes = 0,
+        mostNotes = 2,
+        averageNotes = 2,
+        mostGamesStartedDifficulty = Difficulty.EASY,
+        mostGamesWonDifficulty = Difficulty.EASY,
+        mostGamesStartedSize = SudokuSize.FOUR,
+        mostGamesWonSize = SudokuSize.FOUR,
+        currentGameStreak = 1,
+        bestGameStreak = 1,
+        totalSecondsPlayed = 90L,
+        hintUsageRate = 0f,
+        notesUsageRate = 1f,
+        eraserUsageRate = 0f,
+        perfectGames = 0,
+    )
+
+private val wonAndStartedStatistics =
+    SudokuStatistics(
+        gamesStarted = 2,
+        gamesCompleted = 1,
+        winRate = 50,
+        bestTimeSudoku = wonSudoku(),
+        averageTime = 90,
+        winsWithoutErrors = 0,
+        mostErrors = 1,
+        averageErrors = 1,
+        winsWithoutHints = 1,
+        mostHints = 2,
+        averageHints = 0,
+        winsWithoutNotes = 0,
+        mostNotes = 2,
+        averageNotes = 2,
+        mostGamesStartedDifficulty = Difficulty.EASY,
+        mostGamesWonDifficulty = Difficulty.EASY,
+        mostGamesStartedSize = SudokuSize.FOUR,
+        mostGamesWonSize = SudokuSize.FOUR,
+        currentGameStreak = 0,
+        bestGameStreak = 1,
+        totalSecondsPlayed = 120L,
+        hintUsageRate = 0.5f,
+        notesUsageRate = 0.5f,
+        eraserUsageRate = 0.5f,
+        perfectGames = 0,
+    )
+
+private object FailingDispatcher : CoroutineDispatcher() {
+    override fun dispatch(
+        context: CoroutineContext,
+        block: Runnable,
+    ): Unit = throw IllegalStateException("calculate failed")
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabStatisticsViewModelTest : ShouldSpec(
     {
-        val observeSudokusAndStatisticsFilterFlags = mockk<ObserveSudokusAndStatisticsFilterFlagsUseCase>()
-        val calculateStatistics = mockk<CalculateStatisticsUseCase>()
+        lateinit var userSettings: UserSettings
+        lateinit var repository: FakeSudokusRepository
 
         beforeEach {
-            clearMocks(observeSudokusAndStatisticsFilterFlags, calculateStatistics)
+            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            repository = FakeSudokusRepository()
         }
 
-        fun newViewModel() = TabStatisticsViewModel(observeSudokusAndStatisticsFilterFlags, calculateStatistics)
+        fun newViewModel(
+            calculateDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
+            observeDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
+        ) = TabStatisticsViewModel(
+            ObserveSudokusAndStatisticsFilterFlagsUseCase(repository, userSettings, observeDispatcher),
+            CalculateStatisticsUseCase(calculateDispatcher),
+        )
 
         should("observe the sudokus and calculate statistics only while state is collected") {
-            val sudokusFlow = MutableSharedFlow<List<Sudoku>>(replay = 1)
-            every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
-            val statistics = mockk<SudokuStatistics>()
-            coEvery { calculateStatistics(emptyList()) } returns statistics
+            repository.store(wonSudoku())
 
             val viewModel = newViewModel()
-            sudokusFlow.emit(emptyList())
 
-            sudokusFlow.subscriptionCount.value shouldBe 0
+            repository.activeObservers shouldBe 0
             viewModel.state.value shouldBe TabStatisticsUiState()
-            coVerify(exactly = 0) { calculateStatistics(any()) }
             viewModel.state.test {
-                expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = statistics)
-                sudokusFlow.subscriptionCount.value shouldBe 1
+                expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = wonStatistics)
+                repository.activeObservers shouldBe 1
             }
         }
 
         should("shows no statistics until the first ones, then keeps them shown while recomputing") {
-            val sudokusFlow = MutableSharedFlow<List<Sudoku>>(extraBufferCapacity = 1)
-            every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
-            val firstDeferred = CompletableDeferred<SudokuStatistics>()
-            coEvery { calculateStatistics(emptyList()) } coAnswers { firstDeferred.await() }
+            val calculation = StandardTestDispatcher(TestCoroutineScheduler())
 
-            val viewModel = newViewModel()
+            val viewModel = newViewModel(calculateDispatcher = calculation)
 
             viewModel.state.test {
                 awaitItem() shouldBe TabStatisticsUiState()
-                sudokusFlow.subscriptionCount.value shouldBe 1
+                repository.activeObservers shouldBe 1
 
-                sudokusFlow.emit(emptyList())
-                val firstStats = mockk<SudokuStatistics>()
-                firstDeferred.complete(firstStats)
-                awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats)
+                calculation.scheduler.runCurrent()
+                awaitItem() shouldBe TabStatisticsUiState(statistics = noStatistics)
 
-                val sudokuList = listOf(mockk<Sudoku>())
-                val secondDeferred = CompletableDeferred<SudokuStatistics>()
-                coEvery { calculateStatistics(sudokuList) } coAnswers { secondDeferred.await() }
-                sudokusFlow.emit(sudokuList)
+                repository.store(wonSudoku())
                 expectNoEvents()
-                viewModel.state.value shouldBe TabStatisticsUiState(statistics = firstStats)
+                viewModel.state.value shouldBe TabStatisticsUiState(statistics = noStatistics)
 
-                val secondStats = mockk<SudokuStatistics>()
-                secondDeferred.complete(secondStats)
-                awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats)
+                calculation.scheduler.runCurrent()
+                awaitItem() shouldBe TabStatisticsUiState(statistics = wonStatistics)
 
                 cancelAndIgnoreRemainingEvents()
             }
@@ -102,34 +212,34 @@ class TabStatisticsViewModelTest : ShouldSpec(
 
         should("collecting again after the stop timeout recomputes the shown statistics") {
             runTest {
-                val sudokusFlow = MutableSharedFlow<List<Sudoku>>(replay = 1)
-                every { observeSudokusAndStatisticsFilterFlags() } returns sudokusFlow
-                val firstStats = mockk<SudokuStatistics>()
-                coEvery { calculateStatistics(emptyList()) } returns firstStats
-                sudokusFlow.emit(emptyList())
-                val viewModel = newViewModel()
-                viewModel.state.test { expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = firstStats) }
+                val calculation = StandardTestDispatcher(TestCoroutineScheduler())
+                repository.store(wonSudoku())
+                val viewModel = newViewModel(calculation, UnconfinedTestDispatcher(testScheduler))
+                viewModel.state.test {
+                    runCurrent()
+                    calculation.scheduler.runCurrent()
+                    runCurrent()
+                    expectMostRecentItem() shouldBe TabStatisticsUiState(statistics = wonStatistics)
+                }
                 advanceTimeBy(5_001)
                 runCurrent()
-                sudokusFlow.subscriptionCount.value shouldBe 0
-                val recomputed = CompletableDeferred<SudokuStatistics>()
-                coEvery { calculateStatistics(emptyList()) } coAnswers { recomputed.await() }
+                repository.activeObservers shouldBe 0
+                repository.store(startedSudoku())
 
                 viewModel.state.test {
-                    awaitItem() shouldBe TabStatisticsUiState(statistics = firstStats)
+                    awaitItem() shouldBe TabStatisticsUiState(statistics = wonStatistics)
                     runCurrent()
-                    sudokusFlow.subscriptionCount.value shouldBe 1
+                    repository.activeObservers shouldBe 1
                     expectNoEvents()
-                    val secondStats = mockk<SudokuStatistics>()
-                    recomputed.complete(secondStats)
+                    calculation.scheduler.runCurrent()
                     runCurrent()
-                    awaitItem() shouldBe TabStatisticsUiState(statistics = secondStats)
+                    awaitItem() shouldBe TabStatisticsUiState(statistics = wonAndStartedStatistics)
                 }
             }
         }
 
         should("init keeps no statistics and reports loadFailed when observeSudokusAndStatisticsFilterFlags throws") {
-            every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw IllegalStateException("observe failed") }
+            repository.observed = { flow { throw IllegalStateException("observe failed") } }
 
             val viewModel = newViewModel()
 
@@ -140,10 +250,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
         }
 
         should("init keeps no statistics and reports loadFailed when calculateStatistics throws") {
-            every { observeSudokusAndStatisticsFilterFlags() } returns flowOf(emptyList())
-            coEvery { calculateStatistics(emptyList()) } throws RuntimeException("calculate failed")
-
-            val viewModel = newViewModel()
+            val viewModel = newViewModel(calculateDispatcher = FailingDispatcher)
 
             viewModel.state.test {
                 expectMostRecentItem() shouldBe TabStatisticsUiState()
@@ -152,7 +259,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
         }
 
         should("onLoadFailureHandled clears a reported load failure") {
-            every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw IllegalStateException("observe failed") }
+            repository.observed = { flow { throw IllegalStateException("observe failed") } }
             val viewModel = newViewModel()
             viewModel.state.test { expectMostRecentItem() shouldBe TabStatisticsUiState() }
             viewModel.loadFailed.value shouldBe true
@@ -163,7 +270,7 @@ class TabStatisticsViewModelTest : ShouldSpec(
         }
 
         should("init does not treat CancellationException as a load failure") {
-            every { observeSudokusAndStatisticsFilterFlags() } returns flow { throw CancellationException("cancelled") }
+            repository.observed = { flow { throw CancellationException("cancelled") } }
 
             val viewModel = newViewModel()
 

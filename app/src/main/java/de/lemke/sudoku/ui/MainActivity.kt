@@ -92,11 +92,11 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.fragments.TabHistory
 import de.lemke.sudoku.ui.fragments.TabStatistics
 import de.lemke.sudoku.ui.fragments.TabSudoku
-import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.GamesSignIn
 import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.PlayGamesScreen
 import de.lemke.sudoku.ui.utils.PlayGamesScreenLaunch
-import de.lemke.sudoku.ui.utils.applyPlayGamesSync
+import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import de.lemke.sudoku.ui.utils.preparePlayGamesScreen
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
@@ -120,10 +120,13 @@ class MainActivity : AppCompatActivity() {
     lateinit var userSettings: UserSettings
 
     @Inject
-    lateinit var gamesSignInProvider: GamesSignInProvider
+    lateinit var gamesSignIn: GamesSignIn
 
     @Inject
     lateinit var playGamesIntentProvider: PlayGamesIntentProvider
+
+    @Inject
+    lateinit var playGamesSyncApplier: PlayGamesSyncApplier
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -171,7 +174,7 @@ class MainActivity : AppCompatActivity() {
         collectState(viewModel.importedSudoku, minActiveState = RESUMED) { if (it is ImportedSudoku.Result) onImportedSudokuResult(it) }
         lifecycleScope.launch {
             isUIReady = true
-            applyPlayGamesSync(viewModel.onScreenReady())
+            playGamesSyncApplier.apply(this@MainActivity, viewModel.onScreenReady())
         }
     }
 
@@ -283,9 +286,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openPlayGamesScreen(screen: PlayGamesScreen) {
-        val client = gamesSignInProvider.getClient(this)
         singleLaunchSuspending(
-            work = { preparePlayGamesScreen(client, playGamesIntentProvider, screen) },
+            work = { preparePlayGamesScreen(gamesSignIn, playGamesIntentProvider, screen) },
             then = { launch ->
                 when (launch) {
                     is PlayGamesScreenLaunch.Ready -> {

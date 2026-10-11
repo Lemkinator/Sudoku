@@ -73,8 +73,8 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldView
+import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
-import de.lemke.sudoku.ui.utils.applyPlayGamesSync
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
@@ -128,8 +128,7 @@ class SudokuActivity : AppCompatActivity() {
             }
     internal var notesEnabled = false
     internal var selected: Int? = null
-    private var menuPausePlayVisible = false
-    private var menuResetVisible = false
+    private var gameEnded = false
     private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
     internal val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
@@ -137,6 +136,9 @@ class SudokuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var userSettings: UserSettings
+
+    @Inject
+    lateinit var playGamesSyncApplier: PlayGamesSyncApplier
 
     internal val viewModel: SudokuViewModel by viewModels()
 
@@ -188,8 +190,8 @@ class SudokuActivity : AppCompatActivity() {
                 )
             it.title = getString(if (sudoku.resumed) R.string.commonutils_pause else R.string.commonutils_resume)
         }
-        menu?.findItem(R.id.menu_reset)?.isVisible = menuResetVisible
-        menu?.findItem(R.id.menu_pause_play)?.isVisible = menuPausePlayVisible
+        menu?.findItem(R.id.menu_reset)?.isVisible = gameEnded
+        menu?.findItem(R.id.menu_pause_play)?.isVisible = !gameEnded
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -275,13 +277,11 @@ class SudokuActivity : AppCompatActivity() {
         if (!this::sudoku.isInitialized) return
         binding.resumeButton.transformTo(binding.gameLayout)
         if (sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now())) {
-            menuPausePlayVisible = false
-            menuResetVisible = true
+            gameEnded = true
             animateGameButtonsVisibility(false)
         } else {
             sudoku.startTimer()
-            menuPausePlayVisible = true
-            menuResetVisible = false
+            gameEnded = false
             animateGameButtonsVisibility(true)
         }
         invalidateOptionsMenu()
@@ -294,8 +294,7 @@ class SudokuActivity : AppCompatActivity() {
         if (sudoku.completed) return
         if (binding.gameLayout.isVisible) binding.gameLayout.transformTo(binding.resumeButton)
         animateGameButtonsVisibility(false)
-        menuResetVisible = false
-        menuPausePlayVisible = true
+        gameEnded = false
         invalidateOptionsMenu()
         if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
         viewModel.onPaused()
@@ -315,8 +314,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onSudokuCompleted() {
         setSubtitle()
-        menuResetVisible = true
-        menuPausePlayVisible = false
+        gameEnded = true
         invalidateOptionsMenu()
         animateGameButtonsVisibility(false)
         viewModel.onCompleted()
@@ -353,7 +351,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun onPlayGamesSync(sync: PlayGamesSync) {
-        applyPlayGamesSync(sync)
+        playGamesSyncApplier.apply(this, sync)
         showInAppReviewIfPossible(userSettings)
         viewModel.onPlayGamesSyncHandled(sync)
     }
@@ -369,8 +367,7 @@ class SudokuActivity : AppCompatActivity() {
             sudoku.stopTimer()
             setSubtitle()
             animateGameButtonsVisibility(false)
-            menuResetVisible = true
-            menuPausePlayVisible = false
+            gameEnded = true
             invalidateOptionsMenu()
             AlertDialog
                 .Builder(this@SudokuActivity)

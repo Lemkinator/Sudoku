@@ -16,13 +16,10 @@
 
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import com.google.android.gms.games.AuthenticationResult
-import com.google.android.gms.games.GamesSignInClient
 import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
@@ -39,16 +36,16 @@ import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.GamesSignInModule
+import de.lemke.sudoku.ui.utils.FakeGamesSignIn
 import de.lemke.sudoku.ui.utils.FakePlayGamesIntentProvider
-import de.lemke.sudoku.ui.utils.GamesSignInProvider
+import de.lemke.sudoku.ui.utils.FakePlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.GamesSignIn
 import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.PlayGamesScreen
+import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,10 +60,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
-
-private val AUTHENTICATED: AuthenticationResult = listOf(AuthenticationResult.zza, AuthenticationResult.zzb).first { it.isAuthenticated }
-private val NOT_AUTHENTICATED: AuthenticationResult =
-    listOf(AuthenticationResult.zza, AuthenticationResult.zzb).first { !it.isAuthenticated }
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -93,20 +86,21 @@ class MainActivityGamesSignInTest {
     @JvmField
     val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
-    private val fakeClient: GamesSignInClient = mockk()
+    private val fakeGamesSignIn = FakeGamesSignIn()
 
     @BindValue
     @JvmField
-    val fakeGamesSignInProvider: GamesSignInProvider =
-        object : GamesSignInProvider {
-            override fun getClient(activity: Activity): GamesSignInClient = fakeClient
-        }
+    val gamesSignIn: GamesSignIn = fakeGamesSignIn
 
     private val fakeIntentProvider = FakePlayGamesIntentProvider()
 
     @BindValue
     @JvmField
     val playGamesIntentProvider: PlayGamesIntentProvider = fakeIntentProvider
+
+    @BindValue
+    @JvmField
+    val playGamesSyncApplier: PlayGamesSyncApplier = FakePlayGamesSyncApplier()
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -140,28 +134,32 @@ class MainActivityGamesSignInTest {
     @Test
     fun `achievements_dest opens achievements directly when already authenticated`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.isAuthenticated() }
-            verify(exactly = 0) { fakeClient.signIn() }
+            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeGamesSignIn.signIns shouldBe 0
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
     fun `achievements_dest signs in then opens achievements when not yet authenticated and sign-in succeeds`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.signIn() }
+            fakeGamesSignIn.signIns shouldBe 1
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
     fun `achievements_dest shows an error toast when sign-in fails`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forResult(false)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
@@ -170,8 +168,8 @@ class MainActivityGamesSignInTest {
     @Test
     fun `achievements_dest shows an error toast when the sign-in task itself fails`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forException(RuntimeException("no network"))
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forException(RuntimeException("no network"))
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
@@ -180,63 +178,67 @@ class MainActivityGamesSignInTest {
     @Test
     fun `achievements_dest signs in when the isAuthenticated check itself fails`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forException(RuntimeException("no network"))
-            every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forException(RuntimeException("no network"))
+            fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.signIn() }
+            fakeGamesSignIn.signIns shouldBe 1
         }
 
     @Test
     fun `an isAuthenticated check that hangs for 10 s ends silently and admits the next tap`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns TaskCompletionSource<AuthenticationResult>().task
+            fakeGamesSignIn.authenticationCheck = TaskCompletionSource<Boolean>().task
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
-            verify(exactly = 0) { fakeClient.signIn() }
+            fakeGamesSignIn.signIns shouldBe 0
             ShadowToast.shownToastCount() shouldBe 0
             clickAchievements(activity)
-            verify(exactly = 2) { fakeClient.isAuthenticated() }
+            fakeGamesSignIn.authenticationChecks shouldBe 2
         }
 
     @Test
     fun `tapping achievements_dest twice signs in once`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forResult(false)
             clickAchievements(activity)
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.isAuthenticated() }
-            verify(exactly = 1) { fakeClient.signIn() }
+            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeGamesSignIn.signIns shouldBe 1
             ShadowToast.shownToastCount() shouldBe 1
         }
 
     @Test
     fun `leaderboards_dest opens leaderboards directly when already authenticated`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.isAuthenticated() }
-            verify(exactly = 0) { fakeClient.signIn() }
+            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeGamesSignIn.signIns shouldBe 0
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
     fun `leaderboards_dest signs in then opens leaderboards when not yet authenticated and sign-in succeeds`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.signIn() }
+            fakeGamesSignIn.signIns shouldBe 1
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
     fun `leaderboards_dest shows an error toast when sign-in fails`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forResult(NOT_AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forResult(false)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
@@ -245,8 +247,8 @@ class MainActivityGamesSignInTest {
     @Test
     fun `leaderboards_dest shows an error toast when the sign-in task itself fails`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(NOT_AUTHENTICATED)
-            every { fakeClient.signIn() } returns Tasks.forException(RuntimeException("no network"))
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+            fakeGamesSignIn.signInResult = Tasks.forException(RuntimeException("no network"))
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
@@ -255,17 +257,17 @@ class MainActivityGamesSignInTest {
     @Test
     fun `leaderboards_dest signs in when the isAuthenticated check itself fails`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forException(RuntimeException("no network"))
-            every { fakeClient.signIn() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forException(RuntimeException("no network"))
+            fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
-            verify(exactly = 1) { fakeClient.signIn() }
+            fakeGamesSignIn.signIns shouldBe 1
         }
 
     @Test
     fun `a failed achievements intent fetch ends silently and admits the next tap`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             fakeIntentProvider.results += Tasks.forException<Intent>(RuntimeException("no network"))
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
@@ -280,7 +282,7 @@ class MainActivityGamesSignInTest {
     @Test
     fun `a leaderboards intent fetch that hangs for 10 s ends silently and admits the next tap`() =
         launch { activity ->
-            every { fakeClient.isAuthenticated() } returns Tasks.forResult(AUTHENTICATED)
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             fakeIntentProvider.results += TaskCompletionSource<Intent>().task
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))

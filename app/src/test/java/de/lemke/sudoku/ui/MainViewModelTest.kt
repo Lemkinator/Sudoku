@@ -16,172 +16,217 @@
 
 package de.lemke.sudoku.ui
 
+import android.app.Application
 import android.net.Uri
+import android.os.Looper
 import androidx.lifecycle.SavedStateHandle
-import de.lemke.commonutils.data.FakeSharedPreferences
+import de.lemke.commonutils.freshTestPreferences
+import de.lemke.sudoku.R
+import de.lemke.sudoku.data.FakeDailyNotifications
+import de.lemke.sudoku.data.FakeSudokuDocuments
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
+import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.PlayGamesSync
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.domain.model.SudokuSize
-import io.kotest.core.spec.style.ShouldSpec
+import de.lemke.sudoku.testSudoku
+import io.kjson.stringifyJSON
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MainViewModelTest : ShouldSpec(
-    {
-        lateinit var userSettings: UserSettings
-        val importSudoku = mockk<ImportSudokuUseCase>()
-        val sendDailyNotification = mockk<SendDailyNotificationUseCase>(relaxUnitFun = true)
-        val calculatePlayGamesSync = mockk<CalculatePlayGamesSyncUseCase>()
-        val uri = mockk<Uri> { every { this@mockk.toString() } returns "content://files/opened.json" }
-        lateinit var savedStateHandle: SavedStateHandle
-        lateinit var viewModel: MainViewModel
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class, sdk = [36])
+class MainViewModelTest {
+    private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+    private val dailyNotifications = FakeDailyNotifications()
+    private val sudokusRepository = FakeSudokusRepository()
+    private val sudokuDocuments = FakeSudokuDocuments()
+    private val dispatcher = UnconfinedTestDispatcher()
+    private val uri = Uri.parse("content://files/opened.json")
+    private var savedStateHandle = SavedStateHandle()
+    private val viewModel = newViewModel()
 
-        fun newViewModel() = MainViewModel(userSettings, importSudoku, sendDailyNotification, calculatePlayGamesSync, savedStateHandle)
+    private val savedIds: List<String> get() = sudokusRepository.saves.map { it.rows.sudoku.id }
 
-        fun sudoku(): Sudoku {
-            val size = SudokuSize.FOUR
-            return Sudoku.create(
-                sudokuId = SudokuId("imported"),
-                size = size,
-                difficulty = Difficulty.VERY_EASY,
-                modeLevel = Sudoku.MODE_NORMAL,
-                fields =
-                    MutableList(size.cellCount) { i ->
-                        val solution = (i % size.value) + 1
-                        Field(position = Position.create(i, size), solution = solution, value = solution, given = true)
-                    },
-            )
-        }
+    private fun newViewModel(): MainViewModel {
+        val getAllSudokus = GetAllSudokusUseCase(sudokusRepository, dispatcher)
+        return MainViewModel(
+            userSettings,
+            ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), dispatcher),
+            SendDailyNotificationUseCase(dailyNotifications, userSettings),
+            CalculatePlayGamesSyncUseCase(getAllSudokus, dispatcher),
+            savedStateHandle,
+        )
+    }
 
-        beforeEach {
-            clearMocks(importSudoku, sendDailyNotification, calculatePlayGamesSync)
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            savedStateHandle = SavedStateHandle()
-            viewModel = newViewModel()
-        }
+    private fun addImportFile() =
+        sudokuDocuments.addDocument(uri, sudokuToExport(testSudoku(sudokuId = SudokuId("imported"))).stringifyJSON())
 
-        should("importedSudoku starts idle") {
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
-        }
+    private fun gateSaves(gate: CompletableDeferred<Unit>) {
+        sudokusRepository.beforeSave = { gate.await() }
+    }
 
-        should("onFileOpened exposes Importing until the import finishes") {
-            val imported = CompletableDeferred<Sudoku?>()
-            coEvery { importSudoku(uri) } coAnswers { imported.await() }
-            viewModel.onFileOpened(uri)
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Importing
-            imported.complete(sudoku())
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
-        }
+    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
 
-        should("onFileOpened exposes Failed when the import returns no sudoku") {
-            coEvery { importSudoku(uri) } returns null
-            viewModel.onFileOpened(uri)
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Failed
-        }
+    @Test
+    fun `importedSudoku starts idle`() {
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
+    }
 
-        should("onImportedSudokuHandled returns to Idle for the current result") {
-            coEvery { importSudoku(uri) } returns sudoku()
-            viewModel.onFileOpened(uri)
-            viewModel.onImportedSudokuHandled(ImportedSudoku.Imported(SudokuId("imported")))
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
-        }
+    @Test
+    fun `onFileOpened exposes Importing until the import finishes`() {
+        addImportFile()
+        val imported = CompletableDeferred<Unit>()
+        gateSaves(imported)
+        viewModel.onFileOpened(uri)
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Importing
+        imported.complete(Unit)
+        idle()
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
+    }
 
-        should("onImportedSudokuHandled keeps a newer result") {
-            coEvery { importSudoku(uri) } returns sudoku()
-            viewModel.onFileOpened(uri)
-            viewModel.onImportedSudokuHandled(ImportedSudoku.Failed)
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
-        }
+    @Test
+    fun `onFileOpened exposes Failed when the import returns no sudoku`() {
+        viewModel.onFileOpened(uri)
+        idle()
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Failed
+    }
 
-        should("onFileOpened imports a file only once when the activity is recreated") {
-            coEvery { importSudoku(uri) } returns sudoku()
-            viewModel.onFileOpened(uri)
-            viewModel.onImportedSudokuHandled(ImportedSudoku.Imported(SudokuId("imported")))
-            viewModel.onFileOpened(uri)
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
-            coVerify(exactly = 1) { importSudoku(uri) }
-        }
+    @Test
+    fun `onImportedSudokuHandled returns to Idle for the current result`() {
+        addImportFile()
+        viewModel.onFileOpened(uri)
+        idle()
+        viewModel.onImportedSudokuHandled(ImportedSudoku.Imported(SudokuId("imported")))
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
+    }
 
-        should("onFileOpened does not import the file again after process death restores the saved state") {
-            coEvery { importSudoku(uri) } returns sudoku()
-            viewModel.onFileOpened(uri)
-            savedStateHandle = SavedStateHandle(mapOf("openedFile" to savedStateHandle.get<String>("openedFile")))
-            val restored = newViewModel()
-            restored.onFileOpened(uri)
-            restored.importedSudoku.value shouldBe ImportedSudoku.Idle
-            coVerify(exactly = 1) { importSudoku(uri) }
-        }
+    @Test
+    fun `onImportedSudokuHandled keeps a newer result`() {
+        addImportFile()
+        viewModel.onFileOpened(uri)
+        idle()
+        viewModel.onImportedSudokuHandled(ImportedSudoku.Failed)
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
+    }
 
-        should("onFileOpened imports a file only once when the activity is recreated during the import") {
-            val imported = CompletableDeferred<Sudoku?>()
-            coEvery { importSudoku(uri) } coAnswers { imported.await() }
-            viewModel.onFileOpened(uri)
-            viewModel.onFileOpened(uri)
-            imported.complete(sudoku())
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
-            coVerify(exactly = 1) { importSudoku(uri) }
-        }
+    @Test
+    fun `onFileOpened imports a file only once when the activity is recreated`() {
+        addImportFile()
+        viewModel.onFileOpened(uri)
+        idle()
+        viewModel.onImportedSudokuHandled(ImportedSudoku.Imported(SudokuId("imported")))
+        viewModel.onFileOpened(uri)
+        idle()
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
+        savedIds shouldBe listOf("imported")
+    }
 
-        should("onFileOpened imports the file again after process death during the import") {
-            val interrupted = CompletableDeferred<Sudoku?>()
-            coEvery { importSudoku(uri) } coAnswers { interrupted.await() }
-            viewModel.onFileOpened(uri)
-            savedStateHandle = SavedStateHandle(savedStateHandle.keys().associateWith { savedStateHandle.get<Any>(it) })
-            coEvery { importSudoku(uri) } returns sudoku()
-            val restored = newViewModel()
-            restored.onFileOpened(uri)
-            restored.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
-            coVerify(exactly = 2) { importSudoku(uri) }
-        }
+    @Test
+    fun `onFileOpened does not import the file again after process death restores the saved state`() {
+        addImportFile()
+        viewModel.onFileOpened(uri)
+        idle()
+        savedStateHandle = SavedStateHandle(mapOf("openedFile" to savedStateHandle.get<String>("openedFile")))
+        val restored = newViewModel()
+        restored.onFileOpened(uri)
+        idle()
+        restored.importedSudoku.value shouldBe ImportedSudoku.Idle
+        savedIds shouldBe listOf("imported")
+    }
 
-        should("onFileOpened imports a different file opened later") {
-            val otherUri = mockk<Uri> { every { this@mockk.toString() } returns "content://files/other.json" }
-            coEvery { importSudoku(uri) } returns sudoku()
-            coEvery { importSudoku(otherUri) } returns null
-            viewModel.onFileOpened(uri)
-            viewModel.onFileOpened(otherUri)
-            viewModel.importedSudoku.value shouldBe ImportedSudoku.Failed
-            coVerify(exactly = 1) { importSudoku(otherUri) }
-        }
+    @Test
+    fun `onFileOpened imports a file only once when the activity is recreated during the import`() {
+        addImportFile()
+        val imported = CompletableDeferred<Unit>()
+        gateSaves(imported)
+        viewModel.onFileOpened(uri)
+        viewModel.onFileOpened(uri)
+        imported.complete(Unit)
+        idle()
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
+        savedIds shouldBe listOf("imported")
+    }
 
-        should("onScreenReady enables the daily notification when userSettings.dailySudokuNotificationEnabled is true") {
+    @Test
+    fun `onFileOpened imports the file again after process death during the import`() {
+        addImportFile()
+        gateSaves(CompletableDeferred())
+        viewModel.onFileOpened(uri)
+        savedStateHandle = SavedStateHandle(savedStateHandle.keys().associateWith { savedStateHandle.get<Any>(it) })
+        sudokusRepository.beforeSave = {}
+        val restored = newViewModel()
+        restored.onFileOpened(uri)
+        idle()
+        restored.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
+        savedIds shouldBe listOf("imported")
+    }
+
+    @Test
+    fun `onFileOpened imports a different file opened later`() {
+        addImportFile()
+        val otherUri = Uri.parse("content://files/other.json")
+        viewModel.onFileOpened(uri)
+        idle()
+        viewModel.onFileOpened(otherUri)
+        idle()
+        viewModel.importedSudoku.value shouldBe ImportedSudoku.Failed
+        savedIds shouldBe listOf("imported")
+    }
+
+    @Test
+    fun `onScreenReady enables the daily notification when userSettings dailySudokuNotificationEnabled is true`() =
+        runTest {
             userSettings.dailySudokuNotificationEnabled = true
-            val sync = mockk<PlayGamesSync>()
-            coEvery { calculatePlayGamesSync() } returns sync
             viewModel.onScreenReady()
-            verify(exactly = 1) { sendDailyNotification.setDailySudokuNotification(enable = true) }
+            dailyNotifications.scheduled shouldBe FakeDailyNotifications.AlarmTime(hour = 9, minute = 0)
         }
 
-        should("onScreenReady disables the daily notification when userSettings.dailySudokuNotificationEnabled is false") {
+    @Test
+    fun `onScreenReady disables the daily notification when userSettings dailySudokuNotificationEnabled is false`() =
+        runTest {
+            dailyNotifications.schedule(9, 0)
             userSettings.dailySudokuNotificationEnabled = false
-            val sync = mockk<PlayGamesSync>()
-            coEvery { calculatePlayGamesSync() } returns sync
             viewModel.onScreenReady()
-            verify(exactly = 1) { sendDailyNotification.setDailySudokuNotification(enable = false) }
+            dailyNotifications.scheduled.shouldBeNull()
         }
 
-        should("onScreenReady returns calculatePlayGamesSync's result") {
-            val sync = mockk<PlayGamesSync>()
-            coEvery { calculatePlayGamesSync() } returns sync
-            viewModel.onScreenReady() shouldBe sync
+    @Test
+    fun `onScreenReady returns calculatePlayGamesSync's result`() =
+        runTest {
+            sudokusRepository.store(
+                testSudoku(completed = true),
+                testSudoku(modeLevel = 1, completed = true),
+                testSudoku(modeLevel = Sudoku.MODE_DAILY, completed = true),
+                testSudoku(),
+            )
+            viewModel.onScreenReady() shouldBe
+                PlayGamesSync(
+                    leaderboardScores =
+                        listOf(
+                            R.string.leaderboard_total_wins to 3L,
+                            R.string.leaderboard_daily_sudokus to 1L,
+                            R.string.leaderboard_level_44 to 1L,
+                            R.string.leaderboard_level_99 to 0L,
+                            R.string.leaderboard_level_1616 to 0L,
+                        ),
+                )
         }
-    },
-)
+}

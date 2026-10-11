@@ -17,28 +17,39 @@
 package de.lemke.sudoku.ui
 
 import androidx.lifecycle.SavedStateHandle
+import de.lemke.commonutils.data.FakeSharedPreferences
+import de.lemke.sudoku.data.FakeDailyNotifications
+import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
+import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class IntroViewModelTest : ShouldSpec(
     {
-        val setDailyNotificationEnabled = mockk<SetDailyNotificationEnabledUseCase>(relaxUnitFun = true)
-        val isNotificationPermissionGranted = mockk<IsNotificationPermissionGrantedUseCase>()
+        lateinit var userSettings: UserSettings
+        lateinit var dailyNotifications: FakeDailyNotifications
 
         beforeEach {
-            clearMocks(setDailyNotificationEnabled, isNotificationPermissionGranted)
+            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            dailyNotifications = FakeDailyNotifications()
         }
 
         fun newViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
-            IntroViewModel(setDailyNotificationEnabled, isNotificationPermissionGranted, savedStateHandle)
+            IntroViewModel(
+                SetDailyNotificationEnabledUseCase(userSettings, SendDailyNotificationUseCase(dailyNotifications, userSettings)),
+                IsNotificationPermissionGrantedUseCase(dailyNotifications),
+                savedStateHandle,
+            )
 
         should("openedFromSettings is true when the saved state handle carries true") {
             val viewModel = newViewModel(SavedStateHandle(mapOf(IntroActivity.KEY_OPENED_FROM_SETTINGS to true)))
@@ -66,27 +77,30 @@ class IntroViewModelTest : ShouldSpec(
             viewModel.onNotificationsDeclined()
 
             viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
-            verify(exactly = 1) { setDailyNotificationEnabled(false) }
+            userSettings.dailySudokuNotificationEnabled.shouldBeFalse()
+            dailyNotifications.scheduled.shouldBeNull()
         }
 
         should("onNotificationsAccepted enables notifications and reports Saved when permission is granted") {
-            every { isNotificationPermissionGranted() } returns true
+            dailyNotifications.permissionGranted = true
             val viewModel = newViewModel()
 
             viewModel.onNotificationsAccepted()
 
             viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
-            verify(exactly = 1) { setDailyNotificationEnabled(true) }
+            userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
+            dailyNotifications.scheduled shouldBe AlarmTime(hour = 9, minute = 0)
         }
 
         should("onNotificationsAccepted only reports RequestPermission when permission is not granted") {
-            every { isNotificationPermissionGranted() } returns false
+            dailyNotifications.permissionGranted = false
             val viewModel = newViewModel()
 
             viewModel.onNotificationsAccepted()
 
             viewModel.notificationChoice.value shouldBe NotificationChoice.RequestPermission
-            verify(exactly = 0) { setDailyNotificationEnabled(any()) }
+            userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
+            dailyNotifications.scheduled.shouldBeNull()
         }
 
         should("onNotificationPermissionResult enables notifications and reports Saved when granted") {
@@ -95,7 +109,8 @@ class IntroViewModelTest : ShouldSpec(
             viewModel.onNotificationPermissionResult(true)
 
             viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
-            verify(exactly = 1) { setDailyNotificationEnabled(true) }
+            userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
+            dailyNotifications.scheduled shouldBe AlarmTime(hour = 9, minute = 0)
         }
 
         should("onNotificationPermissionResult disables notifications and reports Saved when not granted") {
@@ -104,7 +119,8 @@ class IntroViewModelTest : ShouldSpec(
             viewModel.onNotificationPermissionResult(false)
 
             viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
-            verify(exactly = 1) { setDailyNotificationEnabled(false) }
+            userSettings.dailySudokuNotificationEnabled.shouldBeFalse()
+            dailyNotifications.scheduled.shouldBeNull()
         }
 
         should("handling the current result returns to pending") {
@@ -117,7 +133,7 @@ class IntroViewModelTest : ShouldSpec(
         }
 
         should("handling a requested permission returns to pending, and the permission result then reports Saved") {
-            every { isNotificationPermissionGranted() } returns false
+            dailyNotifications.permissionGranted = false
             val viewModel = newViewModel()
             viewModel.onNotificationsAccepted()
 
@@ -129,7 +145,7 @@ class IntroViewModelTest : ShouldSpec(
         }
 
         should("handling a stale result keeps the current result") {
-            every { isNotificationPermissionGranted() } returns false
+            dailyNotifications.permissionGranted = false
             val viewModel = newViewModel()
             viewModel.onNotificationsAccepted()
 

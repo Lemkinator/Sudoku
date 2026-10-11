@@ -16,26 +16,30 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeleteInvalidSudokusUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
+        val sudokusRepository = FakeSudokusRepository()
         val useCase = DeleteInvalidSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
 
         should("delegates to sudokusRepository.deleteInvalidSudokus") {
-            coEvery { sudokusRepository.deleteInvalidSudokus() } returns Unit
+            val valid = testSudoku()
+            val invalid = testSudoku()
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(valid))
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(invalid).copy(fields = emptyList()))
 
             useCase()
 
-            coVerify(exactly = 1) { sudokusRepository.deleteInvalidSudokus() }
+            sudokusRepository.deletedIds shouldBe listOf(invalid.id)
+            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(valid.id.value)
         }
     },
 )

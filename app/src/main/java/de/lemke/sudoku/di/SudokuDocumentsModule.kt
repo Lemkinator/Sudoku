@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.ui.utils
+package de.lemke.sudoku.di
 
-import android.app.Activity
-import com.google.android.gms.games.GamesSignInClient
-import com.google.android.gms.games.PlayGames
-import javax.inject.Inject
+import dagger.Binds
+import dagger.Module
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import de.lemke.sudoku.data.DefaultSudokuDocuments
+import de.lemke.sudoku.data.SudokuDocuments
 
-interface GamesSignInProvider {
-    fun getClient(activity: Activity): GamesSignInClient
-}
-
-class DefaultGamesSignInProvider @Inject constructor() : GamesSignInProvider {
-    override fun getClient(activity: Activity): GamesSignInClient = PlayGames.getGamesSignInClient(activity)
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class SudokuDocumentsModule {
+    @Binds
+    abstract fun bindSudokuDocuments(documents: DefaultSudokuDocuments): SudokuDocuments
 }

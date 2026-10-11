@@ -21,27 +21,21 @@ import android.content.pm.ProviderInfo
 import android.database.sqlite.SQLiteException
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.data.DefaultSudokuDocuments
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.sudokuToExport
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kjson.stringifyJSON
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -58,24 +52,9 @@ class ImportSudokuUseCaseTest {
     val temporaryFolder = TemporaryFolder()
 
     private val context = ApplicationProvider.getApplicationContext<Application>()
-    private val saveSudoku = mockk<SaveSudokuUseCase>(relaxUnitFun = true)
-    private val useCase = ImportSudokuUseCase(context, saveSudoku, UnconfinedTestDispatcher())
-
-    @Before
-    fun setUp() {
-        clearMocks(saveSudoku)
-    }
-
-    private fun testSudoku(size: SudokuSize = SudokuSize.FOUR): Sudoku =
-        Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = Sudoku.MODE_NORMAL,
-            fields =
-                MutableList(size.cellCount) { i ->
-                    Field(position = Position.create(i, size), solution = (i % size.value) + 1, value = (i % size.value) + 1, given = true)
-                },
-        )
+    private val sudokusRepository = FakeSudokusRepository()
+    private val dispatcher = UnconfinedTestDispatcher()
+    private val useCase = ImportSudokuUseCase(DefaultSudokuDocuments(context), SaveSudokuUseCase(sudokusRepository, dispatcher), dispatcher)
 
     private fun uriFor(content: String): Uri {
         val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(content) }
@@ -87,7 +66,7 @@ class ImportSudokuUseCaseTest {
         runTest {
             useCase(null).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
@@ -101,7 +80,7 @@ class ImportSudokuUseCaseTest {
             result.shouldNotBeNull()
             result.id shouldBe sudoku.id
             result.fields.size shouldBe sudoku.fields.size
-            coVerify(exactly = 1) { saveSudoku(sudoku, false) }
+            sudokusRepository.saves.map { it.rows.sudoku.id to it.onlyUpdate } shouldBe listOf(sudoku.id.value to false)
         }
 
     @Test
@@ -111,7 +90,7 @@ class ImportSudokuUseCaseTest {
 
             useCase(uri).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
@@ -122,7 +101,7 @@ class ImportSudokuUseCaseTest {
 
             useCase(uri).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
@@ -132,7 +111,7 @@ class ImportSudokuUseCaseTest {
 
             useCase(uri).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
@@ -142,14 +121,14 @@ class ImportSudokuUseCaseTest {
 
             useCase(uri).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
     fun `returns null when saving the imported sudoku fails in the database`() =
         runTest {
             val uri = uriFor(sudokuToExport(testSudoku()).stringifyJSON())
-            coEvery { saveSudoku(any(), any()) } throws SQLiteException("boom")
+            sudokusRepository.saveFailure = SQLiteException("boom")
 
             useCase(uri).shouldBeNull()
         }
@@ -165,7 +144,7 @@ class ImportSudokuUseCaseTest {
 
             useCase(uri).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
@@ -180,7 +159,7 @@ class ImportSudokuUseCaseTest {
 
             useCase(uri).shouldBeNull()
 
-            coVerify(exactly = 0) { saveSudoku(any(), any()) }
+            sudokusRepository.saves.shouldBeEmpty()
         }
 
     @Test
@@ -188,7 +167,7 @@ class ImportSudokuUseCaseTest {
         runTest {
             val sudoku = testSudoku()
             val uri = uriFor(sudokuToExport(sudoku).stringifyJSON())
-            coEvery { saveSudoku(any(), any()) } throws CancellationException()
+            sudokusRepository.saveFailure = CancellationException()
 
             shouldThrow<CancellationException> { useCase(uri) }
         }

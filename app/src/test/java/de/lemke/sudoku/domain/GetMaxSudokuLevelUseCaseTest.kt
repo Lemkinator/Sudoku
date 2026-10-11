@@ -16,28 +16,28 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testLevelSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GetMaxSudokuLevelUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
+        val sudokusRepository = FakeSudokusRepository()
         val useCase = GetMaxSudokuLevelUseCase(sudokusRepository, UnconfinedTestDispatcher())
 
         should("passes through the repository's max sudoku level for the given size") {
-            coEvery { sudokusRepository.getMaxSudokuLevel(SudokuSize.NINE) } returns 42
+            listOf(
+                testLevelSudoku(SudokuSize.NINE, level = 3),
+                testLevelSudoku(SudokuSize.NINE, level = 42),
+                testLevelSudoku(SudokuSize.FOUR, level = 50),
+            ).forEach { sudokusRepository.saveSudoku(it) }
 
             useCase(SudokuSize.NINE) shouldBe 42
-
-            coVerify(exactly = 1) { sudokusRepository.getMaxSudokuLevel(SudokuSize.NINE) }
         }
     },
 )

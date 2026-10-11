@@ -16,20 +16,11 @@
 
 package de.lemke.sudoku.ui
 
-import android.Manifest.permission.POST_NOTIFICATIONS
-import android.content.Context
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri
-import android.os.Build.VERSION.SDK_INT
-import android.os.Build.VERSION_CODES.TIRAMISU
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.NotificationManagerCompat.IMPORTANCE_NONE
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import de.lemke.sudoku.R
+import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
 import de.lemke.sudoku.domain.ExportDataUseCase
@@ -94,8 +85,8 @@ sealed interface DataTransfer {
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val userSettings: UserSettings,
+    private val dailyNotifications: DailyNotifications,
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
     private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
@@ -112,7 +103,7 @@ class SettingsViewModel @Inject constructor(
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
 
     val isDailyNotificationChecked: Boolean
-        get() = userSettings.dailySudokuNotificationEnabled && systemNotificationsEnabled()
+        get() = userSettings.dailySudokuNotificationEnabled && !dailyNotifications.isBlocked()
 
     fun onDailyNotificationToggleRequested(enabled: Boolean): DailyNotificationToggleResult =
         when {
@@ -125,7 +116,7 @@ class SettingsViewModel @Inject constructor(
                 DailyNotificationToggleResult.NeedsPermission
             }
 
-            !systemNotificationsEnabled() -> {
+            dailyNotifications.isBlocked() -> {
                 DailyNotificationToggleResult.SystemNotificationsDisabled
             }
 
@@ -185,17 +176,6 @@ class SettingsViewModel @Inject constructor(
 
     private fun setDailySudokuNotification(enabled: Boolean) {
         viewModelScope.launch { setDailyNotificationEnabled(enabled) }
-    }
-
-    private fun systemNotificationsEnabled(): Boolean {
-        val channelId = context.getString(R.string.daily_sudoku_notification_channel_id)
-        val notificationManager = NotificationManagerCompat.from(context)
-        return when {
-            !notificationManager.areNotificationsEnabled() -> false
-            notificationManager.getNotificationChannel(channelId)?.importance == IMPORTANCE_NONE -> false
-            SDK_INT >= TIRAMISU -> ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_GRANTED
-            else -> true
-        }
     }
 
     private companion object {

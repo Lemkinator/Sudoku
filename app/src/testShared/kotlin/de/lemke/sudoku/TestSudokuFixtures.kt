@@ -23,37 +23,26 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.tutorialSudoku
+import java.time.LocalDateTime
 
-/**
- * For size 9 (the only size ever actually rendered in a screenshot test), reuses
- * [tutorialSudoku][de.lemke.sudoku.domain.model.tutorialSudoku] — the same real, hand-verified board
- * [IntroActivity][de.lemke.sudoku.ui.IntroActivity] ships — rather than hardcoding a second one. Size 4/16 boards
- * are only ever used to seed [de.lemke.sudoku.ui.SudokuLevelActivity]'s level list (never rendered as a grid), so
- * they fall back to the standard band-shifted base pattern
- * `(blockSize * (row % blockSize) + row / blockSize + col) % size + 1` — a real valid solved grid, just not one a
- * human authored. Shared between `src/test` (Robolectric) and `src/androidTest` (instrumented).
- */
-fun testLevelSudoku(
-    size: SudokuSize,
-    level: Int = 1,
+/** A readable sudoku over a valid solved pattern; every third field is given, the rest stays empty unless [completed]. */
+fun testSudoku(
+    size: SudokuSize = SudokuSize.FOUR,
+    modeLevel: Int = Sudoku.MODE_NORMAL,
+    difficulty: Difficulty = Difficulty.EASY,
     sudokuId: SudokuId = SudokuId.generate(),
-): Sudoku =
-    when (size) {
-        SudokuSize.NINE -> tutorialSudoku(sudokuId = sudokuId, modeLevel = level)
-        SudokuSize.FOUR, SudokuSize.SIXTEEN -> patternLevelSudoku(size = size, level = level, sudokuId = sudokuId)
-    }
-
-private fun patternLevelSudoku(
-    size: SudokuSize,
-    level: Int,
-    sudokuId: SudokuId,
+    created: LocalDateTime = LocalDateTime.now(),
+    updated: LocalDateTime = created,
+    completed: Boolean = false,
 ): Sudoku {
     val blockSize = size.blockSize
     return Sudoku.create(
         sudokuId = sudokuId,
         size = size,
-        difficulty = Difficulty.VERY_EASY,
-        modeLevel = level,
+        difficulty = difficulty,
+        modeLevel = modeLevel,
+        created = created,
+        updated = updated,
         fields =
             MutableList(size.cellCount) { index ->
                 val position = Position.create(index, size)
@@ -64,9 +53,29 @@ private fun patternLevelSudoku(
                 Field(
                     position = position,
                     solution = solution,
-                    value = if (given) solution else null,
+                    value = if (given || completed) solution else null,
                     given = given,
                 )
             },
     )
 }
+
+fun testLevelSudoku(
+    size: SudokuSize,
+    level: Int = 1,
+    sudokuId: SudokuId = SudokuId.generate(),
+): Sudoku =
+    when (size) {
+        SudokuSize.NINE -> {
+            tutorialSudoku(sudokuId = sudokuId, modeLevel = level)
+        }
+
+        SudokuSize.FOUR, SudokuSize.SIXTEEN -> {
+            testSudoku(
+                size = size,
+                modeLevel = level,
+                difficulty = Difficulty.VERY_EASY,
+                sudokuId = sudokuId,
+            )
+        }
+    }

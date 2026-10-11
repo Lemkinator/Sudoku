@@ -65,6 +65,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.fakes.RoboMenu
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
@@ -363,6 +364,17 @@ class SudokuActivityLifecycleTest {
     fun `onPrepareOptionsMenu with a null menu is a safe no-op once the sudoku is initialized`() =
         launch(formulaicSudoku()) { activity ->
             activity.onPrepareOptionsMenu(null).shouldBeTrue()
+        }
+
+    @Test
+    fun `onPrepareOptionsMenu skips the game items a menu does not hold`() =
+        launch(formulaicSudoku()) { activity ->
+            val menu = RoboMenu(activity)
+            val share = menu.add(0, R.id.menu_share, 0, "Share").apply { isVisible = false }
+
+            activity.onPrepareOptionsMenu(menu).shouldBeTrue()
+
+            share.isVisible.shouldBeFalse()
         }
 
     // endregion

@@ -16,18 +16,14 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.mockk
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -35,54 +31,53 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalCoroutinesApi::class)
 class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
     {
-        val getAllSudokus = mockk<GetAllSudokusUseCase>()
-        val useCase = IsDailySudokuCompletedUseCase(getAllSudokus, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: IsDailySudokuCompletedUseCase
         val date = LocalDate.of(2026, 1, 1)
-        val flags = SudokuFilterFlags.TYPE_DAILY or SudokuFilterFlags.DIFFICULTY_ALL or SudokuFilterFlags.SIZE_ALL
 
-        beforeEach { clearMocks(getAllSudokus) }
+        beforeEach {
+            val dispatcher = UnconfinedTestDispatcher()
+            sudokusRepository = FakeSudokusRepository()
+            useCase = IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
+        }
 
         should("returns true when a completed daily sudoku exists for the date") {
-            val completedField = Field(Position.create(0, SudokuSize.FOUR), solution = 1, value = 1)
             val completedSudoku =
-                Sudoku.create(
+                testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),
-                    fields = mutableListOf(completedField),
+                    completed = true,
                 )
-            coEvery { getAllSudokus(flags) } returns listOf(completedSudoku)
+            sudokusRepository.saveSudoku(completedSudoku)
 
             useCase(date).shouldBeTrue()
         }
 
         should("returns false when no daily sudoku is completed on the date") {
-            val incompleteField = Field(Position.create(0, SudokuSize.FOUR), solution = 1, value = null)
             val incompleteSudoku =
-                Sudoku.create(
+                testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.atStartOfDay(),
-                    fields = mutableListOf(incompleteField),
                 )
-            coEvery { getAllSudokus(flags) } returns listOf(incompleteSudoku)
+            sudokusRepository.saveSudoku(incompleteSudoku)
 
             useCase(date).shouldBeFalse()
         }
 
         should("returns false when a completed daily sudoku exists but on a different date") {
-            val completedField = Field(Position.create(0, SudokuSize.FOUR), solution = 1, value = 1)
             val completedOnOtherDate =
-                Sudoku.create(
+                testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
                     modeLevel = Sudoku.MODE_DAILY,
                     created = date.plusDays(1).atStartOfDay(),
-                    fields = mutableListOf(completedField),
+                    completed = true,
                 )
-            coEvery { getAllSudokus(flags) } returns listOf(completedOnOtherDate)
+            sudokusRepository.saveSudoku(completedOnOtherDate)
 
             useCase(date).shouldBeFalse()
         }

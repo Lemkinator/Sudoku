@@ -21,23 +21,17 @@ import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
-import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GenerateSudokuLevelUseCaseTest : ShouldSpec(
     {
-        val generateFields = mockk<GenerateFieldsUseCase>()
-        val useCase = GenerateSudokuLevelUseCase(generateFields, UnconfinedTestDispatcher())
-
-        beforeEach { clearMocks(generateFields) }
+        val dispatcher = UnconfinedTestDispatcher()
+        val useCase = GenerateSudokuLevelUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), dispatcher)
 
         should("map every level-threshold boundary to its difficulty") {
             val cases =
@@ -55,8 +49,6 @@ class GenerateSudokuLevelUseCaseTest : ShouldSpec(
                 )
 
             cases.forEach { (level, expectedDifficulty) ->
-                coEvery { generateFields(SudokuSize.NINE, expectedDifficulty) } returns mutableListOf<Field>()
-
                 val sudoku = useCase(SudokuSize.NINE, level)
 
                 sudoku.difficulty shouldBe expectedDifficulty

@@ -25,6 +25,7 @@ import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.commonutils.ShadowFileProvider
+import de.lemke.sudoku.data.DefaultSudokuShareFiles
 import de.lemke.sudoku.data.database.FieldExport
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.domain.model.Difficulty
@@ -83,7 +84,7 @@ private fun testSudoku(
 @Config(application = Application::class, sdk = [36], shadows = [ShadowFileProvider::class])
 class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val useCase = ShareSudokuUseCase(context, UnconfinedTestDispatcher())
+    private val useCase = ShareSudokuUseCase(DefaultSudokuShareFiles(context), UnconfinedTestDispatcher())
     private val fileProviderAuthority: String =
         context.packageManager
             .getPackageInfo(context.packageName, PackageInfoFlags.of(GET_PROVIDERS.toLong()))

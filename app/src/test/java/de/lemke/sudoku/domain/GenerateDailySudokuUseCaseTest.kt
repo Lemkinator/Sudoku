@@ -17,15 +17,11 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.every
-import io.mockk.mockk
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
@@ -36,16 +32,12 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 @OptIn(ExperimentalCoroutinesApi::class)
 class GenerateDailySudokuUseCaseTest : ShouldSpec(
     {
-        val generateFields = mockk<GenerateFieldsUseCase>()
+        val dispatcher = UnconfinedTestDispatcher()
         val fixedInstant = Instant.parse("2026-02-15T10:00:00Z")
-        val clock = mockk<Clock>()
-        val useCase = GenerateDailySudokuUseCase(generateFields, clock, UnconfinedTestDispatcher())
+        val clock = Clock.fixed(fixedInstant, ZoneOffset.UTC)
+        val useCase = GenerateDailySudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), clock, dispatcher)
 
         should("mark the sudoku as daily mode, stamp created from the injected clock, and pick a supported difficulty") {
-            every { clock.instant() } returns fixedInstant
-            every { clock.zone } returns ZoneOffset.UTC
-            coEvery { generateFields(SudokuSize.NINE, any()) } returns mutableListOf<Field>()
-
             val sudoku = useCase(SudokuSize.NINE)
 
             sudoku.modeLevel shouldBe Sudoku.MODE_DAILY

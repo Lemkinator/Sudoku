@@ -17,32 +17,28 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.domain.model.Difficulty.HARD
-import de.lemke.sudoku.domain.model.Field
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GenerateSudokuUseCaseTest : ShouldSpec(
     {
-        val generateFields = mockk<GenerateFieldsUseCase>()
-        val useCase = GenerateSudokuUseCase(generateFields, UnconfinedTestDispatcher())
+        val dispatcher = UnconfinedTestDispatcher()
+        val useCase = GenerateSudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), dispatcher)
 
         should("pass size/difficulty through to GenerateFieldsUseCase and mark the sudoku as normal mode") {
-            val fields = mutableListOf<Field>()
-            coEvery { generateFields(SudokuSize.NINE, HARD) } returns fields
-
             val sudoku = useCase(SudokuSize.NINE, HARD)
 
             sudoku.size shouldBe SudokuSize.NINE
             sudoku.difficulty shouldBe HARD
             sudoku.modeLevel shouldBe Sudoku.MODE_NORMAL
-            sudoku.fields shouldBe fields
+            sudoku.fields shouldHaveSize 81
+            sudoku.fields.take(9).map { it.solution } shouldBe (1..9).toList()
         }
     },
 )

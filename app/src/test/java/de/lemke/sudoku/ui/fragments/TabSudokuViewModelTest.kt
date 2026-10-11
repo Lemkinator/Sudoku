@@ -18,60 +18,68 @@ package de.lemke.sudoku.ui.fragments
 
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.sudokuFromDb
+import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
+import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetRecentlyUpdatedNormalSudokuUseCase
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
+import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
-import io.mockk.Ordering
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import java.time.LocalDateTime
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
-private fun testSudoku(
-    size: SudokuSize = SudokuSize.NINE,
-    completed: Boolean = false,
-    errorsMade: Int = 0,
-): Sudoku =
-    Sudoku.create(
-        size = size,
-        difficulty = Difficulty.EASY,
-        modeLevel = Sudoku.MODE_NORMAL,
-        errorsMade = errorsMade,
-        fields =
-            MutableList(size.cellCount) { index ->
-                Field(Position.create(index, size), solution = 1, value = if (completed) 1 else null)
-            },
-    )
+private const val GENERATE = "generate"
+private const val SAVE = "save"
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabSudokuViewModelTest : ShouldSpec(
     {
         lateinit var userSettings: UserSettings
-        val generateSudoku = mockk<GenerateSudokuUseCase>()
-        val saveSudoku = mockk<SaveSudokuUseCase>(relaxUnitFun = true)
-        val getRecentSudoku = mockk<GetRecentlyUpdatedNormalSudokuUseCase>()
-        val isDailySudokuCompleted = mockk<IsDailySudokuCompletedUseCase>()
+        lateinit var repository: FakeSudokusRepository
+        lateinit var events: MutableList<String>
         lateinit var viewModel: TabSudokuViewModel
 
         beforeEach {
-            clearMocks(generateSudoku, saveSudoku, getRecentSudoku, isDailySudokuCompleted)
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            viewModel = TabSudokuViewModel(userSettings, generateSudoku, saveSudoku, getRecentSudoku, isDailySudokuCompleted)
+            repository = FakeSudokusRepository()
+            events = mutableListOf()
+            repository.beforeSave = { events += SAVE }
+            val dispatcher = UnconfinedTestDispatcher()
+            val solvedBoardGenerator =
+                SolvedBoardGenerator { schema ->
+                    events += GENERATE
+                    PatternSolvedBoardGenerator().generate(schema)
+                }
+            viewModel =
+                TabSudokuViewModel(
+                    userSettings,
+                    GenerateSudokuUseCase(GenerateFieldsUseCase(dispatcher, solvedBoardGenerator), dispatcher),
+                    SaveSudokuUseCase(repository, dispatcher),
+                    GetRecentlyUpdatedNormalSudokuUseCase(repository, dispatcher),
+                    IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+                )
         }
+
+        fun savedIds() = repository.saves.map { SudokuId(it.rows.sudoku.id) }
+
+        fun generations() = events.count { it == GENERATE }
 
         should("difficultySliderValue round-trips through the real UserSettings") {
             viewModel.difficultySliderValue = 3
@@ -86,116 +94,109 @@ class TabSudokuViewModelTest : ShouldSpec(
         }
 
         should("onNewGame generates then saves the sudoku, in order, and reports it created") {
-            val sudoku = testSudoku()
-            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
-
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
 
-            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
-            coVerify(ordering = Ordering.ORDERED) {
-                generateSudoku(SudokuSize.NINE, Difficulty.HARD)
-                saveSudoku(sudoku)
-            }
+            viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
+            events shouldBe listOf(GENERATE, SAVE)
+            val save = repository.saves.single()
+            save.onlyUpdate shouldBe false
+            sudokuFromDb(save.rows)?.let { Triple(it.size, it.difficulty, it.modeLevel) } shouldBe
+                Triple(SudokuSize.NINE, Difficulty.HARD, Sudoku.MODE_NORMAL)
         }
 
         should("onNewGame reports generating until the sudoku is saved") {
-            val generated = CompletableDeferred<Sudoku>()
-            coEvery { generateSudoku(SudokuSize.FOUR, Difficulty.EASY) } coAnswers { generated.await() }
+            val saved = CompletableDeferred<Unit>()
+            repository.beforeSave = { saved.await() }
 
             viewModel.onNewGame(SudokuSize.FOUR, Difficulty.EASY)
 
             viewModel.newGame.value shouldBe NewGame.Generating
-            coVerify(exactly = 0) { saveSudoku(any()) }
-            val sudoku = testSudoku(SudokuSize.FOUR)
-            generated.complete(sudoku)
-            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
+            repository.saves shouldBe emptyList()
+            saved.complete(Unit)
+            viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
         }
 
         should("a second onNewGame while generating generates once") {
-            val generated = CompletableDeferred<Sudoku>()
-            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } coAnswers { generated.await() }
+            val saved = CompletableDeferred<Unit>()
+            repository.beforeSave = { saved.await() }
 
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
-            generated.complete(testSudoku())
+            saved.complete(Unit)
 
-            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.HARD) }
-            coVerify(exactly = 1) { saveSudoku(any()) }
+            generations() shouldBe 1
+            repository.saves.size shouldBe 1
         }
 
         should("onNewGame while a created sudoku is not handled yet keeps that sudoku") {
-            val sudoku = testSudoku()
-            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
 
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
 
-            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
-            coVerify(exactly = 1) { generateSudoku(SudokuSize.NINE, Difficulty.HARD) }
+            viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
+            generations() shouldBe 1
         }
 
         should("onNewGameHandled returns to idle, so the next onNewGame generates again") {
-            val first = testSudoku()
-            val second = testSudoku()
-            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returnsMany listOf(first, second)
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
+            val first = viewModel.newGame.value.shouldBeInstanceOf<NewGame.Created>()
 
-            viewModel.onNewGameHandled(NewGame.Created(first.id))
+            viewModel.onNewGameHandled(first)
 
             viewModel.newGame.value shouldBe NewGame.Idle
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
-            viewModel.newGame.value shouldBe NewGame.Created(second.id)
+            val second = savedIds().last()
+            second shouldNotBe first.sudokuId
+            viewModel.newGame.value shouldBe NewGame.Created(second)
+            generations() shouldBe 2
         }
 
         should("onNewGameHandled for another sudoku keeps the pending one") {
-            val sudoku = testSudoku()
-            coEvery { generateSudoku(SudokuSize.NINE, Difficulty.HARD) } returns sudoku
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
 
             viewModel.onNewGameHandled(NewGame.Created(testSudoku().id))
 
-            viewModel.newGame.value shouldBe NewGame.Created(sudoku.id)
+            viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
         }
 
         should("getContinuableSudoku returns null when getRecentSudoku finds nothing") {
-            coEvery { getRecentSudoku() } returns null
-
             viewModel.getContinuableSudoku() shouldBe null
         }
 
         should("getContinuableSudoku returns null when the recent sudoku is already completed") {
-            val sudoku = testSudoku(completed = true)
-            coEvery { getRecentSudoku() } returns sudoku
+            repository.store(testSudoku(completed = true))
 
             viewModel.getContinuableSudoku() shouldBe null
         }
 
         should("getContinuableSudoku returns null when the recent sudoku's error limit is reached") {
-            val sudoku = testSudoku(completed = false, errorsMade = userSettings.errorLimit)
-            coEvery { getRecentSudoku() } returns sudoku
+            val sudoku = testSudoku().apply { errorsMade = userSettings.errorLimit }
+            repository.store(sudoku)
 
             sudoku.errorLimitReached(userSettings.errorLimit).shouldBeTrue()
             viewModel.getContinuableSudoku() shouldBe null
         }
 
         should("getContinuableSudoku returns the sudoku when it is neither completed nor error-limit-reached") {
-            val sudoku = testSudoku(completed = false, errorsMade = 0)
-            coEvery { getRecentSudoku() } returns sudoku
+            val sudoku = testSudoku()
+            repository.store(sudoku)
 
             sudoku.errorLimitReached(userSettings.errorLimit).shouldBeFalse()
             viewModel.getContinuableSudoku() shouldBe sudoku
         }
 
-        should("checkDailySudokuCompleted delegates to isDailySudokuCompleted") {
-            coEvery { isDailySudokuCompleted() } returns true
+        should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {
+            repository.store(testSudoku(modeLevel = Sudoku.MODE_DAILY, completed = true))
 
             viewModel.checkDailySudokuCompleted().shouldBeTrue()
-
-            coVerify(exactly = 1) { isDailySudokuCompleted() }
         }
 
         should("checkDailySudokuCompleted returns false when isDailySudokuCompleted returns false") {
-            coEvery { isDailySudokuCompleted() } returns false
+            repository.store(
+                testSudoku(modeLevel = Sudoku.MODE_DAILY),
+                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now().minusDays(1), completed = true),
+                testSudoku(completed = true),
+            )
 
             viewModel.checkDailySudokuCompleted().shouldBeFalse()
         }
