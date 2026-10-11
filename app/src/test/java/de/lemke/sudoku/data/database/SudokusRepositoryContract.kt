@@ -479,6 +479,21 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
+    fun `observeAllSudokus re-emits when a save leaves the rows unchanged`() =
+        runTest {
+            val saved = sudoku()
+            repository.saveSudoku(saved)
+
+            repository.observeAllSudokus().test {
+                awaitItem().single().id shouldBe saved.id
+
+                repository.saveSudoku(saved)
+
+                awaitItem().single().id shouldBe saved.id
+            }
+        }
+
+    @Test
     fun `observeAllNormalSudokus only emits normal-mode sudokus`() =
         runTest {
             repository.observeAllNormalSudokus().test {

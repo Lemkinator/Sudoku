@@ -39,13 +39,20 @@ class FakeSudokusRepository : SudokusRepository {
         val onlyUpdate: Boolean,
     )
 
-    private val rows = MutableStateFlow<List<SudokuWithFields>>(emptyList())
+    /** Counts [writes] so that a write leaving [rows] equal still emits, as Room's invalidation does. */
+    private data class Table(
+        val rows: List<SudokuWithFields> = emptyList(),
+        val writes: Int = 0,
+    )
+
+    private val table = MutableStateFlow(Table())
+    private val rows: List<SudokuWithFields> get() = table.value.rows
     private val recordedSaves = mutableListOf<Save>()
     private val recordedDeletions = mutableListOf<SudokuId>()
 
     val saves: List<Save> get() = synchronized(recordedSaves) { recordedSaves.toList() }
     val deletedIds: List<SudokuId> get() = synchronized(recordedDeletions) { recordedDeletions.toList() }
-    val storedRows: List<SudokuWithFields> get() = rows.value
+    val storedRows: List<SudokuWithFields> get() = rows
 
     var observeCalls = 0
         private set
@@ -64,7 +71,9 @@ class FakeSudokusRepository : SudokusRepository {
 
     /** Stores [sudokuWithFields] as given, like a raw DAO insert, so a test can add an unreadable row. */
     fun insertRows(sudokuWithFields: SudokuWithFields) {
-        rows.update { current -> current.filterNot { it.sudoku.id == sudokuWithFields.sudoku.id } + sudokuWithFields }
+        table.update { current ->
+            Table(current.rows.filterNot { it.sudoku.id == sudokuWithFields.sudoku.id } + sudokuWithFields, current.writes + 1)
+        }
     }
 
     override fun observeAllSudokus(): Flow<List<Sudoku>> = observe { it.byUpdatedDescending() }
@@ -77,17 +86,16 @@ class FakeSudokusRepository : SudokusRepository {
 
     override suspend fun getAllSudokus(): List<Sudoku> {
         beforeGetAllSudokus()
-        return rows.value.byUpdatedDescending().readable()
+        return rows.byUpdatedDescending().readable()
     }
 
-    override suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(rows.value.normal().maxByOrNull { it.sudoku.updated })
+    override suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(rows.normal().maxByOrNull { it.sudoku.updated })
 
-    override suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> = rows.value.levels(size).readable()
+    override suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> = rows.levels(size).readable()
 
-    override suspend fun getDailySudokus(): List<Sudoku> = rows.value.dailies().readable()
+    override suspend fun getDailySudokus(): List<Sudoku> = rows.dailies().readable()
 
-    override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? =
-        sudokuFromDb(rows.value.firstOrNull { it.sudoku.id == sudokuId.value })
+    override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = sudokuFromDb(rows.firstOrNull { it.sudoku.id == sudokuId.value })
 
     override suspend fun deleteSudoku(sudoku: Sudoku) {
         beforeDelete(sudoku.id)
@@ -108,12 +116,12 @@ class FakeSudokusRepository : SudokusRepository {
 
     override suspend fun getMaxSudokuLevel(size: SudokuSize): Int {
         beforeGetMaxSudokuLevel()
-        return rows.value.filter { it.sudoku.size == size.value && it.sudoku.modeLevel > 0 }.maxOfOrNull { it.sudoku.modeLevel } ?: 0
+        return rows.filter { it.sudoku.size == size.value && it.sudoku.modeLevel > 0 }.maxOfOrNull { it.sudoku.modeLevel } ?: 0
     }
 
     override suspend fun deleteInvalidSudokus() {
         val invalidIds =
-            rows.value
+            rows
                 .filter { sudokuFromDb(it) == null }
                 .map { it.sudoku.id }
                 .toSet()
@@ -122,24 +130,27 @@ class FakeSudokusRepository : SudokusRepository {
 
     private fun observe(query: (List<SudokuWithFields>) -> List<SudokuWithFields>): Flow<List<Sudoku>> {
         observeCalls++
-        return observed(rows.map { query(it).readable() })
+        return observed(table.map { query(it.rows).readable() })
             .onStart { activeObservers++ }
             .onCompletion { activeObservers-- }
     }
 
     private fun delete(ids: Set<String>) {
-        rows.update { current -> current.filterNot { it.sudoku.id in ids } }
+        table.update { current ->
+            val kept = current.rows.filterNot { it.sudoku.id in ids }
+            if (kept.size == current.rows.size) current else Table(kept, current.writes + 1)
+        }
         synchronized(recordedDeletions) { recordedDeletions += ids.map(::SudokuId) }
     }
 
     private fun replacedBy(sudoku: SudokuDb): SudokuDb? =
         when {
             sudoku.modeLevel == MODE_DAILY -> {
-                rows.value.dailies().filter { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
+                rows.dailies().filter { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
             }
 
             sudoku.modeLevel > 0 -> {
-                rows.value.filter { it.sudoku.size == sudoku.size && it.sudoku.modeLevel == sudoku.modeLevel }
+                rows.filter { it.sudoku.size == sudoku.size && it.sudoku.modeLevel == sudoku.modeLevel }
             }
 
             else -> {
