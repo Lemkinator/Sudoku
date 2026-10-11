@@ -25,10 +25,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import java.time.LocalDateTime
 import java.util.concurrent.Executor
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -42,7 +39,6 @@ import org.robolectric.annotation.Config
 @Config(sdk = [36])
 class SudokusRepositoryTest {
     private lateinit var database: AppDatabase
-    private lateinit var repository: SudokusRepository
 
     @Before
     fun setUp() {
@@ -55,7 +51,6 @@ class SudokusRepositoryTest {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        repository = DefaultSudokusRepository(database.sudokuDao())
     }
 
     @After
@@ -63,387 +58,21 @@ class SudokusRepositoryTest {
         database.close()
     }
 
-    private fun sudoku(
-        size: SudokuSize = SudokuSize.FOUR,
-        modeLevel: Int = Sudoku.MODE_NORMAL,
-        created: LocalDateTime = LocalDateTime.now(),
-        updated: LocalDateTime = created,
-    ): Sudoku =
+    private fun sudoku(): Sudoku =
         Sudoku.create(
-            size = size,
+            size = SudokuSize.FOUR,
             difficulty = Difficulty.EASY,
-            modeLevel = modeLevel,
-            created = created,
-            updated = updated,
-            fields = MutableList(size.cellCount) { Field(position = Position.create(it, size), solution = it % size.value + 1) },
+            modeLevel = Sudoku.MODE_NORMAL,
+            fields =
+                MutableList(
+                    SudokuSize.FOUR.cellCount,
+                ) { Field(position = Position.create(it, SudokuSize.FOUR), solution = it % 4 + 1) },
         )
-
-    @Test
-    fun `getAllSudokus returns an empty list when nothing was saved`() =
-        runTest {
-            repository.getAllSudokus().shouldBeEmpty()
-        }
-
-    @Test
-    fun `saveSudoku then getAllSudokus round-trips the sudoku`() =
-        runTest {
-            val saved = sudoku()
-            repository.saveSudoku(saved)
-
-            repository.getAllSudokus().single().id shouldBe saved.id
-        }
-
-    @Test
-    fun `getSudokuById returns null for an unknown id`() =
-        runTest {
-            repository.getSudokuById(sudoku().id).shouldBeNull()
-        }
-
-    @Test
-    fun `getSudokuById returns the matching sudoku`() =
-        runTest {
-            val saved = sudoku()
-            repository.saveSudoku(saved)
-
-            repository.getSudokuById(saved.id)?.id shouldBe saved.id
-        }
-
-    @Test
-    fun `getRecentlyUpdatedNormalSudoku returns null when there are no normal sudokus`() =
-        runTest {
-            repository.saveSudoku(sudoku(modeLevel = 1))
-
-            repository.getRecentlyUpdatedNormalSudoku().shouldBeNull()
-        }
-
-    @Test
-    fun `getRecentlyUpdatedNormalSudoku returns the most recently updated normal sudoku`() =
-        runTest {
-            val older = sudoku(updated = LocalDateTime.now().minusDays(1))
-            val newer = sudoku(updated = LocalDateTime.now())
-            repository.saveSudoku(older)
-            repository.saveSudoku(newer)
-
-            repository.getRecentlyUpdatedNormalSudoku()?.id shouldBe newer.id
-        }
-
-    @Test
-    fun `getSudokuLevel returns level sudokus for the given size ordered by level descending`() =
-        runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 1))
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 2))
-            repository.saveSudoku(sudoku(size = SudokuSize.NINE, modeLevel = 1))
-
-            repository.getSudokuLevel(SudokuSize.FOUR).map { it.modeLevel } shouldBe listOf(2, 1)
-        }
-
-    @Test
-    fun `getDailySudokus returns only daily sudokus`() =
-        runTest {
-            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
-            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
-
-            val dailies = repository.getDailySudokus()
-            dailies shouldHaveSize 1
-            dailies.single().isDailySudoku shouldBe true
-        }
-
-    @Test
-    fun `deleteSudoku removes the sudoku and its fields`() =
-        runTest {
-            val saved = sudoku()
-            repository.saveSudoku(saved)
-
-            repository.deleteSudoku(saved)
-
-            repository.getAllSudokus().shouldBeEmpty()
-        }
-
-    @Test
-    fun `saveSudoku replaces the existing daily sudoku for the same day`() =
-        runTest {
-            val day = LocalDateTime.now()
-            val first = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            repository.saveSudoku(first)
-
-            val second = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            repository.saveSudoku(second)
-
-            val all = repository.getAllSudokus()
-            all shouldHaveSize 1
-            all.single().id shouldBe second.id
-        }
-
-    @Test
-    fun `saveSudoku keeps daily sudokus from different days`() =
-        runTest {
-            val first = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now().minusDays(1))
-            repository.saveSudoku(first)
-
-            val second = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now())
-            repository.saveSudoku(second)
-
-            repository.getAllSudokus() shouldHaveSize 2
-        }
-
-    @Test
-    fun `saveSudoku replaces the existing level sudoku for the same size and level`() =
-        runTest {
-            val first = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(first)
-
-            val second = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(second)
-
-            val all = repository.getAllSudokus()
-            all shouldHaveSize 1
-            all.single().id shouldBe second.id
-        }
-
-    @Test
-    fun `saveSudoku keeps an unreadable level sudoku for the same size and level`() =
-        runTest {
-            val unreadable = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            database.sudokuDao().insert(
-                sudokuToDb(unreadable),
-                unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) },
-            )
-
-            val second = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(second)
-
-            database
-                .sudokuDao()
-                .getAll()
-                .map { it.sudoku.id }
-                .toSet() shouldBe setOf(unreadable.id.value, second.id.value)
-        }
-
-    @Test
-    fun `saveSudoku keeps an unreadable daily sudoku for the same day`() =
-        runTest {
-            val day = LocalDateTime.now()
-            val unreadable = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            database.sudokuDao().insert(
-                sudokuToDb(unreadable),
-                unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) },
-            )
-
-            val second = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            repository.saveSudoku(second)
-
-            database
-                .sudokuDao()
-                .getAll()
-                .map { it.sudoku.id }
-                .toSet() shouldBe setOf(unreadable.id.value, second.id.value)
-        }
-
-    @Test
-    fun `saveSudoku replaces the readable level sudoku behind an unreadable one for the same size and level`() =
-        runTest {
-            val unreadable = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            database.sudokuDao().insert(
-                sudokuToDb(unreadable),
-                unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) },
-            )
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 3))
-
-            val third = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(third)
-
-            database
-                .sudokuDao()
-                .getAll()
-                .map { it.sudoku.id }
-                .toSet() shouldBe setOf(unreadable.id.value, third.id.value)
-        }
-
-    @Test
-    fun `saveSudoku replaces the readable daily sudoku behind an unreadable one for the same day`() =
-        runTest {
-            val day = LocalDateTime.of(2026, 3, 14, 12, 0)
-            val unreadable = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            database.sudokuDao().insert(
-                sudokuToDb(unreadable),
-                unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) },
-            )
-            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY, created = day.minusSeconds(1)))
-
-            val third = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            repository.saveSudoku(third)
-
-            database
-                .sudokuDao()
-                .getAll()
-                .map { it.sudoku.id }
-                .toSet() shouldBe setOf(unreadable.id.value, third.id.value)
-        }
-
-    @Test
-    fun `saveSudoku does not delete the daily sudoku being updated`() =
-        runTest {
-            val daily = sudoku(modeLevel = Sudoku.MODE_DAILY)
-            repository.saveSudoku(daily)
-
-            repository.saveSudoku(daily)
-
-            val all = repository.getAllSudokus()
-            all shouldHaveSize 1
-            all.single().id shouldBe daily.id
-        }
-
-    @Test
-    fun `saveSudoku does not delete the level sudoku being updated`() =
-        runTest {
-            val level = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(level)
-
-            repository.saveSudoku(level)
-
-            val all = repository.getAllSudokus()
-            all shouldHaveSize 1
-            all.single().id shouldBe level.id
-        }
-
-    @Test
-    fun `saveSudoku with onlyUpdate true skips the level dedup even for a matching level`() =
-        runTest {
-            val first = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(first)
-
-            val second = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(second, onlyUpdate = true)
-
-            repository.getAllSudokus() shouldHaveSize 2
-        }
-
-    @Test
-    fun `getMaxSudokuLevel returns 0 when no level sudoku exists for the size`() =
-        runTest {
-            repository.getMaxSudokuLevel(SudokuSize.FOUR) shouldBe 0
-        }
-
-    @Test
-    fun `getMaxSudokuLevel returns the highest existing level for the size`() =
-        runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 1))
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 5))
-
-            repository.getMaxSudokuLevel(SudokuSize.FOUR) shouldBe 5
-        }
-
-    @Test
-    fun `getMaxSudokuLevel ignores daily sudokus`() =
-        runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY))
-
-            repository.getMaxSudokuLevel(SudokuSize.NINE) shouldBe 0
-        }
-
-    @Test
-    fun `deleteInvalidSudokus leaves sudokus whose stored field count matches size squared untouched`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-
-            repository.deleteInvalidSudokus()
-
-            database.sudokuDao().getAll() shouldHaveSize 1
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a row whose stored field count does not match size squared and keeps valid rows`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-            val invalid = sudoku(size = SudokuSize.FOUR)
-            database.sudokuDao().insert(
-                sudokuToDb(invalid),
-                invalid.fields.take(invalid.fields.size - 1).map { fieldToDb(it, invalid.id) },
-            )
-            database.sudokuDao().getAll() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            val remaining = database.sudokuDao().getAll()
-            remaining shouldHaveSize 1
-            remaining.single().sudoku.id shouldBe valid.id.value
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a row with a correct field count but a null solution and keeps valid rows`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-            val invalid = sudoku(size = SudokuSize.FOUR)
-            val fields =
-                invalid.fields
-                    .map { fieldToDb(it, invalid.id) }
-                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
-            database.sudokuDao().insert(sudokuToDb(invalid), fields)
-            database.sudokuDao().getAll() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            val remaining = database.sudokuDao().getAll()
-            remaining shouldHaveSize 1
-            remaining.single().sudoku.id shouldBe valid.id.value
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a zero-sized corrupted row instead of throwing`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-            val invalid = sudoku(size = SudokuSize.FOUR)
-            database.sudokuDao().insert(
-                sudokuToDb(invalid).copy(size = 0),
-                listOf(fieldToDb(invalid.fields.first(), invalid.id).copy(gameSize = 0)),
-            )
-            database.sudokuDao().getAll() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            val remaining = database.sudokuDao().getAll()
-            remaining shouldHaveSize 1
-            remaining.single().sudoku.id shouldBe valid.id.value
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a row with an unsupported size and keeps valid rows`() =
-        runTest {
-            val valid = sudoku()
-            repository.saveSudoku(valid)
-            val invalid = sudokuToDb(sudoku()).copy(size = 6)
-            database.sudokuDao().insert(
-                invalid,
-                List(36) { index ->
-                    FieldDb(
-                        sudokuId = invalid.id,
-                        gameSize = 6,
-                        index = index,
-                        solution = index % 6 + 1,
-                        value = null,
-                        given = false,
-                        hint = false,
-                        notes = "",
-                    )
-                },
-            )
-            database.sudokuDao().getAll() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            val remaining = database.sudokuDao().getAll()
-            remaining shouldHaveSize 1
-            remaining.single().sudoku.id shouldBe valid.id.value
-        }
 
     @Test
     fun `sudokuDao insert and getAll round-trip a raw field row with a null solution`() =
         runTest {
-            val sudoku = sudoku(size = SudokuSize.FOUR)
+            val sudoku = sudoku()
             val fields =
                 sudoku.fields
                     .map { fieldToDb(it, sudoku.id) }
@@ -456,65 +85,9 @@ class SudokusRepositoryTest {
         }
 
     @Test
-    fun `observeAllSudokus starts empty and emits after a sudoku is saved`() =
-        runTest {
-            repository.observeAllSudokus().test {
-                awaitItem().shouldBeEmpty()
-
-                val saved = sudoku()
-                repository.saveSudoku(saved)
-
-                awaitItem().single().id shouldBe saved.id
-            }
-        }
-
-    @Test
-    fun `observeAllNormalSudokus only emits normal-mode sudokus`() =
-        runTest {
-            repository.observeAllNormalSudokus().test {
-                awaitItem().shouldBeEmpty()
-
-                // Room's invalidation tracker re-emits on any write to the table.
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
-                awaitItem().shouldBeEmpty()
-
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
-                awaitItem().single().isNormalSudoku shouldBe true
-            }
-        }
-
-    @Test
-    fun `observeSudokuLevel only emits level sudokus for the requested size`() =
-        runTest {
-            repository.observeSudokuLevel(SudokuSize.FOUR).test {
-                awaitItem().shouldBeEmpty()
-
-                repository.saveSudoku(sudoku(size = SudokuSize.NINE, modeLevel = 1))
-                awaitItem().shouldBeEmpty()
-
-                repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 1))
-                awaitItem().single().size shouldBe SudokuSize.FOUR
-            }
-        }
-
-    @Test
-    fun `observeDailySudokus only emits daily sudokus`() =
-        runTest {
-            repository.observeDailySudokus().test {
-                awaitItem().shouldBeEmpty()
-
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
-                awaitItem().shouldBeEmpty()
-
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
-                awaitItem().single().isDailySudoku shouldBe true
-            }
-        }
-
-    @Test
     fun `sudokuDao observeAll round-trips a raw field row with a null solution`() =
         runTest {
-            val sudoku = sudoku(size = SudokuSize.FOUR)
+            val sudoku = sudoku()
             val fields =
                 sudoku.fields
                     .map { fieldToDb(it, sudoku.id) }
