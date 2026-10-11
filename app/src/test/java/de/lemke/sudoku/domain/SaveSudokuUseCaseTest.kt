@@ -16,34 +16,35 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
-import io.mockk.clearMocks
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SaveSudokuUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>(relaxUnitFun = true)
-        val useCase = SaveSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
-        val sudoku = mockk<Sudoku>()
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: SaveSudokuUseCase
+        val sudoku = testSudoku()
 
-        beforeEach { clearMocks(sudokusRepository) }
+        beforeEach {
+            sudokusRepository = FakeSudokusRepository()
+            useCase = SaveSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        }
 
         should("saves with onlyUpdate = false by default") {
             useCase(sudoku)
 
-            coVerify(exactly = 1) { sudokusRepository.saveSudoku(sudoku, false) }
+            sudokusRepository.saves.map { it.rows.sudoku.id to it.onlyUpdate } shouldBe listOf(sudoku.id.value to false)
         }
 
         should("saves with onlyUpdate = true when explicitly requested") {
             useCase(sudoku, onlyUpdate = true)
 
-            coVerify(exactly = 1) { sudokusRepository.saveSudoku(sudoku, true) }
+            sudokusRepository.saves.map { it.rows.sudoku.id to it.onlyUpdate } shouldBe listOf(sudoku.id.value to true)
         }
     },
 )

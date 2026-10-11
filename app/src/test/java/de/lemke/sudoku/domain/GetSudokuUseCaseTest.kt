@@ -16,35 +16,35 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GetSudokuUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val useCase = GetSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: GetSudokuUseCase
         val sudokuId = SudokuId.generate()
 
-        beforeEach { clearMocks(sudokusRepository) }
+        beforeEach {
+            sudokusRepository = FakeSudokusRepository()
+            useCase = GetSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        }
 
         should("returns null when the repository has no sudoku with that id") {
-            coEvery { sudokusRepository.getSudokuById(sudokuId) } returns null
+            sudokusRepository.saveSudoku(testSudoku())
 
             useCase(sudokuId) shouldBe null
         }
 
         should("passes through the repository's sudoku for that id") {
-            val sudoku = mockk<Sudoku>()
-            coEvery { sudokusRepository.getSudokuById(sudokuId) } returns sudoku
+            val sudoku = testSudoku(sudokuId = sudokuId)
+            sudokusRepository.saveSudoku(sudoku)
 
             useCase(sudokuId) shouldBe sudoku
         }

@@ -16,66 +16,55 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.mockk
+import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GetAllSudokusUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>()
-        val useCase = GetAllSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: GetAllSudokusUseCase
 
-        beforeEach { clearMocks(sudokusRepository) }
+        beforeEach {
+            sudokusRepository = FakeSudokusRepository()
+            useCase = GetAllSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        }
 
         should("returns every sudoku from the repository when using the default all-inclusive flags") {
             val sudokus =
                 listOf(
-                    Sudoku.create(
+                    testSudoku(
                         size = SudokuSize.FOUR,
                         difficulty = Difficulty.EASY,
                         modeLevel = Sudoku.MODE_NORMAL,
-                        fields = mutableListOf(),
+                        created = LocalDateTime.of(2026, 1, 2, 10, 0),
                     ),
-                    Sudoku.create(
+                    testSudoku(
                         size = SudokuSize.NINE,
                         difficulty = Difficulty.HARD,
                         modeLevel = Sudoku.MODE_DAILY,
-                        fields = mutableListOf(),
+                        created = LocalDateTime.of(2026, 1, 1, 10, 0),
                     ),
                 )
-            coEvery { sudokusRepository.getAllSudokus() } returns sudokus
+            sudokus.forEach { sudokusRepository.saveSudoku(it) }
 
             useCase() shouldBe sudokus
         }
 
         should("filters out sudokus that don't match the given flags") {
-            val normal9x9 =
-                Sudoku.create(
-                    size = SudokuSize.NINE,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    fields = mutableListOf(),
-                )
-            val daily9x9 =
-                Sudoku.create(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY, fields = mutableListOf())
-            val normal4x4 =
-                Sudoku.create(
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    fields = mutableListOf(),
-                )
-            coEvery { sudokusRepository.getAllSudokus() } returns listOf(normal9x9, daily9x9, normal4x4)
+            val normal9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL)
+            val daily9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY)
+            val normal4x4 = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL)
+            listOf(normal9x9, daily9x9, normal4x4).forEach { sudokusRepository.saveSudoku(it) }
             val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
             useCase(flags) shouldBe listOf(normal9x9)

@@ -16,38 +16,43 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
-import io.mockk.clearMocks
-import io.mockk.coVerify
-import io.mockk.mockk
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeleteSudokusUseCaseTest : ShouldSpec(
     {
-        val sudokusRepository = mockk<SudokusRepository>(relaxUnitFun = true)
-        val useCase = DeleteSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var useCase: DeleteSudokusUseCase
 
-        beforeEach { clearMocks(sudokusRepository) }
+        beforeEach {
+            sudokusRepository = FakeSudokusRepository()
+            useCase = DeleteSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
+        }
 
         should("deletes nothing when the list is empty") {
+            val kept = testSudoku()
+            sudokusRepository.saveSudoku(kept)
+
             useCase(emptyList())
 
-            coVerify(exactly = 0) { sudokusRepository.deleteSudoku(any()) }
+            sudokusRepository.deletedIds.shouldBeEmpty()
+            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(kept.id.value)
         }
 
         should("deletes every sudoku in the list") {
-            val sudokus = listOf(mockk<Sudoku>(), mockk<Sudoku>(), mockk<Sudoku>())
+            val sudokus = listOf(testSudoku(), testSudoku(), testSudoku())
+            sudokus.forEach { sudokusRepository.saveSudoku(it) }
 
             useCase(sudokus)
 
-            coVerify(exactly = 1) { sudokusRepository.deleteSudoku(sudokus[0]) }
-            coVerify(exactly = 1) { sudokusRepository.deleteSudoku(sudokus[1]) }
-            coVerify(exactly = 1) { sudokusRepository.deleteSudoku(sudokus[2]) }
-            coVerify(exactly = 3) { sudokusRepository.deleteSudoku(any()) }
+            sudokusRepository.deletedIds shouldBe sudokus.map { it.id }
+            sudokusRepository.storedRows.shouldBeEmpty()
         }
     },
 )
