@@ -139,6 +139,8 @@ class MainActivityGamesSignInTest {
             shadowOf(Looper.getMainLooper()).idle()
             fakeGamesSignIn.authenticationChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 0
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
@@ -149,6 +151,8 @@ class MainActivityGamesSignInTest {
             clickAchievements(activity)
             shadowOf(Looper.getMainLooper()).idle()
             fakeGamesSignIn.signIns shouldBe 1
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
@@ -214,6 +218,8 @@ class MainActivityGamesSignInTest {
             shadowOf(Looper.getMainLooper()).idle()
             fakeGamesSignIn.authenticationChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 0
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
@@ -224,6 +230,8 @@ class MainActivityGamesSignInTest {
             clickLeaderboards(activity)
             shadowOf(Looper.getMainLooper()).idle()
             fakeGamesSignIn.signIns shouldBe 1
+            fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
+            shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
 
     @Test
