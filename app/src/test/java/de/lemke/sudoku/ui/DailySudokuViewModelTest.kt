@@ -19,100 +19,128 @@ package de.lemke.sudoku.ui
 import app.cash.turbine.test
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.domain.GenerateDailySudokuUseCase
+import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
-import de.lemke.sudoku.domain.model.SudokuListItem
+import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
+import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
+import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
 import java.time.Clock
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
+private data class ShownDailies(
+    val sudokus: List<String>,
+    val isLoading: Boolean,
+)
+
+private fun DailySudokuUiState.shown() =
+    ShownDailies(
+        sudokus = sudokus.map { item -> if (item is SudokuItem) item.sudoku.id.value else "separator" },
+        isLoading = isLoading,
+    )
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class DailySudokuViewModelTest : ShouldSpec(
     {
         lateinit var userSettings: UserSettings
-        val initDailySudokus = mockk<InitDailySudokusUseCase>()
-        val observeDailySudokus = mockk<ObserveDailySudokusUseCase>()
+        lateinit var repository: FakeSudokusRepository
         val clock = Clock.fixed(ZonedDateTime.of(2026, 1, 15, 12, 0, 0, 0, ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
 
         beforeEach {
-            clearMocks(initDailySudokus, observeDailySudokus)
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            coEvery { initDailySudokus(any()) } returns Unit
-            every { observeDailySudokus(any()) } returns flowOf(mutableListOf())
+            repository = FakeSudokusRepository()
         }
 
-        fun newViewModel() = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus, clock)
+        fun newViewModel(): DailySudokuViewModel {
+            val dispatcher = UnconfinedTestDispatcher()
+            val generateDailySudoku =
+                GenerateDailySudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), clock, dispatcher)
+            return DailySudokuViewModel(
+                userSettings,
+                InitDailySudokusUseCase(repository, SaveSudokuUseCase(repository, dispatcher), generateDailySudoku, dispatcher),
+                ObserveDailySudokusUseCase(repository, userSettings, dispatcher),
+                clock,
+            )
+        }
+
+        fun dailySudoku(
+            created: LocalDateTime,
+            completed: Boolean = false,
+        ) = testSudoku(modeLevel = MODE_DAILY, created = created, completed = completed)
 
         should("observe today's daily sudokus only while state is collected and map them to the UI state") {
-            val dailySudokus = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
-            every { observeDailySudokus(LocalDate.of(2026, 1, 15)) } returns dailySudokus
-            val items: MutableList<SudokuListItem> = mutableListOf(SudokuListItem.SeparatorItem("Jan 2026"))
+            val today = dailySudoku(created = LocalDateTime.of(2026, 1, 15, 9, 0))
+            repository.store(today)
 
             val viewModel = newViewModel()
-            dailySudokus.emit(items)
 
-            dailySudokus.subscriptionCount.value shouldBe 0
+            repository.activeObservers shouldBe 0
             viewModel.state.value shouldBe DailySudokuUiState()
             viewModel.state.test {
-                expectMostRecentItem() shouldBe DailySudokuUiState(sudokus = items, isLoading = false)
-                dailySudokus.subscriptionCount.value shouldBe 1
+                expectMostRecentItem().shown() shouldBe ShownDailies(sudokus = listOf("separator", today.id.value), isLoading = false)
+                repository.activeObservers shouldBe 1
             }
         }
 
         should("initialize today's daily sudoku once, also when state is collected again after the stop timeout") {
             runTest {
-                val dailySudokus = MutableSharedFlow<MutableList<SudokuListItem>>(replay = 1)
-                every { observeDailySudokus(any()) } returns dailySudokus
                 val viewModel = newViewModel()
 
                 viewModel.state.test { cancelAndIgnoreRemainingEvents() }
                 advanceTimeBy(5_001)
                 runCurrent()
-                dailySudokus.subscriptionCount.value shouldBe 0
+                repository.activeObservers shouldBe 0
+                repository.deleteSudoku(repository.getDailySudokus().single())
                 viewModel.state.test {
                     runCurrent()
-                    dailySudokus.subscriptionCount.value shouldBe 1
+                    repository.activeObservers shouldBe 1
                     cancelAndIgnoreRemainingEvents()
                 }
 
-                coVerify(exactly = 1) { initDailySudokus(LocalDate.of(2026, 1, 15)) }
+                repository.saves.map { it.rows.sudoku.modeLevel to it.rows.sudoku.created } shouldBe
+                    listOf(MODE_DAILY to LocalDateTime.of(2026, 1, 15, 12, 0))
             }
         }
 
         should("init loads sudokus from observeDailySudokus and sets isLoading false on success") {
-            val items: MutableList<SudokuListItem> =
-                mutableListOf(SudokuListItem.SeparatorItem("Jan 2026"), SudokuListItem.SeparatorItem("Feb 2026"))
-            every { observeDailySudokus(any()) } returns flowOf(items)
+            val today = dailySudoku(created = LocalDateTime.of(2026, 1, 15, 9, 0))
+            val lastMonth = dailySudoku(created = LocalDateTime.of(2025, 12, 10, 9, 0), completed = true)
+            repository.store(lastMonth, today)
 
             val viewModel = newViewModel()
 
             viewModel.state.test {
-                expectMostRecentItem() shouldBe DailySudokuUiState(sudokus = items, isLoading = false)
+                expectMostRecentItem().shown() shouldBe
+                    ShownDailies(sudokus = listOf("separator", today.id.value, "separator", lastMonth.id.value), isLoading = false)
             }
             viewModel.loadFailed.value shouldBe false
         }
 
         should("init sets isLoading false and reports loadFailed when initDailySudokus throws") {
-            coEvery { initDailySudokus(any()) } throws RuntimeException("init failed")
+            repository.saveFailure = RuntimeException("init failed")
 
             val viewModel = newViewModel()
 
@@ -123,7 +151,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         }
 
         should("init sets isLoading false and reports loadFailed when observeDailySudokus throws") {
-            every { observeDailySudokus(any()) } returns flow { throw IllegalStateException("observe failed") }
+            repository.observed = { flow { throw IllegalStateException("observe failed") } }
 
             val viewModel = newViewModel()
 
@@ -134,7 +162,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         }
 
         should("onLoadFailureHandled clears a reported load failure") {
-            coEvery { initDailySudokus(any()) } throws RuntimeException("init failed")
+            repository.saveFailure = RuntimeException("init failed")
             val viewModel = newViewModel()
             viewModel.state.test { expectMostRecentItem() shouldBe DailySudokuUiState(isLoading = false) }
             viewModel.loadFailed.value shouldBe true
@@ -145,7 +173,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         }
 
         should("init does not treat CancellationException as a load failure: no isLoading flip, no loadFailed") {
-            coEvery { initDailySudokus(any()) } throws CancellationException("cancelled")
+            repository.saveFailure = CancellationException("cancelled")
 
             val viewModel = newViewModel()
 
