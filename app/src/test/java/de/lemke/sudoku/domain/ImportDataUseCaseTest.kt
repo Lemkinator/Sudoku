@@ -22,6 +22,7 @@ import android.content.pm.ProviderInfo
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.data.DefaultSudokuDocuments
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.FieldDb
@@ -81,7 +82,7 @@ class ImportDataUseCaseTest {
                 .setTransactionExecutor(directExecutor)
                 .build()
         sudokusRepository = DefaultSudokusRepository(database.sudokuDao())
-        useCase = ImportDataUseCase(context, sudokusRepository, UnconfinedTestDispatcher())
+        useCase = ImportDataUseCase(DefaultSudokuDocuments(context), sudokusRepository, UnconfinedTestDispatcher())
     }
 
     @After
@@ -254,7 +255,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.savefails", json)
         val failingRepository = repositoryFailingInsertWith(RuntimeException("boom"))
-        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher())
+        val throwingUseCase = ImportDataUseCase(DefaultSudokuDocuments(context), failingRepository, UnconfinedTestDispatcher())
 
         runTest { throwingUseCase(uri) { progress += it } shouldBe DataImportResult.InvalidJson }
 
@@ -305,7 +306,7 @@ class ImportDataUseCaseTest {
         val json = listOf(sudokuToExport(testSudoku())).stringifyJSON()
         val uri = registerDocument("import.cancelled", json)
         val failingRepository = repositoryFailingInsertWith(CancellationException())
-        val throwingUseCase = ImportDataUseCase(context, failingRepository, UnconfinedTestDispatcher())
+        val throwingUseCase = ImportDataUseCase(DefaultSudokuDocuments(context), failingRepository, UnconfinedTestDispatcher())
 
         shouldThrow<CancellationException> { runTest { throwingUseCase(uri) { progress += it } } }
     }

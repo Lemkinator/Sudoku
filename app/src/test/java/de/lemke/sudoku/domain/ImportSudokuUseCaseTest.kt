@@ -21,6 +21,7 @@ import android.content.pm.ProviderInfo
 import android.database.sqlite.SQLiteException
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.data.DefaultSudokuDocuments
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.testSudoku
@@ -53,7 +54,7 @@ class ImportSudokuUseCaseTest {
     private val context = ApplicationProvider.getApplicationContext<Application>()
     private val sudokusRepository = FakeSudokusRepository()
     private val dispatcher = UnconfinedTestDispatcher()
-    private val useCase = ImportSudokuUseCase(context, SaveSudokuUseCase(sudokusRepository, dispatcher), dispatcher)
+    private val useCase = ImportSudokuUseCase(DefaultSudokuDocuments(context), SaveSudokuUseCase(sudokusRepository, dispatcher), dispatcher)
 
     private fun uriFor(content: String): Uri {
         val file = temporaryFolder.newFile("sudoku-import.json").apply { writeText(content) }

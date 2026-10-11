@@ -16,11 +16,10 @@
 
 package de.lemke.sudoku.domain
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
 import de.lemke.commonutils.di.IoDispatcher
+import de.lemke.sudoku.data.SudokuDocuments
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.DataExportResult
 import de.lemke.sudoku.domain.model.ExportProgress
@@ -30,7 +29,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class ExportDataUseCase @Inject constructor(
-    @param:ApplicationContext private val context: Context,
+    private val sudokuDocuments: SudokuDocuments,
     private val getAllSudokus: GetAllSudokusUseCase,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
@@ -55,16 +54,7 @@ class ExportDataUseCase @Inject constructor(
         destination: Uri,
     ): DataExportResult =
         runCatching {
-            when (val stream = context.contentResolver.openOutputStream(destination)) {
-                null -> {
-                    DataExportResult.WriteFailed
-                }
-
-                else -> {
-                    stream.writer().use { writer -> writer.write(content) }
-                    DataExportResult.Written
-                }
-            }
+            if (sudokuDocuments.writeText(destination, content)) DataExportResult.Written else DataExportResult.WriteFailed
         }.getOrElse { e ->
             Log.e("ExportDataUseCase", "Error when writing the export file:", e)
             DataExportResult.WriteFailed

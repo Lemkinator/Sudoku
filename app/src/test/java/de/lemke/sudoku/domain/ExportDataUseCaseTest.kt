@@ -21,6 +21,7 @@ import android.content.Context
 import android.content.pm.ProviderInfo
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.data.DefaultSudokuDocuments
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -60,7 +61,7 @@ class ExportDataUseCaseTest {
     fun setUp() {
         val dispatcher = UnconfinedTestDispatcher()
         sudokusRepository = FakeSudokusRepository()
-        useCase = ExportDataUseCase(context, GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
+        useCase = ExportDataUseCase(DefaultSudokuDocuments(context), GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
         destinationFile = File.createTempFile("export-data-use-case-test", ".json")
     }
 
