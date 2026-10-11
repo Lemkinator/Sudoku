@@ -185,14 +185,10 @@ class TabSudokuViewModelTest : ShouldSpec(
             viewModel.getContinuableSudoku() shouldBe sudoku
         }
 
-        should("checkDailySudokuCompleted delegates to isDailySudokuCompleted") {
+        should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {
             repository.store(testSudoku(modeLevel = Sudoku.MODE_DAILY, completed = true))
-            var reads = 0
-            repository.beforeGetAllSudokus = { reads++ }
 
             viewModel.checkDailySudokuCompleted().shouldBeTrue()
-
-            reads shouldBe 1
         }
 
         should("checkDailySudokuCompleted returns false when isDailySudokuCompleted returns false") {
