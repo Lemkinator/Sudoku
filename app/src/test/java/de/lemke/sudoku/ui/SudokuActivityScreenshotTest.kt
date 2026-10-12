@@ -22,18 +22,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import com.github.takahirom.roborazzi.captureRoboImage
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.ApplicationScope
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.HiltTestRule
-import de.lemke.sudoku.di.AppCoroutinesModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
@@ -41,11 +34,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +49,6 @@ import org.robolectric.annotation.GraphicsMode
  *
  * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
  */
-@UninstallModules(AppCoroutinesModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -68,26 +56,6 @@ import org.robolectric.annotation.GraphicsMode
 class SudokuActivityScreenshotTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
-
-    @BindValue
-    @ApplicationScope
-    @JvmField
-    val testApplicationScope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher())
 
     @Inject
     lateinit var settings: SettingsRepository

@@ -95,7 +95,8 @@ VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`
 provides singleton `AppDatabase`; `AppCoroutinesModule` includes common-utils' `CommonUtilsCoroutinesModule`, which provides
 the `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified `CoroutineDispatcher`s and the `@ApplicationScope`
 `CoroutineScope` (qualifiers from `common-utils`) for injection into use cases instead of hardcoding `Dispatchers.*`.
-A Hilt test that swaps dispatchers uninstalls `AppCoroutinesModule` and binds all four qualifiers itself.
+`TestCoroutinesModule` (testFixtures) replaces it in every Hilt test with unconfined test dispatchers; a test redirects the
+`@DefaultDispatcher` or `@IoDispatcher` work through the injected `TestDispatchers` and resets it in `@After`.
 
 **Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent
 CLAUDE.md convention).
@@ -208,6 +209,8 @@ common-utils from `lib/src/testFixtures` (`testImplementation(testFixtures(libs.
   `@TestInstallIn`-replaces the production settings module with `UserSettings` over
   `freshTestPreferences(context)`, visible to both `src/test` and `src/androidTest` via AGP's
   testFixtures source set.
+- **`TestCoroutinesModule`** — `app/src/testFixtures/java/de/lemke/sudoku/TestCoroutinesModule.kt` — replaces
+  `AppCoroutinesModule` with an unconfined default dispatcher and application scope, for the early-entry-point graph too. `TestDispatchers` holds the redirectable `@DefaultDispatcher` and `@IoDispatcher`.
 - **`TestPersistenceModule`** — `app/src/testFixtures/java/de/lemke/sudoku/TestPersistenceModule.kt`
   — replaces the production Room module with an in-memory database for the same reason.
 - **`TestFixturesModuleInstallationTest`** exists on both sides

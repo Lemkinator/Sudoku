@@ -22,12 +22,12 @@ import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
+import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.SettingsProvideModule
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @Module
 @TestInstallIn(components = [SingletonComponent::class], replaces = [SettingsProvideModule::class])
@@ -36,5 +36,6 @@ object TestSettingsModule {
     @Singleton
     fun provideTestUserSettings(
         @ApplicationContext context: Context,
-    ): UserSettings = UserSettings(freshTestPreferences(context), CoroutineScope(UnconfinedTestDispatcher()))
+        @ApplicationScope scope: CoroutineScope,
+    ): UserSettings = UserSettings(freshTestPreferences(context), scope)
 }

@@ -22,19 +22,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.ApplicationScope
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
-import de.lemke.sudoku.di.AppCoroutinesModule
+import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -52,11 +46,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -68,7 +60,6 @@ import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
 /** sdk = 36: Robolectric's max supported SDK. */
-@UninstallModules(AppCoroutinesModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -78,25 +69,8 @@ class SudokuActivityGameStateTest {
 
     private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Default)
 
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = pausableDefaultDispatcher
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
-
-    @BindValue
-    @ApplicationScope
-    @JvmField
-    val testApplicationScope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher())
+    @Inject
+    lateinit var testDispatchers: TestDispatchers
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -107,9 +81,15 @@ class SudokuActivityGameStateTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        testDispatchers.default.redirectTo(pausableDefaultDispatcher)
         settings.bypassOobe()
         // Robolectric skips the Play Games SDK's auto-init ContentProvider under HiltTestApplication.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
+    }
+
+    @After
+    fun resetDispatchers() {
+        testDispatchers.reset()
     }
 
     private fun formulaicSudoku(solved: Boolean): Sudoku {

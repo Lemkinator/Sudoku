@@ -24,19 +24,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.ApplicationScope
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
 import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
-import de.lemke.sudoku.di.AppCoroutinesModule
 import de.lemke.sudoku.domain.model.Position
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -44,11 +37,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -61,33 +50,12 @@ import org.robolectric.shadows.ShadowDialog
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(AppCoroutinesModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class IntroActivityFlowTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
-
-    @BindValue
-    @ApplicationScope
-    @JvmField
-    val testApplicationScope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher())
 
     @Inject
     lateinit var settings: SettingsRepository
