@@ -299,7 +299,7 @@ class SettingsFragmentTest {
         }
 
     @Test
-    fun `exportData's result callback ignores an OK result without a destination`() =
+    fun `exportData's result callback shows the file error dialog for an OK result without a destination`() =
         launch { fragment ->
             val pref = fragment.pref<PreferenceScreen>("exportData")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
@@ -307,11 +307,13 @@ class SettingsFragmentTest {
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent())
             shadowOf(Looper.getMainLooper()).idle()
-            ShadowDialog.getLatestDialog().shouldBeNull()
+            val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
+            resultDialog.isShowing.shouldBeTrue()
+            resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
         }
 
     @Test
-    fun `exportData's result callback ignores an OK result with a null data intent`() =
+    fun `exportData's result callback shows the file error dialog for an OK result with a null data intent`() =
         launch { fragment ->
             val pref = fragment.pref<PreferenceScreen>("exportData")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
@@ -319,7 +321,9 @@ class SettingsFragmentTest {
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, null)
             shadowOf(Looper.getMainLooper()).idle()
-            ShadowDialog.getLatestDialog().shouldBeNull()
+            val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
+            resultDialog.isShowing.shouldBeTrue()
+            resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
         }
 
     @Test

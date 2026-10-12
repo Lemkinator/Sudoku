@@ -156,6 +156,11 @@ class SettingsViewModel @Inject constructor(
             DataTransfer.Exported(exportData(uri) { dataTransfer.value = DataTransfer.Exporting(it) })
         }
 
+    fun onExportDestinationMissing() {
+        if (dataTransfer.value is DataTransfer.Running) return
+        dataTransfer.value = DataTransfer.Exported(DataExportResult.WriteFailed)
+    }
+
     fun onImportFilePicked(uri: Uri) =
         startDataTransfer(DataTransfer.Importing(ImportProgress.Reading)) {
             DataTransfer.Imported(importData(uri) { dataTransfer.value = DataTransfer.Importing(it) })
