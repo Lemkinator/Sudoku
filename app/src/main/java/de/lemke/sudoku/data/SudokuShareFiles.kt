@@ -17,21 +17,18 @@
 package de.lemke.sudoku.data
 
 import android.content.Context
-import android.net.Uri
-import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
-import de.lemke.sudoku.BuildConfig
 import de.lemke.sudoku.domain.model.Sudoku
 import java.io.File
 import javax.inject.Inject
 
 /** Writes a shared sudoku to a file other apps can read. */
 interface SudokuShareFiles {
-    /** Writes [json] to a file named after [sudoku] and returns its content [Uri]. */
+    /** Writes [json] to a cache file named after [sudoku] and returns it. */
     suspend fun write(
         sudoku: Sudoku,
         json: String,
-    ): Uri
+    ): File
 }
 
 class DefaultSudokuShareFiles @Inject constructor(
@@ -40,15 +37,9 @@ class DefaultSudokuShareFiles @Inject constructor(
     override suspend fun write(
         sudoku: Sudoku,
         json: String,
-    ): Uri {
+    ): File {
         val size = sudoku.size.getLocalString(context.resources)
         val fileName = "Sudoku ($size ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"
-        val file = File(context.cacheDir, fileName)
-        val uri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider", file)
-        context.contentResolver
-            .openOutputStream(uri)!!
-            .writer()
-            .use { writer -> writer.write(json) }
-        return uri
+        return File(context.cacheDir, fileName).apply { writeText(json) }
     }
 }

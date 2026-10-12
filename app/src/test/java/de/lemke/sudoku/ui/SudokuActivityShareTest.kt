@@ -209,6 +209,9 @@ class SudokuActivityShareTest {
             shareVia(activity, R.id.radioButtonText)
             val started = shadowOf(activity).nextStartedActivity
             started.action shouldBe Intent.ACTION_CHOOSER
+            val send = IntentCompat.getParcelableExtra(started, Intent.EXTRA_INTENT, Intent::class.java)!!
+            send.type shouldBe "text/plain"
+            send.getStringExtra(Intent.EXTRA_TEXT) shouldBe activity.sudoku.getLocalStatisticsStringShare(activity.resources)
         }
 
     @Test
@@ -304,7 +307,8 @@ class SudokuActivityShareTest {
                 chooser.action shouldBe Intent.ACTION_CHOOSER
                 val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
                 send.type shouldBe "application/sudoku"
-                IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java) shouldBe file.uri
+                val uri = IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java)!!
+                uri.path shouldBe "/cache/${file.file.name}"
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
             viewModel.share.value shouldBe SudokuShare.Idle

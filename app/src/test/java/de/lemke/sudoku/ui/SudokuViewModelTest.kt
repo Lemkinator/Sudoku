@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -47,7 +46,7 @@ import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.mockk.mockk
+import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -86,7 +85,7 @@ class SudokuViewModelTest : ShouldSpec(
         fun viewModel(
             savedStateHandle: SavedStateHandle = SavedStateHandle(),
             generateDispatcher: CoroutineDispatcher = Dispatchers.Main,
-            shareFiles: SudokuShareFiles = FakeSudokuShareFiles(mockk<Uri>()),
+            shareFiles: SudokuShareFiles = FakeSudokuShareFiles(File("game.sudoku")),
             shareDispatcher: CoroutineDispatcher = Dispatchers.Main,
         ): SudokuViewModel {
             val dispatcher = Dispatchers.Main
@@ -286,8 +285,8 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("onShare writes the sudoku file and reports it, and a second share while it runs writes once") {
-            val uri = mockk<Uri>()
-            val shareFiles = FakeSudokuShareFiles(uri)
+            val file = File("game.sudoku")
+            val shareFiles = FakeSudokuShareFiles(file)
             val writing = StandardTestDispatcher()
             val viewModel = viewModel(shareFiles = shareFiles, shareDispatcher = writing)
             val sudoku = testSudoku()
@@ -297,19 +296,19 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.share.value shouldBe SudokuShare.Running
             writing.scheduler.advanceUntilIdle()
-            viewModel.share.value shouldBe SudokuShare.File(uri)
+            viewModel.share.value shouldBe SudokuShare.File(file)
             shareFiles.writes.map { it.sudokuId } shouldBe listOf(sudoku.id)
         }
 
         should("onShareHandled returns to idle, and a stale handled call keeps the pending file") {
-            val uri = mockk<Uri>()
-            val viewModel = viewModel(shareFiles = FakeSudokuShareFiles(uri))
+            val file = File("game.sudoku")
+            val viewModel = viewModel(shareFiles = FakeSudokuShareFiles(file))
             val sudoku = testSudoku()
             viewModel.onShare(sudoku)
 
-            viewModel.onShareHandled(SudokuShare.File(mockk()))
-            viewModel.share.value shouldBe SudokuShare.File(uri)
-            viewModel.onShareHandled(SudokuShare.File(uri))
+            viewModel.onShareHandled(SudokuShare.File(File("other.sudoku")))
+            viewModel.share.value shouldBe SudokuShare.File(file)
+            viewModel.onShareHandled(SudokuShare.File(file))
             viewModel.share.value shouldBe SudokuShare.Idle
         }
 

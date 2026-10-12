@@ -16,13 +16,13 @@
 
 package de.lemke.sudoku.domain
 
-import android.net.Uri
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.SudokuShareFiles
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Sudoku
 import io.kjson.JSONConfig
 import io.kjson.stringifyJSON
+import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -31,7 +31,7 @@ class ShareSudokuUseCase @Inject constructor(
     private val sudokuShareFiles: SudokuShareFiles,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(sudoku: Sudoku): Uri =
+    suspend operator fun invoke(sudoku: Sudoku): File =
         withContext(ioDispatcher) {
             sudokuShareFiles.write(sudoku, sudokuToExport(sudoku).stringifyJSON(JSONConfig { includeNulls = true }))
         }

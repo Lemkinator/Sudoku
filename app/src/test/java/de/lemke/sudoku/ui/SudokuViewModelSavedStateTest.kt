@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui
 
 import android.app.Application
-import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
 import android.os.Parcel
@@ -37,6 +36,7 @@ import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -62,7 +62,7 @@ class SudokuViewModelSavedStateTest {
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
-            ShareSudokuUseCase(FakeSudokuShareFiles(Uri.EMPTY), dispatcher),
+            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
         ).also { shadowOf(Looper.getMainLooper()).idle() }
     }
