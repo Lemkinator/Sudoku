@@ -40,7 +40,6 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
-import de.lemke.commonutils.ui.utils.LaunchOutcome
 import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
 import de.lemke.commonutils.ui.utils.advanceOnboarding
 import de.lemke.commonutils.ui.utils.collectState
@@ -685,10 +684,3 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 }
-
-private val LaunchOutcome.isSettled: Boolean
-    get() =
-        when (this) {
-            LaunchOutcome.Started, LaunchOutcome.Failed -> true
-            LaunchOutcome.Dropped -> false
-        }
