@@ -33,6 +33,7 @@ import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.ShadowFileProvider
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
@@ -41,7 +42,7 @@ import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokuExport
-import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.di.AppCoroutinesModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -58,6 +59,7 @@ import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -74,7 +76,7 @@ import org.robolectric.shadows.ShadowDialog
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
+@UninstallModules(AppCoroutinesModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36], shadows = [ShadowFileProvider::class])
@@ -98,6 +100,11 @@ class SudokuActivityShareTest {
     @MainDispatcher
     @JvmField
     val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+
+    @BindValue
+    @ApplicationScope
+    @JvmField
+    val testApplicationScope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher())
 
     @Inject
     lateinit var settings: SettingsRepository

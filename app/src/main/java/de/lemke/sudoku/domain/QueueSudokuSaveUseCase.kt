@@ -17,10 +17,10 @@
 package de.lemke.sudoku.domain
 
 import android.util.Log
+import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
-import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
 import javax.inject.Singleton

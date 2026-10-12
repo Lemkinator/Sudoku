@@ -76,7 +76,7 @@ de.lemke.sudoku/
 ```
 
 **Data flow:** UI → ViewModel → UseCase → Repository → Room/SharedPreferences. Reactive updates via `Flow<>`. Background work via
-`withContext(dispatcher)`, where `dispatcher` is a Hilt-injected `CoroutineDispatcher` (see `di/DispatchersModule.kt` below) — never call
+`withContext(dispatcher)`, where `dispatcher` is a Hilt-injected `CoroutineDispatcher` (see `di/AppCoroutinesModule.kt` below) — never call
 `Dispatchers.IO`/`.Default`/`.Main` directly in use cases.
 
 **Play Games:** the drawer's achievements and leaderboards run `preparePlayGamesScreen` in `singleLaunchSuspending`,
@@ -92,8 +92,10 @@ VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`
 ## Key Patterns
 
 **Hilt DI:** `@HiltAndroidApp` on `App`, `@AndroidEntryPoint` on Activities/Fragments. All modules live in `di/`: `PersistenceModule`
-provides singleton `AppDatabase`; `DispatchersModule` provides `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified
-`CoroutineDispatcher`s (qualifiers from `common-utils`) for injection into use cases instead of hardcoding `Dispatchers.*`.
+provides singleton `AppDatabase`; `AppCoroutinesModule` includes common-utils' `CommonUtilsCoroutinesModule`, which provides
+the `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified `CoroutineDispatcher`s and the `@ApplicationScope`
+`CoroutineScope` (qualifiers from `common-utils`) for injection into use cases instead of hardcoding `Dispatchers.*`.
+A Hilt test that swaps dispatchers uninstalls `AppCoroutinesModule` and binds all four qualifiers itself.
 
 **Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent
 CLAUDE.md convention).

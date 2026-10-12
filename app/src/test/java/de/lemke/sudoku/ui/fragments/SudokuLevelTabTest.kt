@@ -28,6 +28,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.bypassOobe
+import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.commonutils.di.MainDispatcher
@@ -41,7 +42,7 @@ import de.lemke.sudoku.data.database.FieldDb
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuDb
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.di.AppCoroutinesModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
@@ -66,6 +67,7 @@ import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -82,7 +84,7 @@ import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class, SolvedBoardGeneratorModule::class, SudokusRepositoryModule::class)
+@UninstallModules(AppCoroutinesModule::class, SolvedBoardGeneratorModule::class, SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -104,6 +106,11 @@ class SudokuLevelTabTest {
     @MainDispatcher
     @JvmField
     val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+
+    @BindValue
+    @ApplicationScope
+    @JvmField
+    val testApplicationScope: CoroutineScope = CoroutineScope(UnconfinedTestDispatcher())
 
     @BindValue
     @JvmField
