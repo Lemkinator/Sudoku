@@ -660,6 +660,22 @@ class SettingsFragmentTest {
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
             started.action shouldBe android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+            ShadowToast.shownToastCount() shouldBe 0
+        }
+
+    @Test
+    fun `daily notification toggle shows the error toast when the device has no notification settings screen`() =
+        launch { fragment ->
+            val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+            shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
+            shadowOf(context).checkActivities(true)
+            val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            shadowOf(notificationManager).setNotificationsEnabled(false)
+            val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            pref.isChecked.shouldBeFalse()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBeNull()
+            ShadowToast.getTextOfLatestToast() shouldBe "Error"
         }
 
     @Test
