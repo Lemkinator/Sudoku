@@ -765,7 +765,7 @@ class SudokuActivity : AppCompatActivity() {
             when (result) {
                 is SudokuShare.File -> {
                     PlayGames.getAchievementsClient(this).unlock(getString(R.string.achievement_share_sudoku))
-                    result.file.share(this, MIME_TYPE_SUDOKU).isSettled
+                    result.file.share(this, MIME_TYPE_SUDOKU, getString(R.string.share_sudoku)).isSettled
                 }
             }
         shareDialog?.dismiss()

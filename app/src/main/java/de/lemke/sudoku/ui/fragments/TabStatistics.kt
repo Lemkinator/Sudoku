@@ -35,7 +35,7 @@ import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.FragmentTabStatisticsBinding
 import de.lemke.sudoku.domain.model.SudokuStatistics
-import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.ViewHolder
+import de.lemke.sudoku.ui.fragments.TabStatistics.StatisticsListAdapter.StatisticsViewHolder
 import dev.oneuiproject.oneui.recyclerview.ktx.enableCoreSeslFeatures
 import dev.oneuiproject.oneui.utils.ItemDecorRule.SELECTED
 import dev.oneuiproject.oneui.utils.SemItemDecoration
@@ -192,7 +192,7 @@ class TabStatistics : Fragment() {
             }
         }
 
-    inner class StatisticsListAdapter : RecyclerView.Adapter<ViewHolder>() {
+    inner class StatisticsListAdapter : RecyclerView.Adapter<StatisticsViewHolder>() {
         override fun getItemCount(): Int = statisticsList.size
 
         override fun getItemId(position: Int): Long = position.toLong()
@@ -202,28 +202,30 @@ class TabStatistics : Fragment() {
         override fun onCreateViewHolder(
             parent: ViewGroup,
             viewType: Int,
-        ): ViewHolder =
+        ): StatisticsViewHolder =
             when (viewType) {
                 0 -> {
-                    ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), false)
+                    StatisticsViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.statistics_list_item, parent, false), false)
                 }
 
                 else -> {
-                    ViewHolder(Separator(requireContext()), true).apply {
+                    StatisticsViewHolder(Separator(requireContext()), true).apply {
                         itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
                     }
                 }
             }
 
         override fun onBindViewHolder(
-            holder: ViewHolder,
+            holder: StatisticsViewHolder,
             position: Int,
         ) {
             holder.textView.text = statisticsList[position].first
             if (!holder.isSeparator) holder.textViewValue.text = statisticsList[position].second
         }
 
-        inner class ViewHolder internal constructor(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
+        inner class StatisticsViewHolder internal constructor(itemView: View, var isSeparator: Boolean) : RecyclerView.ViewHolder(
+            itemView,
+        ) {
             var textView: TextView
             lateinit var textViewValue: TextView
 

@@ -30,8 +30,6 @@ import android.text.format.DateFormat
 import android.text.format.DateFormat.is24HourFormat
 import android.util.Log
 import android.view.View
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -50,10 +48,12 @@ import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
 import de.lemke.commonutils.ui.utils.launchCreateDocument
+import de.lemke.commonutils.ui.utils.launchOpenDocument
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.commonutils.ui.utils.openApp
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
 import de.lemke.commonutils.ui.utils.registerForDocumentPick
+import de.lemke.commonutils.ui.utils.registerForOpenDocument
 import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.shareApp
@@ -97,7 +97,7 @@ class SettingsActivity : AppCompatActivity() {
     @AndroidEntryPoint
     class SettingsFragment : PreferenceFragmentCompat() {
         private lateinit var exportActivityResultLauncher: SingleLaunchResultLauncher<Intent>
-        private lateinit var importActivityResultLauncher: ActivityResultLauncher<String>
+        private lateinit var importActivityResultLauncher: SingleLaunchResultLauncher<Intent>
 
         private val viewModel: SettingsViewModel by viewModels()
 
@@ -134,7 +134,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             importActivityResultLauncher =
-                registerForSingleLaunchResult(GetContent()) { uri: Uri? ->
+                registerForOpenDocument { uri: Uri? ->
                     if (uri == null) {
                         toast(R.string.error_no_file_selected)
                     } else {
@@ -234,7 +234,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setMessage(R.string.import_data_message)
                     .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                        importActivityResultLauncher.launch("application/json")
+                        launchOpenDocument("application/json", importActivityResultLauncher)
                     }.showOnce(IMPORT_DATA_DIALOG_TAG)
             }
         }

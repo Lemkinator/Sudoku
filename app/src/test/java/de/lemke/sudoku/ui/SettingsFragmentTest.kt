@@ -37,9 +37,10 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.TestPersistenceModule
@@ -139,7 +140,7 @@ class SettingsFragmentTest {
 
     private fun launch(block: (SettingsActivity.SettingsFragment) -> Unit) {
         ActivityScenario.launch(SettingsActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.findFragmentById(R.id.settings) as SettingsActivity.SettingsFragment
@@ -232,9 +233,9 @@ class SettingsFragmentTest {
             val okButton = (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)
             okButton.performClick()
             okButton.performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val activity = shadowOf(fragment.requireActivity())
-            activity.nextStartedActivity?.action shouldBe android.content.Intent.ACTION_GET_CONTENT
+            activity.nextStartedActivity?.action shouldBe android.content.Intent.ACTION_OPEN_DOCUMENT
             activity.nextStartedActivity shouldBe null
         }
 
@@ -265,7 +266,7 @@ class SettingsFragmentTest {
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing.shouldBeFalse()
         }
 
@@ -277,7 +278,7 @@ class SettingsFragmentTest {
             val shadowActivity = shadowOf(fragment.requireActivity())
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowDialog.getLatestDialog().shouldBeNull()
         }
 
@@ -289,7 +290,7 @@ class SettingsFragmentTest {
             val shadowActivity = shadowOf(fragment.requireActivity())
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent())
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
             resultDialog.isShowing.shouldBeTrue()
             resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
@@ -303,7 +304,7 @@ class SettingsFragmentTest {
             val shadowActivity = shadowOf(fragment.requireActivity())
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, null)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
             resultDialog.isShowing.shouldBeTrue()
             resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
@@ -323,7 +324,7 @@ class SettingsFragmentTest {
                     Activity.RESULT_OK,
                     Intent().apply { data = Uri.fromFile(destinationFile) },
                 )
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 destinationFile.readText() shouldBe "[]"
             } finally {
                 destinationFile.delete()
@@ -339,7 +340,7 @@ class SettingsFragmentTest {
         val shadowActivity = shadowOf(fragment.requireActivity())
         val started = shadowActivity.peekNextStartedActivityForResult()!!
         shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent().apply { data = destination })
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
     }
 
     @Test
@@ -357,7 +358,7 @@ class SettingsFragmentTest {
                     fragment.getString(R.string.export_data_ongoing)
 
                 getAllGate.complete(Unit)
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
 
                 progressDialog.isShowing.shouldBeFalse()
                 val successDialog = ShadowDialog.getLatestDialog() as AlertDialog
@@ -396,11 +397,11 @@ class SettingsFragmentTest {
             val pref = fragment.pref<PreferenceScreen>("importData")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
             (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val shadowActivity = shadowOf(fragment.requireActivity())
             val started = shadowActivity.peekNextStartedActivityForResult()!!
             shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.getTextOfLatestToast() shouldBe fragment.getString(R.string.error_no_file_selected)
         }
 
@@ -414,7 +415,7 @@ class SettingsFragmentTest {
                 pref.onPreferenceClickListener?.onPreferenceClick(pref)
                 val confirmDialog = ShadowDialog.getLatestDialog() as AlertDialog
                 confirmDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 val shadowActivity = shadowOf(fragment.requireActivity())
                 val started = shadowActivity.peekNextStartedActivityForResult()!!
                 shadowActivity.receiveResult(
@@ -422,7 +423,7 @@ class SettingsFragmentTest {
                     Activity.RESULT_OK,
                     Intent().apply { data = Uri.fromFile(sourceFile) },
                 )
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 val resultDialog = ShadowDialog.getLatestDialog().shouldNotBeNull()
                 resultDialog shouldNotBe confirmDialog
                 resultDialog.isShowing.shouldBeTrue()
@@ -467,11 +468,11 @@ class SettingsFragmentTest {
         val pref = fragment.pref<PreferenceScreen>("importData")
         pref.onPreferenceClickListener?.onPreferenceClick(pref)
         (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         val shadowActivity = shadowOf(fragment.requireActivity())
         val started = shadowActivity.peekNextStartedActivityForResult()!!
         shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent().apply { data = uri })
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
         return resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString()
     }
@@ -540,12 +541,12 @@ class SettingsFragmentTest {
 
             deleteButton.performClick()
             deleteButton.performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             getAllCalls shouldBe 1
             dialog.isShowing.shouldBeTrue()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing.shouldBeFalse()
             getAllCalls shouldBe 1
         }
@@ -558,7 +559,7 @@ class SettingsFragmentTest {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(600))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing.shouldBeFalse()
         }
 
@@ -573,7 +574,7 @@ class SettingsFragmentTest {
             shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val dialog = ShadowDialog.getLatestDialog()
             dialog.shouldNotBeNull()
         }
@@ -587,12 +588,12 @@ class SettingsFragmentTest {
             shadowOf(context).grantPermissions(POST_NOTIFICATIONS)
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             // SeslTimePickerDialog ignores BUTTON_POSITIVE clicks during its 283ms show animation.
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing.shouldBeFalse()
             userSettings.dailySudokuNotificationHour shouldBe 14
             userSettings.dailySudokuNotificationMinute shouldBe 37
@@ -625,7 +626,7 @@ class SettingsFragmentTest {
                 request.requestedPermissions,
                 intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
             )
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             pref.isChecked.shouldBeTrue()
         }
@@ -667,7 +668,7 @@ class SettingsFragmentTest {
         launch { fragment ->
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceChangeListener?.onPreferenceChange(pref, false)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             userSettings.dailySudokuNotificationEnabled.shouldBeFalse()
         }
     }
@@ -757,7 +758,7 @@ class SettingsFragmentTest {
                 request.requestedPermissions,
                 intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
             )
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             fragment.findPreference<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled").shouldBeNull()
             userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
