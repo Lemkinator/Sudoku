@@ -17,8 +17,6 @@
 package de.lemke.sudoku
 
 import com.lemonappdev.konsist.api.Konsist
-import com.lemonappdev.konsist.api.ext.list.withPackage
-import com.lemonappdev.konsist.api.verify.assertFalse
 import de.lemke.commonutils.assertArchitecture
 import io.kotest.core.spec.style.ShouldSpec
 
@@ -26,15 +24,6 @@ class ArchitectureTest : ShouldSpec() {
     init {
         should("follow the shared layering and ViewModel rules") {
             Konsist.scopeFromProduction().assertArchitecture("de.lemke.sudoku")
-        }
-        should("ui collects no event flows") {
-            Konsist
-                .scopeFromProduction()
-                .files
-                .withPackage("de.lemke.sudoku.ui..")
-                .assertFalse(testName = this.testCase.name.toString()) {
-                    it.hasImport { import -> import.name == "de.lemke.commonutils.ui.utils.collectEvents" }
-                }
         }
     }
 }

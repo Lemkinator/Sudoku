@@ -31,9 +31,11 @@ import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.PausableDispatcher
 import de.lemke.commonutils.WhileResumed
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.read
 import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
@@ -356,14 +358,8 @@ class MainActivityMenuTest {
         }
     }
 
-    private fun ActivityScenario<MainActivity>.idleUntilImportFinished() {
-        val deadline = System.nanoTime() + IMPORT_TIMEOUT_NANOS
-        var finished = false
-        while (!finished && System.nanoTime() < deadline) {
-            idleMainLooper()
-            onActivity { activity -> finished = activity.importedSudoku != ImportedSudoku.Importing }
-        }
-    }
+    private fun ActivityScenario<MainActivity>.awaitImportFinished() =
+        awaitMainLooperUntil { read { it.importedSudoku != ImportedSudoku.Importing } }
 
     @Test
     fun `launching with a resolvable import uri opens the imported sudoku`() =
@@ -424,7 +420,7 @@ class MainActivityMenuTest {
             ActivityScenario.launch<MainActivity>(intent).use { scenario ->
                 scenario.onActivity { activity -> activity.singleLaunchActivity(Intent(activity, SettingsActivity::class.java)) }
                 pausableIoDispatcher.resume()
-                scenario.idleUntilImportFinished()
+                scenario.awaitImportFinished()
                 scenario.onActivity { activity ->
                     val shadowActivity = shadowOf(activity)
                     shadowActivity.nextStartedActivity?.component?.className shouldBe SettingsActivity::class.java.name
@@ -456,7 +452,7 @@ class MainActivityMenuTest {
                 scenario.moveToState(Lifecycle.State.RESUMED)
                 idleMainLooper()
                 pausableIoDispatcher.resume()
-                scenario.idleUntilImportFinished()
+                scenario.awaitImportFinished()
                 idleMainLooper()
 
                 val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
@@ -469,10 +465,6 @@ class MainActivityMenuTest {
         }
 
     // endregion
-
-    private companion object {
-        const val IMPORT_TIMEOUT_NANOS = 10_000_000_000L
-    }
 }
 
 private val MainActivity.importedSudoku: ImportedSudoku

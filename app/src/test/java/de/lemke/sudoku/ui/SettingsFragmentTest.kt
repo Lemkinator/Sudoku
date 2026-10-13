@@ -240,6 +240,19 @@ class SettingsFragmentTest {
         }
 
     @Test
+    fun `the import confirmation's ok button shows the error toast once when no app can pick a document`() =
+        launch { fragment ->
+            shadowOf(ApplicationProvider.getApplicationContext<HiltTestApplication>()).checkActivities(true)
+            val pref = fragment.pref<PreferenceScreen>("importData")
+            pref.onPreferenceClickListener?.onPreferenceClick(pref)
+            (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            idleMainLooper()
+            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBeNull()
+            ShadowToast.shownToastCount() shouldBe 1
+            ShadowToast.getTextOfLatestToast() shouldBe "Error: Opening content is not supported on your device."
+        }
+
+    @Test
     fun `exportData preference launches a create-document picker`() =
         launch { fragment ->
             val pref = fragment.pref<PreferenceScreen>("exportData")

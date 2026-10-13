@@ -25,6 +25,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
@@ -93,20 +94,11 @@ class FieldViewTest {
         adapter = SudokuViewAdapter(context, sudoku)
     }
 
-    private fun awaitInflated(fieldView: FieldView) {
-        val deadline = System.currentTimeMillis() + 5_000
-        while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
-            idleMainLooper()
-            Thread.sleep(5)
-        }
-        check(fieldView.fieldViewValue != null) { "FieldView's async inflate did not complete within 5000ms" }
-    }
-
     private fun inflatedFieldView(index: Int): FieldView {
         val fieldView = FieldView(context)
         // performLongClick() falls through to View.showContextMenu(), which NPEs without a parent.
         FrameLayout(context).addView(fieldView)
-        awaitInflated(fieldView)
+        awaitMainLooperUntil { fieldView.fieldViewValue != null }
         fieldView.init(sudoku, index, adapter)
         return fieldView
     }
@@ -115,7 +107,7 @@ class FieldViewTest {
     fun `no border is drawn for a cell away from any block boundary`() {
         val fieldView = FieldView(context)
         FrameLayout(context).addView(fieldView)
-        awaitInflated(fieldView)
+        awaitMainLooperUntil { fieldView.fieldViewValue != null }
         val sentinel = ColorDrawable(Color.MAGENTA)
         fieldView.foreground = sentinel
 
@@ -349,7 +341,7 @@ class FieldViewTest {
         fieldView.foreground.shouldBeNull()
         fieldView.field.value shouldBe 2
 
-        awaitInflated(fieldView)
+        awaitMainLooperUntil { fieldView.fieldViewValue != null }
         fieldView.fieldViewValue?.text.toString() shouldBe "2"
     }
 

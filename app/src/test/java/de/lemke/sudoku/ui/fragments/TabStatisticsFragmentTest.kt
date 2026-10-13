@@ -24,6 +24,7 @@ import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
@@ -194,13 +195,7 @@ class TabStatisticsFragmentTest {
             )
 
         controller.resume()
-        val deadline = System.currentTimeMillis() + 5000
-        while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
-            idleMainLooper()
-            Thread.sleep(20)
-        }
-        idleMainLooper()
-        check(insertedCount != -1 || changedCalled) { "TabStatistics's first load did not notify within 5000ms" }
+        awaitMainLooperUntil { insertedCount != -1 || changedCalled }
 
         insertedCount shouldBeGreaterThan 0
         changedCalled.shouldBeFalse()

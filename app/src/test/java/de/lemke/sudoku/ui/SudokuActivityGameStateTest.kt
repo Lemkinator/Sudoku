@@ -26,9 +26,11 @@ import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.PausableDispatcher
 import de.lemke.commonutils.WhileResumed
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.read
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -125,23 +127,9 @@ class SudokuActivityGameStateTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { it.userSettings.animationsEnabled = false }
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             block(scenario)
         }
-    }
-
-    private fun idleUntil(
-        scenario: ActivityScenario<SudokuActivity>,
-        condition: (SudokuActivity) -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + TIMEOUT_MILLIS
-        var met = false
-        while (!met && System.currentTimeMillis() < deadline) {
-            idleMainLooper()
-            scenario.onActivity { met = condition(it) }
-            if (!met) Thread.sleep(POLL_MILLIS)
-        }
-        check(met) { "condition not met within ${TIMEOUT_MILLIS}ms" }
     }
 
     private fun loadingDialog(): ProgressDialog? = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().lastOrNull()
@@ -163,7 +151,7 @@ class SudokuActivityGameStateTest {
             }
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudoku.id
                 activity.binding.gameRecycler.adapter
@@ -182,7 +170,7 @@ class SudokuActivityGameStateTest {
             scenario.state shouldBe Lifecycle.State.RESUMED
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value == SudokuGame.NotFound }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value == SudokuGame.NotFound } }
             scenario.onActivity { activity -> activity.isFinishing.shouldBeTrue() }
         }
     }
@@ -208,7 +196,7 @@ class SudokuActivityGameStateTest {
             }
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudoku.id
                 activity.sudoku[1].value.shouldBeNull()
@@ -234,7 +222,7 @@ class SudokuActivityGameStateTest {
             }
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.viewModel.game.value
                     .shouldBeInstanceOf<SudokuGame.Playing>()
@@ -242,10 +230,5 @@ class SudokuActivityGameStateTest {
                 loadingDialog()?.isShowing shouldBe false
             }
         }
-    }
-
-    private companion object {
-        const val TIMEOUT_MILLIS = 10_000L
-        const val POLL_MILLIS = 20L
     }
 }
