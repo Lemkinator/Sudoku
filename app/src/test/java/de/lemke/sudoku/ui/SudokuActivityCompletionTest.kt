@@ -21,7 +21,6 @@ import android.os.Looper
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -29,10 +28,13 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
@@ -179,7 +181,7 @@ class SudokuActivityCompletionTest {
                 activity.select(activity.sudoku.itemCount)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 activity.sudoku.completed.shouldBeTrue()
                 block(activity)
@@ -208,7 +210,7 @@ class SudokuActivityCompletionTest {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.sudoku.id shouldNotBe sudokuId
             activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
         }
@@ -223,7 +225,7 @@ class SudokuActivityCompletionTest {
             newGameButton.performClick()
             newGameButton.performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.sudoku.id shouldNotBe sudokuId
             runBlocking { getAllSudokus() }.size shouldBe 2
         }
@@ -237,7 +239,7 @@ class SudokuActivityCompletionTest {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.sudoku.modeLevel shouldBe 2
         }
     }
@@ -297,7 +299,7 @@ class SudokuActivityCompletionTest {
             scenario.recreate()
             maxLevelRead.complete(Unit)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 val dialogs = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>()
@@ -327,13 +329,13 @@ class SudokuActivityCompletionTest {
                     activity.select(0)
                     activity.select(activity.sudoku.itemCount)
                 }
-                awaitUntil { reviewRequested && ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().isNotEmpty() }
+                awaitMainLooperUntil { reviewRequested && ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().isNotEmpty() }
                 val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
                 dialog.isShowing shouldBe true
 
                 scenario.recreate()
                 shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
 
                 dialog.isShowing shouldBe false
                 scenario.onActivity { activity ->
@@ -364,11 +366,11 @@ class SudokuActivityCompletionTest {
                 activity.select(0)
                 activity.select(activity.sudoku.itemCount)
             }
-            awaitUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
+            awaitMainLooperUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
             val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
 
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.recreate()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
 
@@ -393,17 +395,16 @@ class SudokuActivityCompletionTest {
                 activity.select(0)
                 activity.select(activity.sudoku.itemCount)
             }
-            awaitUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
+            awaitMainLooperUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
             val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>() shouldBe listOf(dialog)
             dialog.isShowing shouldBe true
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing shouldBe false
             scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Idle }
         }
@@ -417,7 +418,7 @@ class SudokuActivityCompletionTest {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
 
             dialog.onBackPressedDispatcher.onBackPressed()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             dialog.isShowing shouldBe false
             activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
@@ -438,7 +439,7 @@ class SudokuActivityCompletionTest {
 
             scenario.recreate()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             dialog.isShowing shouldBe false
             val newDialog = (ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>() - dialog).single()
@@ -460,16 +461,16 @@ class SudokuActivityCompletionTest {
         syncCalculated = CompletableDeferred()
         completeBoard(sudokuId) { activity ->
             (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             activity.viewModel.onRestart()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             activity.viewModel.game.value shouldBe SudokuGame.Restarting
             activity.sudoku.completed shouldBe true
             ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().shouldBeEmpty()
             syncCalculated.complete(Unit)
-            awaitUntil { activity.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { activity.viewModel.game.value is SudokuGame.Playing }
             ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().shouldBeEmpty()
             activity.sudoku.completed shouldBe false
         }
@@ -503,7 +504,7 @@ class SudokuActivityCompletionTest {
 
                 scenario.recreate()
                 syncCalculated.complete(Unit)
-                awaitUntil { reviewRequested }
+                awaitMainLooperUntil { reviewRequested }
 
                 scenario.onActivity { activity -> activity.viewModel.playGamesSync.value shouldBe null }
                 fakePlayGamesSyncApplier.applied.size shouldBe 1
@@ -514,23 +515,5 @@ class SudokuActivityCompletionTest {
         } finally {
             unmockkStatic(AppCompatActivity::showInAppReviewIfPossible)
         }
-    }
-
-    // The Play Games sync and the restart save run on a real background dispatcher that idle() does not wait for.
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(AWAIT_ATTEMPTS) {
-            shadowOf(Looper.getMainLooper()).idle()
-            if (condition()) {
-                shadowOf(Looper.getMainLooper()).idle()
-                return
-            }
-            Thread.sleep(AWAIT_STEP_MS)
-        }
-        error("condition not met within ${AWAIT_ATTEMPTS * AWAIT_STEP_MS} ms")
-    }
-
-    private companion object {
-        const val AWAIT_ATTEMPTS = 200
-        const val AWAIT_STEP_MS = 25L
     }
 }

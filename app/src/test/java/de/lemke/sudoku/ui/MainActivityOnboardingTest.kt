@@ -16,11 +16,11 @@
 
 package de.lemke.sudoku.ui
 
-import android.os.Looper
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.ui.activity.CommonUtilsOOBEActivity
-import de.lemke.sudoku.HiltTestRule
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -45,7 +45,7 @@ class MainActivityOnboardingTest {
         hiltRule.inject()
         // ActivityScenario refuses onActivity() once the activity finishes and is destroyed.
         val activity = Robolectric.buildActivity(MainActivity::class.java).create().get()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
 
         val started = shadowOf(activity).nextStartedActivity
         started.shouldNotBeNull()

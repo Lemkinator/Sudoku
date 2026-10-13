@@ -27,9 +27,10 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.GamesSignInModule
 import de.lemke.sudoku.ui.utils.FakeGamesSignIn
@@ -92,7 +93,7 @@ class MainActivityGamesSignInTest {
 
     private fun launch(block: (MainActivity) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity -> block(activity) }
         }
     }
@@ -114,7 +115,7 @@ class MainActivityGamesSignInTest {
         launch { activity ->
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.authenticationChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 0
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
@@ -127,7 +128,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
             fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.signIns shouldBe 1
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
@@ -139,7 +140,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
             fakeGamesSignIn.signInResult = Tasks.forResult(false)
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
         }
 
@@ -149,7 +150,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
             fakeGamesSignIn.signInResult = Tasks.forException(RuntimeException("no network"))
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
         }
 
@@ -159,7 +160,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forException(RuntimeException("no network"))
             fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.signIns shouldBe 1
         }
 
@@ -182,7 +183,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.signInResult = Tasks.forResult(false)
             clickAchievements(activity)
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.authenticationChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 1
             ShadowToast.shownToastCount() shouldBe 1
@@ -193,7 +194,7 @@ class MainActivityGamesSignInTest {
         launch { activity ->
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             clickLeaderboards(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.authenticationChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 0
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
@@ -206,7 +207,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
             fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickLeaderboards(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.signIns shouldBe 1
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
@@ -218,7 +219,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
             fakeGamesSignIn.signInResult = Tasks.forResult(false)
             clickLeaderboards(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
         }
 
@@ -228,7 +229,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
             fakeGamesSignIn.signInResult = Tasks.forException(RuntimeException("no network"))
             clickLeaderboards(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.getTextOfLatestToast() shouldContain activity.getString(R.string.error_sign_in_failed)
         }
 
@@ -238,7 +239,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forException(RuntimeException("no network"))
             fakeGamesSignIn.signInResult = Tasks.forResult(true)
             clickLeaderboards(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeGamesSignIn.signIns shouldBe 1
         }
 
@@ -248,11 +249,11 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             fakeIntentProvider.results += Tasks.forException<Intent>(RuntimeException("no network"))
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             shadowOf(activity).peekNextStartedActivityForResult().shouldBeNull()
             ShadowToast.getLatestToast().shouldBeNull()
             clickAchievements(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS, PlayGamesScreen.ACHIEVEMENTS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
@@ -267,7 +268,7 @@ class MainActivityGamesSignInTest {
             shadowOf(activity).peekNextStartedActivityForResult().shouldBeNull()
             ShadowToast.shownToastCount() shouldBe 0
             clickLeaderboards(activity)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS, PlayGamesScreen.LEADERBOARDS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }

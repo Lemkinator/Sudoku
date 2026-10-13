@@ -18,10 +18,10 @@ package de.lemke.sudoku.ui
 
 import android.app.Application
 import android.os.Bundle
-import android.os.Looper
 import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
 import de.lemke.commonutils.data.FakeSharedPreferences
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
@@ -33,7 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
@@ -48,8 +47,6 @@ class IntroViewModelSavedStateTest {
             IsNotificationPermissionGrantedUseCase(dailyNotifications),
             savedStateHandle,
         )
-
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
 
     /** The saved state of [savedStateHandle] after a round trip through a parcel, as the system restores it after process death. */
     private fun restoredHandle(savedStateHandle: SavedStateHandle): SavedStateHandle {
@@ -68,7 +65,7 @@ class IntroViewModelSavedStateTest {
     fun `an unhandled saved choice resumes after process death`() {
         val savedStateHandle = SavedStateHandle()
         viewModel(savedStateHandle).onNotificationsDeclined()
-        idle()
+        idleMainLooper()
 
         viewModel(restoredHandle(savedStateHandle)).notificationChoice.value shouldBe NotificationChoice.Saved
     }
@@ -87,7 +84,7 @@ class IntroViewModelSavedStateTest {
         val savedStateHandle = SavedStateHandle()
         val viewModel = viewModel(savedStateHandle)
         viewModel.onNotificationsDeclined()
-        idle()
+        idleMainLooper()
         viewModel.onNotificationChoiceHandled(NotificationChoice.Saved)
 
         viewModel(restoredHandle(savedStateHandle)).notificationChoice.value shouldBe NotificationChoice.Pending

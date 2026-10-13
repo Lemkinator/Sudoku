@@ -23,6 +23,7 @@ import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.di.PersistenceModule
@@ -53,7 +54,7 @@ object TestPersistenceModule {
             .setQueryExecutor(directExecutor)
             .setTransactionExecutor(directExecutor)
             .build()
-            .let(HiltTestRule::closeAfterTest)
+            .let { HiltTestRule.closeAfterTest(it, AppDatabase::close) }
 
     @Provides
     fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()

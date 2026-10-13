@@ -19,7 +19,7 @@ package de.lemke.sudoku.data
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import dagger.hilt.android.testing.HiltAndroidTest
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.HiltTestRule
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import org.junit.Before

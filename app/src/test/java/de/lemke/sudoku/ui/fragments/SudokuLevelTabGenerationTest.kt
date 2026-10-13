@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui.fragments
 
-import android.os.Looper
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.RecyclerView
@@ -25,9 +24,11 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.read
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
@@ -52,7 +53,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /** sdk = 36: Robolectric's max supported SDK. */
@@ -105,13 +105,13 @@ class SudokuLevelTabGenerationTest {
     fun `generating the next level after returning from a finished level keeps the level list at the top`() {
         save(levelOne(filled = 0))
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            awaitUntil { scenario.read { it.levelState().sudokuLevel.size == 1 && !it.progressBarShown() } }
+            awaitMainLooperUntil { scenario.read { it.levelState().sudokuLevel.size == 1 && !it.progressBarShown() } }
             generationGate = CountDownLatch(1)
             try {
                 scenario.moveToState(Lifecycle.State.CREATED)
                 save(levelOne(filled = 16))
                 scenario.moveToState(Lifecycle.State.RESUMED)
-                awaitUntil { scenario.read { it.progressBarShown() && !it.levelList().isLayoutRequested } }
+                awaitMainLooperUntil { scenario.read { it.progressBarShown() && !it.levelList().isLayoutRequested } }
 
                 scenario.onActivity { activity ->
                     activity.levelState().isGeneratingNextLevel.shouldBeTrue()
@@ -121,7 +121,7 @@ class SudokuLevelTabGenerationTest {
             } finally {
                 generationGate.countDown()
             }
-            awaitUntil { scenario.read { it.levelState().hasNextLevelToStart && !it.progressBarShown() } }
+            awaitMainLooperUntil { scenario.read { it.levelState().hasNextLevelToStart && !it.progressBarShown() } }
             scenario.onActivity { activity -> activity.levelList().top shouldBe 0 }
         }
     }
@@ -138,27 +138,6 @@ class SudokuLevelTabGenerationTest {
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
-    // Generation runs on a real background dispatcher that idle() does not wait for.
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(AWAIT_ATTEMPTS) {
-            idle()
-            if (condition()) {
-                idle()
-                return
-            }
-            Thread.sleep(AWAIT_STEP_MS)
-        }
-        error("condition not met within ${AWAIT_ATTEMPTS * AWAIT_STEP_MS} ms")
-    }
-
-    private fun <T> ActivityScenario<SudokuLevelActivity>.read(block: (SudokuLevelActivity) -> T): T {
-        val result = mutableListOf<T>()
-        onActivity { result += block(it) }
-        return result.single()
-    }
-
     private fun SudokuLevelActivity.levelTab(): SudokuLevelTab =
         supportFragmentManager.fragments
             .filterIsInstance<SudokuLevelTab>()
@@ -169,9 +148,4 @@ class SudokuLevelTabGenerationTest {
     private fun SudokuLevelActivity.levelList(): RecyclerView = levelTab().binding.sudokuLevelsRecycler
 
     private fun SudokuLevelActivity.progressBarShown(): Boolean = levelTab().binding.tabLevelProgressBar.isVisible
-
-    private companion object {
-        const val AWAIT_ATTEMPTS = 500
-        const val AWAIT_STEP_MS = 10L
-    }
 }

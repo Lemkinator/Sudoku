@@ -17,11 +17,8 @@
 package de.lemke.sudoku.ui
 
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import de.lemke.commonutils.clearForTest
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.SudokuShareFiles
@@ -366,14 +363,12 @@ class SudokuViewModelTest : ShouldSpec(
 
         should("the save on leaving finishes after the view model is cleared") {
             val sudoku = testSudoku()
-            val store = ViewModelStore()
-            val viewModel =
-                ViewModelProvider.create(store, viewModelFactory { initializer { playing(sudoku) } })[SudokuViewModel::class]
+            val viewModel = playing(sudoku)
             val saved = CompletableDeferred<Unit>()
             repository.beforeSave = { saved.await() }
 
             viewModel.onPaused()
-            store.clear()
+            viewModel.clearForTest()
             saved.complete(Unit)
 
             viewModel.viewModelScope.isActive shouldBe false

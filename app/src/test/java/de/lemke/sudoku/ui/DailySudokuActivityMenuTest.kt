@@ -22,9 +22,9 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.ClockModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase

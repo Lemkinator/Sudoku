@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.os.Looper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -24,9 +23,10 @@ import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -47,7 +47,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 /** sdk = 36: Robolectric's max supported SDK. */
@@ -74,7 +73,7 @@ class MainActivityTabReselectTest {
 
     private fun launch(block: (MainActivity) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity(block)
         }
     }
@@ -88,9 +87,9 @@ class MainActivityTabReselectTest {
                 .getTabAt(position)
                 .shouldNotBeNull()
         tab.select()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         tab.select()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         return tab
     }
 
@@ -131,15 +130,15 @@ class MainActivityTabReselectTest {
         launch { activity ->
             val tab = activity.binding.bottomTab.getTabAt(0)
             tab?.select()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val historyRecyclerView = activity.findViewById<RecyclerView>(R.id.sudokuHistoryList)
             historyRecyclerView.scrollBy(0, 3000)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             historyRecyclerView.canScrollVertically(-1).shouldBeTrue()
 
             tab?.select()
-            repeat(5) { shadowOf(Looper.getMainLooper()).idle() }
+            repeat(5) { idleMainLooper() }
             historyRecyclerView.canScrollVertically(-1).shouldBeFalse()
         }
     }
@@ -149,15 +148,15 @@ class MainActivityTabReselectTest {
         launch { activity ->
             val tab = activity.binding.bottomTab.getTabAt(2)
             tab?.select()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val drawerLayout = activity.findViewById<DrawerLayout>(R.id.drawerLayout)
             drawerLayout.setExpanded(true, false)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             drawerLayout.isExpanded.shouldBeTrue()
 
             tab?.select()
-            repeat(5) { shadowOf(Looper.getMainLooper()).idle() }
+            repeat(5) { idleMainLooper() }
             drawerLayout.isExpanded.shouldBeFalse()
         }
 
@@ -166,18 +165,18 @@ class MainActivityTabReselectTest {
         launch { activity ->
             val tab = activity.binding.bottomTab.getTabAt(2)
             tab?.select()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val drawerLayout = activity.findViewById<DrawerLayout>(R.id.drawerLayout)
             drawerLayout.isExpanded.shouldBeFalse()
 
             val statisticsRecyclerView = activity.findViewById<RecyclerView>(R.id.statisticsListRecycler)
             statisticsRecyclerView.scrollBy(0, 3000)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             statisticsRecyclerView.canScrollVertically(-1).shouldBeTrue()
 
             tab?.select()
-            repeat(5) { shadowOf(Looper.getMainLooper()).idle() }
+            repeat(5) { idleMainLooper() }
             statisticsRecyclerView.canScrollVertically(-1).shouldBeFalse()
         }
 }

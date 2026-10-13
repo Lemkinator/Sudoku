@@ -21,14 +21,14 @@ import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Intent
-import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EarlyEntryPoint
 import dagger.hilt.android.EarlyEntryPoints
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.components.SingletonComponent
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
@@ -74,7 +74,7 @@ interface AlarmReceiverTestEntryPoint {
 @Config(application = HiltTestApplication::class, sdk = [36])
 class AlarmReceiverTest {
     @get:Rule
-    val closeTestDatabases = HiltTestRule.closeDatabasesRule()
+    val closeTestResources = HiltTestRule.closeResourcesRule()
 
     private val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
     private val graph = EarlyEntryPoints.get(context, AlarmReceiverTestEntryPoint::class.java)
@@ -88,7 +88,7 @@ class AlarmReceiverTest {
 
     private fun broadcast(action: String) {
         context.sendBroadcast(Intent(context, AlarmReceiver::class.java).setAction(action))
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         val receiver =
             shadowOf(context)
                 .registeredReceivers

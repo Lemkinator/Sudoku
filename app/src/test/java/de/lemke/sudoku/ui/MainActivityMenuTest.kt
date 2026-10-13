@@ -18,7 +18,6 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.lifecycle.Lifecycle
@@ -29,12 +28,16 @@ import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.PausableDispatcher
+import de.lemke.commonutils.WhileResumed
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
@@ -79,7 +82,7 @@ class MainActivityMenuTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO)
+    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO, WhileResumed.RunInPlace)
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -111,7 +114,7 @@ class MainActivityMenuTest {
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val launchIntent = intent ?: Intent(context, MainActivity::class.java)
         ActivityScenario.launch<MainActivity>(launchIntent).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity -> block(activity) }
         }
     }
@@ -163,7 +166,7 @@ class MainActivityMenuTest {
     fun `menu_item_filter shows the statistics filter dialog`() =
         launch { activity ->
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter)).shouldBeTrue()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val dialog = ShadowDialog.getLatestDialog()
             dialog.shouldNotBeNull()
             dialog.isShowing.shouldBeTrue()
@@ -174,7 +177,7 @@ class MainActivityMenuTest {
         launch { activity ->
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter)).shouldBeTrue()
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter)).shouldBeTrue()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowDialog.getShownDialogs().count { it.isShowing } shouldBe 1
         }
 
@@ -183,11 +186,11 @@ class MainActivityMenuTest {
         launch { activity ->
             val originalFilterFlags = userSettings.filterFlags
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.findViewById<AppCompatCheckBox>(R.id.filterSize4)!!.isChecked = false
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing.shouldBeFalse()
             userSettings.filterFlags shouldBe originalFilterFlags
         }
@@ -196,11 +199,11 @@ class MainActivityMenuTest {
     fun `the filter dialog's apply button updates the filter settings`() =
         launch { activity ->
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_item_filter))
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.findViewById<AppCompatCheckBox>(R.id.filterSize4)!!.isChecked = false
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             dialog.isShowing.shouldBeFalse()
             (userSettings.filterFlags and SudokuSize.FOUR.filterFlag) shouldBe 0
             (userSettings.filterFlags and SudokuFilterFlags.SIZE_ALL) shouldBe 0
@@ -325,7 +328,7 @@ class MainActivityMenuTest {
             Intent(context, MainActivity::class.java)
                 .setData(Uri.parse("content://de.lemke.sudoku.nonexistent.provider/import"))
         launch(intent) {
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             org.robolectric.shadows.ShadowToast
                 .getTextOfLatestToast() shouldBe context.getString(R.string.error_import_failed)
         }
@@ -357,7 +360,7 @@ class MainActivityMenuTest {
         val deadline = System.nanoTime() + IMPORT_TIMEOUT_NANOS
         var finished = false
         while (!finished && System.nanoTime() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             onActivity { activity -> finished = activity.importedSudoku != ImportedSudoku.Importing }
         }
     }
@@ -368,7 +371,7 @@ class MainActivityMenuTest {
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
             launch(intent) { activity ->
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 val started = shadowOf(activity).nextStartedActivity
                 started.shouldNotBeNull()
                 started.component?.className shouldBe SudokuActivity::class.java.name
@@ -382,12 +385,12 @@ class MainActivityMenuTest {
             val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
             val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
             ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 scenario.onActivity { activity ->
                     shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
                 }
                 scenario.recreate()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 scenario.onActivity { activity ->
                     shadowOf(activity).nextStartedActivity shouldBe null
                     org.robolectric.shadows.ShadowToast
@@ -405,7 +408,7 @@ class MainActivityMenuTest {
                     .setData(Uri.fromFile(file))
                     .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
             launch(intent) { activity ->
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 shadowOf(activity).nextStartedActivity shouldBe null
                 org.robolectric.shadows.ShadowToast
                     .shownToastCount() shouldBe 0
@@ -428,9 +431,8 @@ class MainActivityMenuTest {
                     shadowActivity.nextStartedActivity shouldBe null
                     activity.importedSudoku shouldBe ImportedSudoku.Imported(sudoku.id)
                 }
-                scenario.moveToState(Lifecycle.State.STARTED)
-                scenario.moveToState(Lifecycle.State.RESUMED)
-                shadowOf(Looper.getMainLooper()).idle()
+                scenario.returnFromLaunchedScreen()
+                idleMainLooper()
                 scenario.onActivity { activity ->
                     val shadowActivity = shadowOf(activity)
                     shadowActivity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
@@ -447,15 +449,15 @@ class MainActivityMenuTest {
             val intent = Intent(context, MainActivity::class.java).setData(Uri.fromFile(file))
             pausableIoDispatcher.pause()
             ActivityScenario.launch<MainActivity>(intent).use { scenario ->
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 scenario.onActivity { activity -> activity.importedSudoku shouldBe ImportedSudoku.Importing }
 
                 scenario.moveToState(Lifecycle.State.CREATED)
                 scenario.moveToState(Lifecycle.State.RESUMED)
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 pausableIoDispatcher.resume()
                 scenario.idleUntilImportFinished()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
 
                 val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
                 progressDialogs.size shouldBe 1

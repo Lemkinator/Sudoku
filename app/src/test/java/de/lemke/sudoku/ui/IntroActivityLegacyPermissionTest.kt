@@ -17,15 +17,15 @@
 package de.lemke.sudoku.ui
 
 import android.content.DialogInterface.BUTTON_POSITIVE
-import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.ui.utils.setupOnboarding
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
@@ -79,7 +79,7 @@ class IntroActivityLegacyPermissionTest {
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             shadowOf(activity).lastRequestedPermission.shouldBeNull()
             fakeDailyNotifications.scheduled shouldBe AlarmTime(hour = 9, minute = 0)

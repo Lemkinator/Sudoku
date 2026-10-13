@@ -29,13 +29,14 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.platform.app.InstrumentationRegistry
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.isSettled
+import de.lemke.commonutils.waitUntil
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
@@ -102,7 +103,7 @@ class SudokuLevelActivityTest {
             .launch<SudokuLevelActivity>(
                 Intent(ApplicationProvider.getApplicationContext(), SudokuLevelActivity::class.java),
             ).use { scenario ->
-                scenario.waitUntil { levelList().adapter?.itemCount == COMPLETED_LEVELS + 1 && levelList().isSettled() }
+                scenario.waitUntil { levelList().adapter?.itemCount == COMPLETED_LEVELS + 1 && levelList().isSettled }
                 var nextLevelId: SudokuId? = null
                 scenario.onActivity { nextLevelId = it.topLevelItem().sudoku.id }
                 scenario.moveToState(Lifecycle.State.CREATED)
@@ -111,7 +112,7 @@ class SudokuLevelActivityTest {
                 SystemClock.sleep(IN_GAME_MS)
                 scenario.moveToState(Lifecycle.State.RESUMED)
                 scenario.waitUntil { levelList().adapter?.itemCount == COMPLETED_LEVELS + 2 }
-                scenario.waitUntil { levelList().isSettled() }
+                scenario.waitUntil { levelList().isSettled }
                 scenario.onActivity { activity ->
                     (activity.levelList().layoutManager as LinearLayoutManager).findFirstVisibleItemPosition() shouldBe 0
                     activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
@@ -143,9 +144,6 @@ class SudokuLevelActivityTest {
             .state.value.sudokuLevel
             .first() as SudokuItem
 
-    private fun RecyclerView.isSettled(): Boolean =
-        layoutManager?.isSmoothScrolling == false && scrollState == RecyclerView.SCROLL_STATE_IDLE && !isLayoutRequested
-
     private fun RecyclerView.levelTextAt(position: Int): String? =
         findViewHolderForAdapterPosition(position)
             ?.itemView
@@ -153,21 +151,8 @@ class SudokuLevelActivityTest {
             ?.text
             ?.toString()
 
-    private fun ActivityScenario<SudokuLevelActivity>.waitUntil(condition: SudokuLevelActivity.() -> Boolean) {
-        repeat(WAIT_ATTEMPTS) {
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            var met = false
-            onActivity { met = it.condition() }
-            if (met) return
-            Thread.sleep(WAIT_STEP_MS)
-        }
-        error("condition not met within ${WAIT_ATTEMPTS * WAIT_STEP_MS} ms")
-    }
-
     private companion object {
         const val COMPLETED_LEVELS = 20
         const val IN_GAME_MS = 5_500L
-        const val WAIT_ATTEMPTS = 500
-        const val WAIT_STEP_MS = 10L
     }
 }

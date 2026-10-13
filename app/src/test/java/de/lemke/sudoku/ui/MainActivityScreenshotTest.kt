@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.os.Looper
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
@@ -25,16 +24,16 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import javax.inject.Inject
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -65,7 +64,7 @@ class MainActivityScreenshotTest {
     ) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             if (tabPosition != null) scenario.onActivity { it.onTabItemSelected(tabPosition) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             onView(isRoot()).captureRoboImage(fileName)
         }
     }

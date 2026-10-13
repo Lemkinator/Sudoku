@@ -19,16 +19,16 @@ package de.lemke.sudoku.ui
 import android.content.DialogInterface.BUTTON_NEGATIVE
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
-import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Position
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -223,7 +223,7 @@ class IntroActivityFlowTest {
         launch { activity ->
             toStep4(activity)
             activity.sudokuButtons[1].performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.introStep shouldBe 5
             activity.selected shouldBe activity.sudoku.itemCount + 1
         }
@@ -232,7 +232,7 @@ class IntroActivityFlowTest {
     fun `a real tap on the delete button routes through its click listener`() =
         launch { activity ->
             activity.binding.deleteButton.performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.introStep shouldBe 0
         }
 
@@ -240,7 +240,7 @@ class IntroActivityFlowTest {
     fun `a real tap on the hint button routes through its click listener`() =
         launch { activity ->
             activity.binding.hintButton.performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.introStep shouldBe 0
         }
 
@@ -469,7 +469,7 @@ class IntroActivityFlowTest {
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_NEGATIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.isFinishing.shouldBeTrue()
             activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Pending
         }
@@ -482,7 +482,7 @@ class IntroActivityFlowTest {
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.isFinishing.shouldBeTrue()
         }
 
@@ -494,7 +494,7 @@ class IntroActivityFlowTest {
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.isFinishing.shouldBeFalse()
             shadowOf(activity)
                 .lastRequestedPermission
@@ -513,7 +513,7 @@ class IntroActivityFlowTest {
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val request = shadowOf(activity).lastRequestedPermission.shouldNotBeNull()
             activity.onRequestPermissionsResult(
@@ -521,7 +521,7 @@ class IntroActivityFlowTest {
                 request.requestedPermissions,
                 intArrayOf(android.content.pm.PackageManager.PERMISSION_GRANTED),
             )
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             activity.isFinishing.shouldBeTrue()
         }
@@ -534,7 +534,7 @@ class IntroActivityFlowTest {
             activity.binding.introContinueButton.performClick()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val request = shadowOf(activity).lastRequestedPermission.shouldNotBeNull()
             activity.onRequestPermissionsResult(
@@ -542,7 +542,7 @@ class IntroActivityFlowTest {
                 request.requestedPermissions,
                 intArrayOf(android.content.pm.PackageManager.PERMISSION_DENIED),
             )
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             activity.isFinishing.shouldBeTrue()
         }
@@ -561,12 +561,12 @@ class IntroActivityFlowTest {
     fun `select collapses the toolbar when it is currently expanded`() =
         launch { activity ->
             activity.binding.sudokuToolbarLayout.setExpanded(expanded = true, animate = false)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.binding.sudokuToolbarLayout.isExpanded
                 .shouldBeTrue()
 
             activity.select(0)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.binding.sudokuToolbarLayout.isExpanded
                 .shouldBeFalse()
         }

@@ -19,13 +19,13 @@ package de.lemke.sudoku.ui.utils
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Looper
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.isVisible
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -41,7 +41,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 private val SIZE = SudokuSize.FOUR
@@ -97,7 +96,7 @@ class FieldViewTest {
     private fun awaitInflated(fieldView: FieldView) {
         val deadline = System.currentTimeMillis() + 5_000
         while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             Thread.sleep(5)
         }
         check(fieldView.fieldViewValue != null) { "FieldView's async inflate did not complete within 5000ms" }

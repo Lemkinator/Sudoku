@@ -26,9 +26,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.ui.utils.setupOnboarding
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.sudoku.HiltTestRule
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -69,15 +70,13 @@ class IntroActivityLaunchOutcomeTest {
 
     private fun launchIntro(block: (ActivityController<IntroActivity>) -> Unit) {
         val controller = Robolectric.buildActivity(IntroActivity::class.java, onboardingIntroIntent(context)).setup()
-        idle()
+        idleMainLooper()
         try {
             block(controller)
         } finally {
             controller.pause().stop().destroy()
         }
     }
-
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
 
     /** Starts another activity without pausing the intro, so the launch latch drops launches until the intro resumes again. */
     private fun IntroActivity.closeLaunchLatch() {
@@ -88,7 +87,7 @@ class IntroActivityLaunchOutcomeTest {
     private fun IntroActivity.declineNotifications() {
         val dialog = ShadowDialog.getLatestDialog() as AlertDialog
         dialog.getButton(BUTTON_NEGATIVE).performClick()
-        idle()
+        idleMainLooper()
     }
 
     private fun IntroActivity.shouldHaveStartedMainActivity() {
@@ -124,7 +123,7 @@ class IntroActivityLaunchOutcomeTest {
             activity.viewModel.notificationChoice.value shouldBe NotificationChoice.Saved
 
             controller.pause().resume()
-            idle()
+            idleMainLooper()
 
             activity.shouldHaveStartedMainActivity()
         }
@@ -140,7 +139,7 @@ class IntroActivityLaunchOutcomeTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
 
             activity.binding.introContinueButton.performClick()
-            idle()
+            idleMainLooper()
 
             ShadowDialog.getLatestDialog() shouldBe question
             activity.shouldHaveStartedMainActivity()
@@ -155,13 +154,13 @@ class IntroActivityLaunchOutcomeTest {
             activity.closeLaunchLatch()
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(BUTTON_POSITIVE).performClick()
-            idle()
+            idleMainLooper()
 
             shadowOf(activity).lastRequestedPermission.shouldBeNull()
             activity.viewModel.notificationChoice.value shouldBe NotificationChoice.RequestPermission
 
             controller.pause().resume()
-            idle()
+            idleMainLooper()
 
             val request = shadowOf(activity).lastRequestedPermission.shouldNotBeNull()
             request.requestedPermissions.toList() shouldBe listOf("android.permission.POST_NOTIFICATIONS")
@@ -171,7 +170,7 @@ class IntroActivityLaunchOutcomeTest {
             alarms.peekNextScheduledAlarm().shouldBeNull()
 
             activity.activityResultRegistry.dispatchResult(request.requestCode, true)
-            idle()
+            idleMainLooper()
 
             val alarm = alarms.peekNextScheduledAlarm().shouldNotBeNull()
             val trigger = Calendar.getInstance().apply { timeInMillis = alarm.triggerAtMs }
@@ -187,7 +186,7 @@ class IntroActivityLaunchOutcomeTest {
  */
 internal fun onboardingIntroIntent(context: Context): Intent {
     val main = Robolectric.buildActivity(MainActivity::class.java).create()
-    shadowOf(Looper.getMainLooper()).idle()
+    idleMainLooper()
     val oobe = shadowOf(main.get()).nextStartedActivity.shouldNotBeNull()
     main.destroy()
     return Intent(oobe).setClass(context, IntroActivity::class.java)

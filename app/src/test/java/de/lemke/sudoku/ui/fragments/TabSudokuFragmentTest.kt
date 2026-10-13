@@ -17,11 +17,9 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.content.Intent
-import android.os.Looper
 import android.view.View
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -30,10 +28,14 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.PausableDispatcher
+import de.lemke.commonutils.WhileResumed
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
@@ -51,7 +53,6 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.MainActivity
-import de.lemke.sudoku.ui.PausableDispatcher
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.SudokuLevelActivity
@@ -84,7 +85,7 @@ class TabSudokuFragmentTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Main)
+    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Main, WhileResumed.RunInPlace)
 
     @BindValue
     @JvmField
@@ -146,7 +147,7 @@ class TabSudokuFragmentTest {
 
     private fun launch(block: (TabSudoku) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
@@ -172,13 +173,13 @@ class TabSudokuFragmentTest {
 
     private fun click(view: View) {
         view.performClick()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
     }
 
     private fun doubleClick(view: View) {
         view.performClick()
         view.performClick()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
     }
 
     @Test
@@ -193,12 +194,12 @@ class TabSudokuFragmentTest {
     @Test
     fun `a sudoku generated across a recreation opens from the recreated activity`() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             pausableDefaultDispatcher.pause()
             scenario.onActivity { activity -> activity.findViewById<View>(R.id.newGameButton).performClick() }
             scenario.recreate()
             pausableDefaultDispatcher.resume()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val generated = runBlocking { getAllSudokus() }.single()
             scenario.onActivity { activity ->
                 activity.supportFragmentManager.fragments.size shouldBe 3
@@ -213,7 +214,7 @@ class TabSudokuFragmentTest {
     @Test
     fun `a new sudoku created while a launch is pending opens once the activity resumes again`() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             lateinit var viewModel: TabSudokuViewModel
             scenario.onActivity { activity ->
                 activity.singleLaunchActivity(Intent(activity, SudokuLevelActivity::class.java)) shouldBe true
@@ -224,7 +225,7 @@ class TabSudokuFragmentTest {
                 viewModel = ViewModelProvider(fragment)[TabSudokuViewModel::class.java]
                 viewModel.onNewGame(SudokuSize.FOUR, Difficulty.VERY_EASY)
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val generated = runBlocking { getAllSudokus() }.single()
             scenario.onActivity { activity ->
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe SudokuLevelActivity::class.java.name
@@ -232,9 +233,8 @@ class TabSudokuFragmentTest {
             }
             viewModel.newGame.value shouldBe NewGame.Created(generated.id)
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 val started = shadowOf(activity).nextStartedActivity
@@ -252,10 +252,10 @@ class TabSudokuFragmentTest {
             val progressBar = fragment.requireView().findViewById<View>(R.id.newSudokuProgressBar)
             pausableDefaultDispatcher.pause()
             fragment.requireView().findViewById<View>(R.id.newGameButton).performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             progressBar.isVisible.shouldBeTrue()
             pausableDefaultDispatcher.resume()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             progressBar.isVisible.shouldBeFalse()
         }
 
@@ -294,7 +294,7 @@ class TabSudokuFragmentTest {
                     R.id.difficulty_seekbar,
                 )
             seekBar.progress = 3
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             userSettings.difficultySliderValue shouldBe 3
         }
 
@@ -309,7 +309,7 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             val seekBar = fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar)
             seekBar.progress = 2
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             userSettings.sizeSliderValue shouldBe 2
         }
 
@@ -342,9 +342,9 @@ class TabSudokuFragmentTest {
             runBlocking { saveSudoku(formulaicSudoku()) }
             Robolectric.buildActivity(MainActivity::class.java).use { controller ->
                 controller.create()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 controller.start().resume()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 controller
                     .get()
                     .findViewById<View>(R.id.continueGameButton)
@@ -361,9 +361,9 @@ class TabSudokuFragmentTest {
                 controller.create()
                 controller.get().onTabItemSelected(0)
                 controller.get().onTabItemSelected(1)
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 controller.start().resume()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 controller
                     .get()
                     .findViewById<View>(R.id.continueGameButton)
@@ -377,10 +377,10 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             val activity = fragment.requireActivity() as MainActivity
             activity.onTabItemSelected(0)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             runBlocking { saveSudoku(formulaicSudoku()) }
             activity.onTabItemSelected(1)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fragment
                 .requireView()
                 .findViewById<View>(R.id.continueGameButton)

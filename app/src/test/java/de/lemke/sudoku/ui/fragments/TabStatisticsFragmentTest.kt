@@ -16,8 +16,6 @@
 
 package de.lemke.sudoku.ui.fragments
 
-import android.os.Looper
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
@@ -25,9 +23,11 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
@@ -53,7 +53,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 
@@ -114,7 +113,7 @@ class TabStatisticsFragmentTest {
     private fun launch(block: (TabStatistics) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(2) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
@@ -197,10 +196,10 @@ class TabStatisticsFragmentTest {
         controller.resume()
         val deadline = System.currentTimeMillis() + 5000
         while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             Thread.sleep(20)
         }
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         check(insertedCount != -1 || changedCalled) { "TabStatistics's first load did not notify within 5000ms" }
 
         insertedCount shouldBeGreaterThan 0
@@ -213,12 +212,12 @@ class TabStatisticsFragmentTest {
         runBlocking { saveSudoku(startedSudoku()) }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(2) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.showedToast("Failed to load statistics") shouldBe false
 
             // Room notifies its observers when a transaction ends, never after a raw write alone.
             database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             ShadowToast.showedToast("Failed to load statistics") shouldBe true
 
@@ -231,9 +230,8 @@ class TabStatisticsFragmentTest {
             }
             val shownToasts = ShadowToast.shownToastCount()
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe shownToasts
         }

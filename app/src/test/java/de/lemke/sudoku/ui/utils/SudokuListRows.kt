@@ -16,9 +16,9 @@
 
 package de.lemke.sudoku.ui.utils
 
-import android.os.Looper
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -27,7 +27,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.LocalDateTime
-import org.robolectric.Shadows.shadowOf
 
 private val LIST_SIZE = SudokuSize.FOUR
 private const val DIFF_TIMEOUT_MS = 5_000L
@@ -76,7 +75,7 @@ internal fun RecyclerView.awaitSmallText(
 }
 
 private fun RecyclerView.smallTextAt(position: Int): String? {
-    shadowOf(Looper.getMainLooper()).idle()
+    idleMainLooper()
     return findViewHolderForAdapterPosition(position)
         ?.itemView
         ?.findViewById<TextView>(R.id.item_text_small)

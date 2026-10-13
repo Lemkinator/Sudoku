@@ -18,9 +18,9 @@ package de.lemke.sudoku.ui
 
 import android.app.Application
 import android.net.Uri
-import android.os.Looper
 import androidx.lifecycle.SavedStateHandle
 import de.lemke.commonutils.freshTestPreferences
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeSudokuDocuments
@@ -47,7 +47,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -83,8 +82,6 @@ class MainViewModelTest {
         sudokusRepository.beforeSave = { gate.await() }
     }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
     @Test
     fun `importedSudoku starts idle`() {
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
@@ -98,14 +95,14 @@ class MainViewModelTest {
         viewModel.onFileOpened(uri)
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Importing
         imported.complete(Unit)
-        idle()
+        idleMainLooper()
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
     }
 
     @Test
     fun `onFileOpened exposes Failed when the import returns no sudoku`() {
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Failed
     }
 
@@ -113,7 +110,7 @@ class MainViewModelTest {
     fun `onImportedSudokuHandled returns to Idle for the current result`() {
         addImportFile()
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         viewModel.onImportedSudokuHandled(ImportedSudoku.Imported(SudokuId("imported")))
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
     }
@@ -122,7 +119,7 @@ class MainViewModelTest {
     fun `onImportedSudokuHandled keeps a newer result`() {
         addImportFile()
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         viewModel.onImportedSudokuHandled(ImportedSudoku.Failed)
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
     }
@@ -131,10 +128,10 @@ class MainViewModelTest {
     fun `onFileOpened imports a file only once when the activity is recreated`() {
         addImportFile()
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         viewModel.onImportedSudokuHandled(ImportedSudoku.Imported(SudokuId("imported")))
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Idle
         savedIds shouldBe listOf("imported")
     }
@@ -143,11 +140,11 @@ class MainViewModelTest {
     fun `onFileOpened does not import the file again after process death restores the saved state`() {
         addImportFile()
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         savedStateHandle = SavedStateHandle(mapOf("openedFile" to savedStateHandle.get<String>("openedFile")))
         val restored = newViewModel()
         restored.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         restored.importedSudoku.value shouldBe ImportedSudoku.Idle
         savedIds shouldBe listOf("imported")
     }
@@ -160,7 +157,7 @@ class MainViewModelTest {
         viewModel.onFileOpened(uri)
         viewModel.onFileOpened(uri)
         imported.complete(Unit)
-        idle()
+        idleMainLooper()
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
         savedIds shouldBe listOf("imported")
     }
@@ -174,7 +171,7 @@ class MainViewModelTest {
         sudokusRepository.beforeSave = {}
         val restored = newViewModel()
         restored.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         restored.importedSudoku.value shouldBe ImportedSudoku.Imported(SudokuId("imported"))
         savedIds shouldBe listOf("imported")
     }
@@ -184,9 +181,9 @@ class MainViewModelTest {
         addImportFile()
         val otherUri = Uri.parse("content://files/other.json")
         viewModel.onFileOpened(uri)
-        idle()
+        idleMainLooper()
         viewModel.onFileOpened(otherUri)
-        idle()
+        idleMainLooper()
         viewModel.importedSudoku.value shouldBe ImportedSudoku.Failed
         savedIds shouldBe listOf("imported")
     }

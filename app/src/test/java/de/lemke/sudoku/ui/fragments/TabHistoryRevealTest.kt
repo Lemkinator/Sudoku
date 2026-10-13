@@ -27,9 +27,12 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.read
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -90,9 +93,9 @@ class TabHistoryRevealTest {
             scenario.scrollHistoryToBottom()
             scenario.moveToState(Lifecycle.State.CREATED)
             save(seededSudoku(0, seconds = 75, updated = SEEDED_DAY.plusHours(2)))
-            awaitUntil { scenario.read { it.firstHistorySudokuId() } == seededIds[0] }
+            awaitMainLooperUntil { scenario.read { it.firstHistorySudokuId() } == seededIds[0] }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
@@ -107,10 +110,10 @@ class TabHistoryRevealTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(seededSudoku(0, seconds = 75, updated = SEEDED_DAY.plusHours(2)))
-            idle()
+            idleMainLooper()
             scenario.read { it.firstHistorySudokuId() } shouldBe seededIds.last()
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.firstHistorySudokuId() == seededIds[0] && it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.firstHistorySudokuId() == seededIds[0] && it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
@@ -125,9 +128,9 @@ class TabHistoryRevealTest {
             scenario.read { it.historyList().firstVisiblePosition() } shouldBe 0
             scenario.moveToState(Lifecycle.State.CREATED)
             save(newSudoku(seconds = 75, updated = IMPORTED_DAY))
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + OLDER_COUNT + 3 }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + OLDER_COUNT + 3 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 val layoutManager = activity.historyList().layoutManager as LinearLayoutManager
                 val completelyVisible =
@@ -144,9 +147,9 @@ class TabHistoryRevealTest {
             scenario.read { it.historyList().firstVisiblePosition() } shouldBe 0
             scenario.moveToState(Lifecycle.State.CREATED)
             save(newSudoku(seconds = 75, updated = NEXT_DAY))
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
@@ -160,12 +163,12 @@ class TabHistoryRevealTest {
             scenario.scrollHistoryToBottom()
             scenario.moveToState(Lifecycle.State.CREATED)
             save(newSudoku(seconds = 75, updated = NEXT_DAY))
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
             scenario.onActivity { it.recreateHistoryView() }
-            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
             scenario.read { it.historyList().firstVisiblePosition() } shouldNotBe 0
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:15 | 0% | Errors: 0/3 | Hints: 0"
@@ -179,11 +182,11 @@ class TabHistoryRevealTest {
             scenario.scrollHistoryToBottom()
             scenario.moveToState(Lifecycle.State.CREATED)
             save(newSudoku(seconds = 75, updated = NEXT_DAY))
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
             save(newSudoku(seconds = 90, updated = NEXT_DAY.plusHours(1)))
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 3 }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 3 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 activity.historyList().firstVisiblePosition() shouldBe 0
                 activity.historyList().smallTextAt(1) shouldBe "01:30 | 0% | Errors: 0/3 | Hints: 0"
@@ -199,11 +202,11 @@ class TabHistoryRevealTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             val deleted = newSudoku(seconds = 75, updated = NEXT_DAY)
             save(deleted)
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
             runBlocking { deleteSudokus(listOf(deleted)) }
-            awaitUntil { scenario.read { it.historySize() } == SEEDED_ROWS }
+            awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
             scenario.onActivity { activity ->
                 activity.historyList().adapter?.itemCount shouldBe SEEDED_ROWS
                 activity.historyList().firstVisiblePosition() shouldBe scrolledTo
@@ -241,40 +244,19 @@ class TabHistoryRevealTest {
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
-    // AsyncListDiffer diffs on a background executor that idle() does not wait for.
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(AWAIT_ATTEMPTS) {
-            idle()
-            if (condition()) {
-                idle()
-                return
-            }
-            Thread.sleep(AWAIT_STEP_MS)
-        }
-        error("condition not met within ${AWAIT_ATTEMPTS * AWAIT_STEP_MS} ms")
-    }
-
     private fun launchHistory(
         rows: Int = SEEDED_ROWS,
         block: (ActivityScenario<MainActivity>) -> Unit,
     ) = ActivityScenario.launch(MainActivity::class.java).use { scenario ->
         scenario.onActivity { it.onTabItemSelected(0) }
-        awaitUntil { scenario.read { it.historyList().adapter?.itemCount } == rows }
+        awaitMainLooperUntil { scenario.read { it.historyList().adapter?.itemCount } == rows }
         block(scenario)
     }
 
     private fun ActivityScenario<MainActivity>.scrollHistoryToBottom(): Int {
         onActivity { it.historyList().scrollToPosition(SEEDED_ROWS - 1) }
-        idle()
+        idleMainLooper()
         return read { it.historyList().firstVisiblePosition() }.also { it shouldNotBe 0 }
-    }
-
-    private fun <T> ActivityScenario<MainActivity>.read(block: (MainActivity) -> T): T {
-        val result = mutableListOf<T>()
-        onActivity { result += block(it) }
-        return result.single()
     }
 
     private fun MainActivity.historyTab(): TabHistory = supportFragmentManager.fragments.filterIsInstance<TabHistory>().first()
@@ -319,8 +301,6 @@ class TabHistoryRevealTest {
         const val SEEDED_ROWS = SEEDED_COUNT + 1
         const val OLDER_COUNT = 10
         const val IMPORTED_ROW = SEEDED_ROWS + 1
-        const val AWAIT_ATTEMPTS = 200
-        const val AWAIT_STEP_MS = 10L
         val SEEDED_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 15, 9, 0)
         val NEXT_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 16, 10, 0)
         val IMPORTED_DAY: LocalDateTime = LocalDateTime.of(2026, 1, 12, 10, 0)

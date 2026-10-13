@@ -17,16 +17,18 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
-import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.PausableDispatcher
+import de.lemke.commonutils.WhileResumed
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -54,7 +56,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
@@ -67,7 +68,7 @@ class SudokuActivityGameStateTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Default)
+    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Default, WhileResumed.RunInPlace)
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -136,7 +137,7 @@ class SudokuActivityGameStateTest {
         val deadline = System.currentTimeMillis() + TIMEOUT_MILLIS
         var met = false
         while (!met && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { met = condition(it) }
             if (!met) Thread.sleep(POLL_MILLIS)
         }
@@ -153,7 +154,7 @@ class SudokuActivityGameStateTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
         pausableDefaultDispatcher.pause()
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.state shouldBe Lifecycle.State.RESUMED
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Loading
@@ -177,7 +178,7 @@ class SudokuActivityGameStateTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, "does-not-exist")
         pausableDefaultDispatcher.pause()
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.state shouldBe Lifecycle.State.RESUMED
 
             pausableDefaultDispatcher.resume()
@@ -198,7 +199,7 @@ class SudokuActivityGameStateTest {
 
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
@@ -225,7 +226,7 @@ class SudokuActivityGameStateTest {
 
                 activity.viewModel.onFollowUp(FollowUp.NEW_GAME)
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Generating

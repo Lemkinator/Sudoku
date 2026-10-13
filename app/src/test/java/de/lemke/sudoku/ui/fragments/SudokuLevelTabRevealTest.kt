@@ -28,9 +28,13 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.isSettled
+import de.lemke.commonutils.read
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
@@ -97,7 +101,7 @@ class SudokuLevelTabRevealTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             solveTopLevel { scenario.read { it } }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled } }
             scenario.onActivity { activity ->
                 activity.levelList().firstVisiblePosition() shouldBe 0
                 activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
@@ -113,12 +117,12 @@ class SudokuLevelTabRevealTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(completedLevel(solvedId, COMPLETED_LEVELS + 1))
-            idle()
+            idleMainLooper()
             scenario.read { it.topLevelLabel() } shouldBe "${COMPLETED_LEVELS + 1}"
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil {
+            awaitMainLooperUntil {
                 scenario.read {
-                    it.topLevelLabel() == "${COMPLETED_LEVELS + 2}" && it.adapterHoldsViewModelLevels() && it.levelList().isSettled()
+                    it.topLevelLabel() == "${COMPLETED_LEVELS + 2}" && it.adapterHoldsViewModelLevels() && it.levelList().isSettled
                 }
             }
             val nextLevelId = scenario.read { it.topLevelId() }
@@ -140,7 +144,7 @@ class SudokuLevelTabRevealTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             solveTopLevel { scenario.read { it } }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled } }
             scenario.onActivity { activity ->
                 activity.levelList().firstVisiblePosition() shouldBe 0
                 activity.levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
@@ -152,17 +156,17 @@ class SudokuLevelTabRevealTest {
     fun `a next level event handled after the list committed the level reveals it`() {
         val controller = Robolectric.buildActivity(SudokuLevelActivity::class.java).setup()
         try {
-            awaitUntil { controller.get().adapterHoldsViewModelLevels() && controller.get().levelList().isSettled() }
+            awaitMainLooperUntil { controller.get().adapterHoldsViewModelLevels() && controller.get().levelList().isSettled }
             controller.get().levelList().scrollToPosition(COMPLETED_LEVELS)
-            idle()
+            idleMainLooper()
             controller.get().levelList().firstVisiblePosition() shouldNotBe 0
             controller.pause().stop()
             solveTopLevel { controller.get() }
             controller.start()
-            awaitUntil { controller.get().adapterHoldsViewModelLevels() }
+            awaitMainLooperUntil { controller.get().adapterHoldsViewModelLevels() }
             controller.get().levelList().firstVisiblePosition() shouldNotBe 0
             controller.resume()
-            awaitUntil { controller.get().levelList().isSettled() }
+            awaitMainLooperUntil { controller.get().levelList().isSettled }
             controller.get().levelList().firstVisiblePosition() shouldBe 0
             controller.get().levelList().levelTextAt(0) shouldBe "Level ${COMPLETED_LEVELS + 2}"
         } finally {
@@ -177,12 +181,12 @@ class SudokuLevelTabRevealTest {
             val scrolledTo = scenario.scrollLevelsToBottom()
             scenario.moveToState(Lifecycle.State.CREATED)
             save(completedLevel(solvedId, COMPLETED_LEVELS + 1))
-            awaitUntil { scenario.read { it.topLevelLabel() } == "${COMPLETED_LEVELS + 2}" }
+            awaitMainLooperUntil { scenario.read { it.topLevelLabel() } == "${COMPLETED_LEVELS + 2}" }
             val replacementId = SudokuId.generate()
             save(openLevel(replacementId, COMPLETED_LEVELS + 2))
-            awaitUntil { scenario.read { it.topLevelId() } == replacementId }
+            awaitMainLooperUntil { scenario.read { it.topLevelId() } == replacementId }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled } }
             scenario.onActivity { activity ->
                 activity.levelList().adapter?.itemCount shouldBe COMPLETED_LEVELS + 2
                 activity.committedLevelId(0) shouldBe replacementId
@@ -200,7 +204,7 @@ class SudokuLevelTabRevealTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             scenario.moveToState(Lifecycle.State.RESUMED)
-            awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() } }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelLevels() } }
             scenario.onActivity { activity ->
                 activity.levelList().firstVisiblePosition() shouldBe scrolledTo
                 activity.topLevelId() shouldBe nextLevelId
@@ -218,11 +222,11 @@ class SudokuLevelTabRevealTest {
 
             repeat(2) {
                 scenario.recreate()
-                awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() } }
+                awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelLevels() } }
             }
             listOf(1 to SudokuSize.NINE, 2 to SudokuSize.SIXTEEN, 0 to SudokuSize.FOUR).forEach { (page, size) ->
                 scenario.onActivity { it.findViewById<ViewPager2>(R.id.viewPagerLevel).currentItem = page }
-                awaitUntil { scenario.read { it.levelTab(size).lifecycle.currentState == Lifecycle.State.RESUMED } }
+                awaitMainLooperUntil { scenario.read { it.levelTab(size).lifecycle.currentState == Lifecycle.State.RESUMED } }
                 scenario.read { it.levelList(size).firstVisiblePosition() } shouldBe if (size == SudokuSize.FOUR) scrolledTo else 0
             }
 
@@ -267,44 +271,23 @@ class SudokuLevelTabRevealTest {
 
     private fun solveTopLevel(activity: () -> SudokuLevelActivity) {
         save(completedLevel(activity().topLevelId(), COMPLETED_LEVELS + 1))
-        awaitUntil { activity().topLevelLabel() == "${COMPLETED_LEVELS + 2}" }
+        awaitMainLooperUntil { activity().topLevelLabel() == "${COMPLETED_LEVELS + 2}" }
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
     }
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
-    // AsyncListDiffer diffs on a background executor that idle() does not wait for.
-    private fun awaitUntil(condition: () -> Boolean) {
-        repeat(AWAIT_ATTEMPTS) {
-            idle()
-            if (condition()) {
-                idle()
-                return
-            }
-            Thread.sleep(AWAIT_STEP_MS)
-        }
-        error("condition not met within ${AWAIT_ATTEMPTS * AWAIT_STEP_MS} ms")
-    }
-
     private fun launchLevels(block: (ActivityScenario<SudokuLevelActivity>) -> Unit) =
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            awaitUntil { scenario.read { it.levelList().adapter?.itemCount } == COMPLETED_LEVELS + 1 }
-            awaitUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled() } }
+            awaitMainLooperUntil { scenario.read { it.levelList().adapter?.itemCount } == COMPLETED_LEVELS + 1 }
+            awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelLevels() && it.levelList().isSettled } }
             block(scenario)
         }
 
     private fun ActivityScenario<SudokuLevelActivity>.scrollLevelsToBottom(): Int {
         onActivity { it.levelList().scrollToPosition(COMPLETED_LEVELS) }
-        idle()
+        idleMainLooper()
         return read { it.levelList().firstVisiblePosition() }.also { it shouldNotBe 0 }
-    }
-
-    private fun <T> ActivityScenario<SudokuLevelActivity>.read(block: (SudokuLevelActivity) -> T): T {
-        val result = mutableListOf<T>()
-        onActivity { result += block(it) }
-        return result.single()
     }
 
     private fun SudokuLevelActivity.levelTab(size: SudokuSize): SudokuLevelTab =
@@ -336,9 +319,6 @@ class SudokuLevelTabRevealTest {
         return committed.size == levels.size && levels.indices.all { committed[it] === levels[it] }
     }
 
-    private fun RecyclerView.isSettled(): Boolean =
-        layoutManager?.isSmoothScrolling == false && scrollState == RecyclerView.SCROLL_STATE_IDLE && !isLayoutRequested
-
     private fun RecyclerView.firstVisiblePosition(): Int = (layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
 
     private fun RecyclerView.levelTextAt(position: Int): String? =
@@ -350,7 +330,5 @@ class SudokuLevelTabRevealTest {
 
     private companion object {
         const val COMPLETED_LEVELS = 20
-        const val AWAIT_ATTEMPTS = 200
-        const val AWAIT_STEP_MS = 10L
     }
 }

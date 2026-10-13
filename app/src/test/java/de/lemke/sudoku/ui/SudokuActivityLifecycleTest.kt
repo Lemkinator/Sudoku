@@ -17,15 +17,15 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
-import android.os.Looper
 import android.view.KeyEvent
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
@@ -54,7 +54,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenu
 import org.robolectric.fakes.RoboMenuItem
@@ -473,7 +472,7 @@ class SudokuActivityLifecycleTest {
         launch(formulaicSudoku()) { activity ->
             activity.sudoku.seconds = 65
             activity.sudoku.gameListener?.onTimeChanged()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             activity.binding.sudokuToolbarLayout.expandedSubtitle
                 .toString() shouldBe
                 activity.binding.sudokuToolbarLayout.collapsedSubtitle

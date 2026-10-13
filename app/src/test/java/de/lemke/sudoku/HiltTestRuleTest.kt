@@ -23,13 +23,10 @@ import dagger.hilt.android.EarlyEntryPoints
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.components.SingletonComponent
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.sudoku.data.database.AppDatabase
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeSameInstanceAs
-import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
@@ -54,9 +51,6 @@ interface HiltTestRuleTestEntryPoint {
 @Config(application = HiltTestApplication::class, sdk = [36])
 class HiltTestRuleTest {
     @get:Rule(order = 0)
-    val outcome = OutcomeRule()
-
-    @get:Rule(order = 1)
     val hiltRule = HiltTestRule(this)
 
     @Inject
@@ -64,48 +58,24 @@ class HiltTestRuleTest {
 
     @Test
     fun `closes the injected database after the test`() {
+        HiltTestRule.closeAfterTest(AutoCloseable { database.isOpen shouldBe false })
         hiltRule.inject()
         database.openHelper.writableDatabase
         database.isOpen shouldBe true
-        outcome.verify = { failure ->
-            failure.shouldBeNull()
-            database.isOpen shouldBe false
-        }
-    }
-
-    @Test
-    fun `keeps the test failure when closing a database also fails`() {
-        val testFailure = AssertionError("test failed")
-        val closeFailure = IllegalStateException("close failed")
-        hiltRule.inject()
-        database.openHelper.writableDatabase
-        HiltTestRule.closeAfterTest(mockk { every { close() } throws closeFailure })
-        outcome.verify = { failure ->
-            failure shouldBeSameInstanceAs testFailure
-            failure!!.suppressed.toList() shouldContainExactly listOf(closeFailure)
-            database.isOpen shouldBe false
-        }
-        throw testFailure
-    }
-
-    @Test
-    fun `reports a close failure when the test passes`() {
-        val closeFailure = IllegalStateException("close failed")
-        HiltTestRule.closeAfterTest(mockk { every { close() } throws closeFailure })
-        outcome.verify = { failure -> failure shouldBeSameInstanceAs closeFailure }
     }
 
     @Test
     fun `builds no database to close when the test never injects`() {
         mockkObject(TestPersistenceModule)
-        outcome.verify = { failure ->
-            try {
-                failure.shouldBeNull()
-                verify(exactly = 0) { TestPersistenceModule.provideTestAppDatabase(any()) }
-            } finally {
-                unmockkObject(TestPersistenceModule)
-            }
-        }
+        HiltTestRule.closeAfterTest(
+            AutoCloseable {
+                try {
+                    verify(exactly = 0) { TestPersistenceModule.provideTestAppDatabase(any()) }
+                } finally {
+                    unmockkObject(TestPersistenceModule)
+                }
+            },
+        )
     }
 
     class OutcomeRule : TestRule {
@@ -130,7 +100,7 @@ class HiltTestRuleEarlyEntryPointTest {
     val outcome = HiltTestRuleTest.OutcomeRule()
 
     @get:Rule(order = 1)
-    val closeTestDatabases = HiltTestRule.closeDatabasesRule()
+    val closeTestResources = HiltTestRule.closeResourcesRule()
 
     @Test
     fun `closes the early entry point database after the test`() {

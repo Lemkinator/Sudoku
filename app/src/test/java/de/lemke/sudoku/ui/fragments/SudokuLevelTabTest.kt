@@ -18,19 +18,19 @@ package de.lemke.sudoku.ui.fragments
 
 import android.content.Intent
 import android.database.sqlite.SQLiteFullException
-import android.os.Looper
 import androidx.core.view.isVisible
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.singleLaunch
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
@@ -136,7 +136,7 @@ class SudokuLevelTabTest {
     ) {
         settings.currentLevelTab = currentLevelTab
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
@@ -156,7 +156,7 @@ class SudokuLevelTabTest {
         fragment.singleLaunch {
             fragment.sudokuListAdapter.onClickItem?.invoke(position, SudokuItem(sudoku, sudoku.modeLevel.toString()), holder)
         }
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
     }
 
     private fun levelSudoku(
@@ -199,7 +199,7 @@ class SudokuLevelTabTest {
     @Test
     fun `clicking the auto-generated next level at position 0 confirms it and starts the game`() =
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fragment.viewModel.state.value.hasNextLevelToStart
                 .shouldBeTrue()
             val nextLevel =
@@ -219,7 +219,7 @@ class SudokuLevelTabTest {
     fun `confirming the auto-generated next level keeps the level list in place until the game starts`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val nextLevel =
                 (
                     fragment.viewModel.state.value.sudokuLevel
@@ -235,7 +235,7 @@ class SudokuLevelTabTest {
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
 
             insertGate.complete(Unit)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
@@ -248,7 +248,7 @@ class SudokuLevelTabTest {
     fun `tapping the auto-generated next level twice while it saves starts one game and saves it once`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val nextLevel =
                 (
                     fragment.viewModel.state.value.sudokuLevel
@@ -260,7 +260,7 @@ class SudokuLevelTabTest {
             clickItem(fragment, 0, nextLevel)
             clickItem(fragment, 0, nextLevel)
             insertGate.complete(Unit)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val startedActivities = generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList()
             startedActivities.size shouldBe 1
@@ -273,7 +273,7 @@ class SudokuLevelTabTest {
     fun `tapping the auto-generated next level again after it saved starts one game and saves it once`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val nextLevel =
                 (
                     fragment.viewModel.state.value.sudokuLevel
@@ -294,7 +294,7 @@ class SudokuLevelTabTest {
     fun `a failed next-level save starts no game and shows the start error`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = true)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val nextLevel =
                 (
                     fragment.viewModel.state.value.sudokuLevel
@@ -317,7 +317,7 @@ class SudokuLevelTabTest {
         database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
         settings.currentLevelTab = 0
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe 1
             ShadowToast.getTextOfLatestToast() shouldBe "Failed to load sudoku levels"
@@ -329,9 +329,8 @@ class SudokuLevelTabTest {
                 fragment.viewModel.loadFailed.value shouldBe false
             }
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe 1
         }
@@ -341,7 +340,7 @@ class SudokuLevelTabTest {
     fun `tapping a level row twice opens SudokuActivity once`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val row =
                 fragment.binding.sudokuLevelsRecycler
                     .findViewHolderForAdapterPosition(0)
@@ -350,7 +349,7 @@ class SudokuLevelTabTest {
 
             row.performClick()
             row.performClick()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val activity = fragment.requireActivity()
             shadowOf(activity)
@@ -367,7 +366,7 @@ class SudokuLevelTabTest {
     fun `tapping an existing level twice starts one game`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val level =
                 (
                     fragment.viewModel.state.value.sudokuLevel
@@ -384,7 +383,7 @@ class SudokuLevelTabTest {
     @Test
     fun `a level tap after returning to the tab starts a game again`() {
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             lateinit var fragment: SudokuLevelTab
             scenario.onActivity { activity ->
                 fragment =
@@ -401,9 +400,8 @@ class SudokuLevelTabTest {
             clickItem(fragment, 0, firstLevel)
             generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
             clickItem(fragment, 0, firstLevel)
 
             generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
@@ -416,7 +414,7 @@ class SudokuLevelTabTest {
         runBlocking { saveSudoku(level) }
         settings.currentLevelTab = 0
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             lateinit var fragment: SudokuLevelTab
             scenario.onActivity { activity ->
                 fragment =
@@ -426,16 +424,15 @@ class SudokuLevelTabTest {
                 activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
                 fragment.viewModel.confirmSudokuStart(0, level)
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe MainActivity::class.java.name
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
             fragment.viewModel.levelStart.value shouldBe LevelStart.Open(level.id)
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 val started = shadowOf(activity).nextStartedActivity
@@ -451,7 +448,7 @@ class SudokuLevelTabTest {
     fun `clicking a level at a non-zero position starts the game without confirming a new one`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val level =
                 (
                     fragment.viewModel.state.value.sudokuLevel
@@ -470,7 +467,7 @@ class SudokuLevelTabTest {
     fun `clicking an existing level at position 0 starts it without confirming a next level`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
         launch { fragment ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             fragment.viewModel.state.value.hasNextLevelToStart
                 .shouldBeFalse()
             val level =
@@ -492,7 +489,7 @@ class SudokuLevelTabTest {
         launch { fragment ->
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuLevelsRecycler, SeparatorItem.VIEW_TYPE)
             fragment.sudokuListAdapter.onClickItem?.invoke(0, SeparatorItem("label"), holder)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
         }
