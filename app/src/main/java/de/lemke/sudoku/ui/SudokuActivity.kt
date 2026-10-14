@@ -19,13 +19,7 @@ package de.lemke.sudoku.ui
 import android.annotation.SuppressLint
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
-import android.content.Intent.ACTION_SEND
-import android.content.Intent.EXTRA_STREAM
-import android.content.Intent.EXTRA_TEXT
-import android.content.Intent.EXTRA_TITLE
-import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.content.res.ColorStateList
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -53,6 +47,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
+import de.lemke.commonutils.ui.utils.share
+import de.lemke.commonutils.ui.utils.shareText
 import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunch
@@ -750,7 +746,7 @@ class SudokuActivity : AppCompatActivity() {
     private fun share(content: ShareContent) {
         when (content) {
             ShareContent.STATISTICS -> {
-                singleLaunchActivity(Intent.createChooser(statisticsShareIntent(), getString(R.string.share_sudoku)))
+                shareText(sudoku.getLocalStatisticsStringShare(resources), getString(R.string.share_sudoku))
                 shareDialog?.dismiss()
             }
 
@@ -769,25 +765,12 @@ class SudokuActivity : AppCompatActivity() {
             when (result) {
                 is SudokuShare.File -> {
                     PlayGames.getAchievementsClient(this).unlock(getString(R.string.achievement_share_sudoku))
-                    singleLaunchActivity(Intent.createChooser(gameShareIntent(result.uri), getString(R.string.share_sudoku)))
+                    result.file.share(this, MIME_TYPE_SUDOKU, getString(R.string.share_sudoku)).isSettled
                 }
             }
         shareDialog?.dismiss()
         if (handled) viewModel.onShareHandled(result)
     }
-
-    private fun statisticsShareIntent(): Intent =
-        Intent(ACTION_SEND)
-            .setType("text/plain")
-            .putExtra(EXTRA_TEXT, sudoku.getLocalStatisticsStringShare(resources))
-            .putExtra(EXTRA_TITLE, getString(R.string.share_sudoku))
-            .setFlags(FLAG_GRANT_READ_URI_PERMISSION)
-
-    private fun gameShareIntent(uri: Uri): Intent =
-        Intent(ACTION_SEND)
-            .setType("application/sudoku")
-            .addFlags(FLAG_GRANT_READ_URI_PERMISSION)
-            .putExtra(EXTRA_STREAM, uri)
 
     companion object {
         const val KEY_SUDOKU_ID = "key_sudoku_id"
@@ -795,6 +778,7 @@ class SudokuActivity : AppCompatActivity() {
         private const val COMPLETED_DIALOG_TAG = "completed"
         private const val GAME_OVER_DIALOG_TAG = "gameOver"
         private const val SHARE_DIALOG_TAG = "share"
+        private const val MIME_TYPE_SUDOKU = "application/sudoku"
 
         private val digitKeyButtonIndex: Map<Int, Int> =
             listOf(

@@ -16,9 +16,9 @@
 
 package de.lemke.sudoku.ui.utils
 
-import android.os.Looper
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
@@ -29,7 +29,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 private const val GIVEN_INDEX = 0
@@ -56,7 +55,7 @@ class SudokuViewAdapterTest {
     private fun awaitInflated(fieldView: FieldView) {
         val deadline = System.currentTimeMillis() + 5_000
         while (fieldView.fieldViewValue == null && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             Thread.sleep(5)
         }
         check(fieldView.fieldViewValue != null) { "FieldView's async inflate did not complete within 5000ms" }

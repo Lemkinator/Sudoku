@@ -16,13 +16,16 @@
 
 package de.lemke.sudoku.domain.model
 
+import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
 import java.util.Timer
+import kotlin.time.Duration.Companion.seconds
 
 class SudokuTest : ShouldSpec(
     {
@@ -650,7 +653,7 @@ class SudokuTest : ShouldSpec(
                 val secondsBefore = sudoku.seconds
 
                 sudoku.startTimer(delay = 0L)
-                awaitUntil { sudoku.seconds > secondsBefore }
+                eventually(2.seconds) { (sudoku.seconds > secondsBefore).shouldBeTrue() }
 
                 sudoku.seconds shouldNotBe secondsBefore
                 listener.timeChangedCount shouldNotBe 0
@@ -663,7 +666,7 @@ class SudokuTest : ShouldSpec(
                 val secondsBefore = sudoku.seconds
 
                 sudoku.startTimer(delay = 0L)
-                awaitUntil { sudoku.seconds > secondsBefore }
+                eventually(2.seconds) { (sudoku.seconds > secondsBefore).shouldBeTrue() }
 
                 sudoku.seconds shouldNotBe secondsBefore
                 sudoku.timer?.cancel()
@@ -867,18 +870,6 @@ private class MoveRecordingGameListener : GameListener {
     override fun onTimeChanged() {
         timeChangedCount++
     }
-}
-
-private fun awaitUntil(
-    timeoutMillis: Long = 2000,
-    condition: () -> Boolean,
-) {
-    val deadline = System.currentTimeMillis() + timeoutMillis
-    while (System.currentTimeMillis() < deadline) {
-        if (condition()) return
-        Thread.sleep(10)
-    }
-    check(condition()) { "condition not met within ${timeoutMillis}ms" }
 }
 
 private fun solvedFields(

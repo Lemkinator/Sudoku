@@ -40,6 +40,7 @@ import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
 import de.lemke.commonutils.ui.utils.advanceOnboarding
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
@@ -99,7 +100,7 @@ class IntroActivity : AppCompatActivity() {
     internal var notesEnabled = false
     internal val viewModel: IntroViewModel by viewModels()
 
-    private val requestPermissionLauncher =
+    private val requestPermissionLauncher: SingleLaunchResultLauncher<String> =
         registerForSingleLaunchResult(RequestPermission()) { isGranted: Boolean ->
             viewModel.onNotificationPermissionResult(isGranted)
         }
@@ -620,20 +621,28 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun onNotificationChoice(result: NotificationChoice.Result) {
-        when (result) {
-            NotificationChoice.Saved -> {
-                advanceOnboarding()
-            }
+        val settled =
+            when (result) {
+                NotificationChoice.Saved -> {
+                    advanceOnboarding().isSettled
+                }
 
-            NotificationChoice.RequestPermission -> {
-                if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) requestPermissionLauncher.launch(POST_NOTIFICATIONS)
+                NotificationChoice.RequestPermission -> {
+                    if (SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        requestPermissionLauncher.tryLaunch(POST_NOTIFICATIONS)
+                    } else {
+                        true.also { viewModel.onNotificationPermissionResult(isGranted = true) }
+                    }
+                }
             }
-        }
-        viewModel.onNotificationChoiceHandled(result)
+        if (settled) viewModel.onNotificationChoiceHandled(result)
     }
 
     private fun showNotificationsDialogOrFinish() {
-        if (!viewModel.openedFromSettings) notificationsDialog() else finishAfterTransition()
+        when (val choice = viewModel.notificationChoice.value) {
+            is NotificationChoice.Result -> onNotificationChoice(choice)
+            NotificationChoice.Pending -> if (viewModel.openedFromSettings) finishAfterTransition() else notificationsDialog()
+        }
     }
 
     private fun notificationsDialog() {

@@ -16,25 +16,20 @@
 
 package de.lemke.sudoku.ui.fragments
 
-import android.os.Looper
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -51,45 +46,25 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class TabStatisticsFragmentTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -139,7 +114,7 @@ class TabStatisticsFragmentTest {
     private fun launch(block: (TabStatistics) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(2) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
@@ -220,13 +195,7 @@ class TabStatisticsFragmentTest {
             )
 
         controller.resume()
-        val deadline = System.currentTimeMillis() + 5000
-        while (insertedCount == -1 && !changedCalled && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            Thread.sleep(20)
-        }
-        shadowOf(Looper.getMainLooper()).idle()
-        check(insertedCount != -1 || changedCalled) { "TabStatistics's first load did not notify within 5000ms" }
+        awaitMainLooperUntil { insertedCount != -1 || changedCalled }
 
         insertedCount shouldBeGreaterThan 0
         changedCalled.shouldBeFalse()
@@ -238,12 +207,12 @@ class TabStatisticsFragmentTest {
         runBlocking { saveSudoku(startedSudoku()) }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(2) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             ShadowToast.showedToast("Failed to load statistics") shouldBe false
 
             // Room notifies its observers when a transaction ends, never after a raw write alone.
             database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             ShadowToast.showedToast("Failed to load statistics") shouldBe true
 
@@ -256,9 +225,8 @@ class TabStatisticsFragmentTest {
             }
             val shownToasts = ShadowToast.shownToastCount()
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe shownToasts
         }

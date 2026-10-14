@@ -22,23 +22,16 @@ import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
+import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.di.SettingsProvideModule
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
-/** Replaces the whole [SettingsProvideModule] object, so this must also re-provide its [ApplicationScope] binding. */
 @Module
 @TestInstallIn(components = [SingletonComponent::class], replaces = [SettingsProvideModule::class])
 object TestSettingsModule {
-    @Provides
-    @Singleton
-    @ApplicationScope
-    fun provideTestApplicationScope(): CoroutineScope = CoroutineScope(UnconfinedTestDispatcher())
-
     @Provides
     @Singleton
     fun provideTestUserSettings(

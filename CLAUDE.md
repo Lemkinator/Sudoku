@@ -76,7 +76,7 @@ de.lemke.sudoku/
 ```
 
 **Data flow:** UI → ViewModel → UseCase → Repository → Room/SharedPreferences. Reactive updates via `Flow<>`. Background work via
-`withContext(dispatcher)`, where `dispatcher` is a Hilt-injected `CoroutineDispatcher` (see `di/DispatchersModule.kt` below) — never call
+`withContext(dispatcher)`, where `dispatcher` is a Hilt-injected `CoroutineDispatcher` (see `di/AppCoroutinesModule.kt` below) — never call
 `Dispatchers.IO`/`.Default`/`.Main` directly in use cases.
 
 **Play Games:** the drawer's achievements and leaderboards run `preparePlayGamesScreen` in `singleLaunchSuspending`,
@@ -92,8 +92,11 @@ VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`
 ## Key Patterns
 
 **Hilt DI:** `@HiltAndroidApp` on `App`, `@AndroidEntryPoint` on Activities/Fragments. All modules live in `di/`: `PersistenceModule`
-provides singleton `AppDatabase`; `DispatchersModule` provides `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified
-`CoroutineDispatcher`s (qualifiers from `common-utils`) for injection into use cases instead of hardcoding `Dispatchers.*`.
+provides singleton `AppDatabase`; `AppCoroutinesModule` includes common-utils' `CommonUtilsCoroutinesModule`, which provides
+the `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified `CoroutineDispatcher`s and the `@ApplicationScope`
+`CoroutineScope` (qualifiers from `common-utils`) for injection into use cases instead of hardcoding `Dispatchers.*`.
+`TestCoroutinesModule` (testFixtures) replaces it in every Hilt test with unconfined test dispatchers; a test redirects the
+`@DefaultDispatcher` or `@IoDispatcher` work through the injected `TestDispatchers` and resets it in `@After`.
 
 **Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent
 CLAUDE.md convention).
@@ -146,23 +149,25 @@ Four tools run as part of `./gradlew build`:
   `kover { reports { variant("debug") { verify { rule { ... } } } } }`.
   Verify: `./gradlew koverVerifyDebug`. CI strips zero-instruction `<line>` entries from the
   Kover XML (`.github/scripts/strip-zero-instruction-lines.py`) before the Codecov upload.
-- **Konsist** — architecture rules in
-  `app/src/test/java/de/lemke/sudoku/ArchitectureTest.kt`. Enforces
-  `data/domain/ui` layering and state-only ViewModels: a file that declares a ViewModel uses no
-  `Channel` or `SharedFlow` (by import, declared type or call), and `ui` never imports `collectEvents`.
-  A probe test feeds the rule fully qualified, typed and inferred variants to keep it loophole-free.
-  Runs as part of `./gradlew test`. `CodingConventionsTest.kt` also
-  enforces the common-utils launch latch through `assertLaunchLatchConventions()` from the
-  common-utils testFixtures: it bans raw activity launches and result registration by name, and a
-  `show`/`showNow` call whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a
-  `FragmentTransaction` named `*transaction`. Launch through `singleLaunchActivity`, `transformToActivity` or
-  `registerForSingleLaunchResult`; wrap taps in the input helpers (`onSingleLaunchClick`, `singleLaunchMenuItem`,
-  `onSingleLaunchItemSelected`, `singleLaunchSuspending`); show dialogs with `showOnce(tag)`.
-  It also requires every `@HiltAndroidTest` to declare exactly one `@get:Rule(order = 0) val hiltRule = HiltTestRule(this)`
-  (testFixtures), ordered before every other rule, and no raw `HiltAndroidRule`. `HiltTestRule` runs `HiltAndroidRule`,
-  exposes `inject()`, and closes each in-memory `AppDatabase` the test built. A class whose `@Config` sets
-  `application = HiltTestApplication::class` without `@HiltAndroidTest`, such as an early-entry-point test, declares a
-  `@get:Rule` property initialized with `HiltTestRule.closeDatabasesRule()` instead.
+- **Konsist** — the rules come from the common-utils testFixtures; the app tests only call them:
+  - `ArchitectureTest.kt` runs `assertArchitecture("de.lemke.sudoku")`: `data/domain/ui` layering, `*UseCase` classes
+    with `operator fun invoke`, `@HiltViewModel` classes with an `@Inject` constructor, and state-only ViewModels (a
+    file that declares a ViewModel uses no `Channel` or `SharedFlow`).
+  - `CodingConventionsTest.kt` runs `assertLaunchLatchConventions()`, `assertClassBodyOrder()`,
+    `assertNoCommonUtilsTypeExtensions()` and
+    `assertHiltTestRuleConventions(requireCloseRuleOnPlainHiltApplicationTests = true)`.
+  - The launch latch rule bans raw activity launches and result registration by name, and a `show`/`showNow` call
+    whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a `FragmentTransaction` named
+    `*transaction`. Launch through `singleLaunchActivity`, `transformToActivity` or `registerForSingleLaunchResult`;
+    wrap taps in the input helpers (`onSingleLaunchClick`, `singleLaunchMenuItem`, `onSingleLaunchItemSelected`,
+    `singleLaunchSuspending`); show dialogs with `showOnce(tag)`.
+  - Every `@HiltAndroidTest` declares exactly one `@get:Rule(order = 0) val hiltRule = HiltTestRule(this)`, ordered
+    before every other rule, and no raw `HiltAndroidRule`. `HiltTestRule` (common-utils testFixtures) runs
+    `HiltAndroidRule`, exposes `inject()` and closes every resource registered with `HiltTestRule.closeAfterTest`, such
+    as the in-memory `AppDatabase` that `TestPersistenceModule` builds. A class whose `@Config` sets
+    `application = HiltTestApplication::class` without `@HiltAndroidTest`, such as an early-entry-point test, declares
+    `@get:Rule val closeTestResources = HiltTestRule.closeResourcesRule()` instead.
+  - Runs as part of `./gradlew test`.
 
 **ktlint rule overrides** — two rules disabled in `.editorconfig` to match
 community practice (NowInAndroid, Pokedex both use the inline form):
@@ -206,6 +211,8 @@ common-utils from `lib/src/testFixtures` (`testImplementation(testFixtures(libs.
   `@TestInstallIn`-replaces the production settings module with `UserSettings` over
   `freshTestPreferences(context)`, visible to both `src/test` and `src/androidTest` via AGP's
   testFixtures source set.
+- **`TestCoroutinesModule`** — `app/src/testFixtures/java/de/lemke/sudoku/TestCoroutinesModule.kt` — replaces
+  `AppCoroutinesModule` with an unconfined default dispatcher and application scope, for the early-entry-point graph too. `TestDispatchers` holds the redirectable `@DefaultDispatcher` and `@IoDispatcher`.
 - **`TestPersistenceModule`** — `app/src/testFixtures/java/de/lemke/sudoku/TestPersistenceModule.kt`
   — replaces the production Room module with an in-memory database for the same reason.
 - **`TestFixturesModuleInstallationTest`** exists on both sides

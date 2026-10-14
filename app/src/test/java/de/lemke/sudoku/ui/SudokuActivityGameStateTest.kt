@@ -17,23 +17,22 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
-import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.PausableDispatcher
+import de.lemke.commonutils.WhileResumed
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.read
 import de.lemke.sudoku.R
-import de.lemke.sudoku.di.DispatchersModule
+import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -51,21 +50,19 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
 /** sdk = 36: Robolectric's max supported SDK. */
-@UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -73,22 +70,10 @@ class SudokuActivityGameStateTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Default)
+    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Default, WhileResumed.RunInPlace)
 
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = pausableDefaultDispatcher
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+    @Inject
+    lateinit var testDispatchers: TestDispatchers
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -99,9 +84,15 @@ class SudokuActivityGameStateTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        testDispatchers.default.redirectTo(pausableDefaultDispatcher)
         settings.bypassOobe()
         // Robolectric skips the Play Games SDK's auto-init ContentProvider under HiltTestApplication.
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
+    }
+
+    @After
+    fun resetDispatchers() {
+        testDispatchers.reset()
     }
 
     private fun formulaicSudoku(solved: Boolean): Sudoku {
@@ -136,23 +127,9 @@ class SudokuActivityGameStateTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { it.userSettings.animationsEnabled = false }
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             block(scenario)
         }
-    }
-
-    private fun idleUntil(
-        scenario: ActivityScenario<SudokuActivity>,
-        condition: (SudokuActivity) -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + TIMEOUT_MILLIS
-        var met = false
-        while (!met && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            scenario.onActivity { met = condition(it) }
-            if (!met) Thread.sleep(POLL_MILLIS)
-        }
-        check(met) { "condition not met within ${TIMEOUT_MILLIS}ms" }
     }
 
     private fun loadingDialog(): ProgressDialog? = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().lastOrNull()
@@ -165,7 +142,7 @@ class SudokuActivityGameStateTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
         pausableDefaultDispatcher.pause()
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.state shouldBe Lifecycle.State.RESUMED
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Loading
@@ -174,7 +151,7 @@ class SudokuActivityGameStateTest {
             }
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudoku.id
                 activity.binding.gameRecycler.adapter
@@ -189,11 +166,11 @@ class SudokuActivityGameStateTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, "does-not-exist")
         pausableDefaultDispatcher.pause()
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.state shouldBe Lifecycle.State.RESUMED
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value == SudokuGame.NotFound }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value == SudokuGame.NotFound } }
             scenario.onActivity { activity -> activity.isFinishing.shouldBeTrue() }
         }
     }
@@ -210,7 +187,7 @@ class SudokuActivityGameStateTest {
 
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
@@ -219,7 +196,7 @@ class SudokuActivityGameStateTest {
             }
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudoku.id
                 activity.sudoku[1].value.shouldBeNull()
@@ -237,7 +214,7 @@ class SudokuActivityGameStateTest {
 
                 activity.viewModel.onFollowUp(FollowUp.NEW_GAME)
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Generating
@@ -245,7 +222,7 @@ class SudokuActivityGameStateTest {
             }
 
             pausableDefaultDispatcher.resume()
-            idleUntil(scenario) { it.viewModel.game.value is SudokuGame.Playing }
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.viewModel.game.value
                     .shouldBeInstanceOf<SudokuGame.Playing>()
@@ -253,10 +230,5 @@ class SudokuActivityGameStateTest {
                 loadingDialog()?.isShowing shouldBe false
             }
         }
-    }
-
-    private companion object {
-        const val TIMEOUT_MILLIS = 10_000L
-        const val POLL_MILLIS = 20L
     }
 }

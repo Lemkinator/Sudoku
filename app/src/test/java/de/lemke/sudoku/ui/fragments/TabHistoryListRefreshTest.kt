@@ -22,19 +22,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -49,13 +45,11 @@ import io.kotest.matchers.shouldBe
 import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -67,28 +61,12 @@ import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class TabHistoryListRefreshTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -146,8 +124,6 @@ class TabHistoryListRefreshTest {
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
     @Test
     fun `the history carries the new stats when the top sudoku is saved again under the same id`() {
         save(olderSudoku())
@@ -155,10 +131,10 @@ class TabHistoryListRefreshTest {
         val viewModel = TabHistoryViewModel(userSettings, observeSudokuHistory, deleteSudokus)
         val collection = viewModel.sudokuHistory.launchIn(CoroutineScope(Dispatchers.Main))
         try {
-            idle()
+            idleMainLooper()
 
             save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
-            idle()
+            idleMainLooper()
 
             val sudoku = topSudoku(viewModel)
             sudoku.id shouldBe playedId
@@ -177,7 +153,7 @@ class TabHistoryListRefreshTest {
         save(playedSudoku(filled = 0, errorsMade = 0, seconds = 0, updated = LocalDateTime.of(2026, 1, 15, 10, 0)))
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 historyList(activity).awaitSmallText(1, "00:00 | 0% | Errors: 0/3 | Hints: 0") shouldBe
                     "00:00 | 0% | Errors: 0/3 | Hints: 0"
@@ -185,10 +161,10 @@ class TabHistoryListRefreshTest {
 
             scenario.moveToState(Lifecycle.State.CREATED)
             save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 historyList(activity).awaitSmallText(1, "01:15 | Errors: 2/3 | Hints: 0") shouldBe "01:15 | Errors: 2/3 | Hints: 0"
@@ -202,7 +178,7 @@ class TabHistoryListRefreshTest {
         save(playedSudoku(filled = 0, errorsMade = 0, seconds = 0, updated = LocalDateTime.of(2026, 1, 15, 10, 0)))
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 historyList(activity).awaitSmallText(1, "00:00 | 0% | Errors: 0/3 | Hints: 0") shouldBe
                     "00:00 | 0% | Errors: 0/3 | Hints: 0"
@@ -211,10 +187,10 @@ class TabHistoryListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).seconds shouldBe 0 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 historyList(activity).awaitSmallText(1, "01:15 | Errors: 2/3 | Hints: 0") shouldBe "01:15 | Errors: 2/3 | Hints: 0"
@@ -228,7 +204,7 @@ class TabHistoryListRefreshTest {
         save(olderSudoku())
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 historyList(activity).awaitSmallText(1, "00:00 | 0% | Errors: 0/3 | Hints: 0") shouldBe
                     "00:00 | 0% | Errors: 0/3 | Hints: 0"
@@ -237,15 +213,14 @@ class TabHistoryListRefreshTest {
 
             // Room notifies its observers when a transaction ends, never after a raw write alone.
             database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
-            idle()
+            idleMainLooper()
 
             ShadowToast.showedToast("Failed to load sudoku history") shouldBe true
             scenario.onActivity { activity -> historyViewModel(activity).loadFailed.value shouldBe false }
             val shownToasts = ShadowToast.shownToastCount()
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe shownToasts
         }

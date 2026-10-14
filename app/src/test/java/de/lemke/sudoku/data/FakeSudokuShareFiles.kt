@@ -16,13 +16,13 @@
 
 package de.lemke.sudoku.data
 
-import android.net.Uri
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import java.io.File
 
-/** Returns [uri] for every write and records each written sudoku id with its JSON in [writes]. */
+/** Returns [file] for every write and records each written sudoku id with its JSON in [writes]. */
 class FakeSudokuShareFiles(
-    private val uri: Uri,
+    private val file: File,
 ) : SudokuShareFiles {
     data class Write(
         val sudokuId: SudokuId,
@@ -34,8 +34,8 @@ class FakeSudokuShareFiles(
     override suspend fun write(
         sudoku: Sudoku,
         json: String,
-    ): Uri {
+    ): File {
         writes += Write(sudoku.id, json)
-        return uri
+        return file
     }
 }

@@ -18,13 +18,7 @@ package de.lemke.sudoku.domain
 
 import android.app.Application
 import android.content.Context
-import android.content.pm.PackageManager.GET_PROVIDERS
-import android.content.pm.PackageManager.PackageInfoFlags
-import android.net.Uri
-import android.provider.OpenableColumns
-import androidx.core.content.FileProvider
 import androidx.test.core.app.ApplicationProvider
-import de.lemke.commonutils.ShadowFileProvider
 import de.lemke.sudoku.data.DefaultSudokuShareFiles
 import de.lemke.sudoku.data.database.FieldExport
 import de.lemke.sudoku.data.database.SudokuExport
@@ -81,32 +75,20 @@ private fun testSudoku(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [36], shadows = [ShadowFileProvider::class])
+@Config(application = Application::class, sdk = [36])
 class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val useCase = ShareSudokuUseCase(DefaultSudokuShareFiles(context), UnconfinedTestDispatcher())
-    private val fileProviderAuthority: String =
-        context.packageManager
-            .getPackageInfo(context.packageName, PackageInfoFlags.of(GET_PROVIDERS.toLong()))
-            .providers
-            .orEmpty()
-            .single { it.name == FileProvider::class.java.name }
-            .authority
 
     @Test
-    fun `invoke writes the exported sudoku as JSON readable back through the returned uri`() =
+    fun `invoke writes the exported sudoku as JSON to the returned cache file`() =
         runTest {
             val sudoku = testSudoku()
 
-            val uri = useCase(sudoku)
+            val file = useCase(sudoku)
 
-            uri.toString() shouldBe "content://$fileProviderAuthority/cache/Sudoku%20(4%C3%974%20Hard).sudoku"
-            val json =
-                context.contentResolver
-                    .openInputStream(uri)!!
-                    .bufferedReader()
-                    .use { it.readText() }
-            json.parseJSON<SudokuExport>() shouldBe
+            file shouldBe File(context.cacheDir, "Sudoku (4×4 Hard).sudoku")
+            file.readText().parseJSON<SudokuExport>() shouldBe
                 SudokuExport(
                     id = "share-test-id",
                     size = 4,
@@ -142,19 +124,11 @@ class ShareSudokuUseCaseTest {
         }
 
     @Test
-    fun `invoke names the file after the sudoku's size and localized difficulty`() {
-        val sudoku = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY)
-        val expectedName = "Sudoku (9×9 Easy).sudoku"
+    fun `invoke names the file after the sudoku's size and localized difficulty`() =
+        runTest {
+            val file = useCase(testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY))
 
-        lateinit var uri: Uri
-        runTest { uri = useCase(sudoku) }
-
-        val displayName =
-            context.contentResolver.query(uri, null, null, null, null)!!.use { cursor ->
-                cursor.moveToFirst()
-                cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
-            }
-        displayName shouldBe expectedName
-        File(context.cacheDir, expectedName).exists() shouldBe true
-    }
+            file shouldBe File(context.cacheDir, "Sudoku (9×9 Easy).sudoku")
+            file.exists() shouldBe true
+        }
 }

@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Bundle
-import android.os.Looper
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -27,13 +26,11 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.ui.utils.saveSearchAndActionMode
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
@@ -41,7 +38,6 @@ import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuDb
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -66,11 +62,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -87,28 +80,13 @@ import org.robolectric.shadows.ShadowDialog
  * sdk = 36: Robolectric's max supported SDK.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class, SudokusRepositoryModule::class)
+@UninstallModules(SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class TabHistoryActionModeTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
     private var deleteGate = CompletableDeferred(Unit)
     private var deleteCalls = 0
@@ -170,7 +148,7 @@ class TabHistoryActionModeTest {
     private fun launch(block: (TabHistory) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
@@ -209,7 +187,7 @@ class TabHistoryActionModeTest {
             drawerLayout.isActionMode.shouldBeFalse()
 
             fragment.launchActionMode()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             drawerLayout.isActionMode.shouldBeTrue()
             fragment.sudokuListAdapter.isActionMode.shouldBeTrue()
 
@@ -218,7 +196,7 @@ class TabHistoryActionModeTest {
             fragment.sudokuListAdapter.getSelectedIds() shouldBe setOf(first, second).map { it.hashCode().toLong() }.toSet()
 
             listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeFalse()
             fragment.sudokuListAdapter.isActionMode.shouldBeFalse()
@@ -237,7 +215,7 @@ class TabHistoryActionModeTest {
         launch { fragment ->
             val drawerLayout = fragment.requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
             fragment.launchActionMode()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val listener = actionModeListenerOf(drawerLayout)
             listener.onSelectAll(true)
             deleteGate = CompletableDeferred()
@@ -245,14 +223,14 @@ class TabHistoryActionModeTest {
 
             listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
             listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeTrue()
             val progressDialog = ShadowDialog.getLatestDialog() as ProgressDialog
             progressDialog.isShowing.shouldBeTrue()
 
             deleteGate.complete(Unit)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             deleteCalls shouldBe 2
             drawerLayout.isActionMode.shouldBeFalse()
@@ -267,26 +245,26 @@ class TabHistoryActionModeTest {
         runBlocking { saveSudoku(historySudoku()) }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<TabHistory>()
                         .first()
                 fragment.launchActionMode()
-                shadowOf(Looper.getMainLooper()).idle()
+                idleMainLooper()
                 val listener = actionModeListenerOf(activity.findViewById(R.id.drawerLayout))
                 listener.onSelectAll(true)
                 deleteGate = CompletableDeferred()
                 listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.moveToState(Lifecycle.State.CREATED)
             scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             deleteGate.complete(Unit)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
             progressDialogs.size shouldBe 1
@@ -302,11 +280,11 @@ class TabHistoryActionModeTest {
         launch { fragment ->
             val drawerLayout = fragment.requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
             fragment.launchActionMode()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val listener = actionModeListenerOf(drawerLayout)
             listener.onMenuItemClicked(otherMenuItem(fragment)).shouldBeFalse()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeTrue()
             runBlocking { getAllSudokus() } shouldBe listOf(sudoku)
@@ -320,7 +298,7 @@ class TabHistoryActionModeTest {
         launch { fragment ->
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
             fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
@@ -337,7 +315,7 @@ class TabHistoryActionModeTest {
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
             fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
             fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val activity = shadowOf(fragment.requireActivity())
             activity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
@@ -351,7 +329,7 @@ class TabHistoryActionModeTest {
         runBlocking { saveSudoku(sudoku) }
         launch { fragment ->
             fragment.launchActionMode()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
             val item = SudokuItem(sudoku, "label")
@@ -374,7 +352,7 @@ class TabHistoryActionModeTest {
         runBlocking { saveSudoku(sudoku) }
         launch { fragment ->
             fragment.launchActionMode()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             val listener = actionModeListenerOf(fragment.requireActivity().findViewById(R.id.drawerLayout))
             listener.onSelectAll(true)
 
@@ -395,7 +373,7 @@ class TabHistoryActionModeTest {
         runBlocking { saveSudoku(sudoku) }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             var selectedId = 0L
             scenario.onActivity { activity ->
                 val fragment =
@@ -404,7 +382,7 @@ class TabHistoryActionModeTest {
                         .first()
                 fragment.launchActionMode()
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val fragment =
                     activity.supportFragmentManager.fragments
@@ -416,12 +394,12 @@ class TabHistoryActionModeTest {
             }
 
             scenario.recreate()
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.onTabItemSelected(0)
             }
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 val drawerLayout = activity.findViewById<DrawerLayout>(R.id.drawerLayout)
                 val fragment =
@@ -453,7 +431,7 @@ class TabHistoryActionModeTest {
         launch { fragment ->
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SeparatorItem.VIEW_TYPE)
             fragment.sudokuListAdapter.onClickItem?.invoke(0, SeparatorItem("label"), holder)
-            shadowOf(Looper.getMainLooper()).idle()
+            idleMainLooper()
 
             fragment.sudokuListAdapter.getSelectedIds().shouldBeEmpty()
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)

@@ -23,16 +23,14 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.di.ClockModule
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
@@ -49,13 +47,11 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -67,28 +63,13 @@ import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class, ClockModule::class)
+@UninstallModules(ClockModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class DailySudokuListRefreshTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
     @BindValue
     @JvmField
@@ -136,18 +117,16 @@ class DailySudokuListRefreshTest {
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
     @Test
     fun `the state carries the new stats when the daily sudoku is saved again under the same id`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         val viewModel = DailySudokuViewModel(userSettings, initDailySudokus, observeDailySudokus, testClock)
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
-            idle()
+            idleMainLooper()
 
             save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
-            idle()
+            idleMainLooper()
 
             val sudoku = shownSudoku(viewModel)
             sudoku.errorsMade shouldBe 2
@@ -163,17 +142,17 @@ class DailySudokuListRefreshTest {
     fun `resuming the daily list shows the stats saved while it was stopped`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 activity.binding.dailySudokuRecycler.awaitSmallText(1, "00:00 | 0% | Errors: 0/3") shouldBe "00:00 | 0% | Errors: 0/3"
             }
 
             scenario.moveToState(Lifecycle.State.CREATED)
             save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity -> shownSudoku(activity.viewModel).seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.binding.dailySudokuRecycler.awaitSmallText(1, "01:15 | Errors: 2/3") shouldBe "01:15 | Errors: 2/3"
@@ -185,7 +164,7 @@ class DailySudokuListRefreshTest {
     fun `resuming the daily list after the stop timeout queries the stats saved while it was stopped`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 activity.binding.dailySudokuRecycler.awaitSmallText(1, "00:00 | 0% | Errors: 0/3") shouldBe "00:00 | 0% | Errors: 0/3"
             }
@@ -193,10 +172,10 @@ class DailySudokuListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity -> shownSudoku(activity.viewModel).seconds shouldBe 0 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.binding.dailySudokuRecycler.awaitSmallText(1, "01:15 | Errors: 2/3") shouldBe "01:15 | Errors: 2/3"
@@ -210,15 +189,14 @@ class DailySudokuListRefreshTest {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
         database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
         ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
-            idle()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe 1
             ShadowToast.getTextOfLatestToast() shouldBe "Failed to load daily sudokus"
             scenario.onActivity { activity -> activity.viewModel.loadFailed.value shouldBe false }
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe 1
         }

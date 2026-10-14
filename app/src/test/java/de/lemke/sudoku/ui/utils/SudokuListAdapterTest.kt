@@ -19,7 +19,6 @@ package de.lemke.sudoku.ui.utils
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -56,7 +56,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 private val SIZE = SudokuSize.FOUR
@@ -428,13 +427,13 @@ class SudokuListAdapterTest {
                 this.adapter = adapter
             }
         context.setContentView(recyclerView)
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         recyclerView.measure(
             View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY),
         )
         recyclerView.layout(0, 0, 1080, 1920)
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         return recyclerView
     }
 

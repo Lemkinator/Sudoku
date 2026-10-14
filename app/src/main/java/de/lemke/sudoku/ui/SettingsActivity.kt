@@ -20,9 +20,6 @@ import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.DialogInterface
 import android.content.DialogInterface.BUTTON_POSITIVE
 import android.content.Intent
-import android.content.Intent.ACTION_CREATE_DOCUMENT
-import android.content.Intent.CATEGORY_OPENABLE
-import android.content.Intent.EXTRA_TITLE
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.net.Uri
 import android.os.Build
@@ -33,10 +30,7 @@ import android.text.format.DateFormat
 import android.text.format.DateFormat.is24HourFormat
 import android.util.Log
 import android.view.View
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
-import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.viewModels
@@ -49,17 +43,23 @@ import androidx.preference.PreferenceScreen
 import androidx.preference.SeslSwitchPreferenceScreen
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.DocumentPick
+import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
+import de.lemke.commonutils.ui.utils.launchCreateDocument
+import de.lemke.commonutils.ui.utils.launchOpenDocument
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.commonutils.ui.utils.openApp
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
+import de.lemke.commonutils.ui.utils.registerForDocumentPick
+import de.lemke.commonutils.ui.utils.registerForOpenDocument
 import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.shareApp
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.commonutils.ui.utils.toSafeFileName
+import de.lemke.commonutils.ui.utils.startActivityForOutcome
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
@@ -96,8 +96,8 @@ class SettingsActivity : AppCompatActivity() {
 
     @AndroidEntryPoint
     class SettingsFragment : PreferenceFragmentCompat() {
-        private lateinit var exportActivityResultLauncher: ActivityResultLauncher<Intent>
-        private lateinit var importActivityResultLauncher: ActivityResultLauncher<String>
+        private lateinit var exportActivityResultLauncher: SingleLaunchResultLauncher<Intent>
+        private lateinit var importActivityResultLauncher: SingleLaunchResultLauncher<Intent>
 
         private val viewModel: SettingsViewModel by viewModels()
 
@@ -126,12 +126,15 @@ class SettingsActivity : AppCompatActivity() {
         override fun onCreate(bundle: Bundle?) {
             super.onCreate(bundle)
             exportActivityResultLauncher =
-                registerForSingleLaunchResult(StartActivityForResult()) { result ->
-                    val uri = result.data?.data
-                    if (result.resultCode == RESULT_OK && uri != null) viewModel.onExportDestinationPicked(uri)
+                registerForDocumentPick { pick ->
+                    when (pick) {
+                        is DocumentPick.Created -> viewModel.onExportDestinationPicked(pick.uri)
+                        DocumentPick.MissingUri -> viewModel.onExportDestinationMissing()
+                        DocumentPick.Canceled -> Unit
+                    }
                 }
             importActivityResultLauncher =
-                registerForSingleLaunchResult(GetContent()) { uri: Uri? ->
+                registerForOpenDocument { uri: Uri? ->
                     if (uri == null) {
                         toast(R.string.error_no_file_selected)
                     } else {
@@ -219,13 +222,7 @@ class SettingsActivity : AppCompatActivity() {
 
         internal fun initExportDataPreference() {
             findPreference<PreferenceScreen>("exportData")?.onSingleLaunchClick {
-                exportActivityResultLauncher.launch(
-                    Intent(ACTION_CREATE_DOCUMENT).apply {
-                        addCategory(CATEGORY_OPENABLE)
-                        type = "application/json"
-                        putExtra(EXTRA_TITLE, "sudoku_export".toSafeFileName(".json"))
-                    },
-                )
+                launchCreateDocument("sudoku_export", "application/json", ".json", exportActivityResultLauncher)
             }
         }
 
@@ -237,7 +234,7 @@ class SettingsActivity : AppCompatActivity() {
                     .setMessage(R.string.import_data_message)
                     .setNegativeButton(designR.string.oui_des_common_cancel, null)
                     .setPositiveButton(commonutilsR.string.commonutils_ok) { _: DialogInterface, _: Int ->
-                        importActivityResultLauncher.launch("application/json")
+                        launchOpenDocument("application/json", importActivityResultLauncher)
                     }.showOnce(IMPORT_DATA_DIALOG_TAG)
             }
         }
@@ -374,7 +371,7 @@ class SettingsActivity : AppCompatActivity() {
                                 .addFlags(FLAG_ACTIVITY_NEW_TASK)
                                 .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
                         // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
-                        requireContext().singleLaunchActivity(settingsIntent)
+                        startActivityForOutcome(settingsIntent)
                         isChecked = false
                     }
                 }

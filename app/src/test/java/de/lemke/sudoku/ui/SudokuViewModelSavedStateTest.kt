@@ -17,11 +17,10 @@
 package de.lemke.sudoku.ui
 
 import android.app.Application
-import android.net.Uri
 import android.os.Bundle
-import android.os.Looper
 import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
@@ -37,13 +36,13 @@ import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
@@ -62,9 +61,9 @@ class SudokuViewModelSavedStateTest {
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
-            ShareSudokuUseCase(FakeSudokuShareFiles(Uri.EMPTY), dispatcher),
+            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
-        ).also { shadowOf(Looper.getMainLooper()).idle() }
+        ).also { idleMainLooper() }
     }
 
     private fun Bundle.throughParcel(): Bundle {
@@ -85,7 +84,7 @@ class SudokuViewModelSavedStateTest {
         val viewModel = viewModel(savedStateHandle)
         viewModel.onGameStarted(SudokuGame.Ready(completed))
         viewModel.onCompleted()
-        shadowOf(Looper.getMainLooper()).idle()
+        idleMainLooper()
         viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
 
         val savedState = savedStateHandle.savedStateProvider().saveState().throughParcel()

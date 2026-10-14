@@ -22,14 +22,17 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import java.io.Serializable
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** The answer to the notifications question. The activity acts on a [Result] and then reports it handled. */
-sealed interface NotificationChoice {
+/**
+ * The answer to the notifications question. The activity acts on a [Result] and then reports it handled.
+ * An unhandled [Result] stays in the saved state, so the intro resumes it after process death.
+ */
+sealed interface NotificationChoice : Serializable {
     sealed interface Result : NotificationChoice
 
     data object Pending : NotificationChoice
@@ -38,6 +41,8 @@ sealed interface NotificationChoice {
 
     data object Saved : Result
 }
+
+private const val KEY_NOTIFICATION_CHOICE = "notification_choice"
 
 @HiltViewModel
 class IntroViewModel @Inject constructor(
@@ -48,7 +53,7 @@ class IntroViewModel @Inject constructor(
     val openedFromSettings: Boolean = savedStateHandle[IntroActivity.KEY_OPENED_FROM_SETTINGS] ?: false
 
     val notificationChoice: StateFlow<NotificationChoice>
-        field = MutableStateFlow<NotificationChoice>(NotificationChoice.Pending)
+        field = savedStateHandle.getMutableStateFlow<NotificationChoice>(KEY_NOTIFICATION_CHOICE, NotificationChoice.Pending)
 
     fun onNotificationsDeclined() = setNotificationsEnabledAndAdvance(false)
 

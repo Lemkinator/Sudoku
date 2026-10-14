@@ -18,30 +18,28 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Looper
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.IntentCompat
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
-import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
-import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.PausableDispatcher
 import de.lemke.commonutils.ShadowFileProvider
+import de.lemke.commonutils.WhileResumed
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
+import de.lemke.commonutils.idleMainLooper
+import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.sudoku.HiltTestRule
 import de.lemke.sudoku.R
+import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokuExport
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -57,11 +55,10 @@ import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,7 +71,6 @@ import org.robolectric.shadows.ShadowDialog
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36], shadows = [ShadowFileProvider::class])
@@ -82,22 +78,10 @@ class SudokuActivityShareTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
+    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO, WhileResumed.RunInPlace)
 
-    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO)
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = pausableIoDispatcher
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
+    @Inject
+    lateinit var testDispatchers: TestDispatchers
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -111,8 +95,14 @@ class SudokuActivityShareTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        testDispatchers.io.redirectTo(pausableIoDispatcher)
         settings.bypassOobe()
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
+    }
+
+    @After
+    fun resetDispatchers() {
+        testDispatchers.reset()
     }
 
     private fun formulaicSudoku(
@@ -164,21 +154,7 @@ class SudokuActivityShareTest {
         val dialog = ShadowDialog.getLatestDialog() as AlertDialog
         dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(radioButtonId)
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-        awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
-    }
-
-    private fun awaitMainLooperIdleUntil(
-        timeoutMillis: Long = 5000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMillis
-        while (System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
-            if (condition()) return
-            Thread.sleep(20)
-        }
-        shadowOf(Looper.getMainLooper()).idle()
-        check(condition()) { "share chooser was not started within ${timeoutMillis}ms" }
+        awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
     }
 
     private fun levelSudokuWithAnEntry(): Sudoku = formulaicSudoku(SudokuSize.FOUR, modeLevel = 3).apply { fields[1].value = 2 }
@@ -186,6 +162,7 @@ class SudokuActivityShareTest {
     private fun sharedSudoku(activity: SudokuActivity): SudokuExport {
         val chooser = shadowOf(activity).nextStartedActivity
         chooser.action shouldBe Intent.ACTION_CHOOSER
+        chooser.getStringExtra(Intent.EXTRA_TITLE) shouldBe "Share Sudoku"
         val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
         send.type shouldBe "application/sudoku"
         val uri = IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java)!!
@@ -202,6 +179,9 @@ class SudokuActivityShareTest {
             shareVia(activity, R.id.radioButtonText)
             val started = shadowOf(activity).nextStartedActivity
             started.action shouldBe Intent.ACTION_CHOOSER
+            val send = IntentCompat.getParcelableExtra(started, Intent.EXTRA_INTENT, Intent::class.java)!!
+            send.type shouldBe "text/plain"
+            send.getStringExtra(Intent.EXTRA_TEXT) shouldBe activity.sudoku.getLocalStatisticsStringShare(activity.resources)
         }
 
     @Test
@@ -220,7 +200,7 @@ class SudokuActivityShareTest {
             dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(R.id.radioButtonText)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+            awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
             shadowOf(activity).nextStartedActivity.action shouldBe Intent.ACTION_CHOOSER
             shadowOf(activity).nextStartedActivity shouldBe null
         }
@@ -235,7 +215,7 @@ class SudokuActivityShareTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             pausableIoDispatcher.resume()
-            awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+            awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
             sharedSudoku(activity).fields[1].value shouldBe 2
             shadowOf(activity).nextStartedActivity shouldBe null
             dialog.isShowing shouldBe false
@@ -259,7 +239,7 @@ class SudokuActivityShareTest {
             scenario.recreate()
             pausableIoDispatcher.resume()
             scenario.onActivity { activity ->
-                awaitMainLooperIdleUntil { shadowOf(activity).peekNextStartedActivity() != null }
+                awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
                 sharedSudoku(activity).fields[1].value shouldBe 2
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
@@ -280,7 +260,7 @@ class SudokuActivityShareTest {
                 activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
                 viewModel.onShare(activity.sudoku.getInitialSudoku())
             }
-            awaitMainLooperIdleUntil { viewModel.share.value is SudokuShare.File }
+            awaitMainLooperUntil { viewModel.share.value is SudokuShare.File }
             val file = viewModel.share.value as SudokuShare.File
             scenario.onActivity { activity ->
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe MainActivity::class.java.name
@@ -288,16 +268,16 @@ class SudokuActivityShareTest {
             }
             viewModel.share.value shouldBe file
 
-            scenario.moveToState(Lifecycle.State.STARTED)
-            scenario.moveToState(Lifecycle.State.RESUMED)
-            shadowOf(Looper.getMainLooper()).idle()
+            scenario.returnFromLaunchedScreen()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 val chooser = shadowOf(activity).nextStartedActivity
                 chooser.action shouldBe Intent.ACTION_CHOOSER
                 val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
                 send.type shouldBe "application/sudoku"
-                IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java) shouldBe file.uri
+                val uri = IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java)!!
+                uri.path shouldBe "/cache/${file.file.name}"
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
             viewModel.share.value shouldBe SudokuShare.Idle

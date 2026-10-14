@@ -16,9 +16,10 @@
 
 package de.lemke.sudoku.ui.utils
 
-import android.os.Looper
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import de.lemke.commonutils.awaitMainLooperUntil
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
@@ -27,10 +28,8 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.LocalDateTime
-import org.robolectric.Shadows.shadowOf
 
 private val LIST_SIZE = SudokuSize.FOUR
-private const val DIFF_TIMEOUT_MS = 5_000L
 
 /** A 4x4 sudoku without givens whose first [filled] fields hold their solution, so progress is `filled * 100 / 16`. */
 internal fun listSudoku(
@@ -66,17 +65,12 @@ internal fun RecyclerView.awaitSmallText(
     position: Int,
     expected: String,
 ): String? {
-    val deadline = System.currentTimeMillis() + DIFF_TIMEOUT_MS
-    var actual = smallTextAt(position)
-    while (actual != expected && System.currentTimeMillis() < deadline) {
-        Thread.sleep(5)
-        actual = smallTextAt(position)
-    }
-    return actual
+    awaitMainLooperUntil { smallTextAt(position) == expected }
+    return smallTextAt(position)
 }
 
 private fun RecyclerView.smallTextAt(position: Int): String? {
-    shadowOf(Looper.getMainLooper()).idle()
+    idleMainLooper()
     return findViewHolderForAdapterPosition(position)
         ?.itemView
         ?.findViewById<TextView>(R.id.item_text_small)

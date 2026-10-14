@@ -297,6 +297,24 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `dataTransfer ends Exported with WriteFailed when the picker reports no destination`() {
+        viewModel.onExportDestinationMissing()
+
+        viewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.WriteFailed)
+    }
+
+    @Test
+    fun `a missing export destination does not replace a running transfer`() =
+        runTest {
+            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
+            settingsViewModel.onExportDestinationPicked(exportUri)
+
+            settingsViewModel.onExportDestinationMissing()
+
+            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exporting(ExportProgress.Reading)
+        }
+
+    @Test
     fun `dataTransfer forwards each import progress step and ends Imported with the use case's result`() =
         runTest {
             addImportFile(sudokuToExport(testSudoku()), sudokuToExport(testSudoku()).copy(size = 5), sudokuToExport(testSudoku()))

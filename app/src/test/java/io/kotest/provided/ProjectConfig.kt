@@ -16,7 +16,7 @@
 
 package io.kotest.provided
 
-import de.lemke.sudoku.MainDispatcherExtension
+import de.lemke.commonutils.MainDispatcherExtension
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.spec.SpecExecutionOrder
 

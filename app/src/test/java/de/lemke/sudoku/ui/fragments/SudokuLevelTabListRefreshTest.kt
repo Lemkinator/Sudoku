@@ -24,15 +24,12 @@ import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
+import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.commonutils.di.IoDispatcher
-import de.lemke.commonutils.di.MainDispatcher
-import de.lemke.sudoku.HiltTestRule
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.di.DispatchersModule
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
@@ -57,13 +54,11 @@ import io.kotest.matchers.shouldBe
 import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -75,28 +70,13 @@ import org.robolectric.shadows.ShadowToast
 
 /** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(DispatchersModule::class, SolvedBoardGeneratorModule::class)
+@UninstallModules(SolvedBoardGeneratorModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class SudokuLevelTabListRefreshTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    @BindValue
-    @DefaultDispatcher
-    @JvmField
-    val testDefaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
-
-    @BindValue
-    @IoDispatcher
-    @JvmField
-    val testIoDispatcher: CoroutineDispatcher = Dispatchers.IO
-
-    @BindValue
-    @MainDispatcher
-    @JvmField
-    val testMainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
     @BindValue
     @JvmField
@@ -173,8 +153,6 @@ class SudokuLevelTabListRefreshTest {
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
-    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
-
     @Test
     fun `the level list carries the new stats when the current level is saved again under the same id`() {
         save(completedLevelOne())
@@ -182,10 +160,10 @@ class SudokuLevelTabListRefreshTest {
         val viewModel = newViewModel()
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
-            idle()
+            idleMainLooper()
 
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
-            idle()
+            idleMainLooper()
 
             val sudoku = topSudoku(viewModel)
             sudoku.id shouldBe currentLevelId
@@ -204,7 +182,7 @@ class SudokuLevelTabListRefreshTest {
         val viewModel = newViewModel(SudokuSize.NINE)
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
-            idle()
+            idleMainLooper()
 
             viewModel.state.value.sudokuLevel
                 .first()
@@ -219,14 +197,14 @@ class SudokuLevelTabListRefreshTest {
         save(completedLevelOne())
         val viewModel = newViewModel()
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
-        idle()
+        idleMainLooper()
         collection.cancel()
         val nextLevel = topSudoku(viewModel)
         nextLevel.modeLevel shouldBe 2
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
         viewModel.confirmSudokuStart(0, nextLevel)
-        idle()
+        idleMainLooper()
 
         viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
 
@@ -243,11 +221,11 @@ class SudokuLevelTabListRefreshTest {
         val viewModel = newViewModel()
         val collection = viewModel.state.launchIn(CoroutineScope(Dispatchers.Main))
         try {
-            idle()
+            idleMainLooper()
             val nextLevel = topSudoku(viewModel)
 
             viewModel.confirmSudokuStart(0, nextLevel)
-            idle()
+            idleMainLooper()
 
             viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
             runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
@@ -263,17 +241,17 @@ class SudokuLevelTabListRefreshTest {
         save(completedLevelOne())
         save(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0))
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 levelList(activity).awaitSmallText(0, "00:00 | 0% | Errors: 0/3") shouldBe "00:00 | 0% | Errors: 0/3"
             }
 
             scenario.moveToState(Lifecycle.State.CREATED)
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 levelList(activity).awaitSmallText(0, "01:15 | 50% | Errors: 2/3") shouldBe "01:15 | 50% | Errors: 2/3"
@@ -287,7 +265,7 @@ class SudokuLevelTabListRefreshTest {
         save(completedLevelOne())
         save(currentLevelTwo(filled = 0, errorsMade = 0, seconds = 0))
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity ->
                 levelList(activity).awaitSmallText(0, "00:00 | 0% | Errors: 0/3") shouldBe "00:00 | 0% | Errors: 0/3"
             }
@@ -295,10 +273,10 @@ class SudokuLevelTabListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
-            idle()
+            idleMainLooper()
             scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).seconds shouldBe 0 }
             scenario.moveToState(Lifecycle.State.RESUMED)
-            idle()
+            idleMainLooper()
 
             scenario.onActivity { activity ->
                 levelList(activity).awaitSmallText(0, "01:15 | 50% | Errors: 2/3") shouldBe "01:15 | 50% | Errors: 2/3"
@@ -313,7 +291,7 @@ class SudokuLevelTabListRefreshTest {
         save(completedLevelOne())
         database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
         ActivityScenario.launch(SudokuLevelActivity::class.java).use {
-            idle()
+            idleMainLooper()
 
             ShadowToast.shownToastCount() shouldBe 1
             ShadowToast.getTextOfLatestToast() shouldBe "Failed to load sudoku levels"

@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -71,7 +70,7 @@ sealed interface SudokuShare {
 
     data object Running : SudokuShare
 
-    data class File(val uri: Uri) : Result
+    data class File(val file: java.io.File) : Result
 }
 
 /**

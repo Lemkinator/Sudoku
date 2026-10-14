@@ -23,8 +23,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EarlyEntryPoint
 import dagger.hilt.android.EarlyEntryPoints
 import dagger.hilt.components.SingletonComponent
+import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.di.ApplicationScope
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import kotlinx.coroutines.CoroutineScope
