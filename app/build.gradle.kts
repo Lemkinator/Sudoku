@@ -128,12 +128,12 @@ android {
     // Plain Kotlin test-data builders shared between Robolectric (src/test) and instrumented (src/androidTest)
     // tests.
     sourceSets {
-        getByName("test") { kotlin.srcDir("src/testShared/kotlin") }
-        getByName("androidTest") { kotlin.srcDir("src/testShared/kotlin") }
+        getByName("test").kotlin.directories += "src/testShared/kotlin"
+        getByName("androidTest").kotlin.directories += "src/testShared/kotlin"
         // Room's exported schemas, for Robolectric-based migration tests (MigrationTestHelper reads them via
         // Context.assets, which only sees the debug variant's merged assets for local unit tests, not a "test"
         // source set). Debug-only, so release APKs never bundle these.
-        getByName("debug") { assets.srcDirs("$projectDir/schemas") }
+        getByName("debug").assets.directories += "$projectDir/schemas"
     }
     testOptions {
         unitTests {
