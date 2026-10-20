@@ -76,6 +76,8 @@ class SudokuViewModelTest : ShouldSpec(
         var maxLevelReads = 0
         var syncCalculations = 0
 
+        fun mainScheduler() = StandardTestDispatcher().scheduler
+
         beforeEach {
             repository = FakeSudokusRepository()
             maxLevelReads = 0
@@ -417,39 +419,67 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("resumeTimer starts the timer of a sudoku in progress") {
-            val sudoku = testSudoku()
+            val sudoku = testSudoku(updated = LocalDateTime.of(2026, 1, 15, 11, 0))
             val viewModel = playing(sudoku)
 
             viewModel.resumeTimer(sudoku) shouldBe true
+            mainScheduler().advanceTimeBy(1000)
+            mainScheduler().runCurrent()
+            val resumed = sudoku.resumed
+            sudoku.stopTimer()
+            resumed shouldBe true
 
-            sudoku.resumed shouldBe true
+            sudoku.seconds shouldBe 1
+            sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
         }
 
         should("resumeTimer starts the timer of a daily sudoku created on the clock's date") {
-            val sudoku = testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 1, 15, 0, 0))
+            val sudoku =
+                testSudoku(
+                    modeLevel = Sudoku.MODE_DAILY,
+                    created = LocalDateTime.of(2026, 1, 15, 0, 0),
+                    updated = LocalDateTime.of(2026, 1, 15, 0, 0),
+                )
             val viewModel = playing(sudoku)
 
             viewModel.resumeTimer(sudoku) shouldBe true
+            mainScheduler().advanceTimeBy(1000)
+            mainScheduler().runCurrent()
+            sudoku.stopTimer()
 
-            sudoku.resumed shouldBe true
+            sudoku.seconds shouldBe 1
+            sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
         }
 
         should("resumeTimer ends a daily sudoku created before the clock's date without a timer") {
-            val sudoku = testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 1, 14, 23, 59))
+            val sudoku =
+                testSudoku(
+                    modeLevel = Sudoku.MODE_DAILY,
+                    created = LocalDateTime.of(2026, 1, 14, 23, 59),
+                    updated = LocalDateTime.of(2026, 1, 14, 23, 59),
+                )
             val viewModel = playing(sudoku)
 
             viewModel.resumeTimer(sudoku) shouldBe false
+            mainScheduler().advanceTimeBy(1000)
+            mainScheduler().runCurrent()
 
             sudoku.resumed shouldBe false
+            sudoku.seconds shouldBe 0
+            sudoku.updated shouldBe LocalDateTime.of(2026, 1, 14, 23, 59)
         }
 
         should("resumeTimer ends a completed sudoku without a timer") {
-            val sudoku = testSudoku(completed = true)
+            val sudoku = testSudoku(completed = true, updated = LocalDateTime.of(2026, 1, 15, 11, 0))
             val viewModel = playing(sudoku)
 
             viewModel.resumeTimer(sudoku) shouldBe false
+            mainScheduler().advanceTimeBy(1000)
+            mainScheduler().runCurrent()
 
             sudoku.resumed shouldBe false
+            sudoku.seconds shouldBe 0
+            sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 11, 0)
         }
 
         should("onCompleted offers no follow-up for a daily sudoku") {
