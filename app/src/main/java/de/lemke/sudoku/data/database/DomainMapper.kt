@@ -26,7 +26,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
     val size = sudokuWithFields?.let { SudokuSize.fromValueOrNull(it.sudoku.size) }
     if (sudokuWithFields == null || size == null) return null
-    val fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }
+    val fields = sudokuWithFields.fields.map { fieldFromDb(it) }
     return fields.inCellOrderOrNull(size)?.let {
         Sudoku(
             id = SudokuId(sudokuWithFields.sudoku.id),
@@ -52,9 +52,11 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
     }
 }
 
-/** The fields sorted by cell index, or null unless they are exactly one field of [size] per cell. */
-private fun List<Field>.inCellOrderOrNull(size: SudokuSize): MutableList<Field>? {
-    val sorted = sortedBy { it.position.index }
+/** The fields sorted by cell index, or null unless they are exactly one decodable field of [size] per cell. */
+private fun List<Field?>.inCellOrderOrNull(size: SudokuSize): MutableList<Field>? {
+    val decoded = filterNotNull()
+    if (decoded.size != this.size) return null
+    val sorted = decoded.sortedBy { it.position.index }
     val exact = sorted.map { it.position.index } == (0 until size.cellCount).toList() && sorted.all { it.position.size == size }
     return if (exact) sorted.toMutableList() else null
 }
@@ -115,7 +117,7 @@ fun fieldToDb(
 
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
     val size = SudokuSize.fromValueOrNull(sudokuExport.size) ?: return null
-    val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, size) }
+    val fields = sudokuExport.fields.map { fieldFromExport(it, size) }
     return fields.inCellOrderOrNull(size)?.let {
         Sudoku(
             id = SudokuId(sudokuExport.id),

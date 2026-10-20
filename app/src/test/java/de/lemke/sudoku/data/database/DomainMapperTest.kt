@@ -117,7 +117,7 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromDb(null).shouldBeNull()
         }
 
-        should("sudokuFromDb filters out a raw field with a null solution before checking the count") {
+        should("sudokuFromDb returns null when a raw field has a null solution") {
             val sudoku = sudoku()
             val fields =
                 sudoku.fields
@@ -126,6 +126,20 @@ class DomainMapperTest : ShouldSpec(
             val sudokuWithFields = SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)
 
             sudokuFromDb(sudokuWithFields).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when an undecodable raw field comes on top of every cell") {
+            val sudoku = sudoku()
+            val extra = fieldToDb(sudoku[0], sudoku.id).copy(index = 16)
+            val rows = sudoku.fields.map { fieldToDb(it, sudoku.id) } + extra
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = rows)).shouldBeNull()
+        }
+
+        should("sudokuFromExport returns null when an undecodable exported field comes on top of every cell") {
+            val export = sudokuToExport(sudoku())
+
+            sudokuFromExport(export.copy(fields = export.fields + FieldExport(index = 16, solution = 1))).shouldBeNull()
         }
 
         should("sudokuFromDb round-trips a valid sudoku") {
