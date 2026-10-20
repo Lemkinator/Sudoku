@@ -279,7 +279,7 @@ class MainActivity : AppCompatActivity() {
             R.id.about_app_dest -> transformToActivity(R.id.about_app_dest, CommonUtilsAboutActivity::class.java)
             R.id.about_me_dest -> transformToActivity(R.id.about_me_dest, CommonUtilsAboutMeActivity::class.java)
             R.id.settings_dest -> transformToActivity(R.id.settings_dest, SettingsActivity::class.java)
-            R.id.leaks_dest -> openLeakCanary(this)
+            R.id.leaks_dest -> openLeakCanary()
             else -> return false
         }
         return true

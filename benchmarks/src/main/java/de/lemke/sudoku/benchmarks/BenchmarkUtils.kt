@@ -24,6 +24,7 @@ import androidx.test.uiautomator.Until
 
 const val PACKAGE_NAME = "de.lemke.sudoku"
 const val TIMEOUT_MS = 5_000L
+private const val GESTURE_MARGIN_DIVISOR = 5
 
 // Sudoku generation (de.sfuhrm:sudoku) runs synchronously before SudokuActivity launches —
 // duration varies with size/difficulty, so this hop needs more headroom than a plain nav wait.
@@ -37,7 +38,7 @@ fun MacrobenchmarkScope.startActivityAndSkipOnboarding() =
     startActivityAndWait { it.putExtra(EXTRA_SKIP_ONBOARDING, true) }
 
 fun UiDevice.flingElementDownUp(element: UiObject2) {
-    element.setGestureMargin(displayWidth / 5)
+    element.setGestureMargin(displayWidth / GESTURE_MARGIN_DIVISOR)
     element.fling(Direction.DOWN)
     waitForIdle()
     element.fling(Direction.UP)
