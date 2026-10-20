@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package de.lemke.sudoku.benchmarks
 
 import androidx.benchmark.macro.MacrobenchmarkScope
@@ -34,8 +35,7 @@ const val GENERATION_TIMEOUT_MS = 15_000L
 // Pinned by app/src/test/.../BenchmarkOnboardingKeyTest.kt.
 const val EXTRA_SKIP_ONBOARDING = "commonUtilsSkipOnboarding"
 
-fun MacrobenchmarkScope.startActivityAndSkipOnboarding() =
-    startActivityAndWait { it.putExtra(EXTRA_SKIP_ONBOARDING, true) }
+fun MacrobenchmarkScope.startActivityAndSkipOnboarding() = startActivityAndWait { it.putExtra(EXTRA_SKIP_ONBOARDING, true) }
 
 fun UiDevice.flingElementDownUp(element: UiObject2) {
     element.setGestureMargin(displayWidth / GESTURE_MARGIN_DIVISOR)
@@ -44,7 +44,10 @@ fun UiDevice.flingElementDownUp(element: UiObject2) {
     element.fling(Direction.UP)
 }
 
-fun UiDevice.waitAndFindObject(selector: BySelector, timeout: Long): UiObject2 =
+fun UiDevice.waitAndFindObject(
+    selector: BySelector,
+    timeout: Long,
+): UiObject2 =
     checkNotNull(wait(Until.findObject(selector), timeout)) {
         "Element not found on screen in ${timeout}ms (selector=$selector)"
     }
