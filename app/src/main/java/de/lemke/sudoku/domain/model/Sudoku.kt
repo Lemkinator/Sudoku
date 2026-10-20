@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain.model
 
 import android.content.res.Resources
 import de.lemke.sudoku.R
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId.systemDefault
@@ -220,6 +221,7 @@ class Sudoku(
 
     fun startTimer(
         scope: CoroutineScope,
+        clock: Clock,
         initialDelay: Long = TICK_MILLIS,
     ) {
         if (completed) return
@@ -229,7 +231,7 @@ class Sudoku(
                 delay(initialDelay)
                 while (true) {
                     seconds++
-                    updated = LocalDateTime.now()
+                    updated = LocalDateTime.now(clock)
                     gameListener?.onTimeChanged()
                     delay(TICK_MILLIS)
                 }

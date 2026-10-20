@@ -74,7 +74,6 @@ import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
@@ -272,14 +271,8 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame() {
         if (!this::sudoku.isInitialized) return
         binding.resumeButton.transformTo(binding.gameLayout)
-        if (sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now())) {
-            gameEnded = true
-            animateGameButtonsVisibility(false)
-        } else {
-            sudoku.startTimer(viewModel.tickScope)
-            gameEnded = false
-            animateGameButtonsVisibility(true)
-        }
+        gameEnded = !viewModel.resumeTimer(sudoku)
+        animateGameButtonsVisibility(!gameEnded)
         invalidateOptionsMenu()
         checkErrorLimit()
         if (userSettings.keepScreenOn) window.addFlags(FLAG_KEEP_SCREEN_ON)

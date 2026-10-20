@@ -44,6 +44,10 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import java.io.File
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -67,6 +71,7 @@ private fun winUnlocks(stopwatchAchievement: Int): List<Int> =
 @OptIn(ExperimentalCoroutinesApi::class)
 class SudokuViewModelTest : ShouldSpec(
     {
+        val clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
         lateinit var repository: FakeSudokusRepository
         var maxLevelReads = 0
         var syncCalculations = 0
@@ -96,7 +101,7 @@ class SudokuViewModelTest : ShouldSpec(
                 QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
                 ShareSudokuUseCase(shareFiles, shareDispatcher),
                 CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
-                dispatcher,
+                clock,
             )
         }
 
@@ -409,6 +414,42 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
             maxLevelReads shouldBe 0
+        }
+
+        should("resumeTimer starts the timer of a sudoku in progress") {
+            val sudoku = testSudoku()
+            val viewModel = playing(sudoku)
+
+            viewModel.resumeTimer(sudoku) shouldBe true
+
+            sudoku.resumed shouldBe true
+        }
+
+        should("resumeTimer starts the timer of a daily sudoku created on the clock's date") {
+            val sudoku = testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 1, 15, 0, 0))
+            val viewModel = playing(sudoku)
+
+            viewModel.resumeTimer(sudoku) shouldBe true
+
+            sudoku.resumed shouldBe true
+        }
+
+        should("resumeTimer ends a daily sudoku created before the clock's date without a timer") {
+            val sudoku = testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 1, 14, 23, 59))
+            val viewModel = playing(sudoku)
+
+            viewModel.resumeTimer(sudoku) shouldBe false
+
+            sudoku.resumed shouldBe false
+        }
+
+        should("resumeTimer ends a completed sudoku without a timer") {
+            val sudoku = testSudoku(completed = true)
+            val viewModel = playing(sudoku)
+
+            viewModel.resumeTimer(sudoku) shouldBe false
+
+            sudoku.resumed shouldBe false
         }
 
         should("onCompleted offers no follow-up for a daily sudoku") {

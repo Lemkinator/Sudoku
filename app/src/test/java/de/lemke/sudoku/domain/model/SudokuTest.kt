@@ -24,11 +24,16 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+
+private val fixedClock: Clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
 
 class SudokuTest : ShouldSpec(
     {
@@ -291,7 +296,7 @@ class SudokuTest : ShouldSpec(
         should("reset cancels a running timer") {
             runTest {
                 val sudoku = fourByFourSudoku()
-                sudoku.startTimer(backgroundScope)
+                sudoku.startTimer(backgroundScope, fixedClock)
                 val running = sudoku.timer
                 running.shouldNotBeNull()
 
@@ -638,7 +643,7 @@ class SudokuTest : ShouldSpec(
                 sudoku.timer?.cancel()
                 sudoku.timer = null
 
-                runTest { sudoku.startTimer(backgroundScope) }
+                runTest { sudoku.startTimer(backgroundScope, fixedClock) }
 
                 sudoku.timer shouldBe null
             }
@@ -649,7 +654,7 @@ class SudokuTest : ShouldSpec(
                     val oldTimer = sudoku.timer
                     oldTimer.shouldNotBeNull()
 
-                    sudoku.startTimer(backgroundScope)
+                    sudoku.startTimer(backgroundScope, fixedClock)
 
                     oldTimer.isCancelled.shouldBeTrue()
                     sudoku.timer shouldNotBe oldTimer
@@ -664,7 +669,7 @@ class SudokuTest : ShouldSpec(
                     val staleUpdate = LocalDateTime.of(2000, 1, 1, 0, 0)
                     sudoku.updated = staleUpdate
 
-                    sudoku.startTimer(backgroundScope)
+                    sudoku.startTimer(backgroundScope, fixedClock)
                     testScheduler.advanceTimeBy(999)
                     testScheduler.runCurrent()
 
@@ -676,7 +681,7 @@ class SudokuTest : ShouldSpec(
 
                     sudoku.seconds shouldBe 1
                     listener.timeChangedCount shouldBe 1
-                    sudoku.updated.isAfter(staleUpdate).shouldBeTrue()
+                    sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
 
                     testScheduler.advanceTimeBy(2000)
                     testScheduler.runCurrent()
@@ -690,7 +695,7 @@ class SudokuTest : ShouldSpec(
                 runTest {
                     val sudoku = runningSudoku()
 
-                    sudoku.startTimer(backgroundScope, initialDelay = 0L)
+                    sudoku.startTimer(backgroundScope, fixedClock, initialDelay = 0L)
                     testScheduler.runCurrent()
 
                     sudoku.seconds shouldBe 1
@@ -700,7 +705,7 @@ class SudokuTest : ShouldSpec(
             should("stop ticking once the timer stops") {
                 runTest {
                     val sudoku = runningSudoku()
-                    sudoku.startTimer(backgroundScope)
+                    sudoku.startTimer(backgroundScope, fixedClock)
                     testScheduler.advanceTimeBy(1000)
                     testScheduler.runCurrent()
 

@@ -20,7 +20,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -33,9 +32,9 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import java.io.Serializable
+import java.time.Clock
+import java.time.LocalDate
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -43,7 +42,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 
 /** The sudoku the activity plays. The activity starts a [Ready] sudoku and then reports it started. */
 sealed interface SudokuGame {
@@ -117,11 +115,8 @@ class SudokuViewModel @Inject constructor(
     private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
-    @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
+    private val clock: Clock,
 ) : ViewModel() {
-    /** The scope of the played sudoku's timer. Its ticks run off the main thread and end with the view model. */
-    val tickScope: CoroutineScope = viewModelScope + defaultDispatcher
-
     val game: StateFlow<SudokuGame>
         field = MutableStateFlow<SudokuGame>(SudokuGame.Loading)
 
@@ -222,6 +217,13 @@ class SudokuViewModel @Inject constructor(
 
     fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
         playGamesSync.update { if (it == sync) null else it }
+    }
+
+    /** Starts the timer of a sudoku that can still be played and returns whether it started. */
+    fun resumeTimer(sudoku: Sudoku): Boolean {
+        val ended = sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now(clock))
+        if (!ended) sudoku.startTimer(viewModelScope, clock)
+        return !ended
     }
 
     fun onPaused() = savePlayingSudokuProgress()
