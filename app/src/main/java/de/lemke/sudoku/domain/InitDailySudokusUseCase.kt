@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
+import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -27,9 +28,10 @@ class InitDailySudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     private val saveSudoku: SaveSudokuUseCase,
     private val generateDailySudoku: GenerateDailySudokuUseCase,
+    private val clock: Clock,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(date: LocalDate = LocalDate.now()) =
+    suspend operator fun invoke(date: LocalDate = LocalDate.now(clock)) =
         withContext(defaultDispatcher) {
             if (sudokusRepository.getDailySudokus().none { it.created.toLocalDate() == date }) {
                 saveSudoku(generateDailySudoku())

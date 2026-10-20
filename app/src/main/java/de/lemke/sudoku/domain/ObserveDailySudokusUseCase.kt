@@ -21,6 +21,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.monthAndYear
+import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,10 +33,11 @@ import kotlinx.coroutines.flow.map
 class ObserveDailySudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     private val userSettings: UserSettings,
+    private val clock: Clock,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
-    operator fun invoke(date: LocalDate = LocalDate.now()) =
+    operator fun invoke(date: LocalDate = LocalDate.now(clock)) =
         userSettings
             .dailyShowUncompletedFlow
             .flatMapLatest { includeUncompleted ->

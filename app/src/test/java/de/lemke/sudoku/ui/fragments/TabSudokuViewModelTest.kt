@@ -39,7 +39,10 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +54,7 @@ private const val SAVE = "save"
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabSudokuViewModelTest : ShouldSpec(
     {
+        val clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
         lateinit var userSettings: UserSettings
         lateinit var repository: FakeSudokusRepository
         lateinit var events: MutableList<String>
@@ -73,7 +77,7 @@ class TabSudokuViewModelTest : ShouldSpec(
                     GenerateSudokuUseCase(GenerateFieldsUseCase(dispatcher, solvedBoardGenerator), dispatcher),
                     SaveSudokuUseCase(repository, dispatcher),
                     GetRecentlyUpdatedNormalSudokuUseCase(repository, dispatcher),
-                    IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+                    IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(repository, dispatcher), clock, dispatcher),
                 )
         }
 
@@ -186,15 +190,15 @@ class TabSudokuViewModelTest : ShouldSpec(
         }
 
         should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {
-            repository.store(testSudoku(modeLevel = Sudoku.MODE_DAILY, completed = true))
+            repository.store(testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now(clock), completed = true))
 
             viewModel.checkDailySudokuCompleted().shouldBeTrue()
         }
 
         should("checkDailySudokuCompleted returns false when isDailySudokuCompleted returns false") {
             repository.store(
-                testSudoku(modeLevel = Sudoku.MODE_DAILY),
-                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now().minusDays(1), completed = true),
+                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now(clock)),
+                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now(clock).minusDays(1), completed = true),
                 testSudoku(completed = true),
             )
 

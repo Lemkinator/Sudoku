@@ -20,6 +20,7 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.DIFFICULTY_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.SIZE_ALL
 import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_DAILY
+import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -27,9 +28,10 @@ import kotlinx.coroutines.withContext
 
 class IsDailySudokuCompletedUseCase @Inject constructor(
     private val getAllSudokus: GetAllSudokusUseCase,
+    private val clock: Clock,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(date: LocalDate = LocalDate.now()): Boolean =
+    suspend operator fun invoke(date: LocalDate = LocalDate.now(clock)): Boolean =
         withContext(defaultDispatcher) {
             return@withContext getAllSudokus(
                 TYPE_DAILY or DIFFICULTY_ALL or SIZE_ALL,

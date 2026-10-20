@@ -49,6 +49,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
                     sudokusRepository,
                     SaveSudokuUseCase(sudokusRepository, dispatcher),
                     GenerateDailySudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), clock, dispatcher),
+                    clock,
                     dispatcher,
                 )
         }
@@ -58,6 +59,12 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
 
             sudokusRepository.saves.map { Triple(it.rows.sudoku.modeLevel, it.rows.sudoku.created, it.onlyUpdate) } shouldBe
                 listOf(Triple(Sudoku.MODE_DAILY, LocalDateTime.of(2026, 1, 1, 10, 0), false))
+        }
+
+        should("uses the clock's date when called without a date") {
+            useCase()
+
+            sudokusRepository.saves.map { it.rows.sudoku.created } shouldBe listOf(LocalDateTime.of(2026, 1, 1, 10, 0))
         }
 
         should("does nothing when a daily sudoku already exists for the date") {

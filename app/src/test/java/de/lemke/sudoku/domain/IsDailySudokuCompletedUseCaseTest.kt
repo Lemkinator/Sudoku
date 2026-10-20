@@ -24,7 +24,10 @@ import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
@@ -38,7 +41,12 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
         beforeEach {
             val dispatcher = UnconfinedTestDispatcher()
             sudokusRepository = FakeSudokusRepository()
-            useCase = IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
+            useCase =
+                IsDailySudokuCompletedUseCase(
+                    GetAllSudokusUseCase(sudokusRepository, dispatcher),
+                    Clock.fixed(Instant.parse("2026-01-01T23:59:59Z"), ZoneOffset.UTC),
+                    dispatcher,
+                )
         }
 
         should("returns true when a completed daily sudoku exists for the date") {
@@ -53,6 +61,20 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
             sudokusRepository.saveSudoku(completedSudoku)
 
             useCase(date).shouldBeTrue()
+        }
+
+        should("checks the clock's date when called without a date") {
+            sudokusRepository.saveSudoku(
+                testSudoku(
+                    size = SudokuSize.FOUR,
+                    difficulty = Difficulty.EASY,
+                    modeLevel = Sudoku.MODE_DAILY,
+                    created = date.atStartOfDay(),
+                    completed = true,
+                ),
+            )
+
+            useCase().shouldBeTrue()
         }
 
         should("returns false when no daily sudoku is completed on the date") {
