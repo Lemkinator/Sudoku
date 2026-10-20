@@ -36,7 +36,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import java.util.Timer
+import kotlinx.coroutines.Job
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -301,7 +301,7 @@ class FieldViewTest {
     @Test
     fun `a long click erases a field's value and clears its selection state`() {
         val fieldView = inflatedFieldView(PLAIN_INDEX)
-        sudoku.timer = Timer()
+        sudoku.timer = Job()
         fieldView.isSelected = true
         fieldView.isHighlightedNumber = true
 
@@ -318,7 +318,7 @@ class FieldViewTest {
     @Test
     fun `a long click on a given field cannot erase and leaves its state untouched`() {
         val fieldView = inflatedFieldView(GIVEN_INDEX)
-        sudoku.timer = Timer()
+        sudoku.timer = Job()
         fieldView.isSelected = true
         fieldView.isHighlightedNumber = true
 

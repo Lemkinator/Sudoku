@@ -40,6 +40,9 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         lateinit var useCase: InitDailySudokusUseCase
         val date = LocalDate.of(2026, 1, 1)
 
+        fun dailySudoku(on: LocalDate) =
+            testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY, created = on.atStartOfDay())
+
         beforeEach {
             val dispatcher = UnconfinedTestDispatcher()
             val clock = Clock.fixed(Instant.parse("2026-01-01T10:00:00Z"), ZoneOffset.UTC)
@@ -49,6 +52,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
                     sudokusRepository,
                     SaveSudokuUseCase(sudokusRepository, dispatcher),
                     GenerateDailySudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), clock, dispatcher),
+                    clock,
                     dispatcher,
                 )
         }
@@ -60,15 +64,24 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
                 listOf(Triple(Sudoku.MODE_DAILY, LocalDateTime.of(2026, 1, 1, 10, 0), false))
         }
 
+        should("uses the clock's date when called without a date") {
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(dailySudoku(LocalDate.of(2026, 1, 1))))
+
+            useCase()
+
+            sudokusRepository.saves.shouldBeEmpty()
+        }
+
+        should("generates for the clock's date when the existing daily sudoku is of another date") {
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(dailySudoku(LocalDate.of(2025, 12, 31))))
+
+            useCase()
+
+            sudokusRepository.saves.map { it.rows.sudoku.created } shouldBe listOf(LocalDateTime.of(2026, 1, 1, 10, 0))
+        }
+
         should("does nothing when a daily sudoku already exists for the date") {
-            val existing =
-                testSudoku(
-                    size = SudokuSize.NINE,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_DAILY,
-                    created = date.atStartOfDay(),
-                )
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(existing))
+            sudokusRepository.insertRows(sudokuWithFieldsToDb(dailySudoku(date)))
 
             useCase(date)
 

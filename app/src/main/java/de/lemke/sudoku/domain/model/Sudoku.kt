@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain.model
 
 import android.content.res.Resources
 import de.lemke.sudoku.R
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId.systemDefault
@@ -28,13 +29,16 @@ import java.time.format.FormatStyle
 import java.time.format.FormatStyle.FULL
 import java.time.format.FormatStyle.MEDIUM
 import java.util.Locale
-import java.util.Timer
 import java.util.UUID
-import kotlin.concurrent.timer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val SECONDS_PER_MINUTE = 60
 private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 private const val PERCENT_SCALE = 100
+private const val TICK_MILLIS = 1000L
 
 private const val MAX_STANDARD_DIGIT = 9
 private val MAX_LARGE_DIGIT = SudokuSize.entries.maxOf { it.value }
@@ -64,7 +68,7 @@ class Sudoku(
     val created: LocalDateTime,
     var updated: LocalDateTime,
     var seconds: Int,
-    var timer: Timer?,
+    var timer: Job?,
     var gameListener: GameListener?,
     val fields: MutableList<Field>,
 ) {
@@ -147,7 +151,7 @@ class Sudoku(
         created: LocalDateTime = this.created,
         updated: LocalDateTime = this.updated,
         seconds: Int = this.seconds,
-        timer: Timer? = this.timer,
+        timer: Job? = this.timer,
         gameListener: GameListener? = this.gameListener,
         fields: MutableList<Field> = MutableList(itemCount) { this.fields[it].copy() },
     ): Sudoku =
@@ -215,14 +219,22 @@ class Sudoku(
         gameListener = null
     }
 
-    fun startTimer(delay: Long = 1000L) {
+    fun startTimer(
+        scope: CoroutineScope,
+        clock: Clock,
+        initialDelay: Long = TICK_MILLIS,
+    ) {
         if (completed) return
         timer?.cancel()
         timer =
-            timer(initialDelay = delay, period = 1000L) {
-                seconds++
-                updated = LocalDateTime.now()
-                gameListener?.onTimeChanged()
+            scope.launch {
+                delay(initialDelay)
+                while (true) {
+                    seconds++
+                    updated = LocalDateTime.now(clock)
+                    gameListener?.onTimeChanged()
+                    delay(TICK_MILLIS)
+                }
             }
     }
 
@@ -459,7 +471,7 @@ class Sudoku(
             created: LocalDateTime = LocalDateTime.now(),
             updated: LocalDateTime = LocalDateTime.now(),
             seconds: Int = 0,
-            timer: Timer? = null,
+            timer: Job? = null,
             gameListener: GameListener? = null,
             fields: MutableList<Field>,
         ): Sudoku =

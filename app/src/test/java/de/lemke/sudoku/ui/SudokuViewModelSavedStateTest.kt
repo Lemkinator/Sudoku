@@ -37,6 +37,7 @@ import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
 import java.io.File
+import java.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -63,6 +64,7 @@ class SudokuViewModelSavedStateTest {
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+            Clock.systemDefaultZone(),
         ).also { idleMainLooper() }
     }
 

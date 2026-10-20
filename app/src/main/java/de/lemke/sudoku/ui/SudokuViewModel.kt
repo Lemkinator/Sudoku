@@ -32,6 +32,8 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import java.io.Serializable
+import java.time.Clock
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -113,6 +115,7 @@ class SudokuViewModel @Inject constructor(
     private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
+    private val clock: Clock,
 ) : ViewModel() {
     val game: StateFlow<SudokuGame>
         field = MutableStateFlow<SudokuGame>(SudokuGame.Loading)
@@ -214,6 +217,13 @@ class SudokuViewModel @Inject constructor(
 
     fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
         playGamesSync.update { if (it == sync) null else it }
+    }
+
+    /** Starts the timer of a sudoku that can still be played and returns whether it started. */
+    fun resumeTimer(sudoku: Sudoku): Boolean {
+        val ended = sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now(clock))
+        if (!ended) sudoku.startTimer(viewModelScope, clock)
+        return !ended
     }
 
     fun onPaused() = savePlayingSudokuProgress()

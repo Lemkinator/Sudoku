@@ -26,8 +26,8 @@ import de.lemke.sudoku.domain.model.SudokuSize
 fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
     val size = sudokuWithFields?.let { SudokuSize.fromValueOrNull(it.sudoku.size) }
     if (sudokuWithFields == null || size == null) return null
-    val fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList()
-    return fields.takeIf { it.size == size.cellCount }?.let {
+    val fields = sudokuWithFields.fields.map { fieldFromDb(it) }
+    return fields.inCellOrderOrNull(size)?.let {
         Sudoku(
             id = SudokuId(sudokuWithFields.sudoku.id),
             size = size,
@@ -50,6 +50,15 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
             fields = it,
         )
     }
+}
+
+/** The fields sorted by cell index, or null unless they are exactly one decodable field of [size] per cell. */
+private fun List<Field?>.inCellOrderOrNull(size: SudokuSize): MutableList<Field>? {
+    val decoded = filterNotNull()
+    if (decoded.size != this.size) return null
+    val sorted = decoded.sortedBy { it.position.index }
+    val exact = sorted.map { it.position.index } == (0 until size.cellCount).toList() && sorted.all { it.position.size == size }
+    return if (exact) sorted.toMutableList() else null
 }
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
@@ -77,7 +86,7 @@ fun sudokuWithFieldsToDb(sudoku: Sudoku): SudokuWithFields =
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? {
     val size = fieldDb?.let { SudokuSize.fromValueOrNull(it.gameSize) }
-    return if (fieldDb?.solution == null || size == null) {
+    return if (fieldDb?.solution == null || size == null || fieldDb.index !in 0 until size.cellCount) {
         null
     } else {
         Field(
@@ -108,8 +117,8 @@ fun fieldToDb(
 
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
     val size = SudokuSize.fromValueOrNull(sudokuExport.size) ?: return null
-    val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, size) }.toMutableList()
-    return fields.takeIf { it.size == size.cellCount }?.let {
+    val fields = sudokuExport.fields.map { fieldFromExport(it, size) }
+    return fields.inCellOrderOrNull(size)?.let {
         Sudoku(
             id = SudokuId(sudokuExport.id),
             size = size,
@@ -159,7 +168,7 @@ fun fieldFromExport(
     fieldExport: FieldExport,
     size: SudokuSize,
 ): Field? =
-    if (fieldExport.solution == null) {
+    if (fieldExport.solution == null || fieldExport.index !in 0 until size.cellCount) {
         null
     } else {
         Field(

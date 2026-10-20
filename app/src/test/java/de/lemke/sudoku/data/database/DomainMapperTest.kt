@@ -83,11 +83,41 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromDb(sudokuWithFields).shouldBeNull()
         }
 
+        listOf(-1, 16).forEach { index ->
+            should("fieldFromDb returns null for the out-of-range index $index") {
+                val sudoku = sudoku()
+                val fieldDb = fieldToDb(sudoku[0], sudoku.id)
+
+                fieldFromDb(fieldDb.copy(index = index)).shouldBeNull()
+            }
+        }
+
+        should("fieldFromDb keeps the first and last valid index") {
+            val sudoku = sudoku()
+
+            fieldFromDb(fieldToDb(sudoku[0], sudoku.id))?.position?.index shouldBe 0
+            fieldFromDb(fieldToDb(sudoku[15], sudoku.id))?.position?.index shouldBe 15
+        }
+
+        should("sudokuFromDb returns null when two raw fields share an index") {
+            val sudoku = sudoku()
+            val fields = sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 5) f.copy(index = 4) else f }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when a raw field index is out of range") {
+            val sudoku = sudoku()
+            val fields = sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 5) f.copy(index = 16) else f }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
         should("sudokuFromDb returns null for a null input") {
             sudokuFromDb(null).shouldBeNull()
         }
 
-        should("sudokuFromDb filters out a raw field with a null solution before checking the count") {
+        should("sudokuFromDb returns null when a raw field has a null solution") {
             val sudoku = sudoku()
             val fields =
                 sudoku.fields
@@ -96,6 +126,20 @@ class DomainMapperTest : ShouldSpec(
             val sudokuWithFields = SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)
 
             sudokuFromDb(sudokuWithFields).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when an undecodable raw field comes on top of every cell") {
+            val sudoku = sudoku()
+            val extra = fieldToDb(sudoku[0], sudoku.id).copy(index = 16)
+            val rows = sudoku.fields.map { fieldToDb(it, sudoku.id) } + extra
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = rows)).shouldBeNull()
+        }
+
+        should("sudokuFromExport returns null when an undecodable exported field comes on top of every cell") {
+            val export = sudokuToExport(sudoku())
+
+            sudokuFromExport(export.copy(fields = export.fields + FieldExport(index = 16, solution = 1))).shouldBeNull()
         }
 
         should("sudokuFromDb round-trips a valid sudoku") {
@@ -136,6 +180,41 @@ class DomainMapperTest : ShouldSpec(
                     .mapIndexed { index, field -> if (index == 0) field.copy(gameSize = 6) else field }
 
             sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when a raw field is stored for another sudoku size") {
+            val sudoku = sudoku(SudokuSize.NINE)
+            val foreign = Field(position = Position.create(0, SudokuSize.SIXTEEN), solution = 1)
+            val fields =
+                sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 0) fieldToDb(foreign, sudoku.id) else f }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when a raw field index exceeds the sudoku but fits its own game size") {
+            val sudoku = sudoku(SudokuSize.NINE)
+            val fields =
+                sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 0) f.copy(gameSize = 16, index = 200) else f }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb restores the fields in cell order from unordered rows") {
+            val sudoku = sudoku()
+            val rows = sudoku.fields.map { fieldToDb(it, sudoku.id) }.reversed()
+
+            val restored = sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = rows))
+
+            restored.shouldNotBeNull().fields.map { it.position.index } shouldBe (0..15).toList()
+            restored[5].position.index shouldBe 5
+        }
+
+        should("sudokuFromExport restores the fields in cell order from unordered fields") {
+            val export = sudokuToExport(sudoku())
+
+            val restored = sudokuFromExport(export.copy(fields = export.fields.reversed()))
+
+            restored.shouldNotBeNull().fields.map { it.position.index } shouldBe (0..15).toList()
         }
 
         should("fieldFromExport returns null when the stored solution is null") {
@@ -200,6 +279,31 @@ class DomainMapperTest : ShouldSpec(
             val export = sudokuToExport(sudoku).copy(fields = sudoku.fields.dropLast(1).map { fieldToExport(it) })
 
             sudokuFromExport(export).shouldBeNull()
+        }
+
+        listOf(-1, 16).forEach { index ->
+            should("fieldFromExport returns null for the out-of-range index $index") {
+                fieldFromExport(FieldExport(index = index, solution = 1), SudokuSize.FOUR).shouldBeNull()
+            }
+        }
+
+        should("fieldFromExport keeps the first and last valid index") {
+            fieldFromExport(FieldExport(index = 0, solution = 1), SudokuSize.FOUR)?.position?.index shouldBe 0
+            fieldFromExport(FieldExport(index = 15, solution = 1), SudokuSize.FOUR)?.position?.index shouldBe 15
+        }
+
+        should("sudokuFromExport returns null when two exported fields share an index") {
+            val export = sudokuToExport(sudoku())
+            val fields = export.fields.mapIndexed { i, f -> if (i == 5) f.copy(index = 4) else f }
+
+            sudokuFromExport(export.copy(fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromExport returns null when an exported field index is out of range") {
+            val export = sudokuToExport(sudoku())
+            val fields = export.fields.mapIndexed { i, f -> if (i == 5) f.copy(index = 16) else f }
+
+            sudokuFromExport(export.copy(fields = fields)).shouldBeNull()
         }
 
         should("sudokuFromExport returns null for a size that is not a supported sudoku size") {

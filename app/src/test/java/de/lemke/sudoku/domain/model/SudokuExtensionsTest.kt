@@ -23,7 +23,7 @@ import io.kotest.matchers.shouldNotBe
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
-import java.util.Timer
+import kotlinx.coroutines.Job
 
 private val solvedFourByFour = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
 
@@ -265,7 +265,7 @@ class SudokuExtensionsTest : ShouldSpec(
                     notesMade = 2
                     errorsMade = 3
                     seconds = 99
-                    timer = Timer()
+                    timer = Job()
                     gameListener = RecordingGameListener()
                 }
 
@@ -296,7 +296,7 @@ class SudokuExtensionsTest : ShouldSpec(
         }
 
         should("reset every mutable field, cancel a running timer and clear the game listener") {
-            val trackingTimer = TrackingTimer()
+            val trackedTimer = Job()
             val sudoku =
                 testSudoku().apply {
                     regionalHighlightingUsed = true
@@ -309,7 +309,7 @@ class SudokuExtensionsTest : ShouldSpec(
                     notesMade = 5
                     errorsMade = 1
                     seconds = 77
-                    timer = trackingTimer
+                    timer = trackedTimer
                     gameListener = RecordingGameListener()
                 }
 
@@ -327,7 +327,7 @@ class SudokuExtensionsTest : ShouldSpec(
             sudoku.seconds shouldBe 0
             sudoku.timer shouldBe null
             sudoku.gameListener shouldBe null
-            trackingTimer.cancelled shouldBe true
+            trackedTimer.isCancelled shouldBe true
             sudoku[0].value shouldBe 1
             sudoku[1].value shouldBe null
             sudoku[1].hint shouldBe false
@@ -382,15 +382,6 @@ class SudokuExtensionsTest : ShouldSpec(
         }
     },
 )
-
-private class TrackingTimer : Timer() {
-    var cancelled = false
-
-    override fun cancel() {
-        cancelled = true
-        super.cancel()
-    }
-}
 
 private class RecordingGameListener : GameListener {
     override fun onFieldClicked(position: Position) = Unit

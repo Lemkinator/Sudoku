@@ -28,7 +28,9 @@ import de.lemke.sudoku.domain.model.monthAndYear
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -70,7 +72,13 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
         beforeEach {
             sudokusRepository = FakeSudokusRepository()
             userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-            useCase = ObserveDailySudokusUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
+            useCase =
+                ObserveDailySudokusUseCase(
+                    sudokusRepository,
+                    userSettings,
+                    Clock.fixed(today.toInstant(ZoneOffset.UTC), ZoneOffset.UTC),
+                    UnconfinedTestDispatcher(),
+                )
             listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth).forEach { sudokusRepository.saveSudoku(it) }
         }
 
@@ -94,6 +102,20 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             userSettings.dailyShowUncompleted = false
 
             useCase(todayDate).test {
+                awaitItem().shape() shouldBe
+                    listOf(
+                        "separator" to completedThisMonth.created.monthAndYear,
+                        "item" to completedThisMonth.created.monthAndYear,
+                        "item" to uncompletedToday.created.monthAndYear,
+                    )
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        should("keep today's in-progress sudoku by the clock's date when called without a date") {
+            userSettings.dailyShowUncompleted = false
+
+            useCase().test {
                 awaitItem().shape() shouldBe
                     listOf(
                         "separator" to completedThisMonth.created.monthAndYear,

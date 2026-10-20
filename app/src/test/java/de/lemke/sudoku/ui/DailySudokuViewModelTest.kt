@@ -80,8 +80,8 @@ class DailySudokuViewModelTest : ShouldSpec(
                 GenerateDailySudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), clock, dispatcher)
             return DailySudokuViewModel(
                 userSettings,
-                InitDailySudokusUseCase(repository, SaveSudokuUseCase(repository, dispatcher), generateDailySudoku, dispatcher),
-                ObserveDailySudokusUseCase(repository, userSettings, dispatcher),
+                InitDailySudokusUseCase(repository, SaveSudokuUseCase(repository, dispatcher), generateDailySudoku, clock, dispatcher),
+                ObserveDailySudokusUseCase(repository, userSettings, clock, dispatcher),
                 clock,
             )
         }
