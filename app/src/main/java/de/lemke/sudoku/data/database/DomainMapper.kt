@@ -27,7 +27,7 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
     val size = sudokuWithFields?.let { SudokuSize.fromValueOrNull(it.sudoku.size) }
     if (sudokuWithFields == null || size == null) return null
     val fields = sudokuWithFields.fields.mapNotNull { fieldFromDb(it) }.toMutableList()
-    return fields.takeIf { it.size == size.cellCount }?.let {
+    return fields.takeIf { it.coversEveryCellOf(size) }?.let {
         Sudoku(
             id = SudokuId(sudokuWithFields.sudoku.id),
             size = size,
@@ -51,6 +51,9 @@ fun sudokuFromDb(sudokuWithFields: SudokuWithFields?): Sudoku? {
         )
     }
 }
+
+private fun List<Field>.coversEveryCellOf(size: SudokuSize): Boolean =
+    this.size == size.cellCount && map { it.position.index }.toSet().size == size.cellCount
 
 fun sudokuToDb(sudoku: Sudoku): SudokuDb =
     SudokuDb(
@@ -77,7 +80,7 @@ fun sudokuWithFieldsToDb(sudoku: Sudoku): SudokuWithFields =
 
 fun fieldFromDb(fieldDb: FieldDb?): Field? {
     val size = fieldDb?.let { SudokuSize.fromValueOrNull(it.gameSize) }
-    return if (fieldDb?.solution == null || size == null) {
+    return if (fieldDb?.solution == null || size == null || fieldDb.index !in 0 until size.cellCount) {
         null
     } else {
         Field(
@@ -109,7 +112,7 @@ fun fieldToDb(
 fun sudokuFromExport(sudokuExport: SudokuExport): Sudoku? {
     val size = SudokuSize.fromValueOrNull(sudokuExport.size) ?: return null
     val fields = sudokuExport.fields.mapNotNull { fieldFromExport(it, size) }.toMutableList()
-    return fields.takeIf { it.size == size.cellCount }?.let {
+    return fields.takeIf { it.coversEveryCellOf(size) }?.let {
         Sudoku(
             id = SudokuId(sudokuExport.id),
             size = size,
@@ -159,7 +162,7 @@ fun fieldFromExport(
     fieldExport: FieldExport,
     size: SudokuSize,
 ): Field? =
-    if (fieldExport.solution == null) {
+    if (fieldExport.solution == null || fieldExport.index !in 0 until size.cellCount) {
         null
     } else {
         Field(
