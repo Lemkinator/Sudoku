@@ -168,6 +168,41 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
         }
 
+        should("sudokuFromDb returns null when a raw field is stored for another sudoku size") {
+            val sudoku = sudoku(SudokuSize.NINE)
+            val foreign = Field(position = Position.create(0, SudokuSize.SIXTEEN), solution = 1)
+            val fields =
+                sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 0) fieldToDb(foreign, sudoku.id) else f }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb returns null when a raw field index exceeds the sudoku but fits its own game size") {
+            val sudoku = sudoku(SudokuSize.NINE)
+            val fields =
+                sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 0) f.copy(gameSize = 16, index = 200) else f }
+
+            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+        }
+
+        should("sudokuFromDb restores the fields in cell order from unordered rows") {
+            val sudoku = sudoku()
+            val rows = sudoku.fields.map { fieldToDb(it, sudoku.id) }.reversed()
+
+            val restored = sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = rows))
+
+            restored.shouldNotBeNull().fields.map { it.position.index } shouldBe (0..15).toList()
+            restored[5].position.index shouldBe 5
+        }
+
+        should("sudokuFromExport restores the fields in cell order from unordered fields") {
+            val export = sudokuToExport(sudoku())
+
+            val restored = sudokuFromExport(export.copy(fields = export.fields.reversed()))
+
+            restored.shouldNotBeNull().fields.map { it.position.index } shouldBe (0..15).toList()
+        }
+
         should("fieldFromExport returns null when the stored solution is null") {
             val export = fieldToExport(sudoku()[0])
             fieldFromExport(export.copy(solution = null), size = SudokuSize.FOUR).shouldBeNull()
