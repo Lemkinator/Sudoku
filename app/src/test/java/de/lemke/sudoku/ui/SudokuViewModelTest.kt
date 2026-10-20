@@ -96,6 +96,7 @@ class SudokuViewModelTest : ShouldSpec(
                 QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
                 ShareSudokuUseCase(shareFiles, shareDispatcher),
                 CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+                dispatcher,
             )
         }
 

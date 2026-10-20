@@ -276,7 +276,7 @@ class SudokuActivity : AppCompatActivity() {
             gameEnded = true
             animateGameButtonsVisibility(false)
         } else {
-            sudoku.startTimer()
+            sudoku.startTimer(viewModel.tickScope)
             gameEnded = false
             animateGameButtonsVisibility(true)
         }

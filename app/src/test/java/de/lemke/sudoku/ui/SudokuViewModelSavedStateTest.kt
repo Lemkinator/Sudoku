@@ -63,6 +63,7 @@ class SudokuViewModelSavedStateTest {
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+            dispatcher,
         ).also { idleMainLooper() }
     }
 

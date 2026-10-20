@@ -56,7 +56,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
-import java.util.Timer
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -217,7 +216,7 @@ class IntroActivity : AppCompatActivity() {
         binding.gameRecycler.seslSetFillBottomEnabled(true)
         binding.gameRecycler.seslSetLastRoundedCorner(true)
         sudoku.gameListener = SudokuGameListener()
-        sudoku.timer = Timer()
+        sudoku.timer = Job()
         initSudokuButtons()
     }
 

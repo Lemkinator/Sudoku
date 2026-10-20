@@ -16,16 +16,19 @@
 
 package de.lemke.sudoku.domain.model
 
-import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
-import java.util.Timer
-import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 
 class SudokuTest : ShouldSpec(
     {
@@ -286,12 +289,17 @@ class SudokuTest : ShouldSpec(
         }
 
         should("reset cancels a running timer") {
-            val sudoku = fourByFourSudoku()
-            sudoku.startTimer()
+            runTest {
+                val sudoku = fourByFourSudoku()
+                sudoku.startTimer(backgroundScope)
+                val running = sudoku.timer
+                running.shouldNotBeNull()
 
-            sudoku.reset()
+                sudoku.reset()
 
-            sudoku.timer shouldBe null
+                sudoku.timer shouldBe null
+                running.isCancelled.shouldBeTrue()
+            }
         }
 
         should("reset still clears progress when no timer is running") {
@@ -630,46 +638,80 @@ class SudokuTest : ShouldSpec(
                 sudoku.timer?.cancel()
                 sudoku.timer = null
 
-                sudoku.startTimer()
+                runTest { sudoku.startTimer(backgroundScope) }
 
                 sudoku.timer shouldBe null
             }
 
             should("cancel a previously running timer before starting a new one") {
-                val sudoku = runningSudoku()
-                val oldTimer = sudoku.timer
+                runTest {
+                    val sudoku = runningSudoku()
+                    val oldTimer = sudoku.timer
+                    oldTimer.shouldNotBeNull()
 
-                sudoku.startTimer()
+                    sudoku.startTimer(backgroundScope)
 
-                sudoku.timer shouldNotBe null
-                sudoku.timer shouldNotBe oldTimer
-                sudoku.timer?.cancel()
+                    oldTimer.isCancelled.shouldBeTrue()
+                    sudoku.timer shouldNotBe oldTimer
+                    sudoku.timer.shouldNotBeNull()
+                }
             }
 
-            should("tick the running timer, incrementing seconds and notifying the listener") {
-                val listener = MoveRecordingGameListener()
-                val sudoku = runningSudoku(gameListener = listener)
-                sudoku.timer?.cancel()
-                val secondsBefore = sudoku.seconds
+            should("tick once per second after the initial second, counting seconds and notifying the listener") {
+                runTest {
+                    val listener = MoveRecordingGameListener()
+                    val sudoku = runningSudoku(gameListener = listener)
+                    val staleUpdate = LocalDateTime.of(2000, 1, 1, 0, 0)
+                    sudoku.updated = staleUpdate
 
-                sudoku.startTimer(delay = 0L)
-                eventually(2.seconds) { (sudoku.seconds > secondsBefore).shouldBeTrue() }
+                    sudoku.startTimer(backgroundScope)
+                    testScheduler.advanceTimeBy(999)
+                    testScheduler.runCurrent()
 
-                sudoku.seconds shouldNotBe secondsBefore
-                listener.timeChangedCount shouldNotBe 0
-                sudoku.timer?.cancel()
+                    sudoku.seconds shouldBe 0
+                    listener.timeChangedCount shouldBe 0
+
+                    testScheduler.advanceTimeBy(1)
+                    testScheduler.runCurrent()
+
+                    sudoku.seconds shouldBe 1
+                    listener.timeChangedCount shouldBe 1
+                    sudoku.updated.isAfter(staleUpdate).shouldBeTrue()
+
+                    testScheduler.advanceTimeBy(2000)
+                    testScheduler.runCurrent()
+
+                    sudoku.seconds shouldBe 3
+                    listener.timeChangedCount shouldBe 3
+                }
             }
 
-            should("tick the running timer without a listener to notify") {
-                val sudoku = runningSudoku()
-                sudoku.timer?.cancel()
-                val secondsBefore = sudoku.seconds
+            should("tick at once for a zero initial delay without a listener to notify") {
+                runTest {
+                    val sudoku = runningSudoku()
 
-                sudoku.startTimer(delay = 0L)
-                eventually(2.seconds) { (sudoku.seconds > secondsBefore).shouldBeTrue() }
+                    sudoku.startTimer(backgroundScope, initialDelay = 0L)
+                    testScheduler.runCurrent()
 
-                sudoku.seconds shouldNotBe secondsBefore
-                sudoku.timer?.cancel()
+                    sudoku.seconds shouldBe 1
+                }
+            }
+
+            should("stop ticking once the timer stops") {
+                runTest {
+                    val sudoku = runningSudoku()
+                    sudoku.startTimer(backgroundScope)
+                    testScheduler.advanceTimeBy(1000)
+                    testScheduler.runCurrent()
+
+                    sudoku.stopTimer()
+                    testScheduler.advanceTimeBy(5000)
+                    testScheduler.runCurrent()
+
+                    sudoku.seconds shouldBe 1
+                    sudoku.timer shouldBe null
+                    sudoku.resumed.shouldBeFalse()
+                }
             }
 
             should("count an error without notifying when there is no listener") {
@@ -845,7 +887,7 @@ private fun runningSudoku(
             hintsUsed = hintsUsed,
             fields = fields,
             gameListener = gameListener,
-        ).apply { timer = Timer(true) }
+        ).apply { timer = Job() }
 
 private class MoveRecordingGameListener : GameListener {
     val fieldChanged = mutableListOf<Position>()

@@ -73,17 +73,7 @@ class SudokuActivityScreenshotTest {
     private fun captureSudokuScreenshot(fileName: String) {
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, SUDOKU_ID.value)
-        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            // Sudoku.startTimer() schedules a real java.util.Timer thread (unrelated to Robolectric's looper), so
-            // under a slow/loaded test run it can tick — and queue a "00:0x" subtitle update on the real Main
-            // dispatcher — before this callback even runs; canceling it here only stops *further* ticks. Resetting
-            // `seconds` and re-firing the listener enqueues one more, correct update after any stray one, which
-            // wins because Espresso drains the paused main looper in FIFO order right before the capture.
-            scenario.onActivity { activity ->
-                activity.sudoku.stopTimer()
-                activity.sudoku.seconds = 0
-                activity.sudoku.gameListener?.onTimeChanged()
-            }
+        ActivityScenario.launch<SudokuActivity>(intent).use {
             onView(isRoot()).captureRoboImage(fileName)
         }
     }
