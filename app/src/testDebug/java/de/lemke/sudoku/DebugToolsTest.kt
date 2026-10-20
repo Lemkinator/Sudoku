@@ -19,6 +19,8 @@ package de.lemke.sudoku
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import leakcanary.AppWatcher
+import leakcanary.LeakCanary
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +38,8 @@ class DebugToolsTest {
             AppWatcher.manualInstall(app)
         }
         app.openLeakCanary()
-        assertNotNull(shadowOf(app).nextStartedActivity)
+        val started = shadowOf(app).nextStartedActivity
+        assertNotNull(started)
+        assertEquals(LeakCanary.newLeakDisplayActivityIntent().component, started.component)
     }
 }

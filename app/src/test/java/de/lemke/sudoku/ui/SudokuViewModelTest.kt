@@ -425,9 +425,9 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.resumeTimer(sudoku) shouldBe true
             mainScheduler().advanceTimeBy(1000)
             mainScheduler().runCurrent()
-            sudoku.resumed shouldBe true
-            sudoku.resumed shouldBe true
+            val resumed = sudoku.resumed
             sudoku.stopTimer()
+            resumed shouldBe true
 
             sudoku.seconds shouldBe 1
             sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
