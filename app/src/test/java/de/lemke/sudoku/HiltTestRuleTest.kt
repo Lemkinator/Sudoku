@@ -56,9 +56,11 @@ class HiltTestRuleTest {
     @Test
     fun `closes the injected database after the test`() {
         HiltTestRule.closeAfterTest(AutoCloseable { database.isOpen shouldBe false })
+        val databasesBuiltBefore = TestPersistenceModule.databasesBuilt
         hiltRule.inject()
         database.openHelper.writableDatabase
         database.isOpen shouldBe true
+        TestPersistenceModule.databasesBuilt shouldBe databasesBuiltBefore + 1
     }
 
     @Test
