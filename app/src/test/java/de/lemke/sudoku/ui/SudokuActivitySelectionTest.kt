@@ -53,7 +53,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import de.lemke.commonutils.R as commonutilsR
 
-/** sdk = 36: Robolectric's max supported SDK. */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])

@@ -80,7 +80,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
-/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(GamesSignInModule::class, InAppReviewModule::class, SudokusRepositoryModule::class)
 @HiltAndroidTest

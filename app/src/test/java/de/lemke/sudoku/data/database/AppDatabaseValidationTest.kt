@@ -30,8 +30,6 @@ import org.robolectric.annotation.Config
 
 /**
  * Room validates the schema only when reopening a file-backed database, never for in-memory ones.
- *
- * sdk = 36: Robolectric's max supported SDK.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])

@@ -55,7 +55,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** sdk = 36: Robolectric's max supported SDK. */
 @UninstallModules(SolvedBoardGeneratorModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)

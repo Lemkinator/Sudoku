@@ -37,8 +37,6 @@ import org.robolectric.annotation.Config
 
 /**
  * The name-based MigrationTestHelper overload fails with `room.generateKotlin`'s absolute database path.
- *
- * sdk = 36: Robolectric's max supported SDK.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])

@@ -38,8 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
 val MIGRATION_1_2 =
     object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            // delete column autoNotesUsed and rename column neighborHighlightingUsed to regionalHighlightingUsed
-            // Drop column isn't supported by SQLite, so the data must manually be moved
+            // Android's SQLite lacks DROP COLUMN, so the table is rebuilt.
             with(db) {
                 execSQL(
                     "CREATE TABLE sudoku_backup (" +

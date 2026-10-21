@@ -70,7 +70,6 @@ class FieldView(context: Context) : LinearLayout(context) {
         index: Int,
         adapter: SudokuViewAdapter,
     ) {
-        // init vars
         this.adapter = adapter
         this.sudoku = sudoku
         position = Position.create(index, sudoku.size)

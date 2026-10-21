@@ -55,6 +55,7 @@ import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import de.lemke.sudoku.ui.utils.FieldView
+import de.lemke.sudoku.ui.utils.SelectionIndices
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
@@ -105,6 +106,7 @@ class IntroActivity : AppCompatActivity() {
         }
 
     var sudoku: Sudoku = tutorialSudoku()
+    private val selectionIndices get() = SelectionIndices(sudoku.size)
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -234,8 +236,8 @@ class IntroActivity : AppCompatActivity() {
             sudokuButtons[index].isVisible = true
             sudokuButtons[index].setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + index) } }
         }
-        binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size.value) } }
-        binding.hintButton.setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + sudoku.size.value + 1) } }
+        binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(selectionIndices.deleteButton) } }
+        binding.hintButton.setOnClickListener { lifecycleScope.launch { select(selectionIndices.hintButton) } }
     }
 
     internal fun checkRowColumnBlockCompleted(position: Position) {
@@ -539,21 +541,15 @@ class IntroActivity : AppCompatActivity() {
     internal fun select(newSelected: Int?) {
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         when (selected) {
-            // nothing is selected
             null -> selectFromNothing(newSelected)
-
-            // field is selected
-            in 0 until sudoku.itemCount -> selectFromField(newSelected)
-
-            // number button is selected
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> selectFromNumberButton(newSelected)
+            in selectionIndices.fields -> selectFromField(newSelected)
+            in selectionIndices.numberButtons -> selectFromNumberButton(newSelected)
         }
     }
 
     private fun selectFromNothing(newSelected: Int?) {
         when (newSelected) {
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 val field = newSelected!!
                 if (field == DEMO_CELL_INDEX_4 && introStep == 2) {
                     gameAdapter.selectFieldView(field, highlightNeighbors = true, highlightNumber = true)
@@ -562,8 +558,7 @@ class IntroActivity : AppCompatActivity() {
                 }
             }
 
-            // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
+            in selectionIndices.buttons -> {
                 val button = newSelected!!
                 if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
                     selectButton(button - sudoku.itemCount)
@@ -571,7 +566,6 @@ class IntroActivity : AppCompatActivity() {
                 }
             }
 
-            // selected nothing
             else -> {}
         }
     }
@@ -579,13 +573,11 @@ class IntroActivity : AppCompatActivity() {
     private fun selectFromField(newSelected: Int?) {
         val position = Position.create(selected!!, sudoku.size)
         when (newSelected) {
-            // selected nothing
             null -> {
                 selected = null
             }
 
-            // selected number
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> {
+            in selectionIndices.numberButtons -> {
                 val number = newSelected!!
                 if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
                     sudoku.move(position, number - sudoku.itemCount + 1, false)
@@ -599,13 +591,11 @@ class IntroActivity : AppCompatActivity() {
 
     private fun selectFromNumberButton(newSelected: Int?) {
         when (newSelected) {
-            // selected nothing
             null -> {
                 selectButton(null)
             }
 
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 val field = newSelected!!
                 val number = selected!! - sudoku.itemCount + 1
                 if ((introStep == INTRO_STEP_5 && field == DEMO_CELL_INDEX_49) ||

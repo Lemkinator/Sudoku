@@ -89,7 +89,6 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 import dev.oneuiproject.oneui.design.R as designR
 
-/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(SudokusRepositoryModule::class)
 @HiltAndroidTest
