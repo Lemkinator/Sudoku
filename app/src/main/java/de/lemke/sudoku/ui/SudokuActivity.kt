@@ -44,12 +44,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.InAppReview
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.share
 import de.lemke.commonutils.ui.utils.shareText
-import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunch
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
@@ -134,6 +134,9 @@ class SudokuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var playGamesSyncApplier: PlayGamesSyncApplier
+
+    @Inject
+    lateinit var inAppReview: InAppReview
 
     internal val viewModel: SudokuViewModel by viewModels()
 
@@ -341,7 +344,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onPlayGamesSync(sync: PlayGamesSync) {
         playGamesSyncApplier.apply(this, sync)
-        showInAppReviewIfPossible(userSettings)
+        inAppReview.showIfPossible(this)
         viewModel.onPlayGamesSyncHandled(sync)
     }
 
