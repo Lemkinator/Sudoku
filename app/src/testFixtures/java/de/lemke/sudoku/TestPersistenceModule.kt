@@ -28,6 +28,7 @@ import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.di.PersistenceModule
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Singleton
 
 /**
@@ -42,6 +43,9 @@ import javax.inject.Singleton
 @TestInstallIn(components = [SingletonComponent::class], replaces = [PersistenceModule::class])
 object TestPersistenceModule {
     private val directExecutor = Executor { it.run() }
+    private val built = AtomicInteger()
+
+    val databasesBuilt: Int get() = built.get()
 
     @Provides
     @Singleton
@@ -54,6 +58,7 @@ object TestPersistenceModule {
             .setQueryExecutor(directExecutor)
             .setTransactionExecutor(directExecutor)
             .build()
+            .also { built.incrementAndGet() }
             .let { HiltTestRule.closeAfterTest(it, AppDatabase::close) }
 
     @Provides

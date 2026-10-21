@@ -154,7 +154,7 @@ Four tools run as part of `./gradlew build`:
     with `operator fun invoke`, `@HiltViewModel` classes with an `@Inject` constructor, and state-only ViewModels (a
     file that declares a ViewModel uses no `Channel` or `SharedFlow`).
   - `CodingConventionsTest.kt` runs `assertLaunchLatchConventions()`, `assertClassBodyOrder()`,
-    `assertNoCommonUtilsTypeExtensions()` and
+    `assertNoCommonUtilsTypeExtensions()`, `assertNoMockedOwnTypes()` and
     `assertHiltTestRuleConventions(requireCloseRuleOnPlainHiltApplicationTests = true)`.
   - The launch latch rule bans raw activity launches and result registration by name, and a `show`/`showNow` call
     whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a `FragmentTransaction` named
