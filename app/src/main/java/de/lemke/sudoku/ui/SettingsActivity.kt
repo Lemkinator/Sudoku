@@ -370,7 +370,6 @@ class SettingsActivity : AppCompatActivity() {
                             Intent(ACTION_APP_NOTIFICATION_SETTINGS)
                                 .addFlags(FLAG_ACTIVITY_NEW_TASK)
                                 .putExtra(EXTRA_APP_PACKAGE, requireContext().packageName)
-                        // .putExtra(Settings.EXTRA_CHANNEL_ID, getString(R.string.daily_sudoku_notification_channel_id))
                         startActivityForOutcome(settingsIntent)
                         isChecked = false
                     }

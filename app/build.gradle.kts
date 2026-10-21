@@ -117,8 +117,7 @@ android {
     }
     lint {
         warningsAsErrors = true
-        // checkDependencies = false: private AAR deps surface
-        // hundreds of unactionable warnings; flip to true once in-project surface is clean
+        // The private AAR dependencies surface hundreds of unactionable warnings.
         checkDependencies = false
         // Explicit: pins intent against future AGP default changes.
         checkReleaseBuilds = true

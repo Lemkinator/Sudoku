@@ -77,7 +77,6 @@ class TabStatistics : Fragment() {
             )
             enableCoreSeslFeatures()
         }
-        // setupMenuProvider()
         collectState(viewModel.state, minActiveState = RESUMED) { state ->
             state.statistics?.let {
                 val previousSize = statisticsList.size
@@ -96,16 +95,6 @@ class TabStatistics : Fragment() {
             }
         }
     }
-
-    /*
-    private fun setupMenuProvider() = requireActivity().addMenuProvider(object : MenuProvider {
-        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) = menuInflater.inflate(R.menu.menu_filter, menu)
-        override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
-            R.id.menu_item_filter -> showStatisticsFilterDialog().let { true }
-            else -> false
-        }
-    }, viewLifecycleOwner, RESUMED)
-     */
 
     private fun updateStatistics(stats: SudokuStatistics) {
         statisticsList = mutableListOf()

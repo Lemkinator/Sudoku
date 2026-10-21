@@ -31,7 +31,6 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The generation of a new sudoku. The fragment opens a [Result] and then reports it handled. */
@@ -82,7 +81,7 @@ class TabSudokuViewModel @Inject constructor(
     }
 
     fun onNewGameHandled(result: NewGame.Result) {
-        newGame.update { if (it == result) NewGame.Idle else it }
+        newGame.compareAndSet(result, NewGame.Idle)
     }
 
     suspend fun getContinuableSudoku(): Sudoku? {

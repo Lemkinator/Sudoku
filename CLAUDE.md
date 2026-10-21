@@ -154,7 +154,7 @@ Four tools run as part of `./gradlew build`:
     with `operator fun invoke`, `@HiltViewModel` classes with an `@Inject` constructor, and state-only ViewModels (a
     file that declares a ViewModel uses no `Channel` or `SharedFlow`).
   - `CodingConventionsTest.kt` runs `assertLaunchLatchConventions()`, `assertClassBodyOrder()`,
-    `assertNoCommonUtilsTypeExtensions()` and
+    `assertNoCommonUtilsTypeExtensions()`, `assertNoMockedOwnTypes()` and
     `assertHiltTestRuleConventions(requireCloseRuleOnPlainHiltApplicationTests = true)`.
   - The launch latch rule bans raw activity launches and result registration by name, and a `show`/`showNow` call
     whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a `FragmentTransaction` named
@@ -190,10 +190,10 @@ activities, Context-backed settings/use cases).
 
 Tests run real use cases over fakes in `src/test`: `FakeSudokusRepository` (in-memory rows with the DAO orderings, recorded
 saves and deletions, suspend hooks to gate reads and writes), `FakeSudokuDocuments`, `FakeSudokuShareFiles`,
-`FakeDailyNotifications`, `FakeGamesSignIn`, `FakePlayGamesIntentProvider` and `FakePlayGamesSyncApplier`.
+`FakeDailyNotifications`, `FakeGamesSignIn`, `FakePlayGamesIntentProvider` and `FakePlayGamesSyncApplier`; the in-app review is common-utils' `InAppReview`, bound in
+`di/InAppReviewModule.kt` and replaced by its `FakeInAppReview`.
 `SudokusRepositoryContract` runs the same behavior tests over Room and the fake. Each `Default*` boundary has its own
-Robolectric or `mockkStatic(PlayGames::class)` test. MockK stays for `Uri` values, the Play Games statics and
-common-utils' `showInAppReviewIfPossible`.
+Robolectric or `mockkStatic(PlayGames::class)` test. MockK stays for `Uri` values and the Play Games statics.
 
 ## Settings in Tests
 

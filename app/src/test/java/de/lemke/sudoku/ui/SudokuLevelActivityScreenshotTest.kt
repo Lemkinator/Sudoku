@@ -42,11 +42,10 @@ import org.robolectric.annotation.GraphicsMode
  * Seeds one incomplete level-1 board per size so [de.lemke.sudoku.ui.fragments.SudokuLevelTabViewModel]'s init never
  * falls into [de.lemke.sudoku.domain.GenerateSudokuLevelUseCase] — the real `de.sfuhrm:sudoku` generator is
  * unseeded/non-deterministic, which would make the golden un-verifiable across recordings.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
  */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
+// sdk = [36]: Robolectric's SDK 37 shadows lack InputManager.getInstance().
 @Config(application = HiltTestApplication::class, sdk = [36])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SudokuLevelActivityScreenshotTest {

@@ -46,11 +46,10 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * Seeds a fixed, hand-formulaic board (not solver-generated, see [testLevelSudoku]) under a known [SudokuId] so the
  * activity loads deterministic data instead of hitting the unseeded `de.sfuhrm:sudoku` generator.
- *
- * sdk = 36: Robolectric 4.16.1 max supported SDK; bump when 4.17+ adds SDK 37.
  */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
+// sdk = [36]: Robolectric's SDK 37 shadows lack InputManager.getInstance().
 @Config(application = HiltTestApplication::class, sdk = [36])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SudokuActivityScreenshotTest {

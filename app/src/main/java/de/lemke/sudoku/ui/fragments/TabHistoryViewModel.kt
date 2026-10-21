@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.transform
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The deletion of the selected sudokus. The tab ends its action mode on a [Result] and then reports it handled. */
@@ -94,7 +93,7 @@ class TabHistoryViewModel @Inject constructor(
     }
 
     fun onDeletionHandled(result: HistoryDeletion.Result) {
-        deletion.update { if (it == result) HistoryDeletion.Idle else it }
+        deletion.compareAndSet(result, HistoryDeletion.Idle)
     }
 
     fun onLoadFailureHandled() {
@@ -102,6 +101,6 @@ class TabHistoryViewModel @Inject constructor(
     }
 
     fun onRevealHandled(sudokuId: SudokuId) {
-        reveal.update { if (it == sudokuId) null else it }
+        reveal.compareAndSet(sudokuId, null)
     }
 }

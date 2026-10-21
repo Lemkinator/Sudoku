@@ -40,7 +40,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The sudoku the activity plays. The activity starts a [Ready] sudoku and then reports it started. */
@@ -146,7 +145,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onGameStarted(ready: SudokuGame.Ready) {
-        game.update { if (it == ready) SudokuGame.Playing(ready.sudoku) else it }
+        game.compareAndSet(ready, SudokuGame.Playing(ready.sudoku))
     }
 
     fun onRestart() {
@@ -183,7 +182,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onShareHandled(result: SudokuShare.Result) {
-        share.update { if (it == result) SudokuShare.Idle else it }
+        share.compareAndSet(result, SudokuShare.Idle)
     }
 
     fun onCompleted() {
@@ -216,7 +215,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
-        playGamesSync.update { if (it == sync) null else it }
+        playGamesSync.compareAndSet(sync, null)
     }
 
     /** Starts the timer of a sudoku that can still be played and returns whether it started. */

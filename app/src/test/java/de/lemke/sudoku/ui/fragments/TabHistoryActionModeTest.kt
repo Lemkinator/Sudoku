@@ -76,8 +76,6 @@ import org.robolectric.shadows.ShadowDialog
 
 /**
  * `seslStartLongPressMultiSelection()` NPEs under Robolectric, and `ToolbarLayout` hides its `actionModeListener`.
- *
- * sdk = 36: Robolectric's max supported SDK.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(SudokusRepositoryModule::class)

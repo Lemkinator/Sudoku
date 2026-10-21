@@ -67,8 +67,6 @@ interface AlarmReceiverTestEntryPoint {
 /**
  * No HiltAndroidRule: the receiver must work before any test component exists. The early component it reads ignores
  * @BindValue and @UninstallModules, so the tests seed through that graph and await the receiver's goAsync result.
- *
- * sdk = 36: Robolectric's max supported SDK.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])

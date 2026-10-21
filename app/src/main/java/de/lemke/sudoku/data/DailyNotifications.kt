@@ -93,9 +93,7 @@ class DefaultDailyNotifications @Inject constructor(
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
             }
-        // If the trigger time you specify is in the past, the alarm triggers immediately. if soo just add one day to required calendar
-        // Note: also adding 1 min cuz if user clicks on notification as soon as received it will reschedule the alarm to
-        // fire another notification immediately
+        // A past trigger fires at once; the extra minute stops a tapped notification from re-firing.
         if (nowCalendar().apply { add(Calendar.MINUTE, 1) }.timeInMillis - calendar.timeInMillis > 0) {
             calendar.add(Calendar.DATE, 1)
         }
@@ -114,7 +112,6 @@ class DefaultDailyNotifications @Inject constructor(
             NotificationChannel(channelId, name, importance).apply {
                 description = descriptionText
             }
-        // Register the channel with the system
         val notificationManager: NotificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
@@ -134,9 +131,7 @@ class DefaultDailyNotifications @Inject constructor(
             .setContentTitle(context.getString(R.string.daily_sudoku))
             .setContentText(context.getString(R.string.daily_sudoku_notification_text))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            // Set the intent that will fire when the user taps the notification
             .setContentIntent(resultPendingIntent)
-            // Automatically removes the notification when the user taps it.
             .setAutoCancel(true)
     }
 

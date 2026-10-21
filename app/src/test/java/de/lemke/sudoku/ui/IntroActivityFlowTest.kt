@@ -48,7 +48,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
-/** sdk = 36: Robolectric's max supported SDK. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
@@ -260,6 +259,15 @@ class IntroActivityFlowTest {
             activity.select(1)
             activity.introStep shouldBe 5
             activity.sudoku[DEMO_CELL_INDEX_49].value.shouldBeNull()
+        }
+
+    @Test
+    fun `tapping another button at step 5 keeps the selected number button`() =
+        launch { activity ->
+            toStep5(activity)
+            activity.select(activity.sudoku.itemCount)
+            activity.introStep shouldBe 5
+            activity.selected shouldBe activity.sudoku.itemCount + 1
         }
 
     @Test

@@ -44,12 +44,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
+import de.lemke.commonutils.ui.utils.InAppReview
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationTo
 import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.share
 import de.lemke.commonutils.ui.utils.shareText
-import de.lemke.commonutils.ui.utils.showInAppReviewIfPossible
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunch
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
@@ -70,6 +70,8 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.SelectionIndices
+import de.lemke.sudoku.ui.utils.SelectionTarget
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
@@ -97,6 +99,7 @@ class SudokuActivity : AppCompatActivity() {
     private var completionDialog: AlertDialog? = null
     private var gameOverDialog: AlertDialog? = null
     lateinit var sudoku: Sudoku
+    private val selectionIndices get() = SelectionIndices(sudoku.size)
     lateinit var gameAdapter: SudokuViewAdapter
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     private val allNumberButtons: List<AppCompatButton>
@@ -134,6 +137,9 @@ class SudokuActivity : AppCompatActivity() {
 
     @Inject
     lateinit var playGamesSyncApplier: PlayGamesSyncApplier
+
+    @Inject
+    lateinit var inAppReview: InAppReview
 
     internal val viewModel: SudokuViewModel by viewModels()
 
@@ -206,8 +212,8 @@ class SudokuActivity : AppCompatActivity() {
             return if (buttonIndex < sudoku.size.value) select(sudoku.itemCount + buttonIndex).let { true } else false
         }
         return when (keyCode) {
-            KeyEvent.KEYCODE_DEL -> select(sudoku.itemCount + sudoku.size.value).let { true }
-            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(sudoku.itemCount + sudoku.size.value + 1).let { true } else false
+            KeyEvent.KEYCODE_DEL -> select(selectionIndices.deleteButton).let { true }
+            KeyEvent.KEYCODE_H -> if (sudoku.isHintAvailable) select(selectionIndices.hintButton).let { true } else false
             KeyEvent.KEYCODE_N -> toggleOrSetNoteButton().let { true }
             KeyEvent.KEYCODE_ESCAPE -> select(null).let { true }
             else -> super.onKeyUp(keyCode, event)
@@ -260,8 +266,8 @@ class SudokuActivity : AppCompatActivity() {
             sudokuButtons[index].isVisible = true
             sudokuButtons[index].setOnClickListener { select(sudoku.itemCount + index) }
         }
-        binding.deleteButton.setOnClickListener { select(sudoku.itemCount + sudoku.size.value) }
-        binding.hintButton.setOnClickListener { select(sudoku.itemCount + sudoku.size.value + 1) }
+        binding.deleteButton.setOnClickListener { select(selectionIndices.deleteButton) }
+        binding.hintButton.setOnClickListener { select(selectionIndices.hintButton) }
         binding.resumeButton.setOnClickListener { resumeGame() }
         selectButton(null, false)
         checkAnyNumberCompleted()
@@ -341,7 +347,7 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onPlayGamesSync(sync: PlayGamesSync) {
         playGamesSyncApplier.apply(this, sync)
-        showInAppReviewIfPossible(userSettings)
+        inAppReview.showIfPossible(this)
         viewModel.onPlayGamesSyncHandled(sync)
     }
 
@@ -374,41 +380,32 @@ class SudokuActivity : AppCompatActivity() {
     internal fun select(newSelected: Int?) {
         if (checkErrorLimit()) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
-        when (selected) {
-            // nothing is selected
-            null -> selectFromNothing(newSelected)
-
-            // field is selected
-            in 0 until sudoku.itemCount -> selectFromField(newSelected)
-
-            // number button is selected
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> selectFromNumberButton(newSelected)
-
-            // delete button is selected
-            sudoku.itemCount + sudoku.size.value -> selectFromDeleteButton(newSelected)
-
-            // hint button is selected
-            sudoku.itemCount + sudoku.size.value + 1 -> selectFromHintButton(newSelected)
+        val current = selected
+        if (current == null) {
+            selectFromNothing(newSelected)
+            return
+        }
+        when (selectionIndices.targetOf(current)) {
+            SelectionTarget.FIELD -> selectFromField(newSelected)
+            SelectionTarget.NUMBER_BUTTON -> selectFromNumberButton(newSelected)
+            SelectionTarget.DELETE_BUTTON -> selectFromDeleteButton(newSelected)
+            SelectionTarget.HINT_BUTTON -> selectFromHintButton(newSelected)
         }
     }
 
     private fun selectFromNothing(newSelected: Int?) {
         when (newSelected) {
-            // selected nothing
             null -> {}
 
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 gameAdapter.selectFieldView(newSelected, userSettings.highlightRegional, userSettings.highlightNumber)
                 selected = newSelected
             }
 
-            // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
+            in selectionIndices.buttons -> {
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
-            // selected nothing
             else -> {}
         }
     }
@@ -417,30 +414,25 @@ class SudokuActivity : AppCompatActivity() {
         val selectedField = selected!!
         val position = Position.create(selectedField, sudoku.size)
         when (newSelected) {
-            // selected nothing / selected same field
             null, selectedField -> {
                 selected = null
             }
 
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 selected = newSelected
             }
 
-            // selected number
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value -> {
+            in selectionIndices.numberButtons -> {
                 sudoku.move(position, newSelected - sudoku.itemCount + 1, notesEnabled)
                 selected = null
             }
 
-            // selected delete
-            sudoku.itemCount + sudoku.size.value -> {
+            selectionIndices.deleteButton -> {
                 sudoku.move(position, null, notesEnabled)
                 selected = null
             }
 
-            // selected hint
-            sudoku.itemCount + sudoku.size.value + 1 -> {
+            selectionIndices.hintButton -> {
                 sudoku.setHint(position)
                 selected = null
                 refreshHintButton()
@@ -452,24 +444,20 @@ class SudokuActivity : AppCompatActivity() {
     private fun selectFromNumberButton(newSelected: Int?) {
         val selectedButton = selected!!
         when (newSelected) {
-            // selected nothing / selected same button
             null, selectedButton -> {
                 selectButton(null, userSettings.highlightNumber)
             }
 
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 sudoku.move(newSelected, selectedButton - sudoku.itemCount + 1, notesEnabled)
                 highlightCurrentNumber(selectedButton - sudoku.itemCount + 1)
             }
 
-            // selected button
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
+            in selectionIndices.buttons -> {
                 gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
-            // selected nothing
             else -> {
                 selectButton(null, userSettings.highlightNumber)
             }
@@ -479,22 +467,18 @@ class SudokuActivity : AppCompatActivity() {
     private fun selectFromDeleteButton(newSelected: Int?) {
         val selectedButton = selected!!
         when (newSelected) {
-            // selected nothing / selected same button
             null, selectedButton -> {
                 selectButton(null, userSettings.highlightNumber)
             }
 
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 sudoku.move(newSelected, null, notesEnabled)
             }
 
-            // selected button(not delete)
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 2 -> {
+            in selectionIndices.buttons -> {
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
-            // selected nothing
             else -> {
                 selectButton(null, userSettings.highlightNumber)
             }
@@ -504,24 +488,20 @@ class SudokuActivity : AppCompatActivity() {
     private fun selectFromHintButton(newSelected: Int?) {
         val selectedButton = selected!!
         when (newSelected) {
-            // selected nothing / selected same button
             null, selectedButton -> {
                 selectButton(null, userSettings.highlightNumber)
             }
 
-            // selected field
-            in 0 until sudoku.itemCount -> {
+            in selectionIndices.fields -> {
                 sudoku.setHint(newSelected)
                 if (!sudoku.isHintAvailable) selected = null
                 refreshHintButton()
             }
 
-            // selected button(not hint)
-            in sudoku.itemCount until sudoku.itemCount + sudoku.size.value + 1 -> {
+            in selectionIndices.buttons -> {
                 selectButton(newSelected - sudoku.itemCount, userSettings.highlightNumber)
             }
 
-            // selected nothing
             else -> {
                 selectButton(null, userSettings.highlightNumber)
             }
@@ -650,8 +630,8 @@ class SudokuActivity : AppCompatActivity() {
         var number = currentNumber
         while (completedNumbers[number - 1].second) {
             number++
-            if (number > completedNumbers.size) number = 1 // wrap around
-            if (number == currentNumber) { // all numbers are completed
+            if (number > completedNumbers.size) number = 1
+            if (number == currentNumber) {
                 selectButton(null, userSettings.highlightNumber)
                 return
             }

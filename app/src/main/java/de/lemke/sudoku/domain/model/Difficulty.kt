@@ -36,9 +36,6 @@ enum class Difficulty(
 
     fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficulty)[this.ordinal]
 
-    // total number of valid 9-by-9 Sudoku grids is 6,670,903,752,021,072,936,960
-    // minimal amount of givens in an initial Sudoku puzzle that can yield a unique solution is 17
-    // more than 50, 36-49, 32-35, 28-31, 22-27
     fun numbersToRemove(size: SudokuSize): Int = size.cellCount - givenNumbers(size)
 
     private fun givenNumbers(size: SudokuSize): Int =

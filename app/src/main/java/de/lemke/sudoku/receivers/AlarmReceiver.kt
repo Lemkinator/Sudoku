@@ -45,10 +45,7 @@ interface AlarmReceiverEntryPoint {
 }
 
 class AlarmReceiver : BroadcastReceiver() {
-    /**
-     * sends notification when receives alarm
-     * and then reschedule the reminder again
-     * */
+    /** Sends the daily notification and schedules the next alarm. */
     override fun onReceive(
         context: Context,
         intent: Intent,

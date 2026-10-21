@@ -27,9 +27,6 @@ import de.lemke.commonutils.HiltTestRule
 import de.lemke.sudoku.data.database.AppDatabase
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.mockkObject
-import io.mockk.unmockkObject
-import io.mockk.verify
 import javax.inject.Inject
 import org.junit.Rule
 import org.junit.Test
@@ -59,23 +56,17 @@ class HiltTestRuleTest {
     @Test
     fun `closes the injected database after the test`() {
         HiltTestRule.closeAfterTest(AutoCloseable { database.isOpen shouldBe false })
+        val databasesBuiltBefore = TestPersistenceModule.databasesBuilt
         hiltRule.inject()
         database.openHelper.writableDatabase
         database.isOpen shouldBe true
+        TestPersistenceModule.databasesBuilt shouldBe databasesBuiltBefore + 1
     }
 
     @Test
     fun `builds no database to close when the test never injects`() {
-        mockkObject(TestPersistenceModule)
-        HiltTestRule.closeAfterTest(
-            AutoCloseable {
-                try {
-                    verify(exactly = 0) { TestPersistenceModule.provideTestAppDatabase(any()) }
-                } finally {
-                    unmockkObject(TestPersistenceModule)
-                }
-            },
-        )
+        val databasesBuiltBefore = TestPersistenceModule.databasesBuilt
+        HiltTestRule.closeAfterTest(AutoCloseable { TestPersistenceModule.databasesBuilt shouldBe databasesBuiltBefore })
     }
 
     class OutcomeRule : TestRule {

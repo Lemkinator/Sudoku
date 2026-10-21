@@ -34,7 +34,6 @@ class GenerateSudokuLevelUseCase @Inject constructor(
         level: Int,
     ): Sudoku =
         withContext(defaultDispatcher) {
-            // level thresholds are the same for every size (4x4/9x9/16x16)
             val difficulty =
                 when (level) {
                     in 1..30 -> Difficulty.VERY_EASY

@@ -44,7 +44,6 @@ class ObserveDailySudokusUseCase @Inject constructor(
                 sudokusRepository
                     .observeDailySudokus()
                     .map { sudokus ->
-                        // apply filter
                         sudokus.filter {
                             if (includeUncompleted) {
                                 true
@@ -53,7 +52,6 @@ class ObserveDailySudokusUseCase @Inject constructor(
                             } || it.created.toLocalDate() == date
                         }
                     }.map { sudokus ->
-                        // map and add separators
                         val dailySudokus: MutableList<SudokuListItem> =
                             sudokus.map { SudokuListItem.SudokuItem(it, it.created.monthAndYear) }.toMutableList()
                         var offset = 0
