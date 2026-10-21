@@ -31,8 +31,7 @@ private const val GESTURE_MARGIN_DIVISOR = 5
 // duration varies with size/difficulty, so this hop needs more headroom than a plain nav wait.
 const val GENERATION_TIMEOUT_MS = 15_000L
 
-// Must match de.lemke.commonutils.ui.utils.EXTRA_SKIP_ONBOARDING — cannot import from test module.
-// Pinned by app/src/test/.../BenchmarkOnboardingKeyTest.kt.
+// common-utils' SESL forks clash with this module's AOSP AndroidX.
 const val EXTRA_SKIP_ONBOARDING = "commonUtilsSkipOnboarding"
 
 fun MacrobenchmarkScope.startActivityAndSkipOnboarding() = startActivityAndWait { it.putExtra(EXTRA_SKIP_ONBOARDING, true) }
