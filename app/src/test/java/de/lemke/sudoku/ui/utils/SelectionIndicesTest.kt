@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui.utils
 
 import de.lemke.sudoku.domain.model.SudokuSize
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 
@@ -47,6 +48,22 @@ class SelectionIndicesTest : ShouldSpec(
             indices.deleteButton shouldBe 272
             indices.hintButton shouldBe 273
             indices.buttons shouldBe 256..273
+        }
+
+        should("map every index of a 4x4 board to its control") {
+            val indices = SelectionIndices(SudokuSize.FOUR)
+            indices.targetOf(0) shouldBe SelectionTarget.FIELD
+            indices.targetOf(15) shouldBe SelectionTarget.FIELD
+            indices.targetOf(16) shouldBe SelectionTarget.NUMBER_BUTTON
+            indices.targetOf(19) shouldBe SelectionTarget.NUMBER_BUTTON
+            indices.targetOf(20) shouldBe SelectionTarget.DELETE_BUTTON
+            indices.targetOf(21) shouldBe SelectionTarget.HINT_BUTTON
+        }
+
+        should("reject an index outside the board") {
+            val indices = SelectionIndices(SudokuSize.FOUR)
+            shouldThrow<IllegalArgumentException> { indices.targetOf(-1) }
+            shouldThrow<IllegalArgumentException> { indices.targetOf(22) }
         }
     },
 )

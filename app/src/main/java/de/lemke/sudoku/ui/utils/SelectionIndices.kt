@@ -26,4 +26,17 @@ value class SelectionIndices(val size: SudokuSize) {
     val deleteButton: Int get() = numberButtons.last + 1
     val hintButton: Int get() = deleteButton + 1
     val buttons: IntRange get() = numberButtons.first..hintButton
+
+    /** The kind of control that [index] selects. */
+    fun targetOf(index: Int): SelectionTarget {
+        require(index in fields.first..hintButton) { "Selection index $index is outside 0..$hintButton" }
+        return when {
+            index in fields -> SelectionTarget.FIELD
+            index in numberButtons -> SelectionTarget.NUMBER_BUTTON
+            index == deleteButton -> SelectionTarget.DELETE_BUTTON
+            else -> SelectionTarget.HINT_BUTTON
+        }
+    }
 }
+
+enum class SelectionTarget { FIELD, NUMBER_BUTTON, DELETE_BUTTON, HINT_BUTTON }

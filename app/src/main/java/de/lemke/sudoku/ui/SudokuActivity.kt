@@ -71,6 +71,7 @@ import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import de.lemke.sudoku.ui.utils.SelectionIndices
+import de.lemke.sudoku.ui.utils.SelectionTarget
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
@@ -379,12 +380,16 @@ class SudokuActivity : AppCompatActivity() {
     internal fun select(newSelected: Int?) {
         if (checkErrorLimit()) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
-        when (selected) {
-            null -> selectFromNothing(newSelected)
-            in selectionIndices.fields -> selectFromField(newSelected)
-            in selectionIndices.numberButtons -> selectFromNumberButton(newSelected)
-            selectionIndices.deleteButton -> selectFromDeleteButton(newSelected)
-            else -> selectFromHintButton(newSelected)
+        val current = selected
+        if (current == null) {
+            selectFromNothing(newSelected)
+            return
+        }
+        when (selectionIndices.targetOf(current)) {
+            SelectionTarget.FIELD -> selectFromField(newSelected)
+            SelectionTarget.NUMBER_BUTTON -> selectFromNumberButton(newSelected)
+            SelectionTarget.DELETE_BUTTON -> selectFromDeleteButton(newSelected)
+            SelectionTarget.HINT_BUTTON -> selectFromHintButton(newSelected)
         }
     }
 
