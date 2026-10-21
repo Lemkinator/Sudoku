@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import android.widget.TextView
@@ -35,15 +36,14 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.FakeInAppReview
 import de.lemke.commonutils.ui.utils.FakeInAppReview.Call.ShowIfPossible
-import de.lemke.commonutils.ui.utils.InAppReview
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
-import de.lemke.sudoku.di.InAppReviewModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
@@ -81,7 +81,7 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(GamesSignInModule::class, InAppReviewModule::class, SudokusRepositoryModule::class)
+@UninstallModules(GamesSignInModule::class, SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
@@ -98,17 +98,25 @@ class SudokuActivityCompletionTest {
     @JvmField
     val sudokusRepository: SudokusRepository = fakeSudokusRepository
 
+    @Inject
+    lateinit var fakeInAppReview: FakeInAppReview
+
     private val fakePlayGamesSyncApplier = FakePlayGamesSyncApplier()
 
-    @BindValue
-    @JvmField
-    val playGamesSyncApplier: PlayGamesSyncApplier = fakePlayGamesSyncApplier
-
-    private val fakeInAppReview = FakeInAppReview()
+    private val reviewCallsWhenApplied = mutableListOf<Int>()
 
     @BindValue
     @JvmField
-    val inAppReview: InAppReview = fakeInAppReview
+    val playGamesSyncApplier: PlayGamesSyncApplier =
+        object : PlayGamesSyncApplier by fakePlayGamesSyncApplier {
+            override fun apply(
+                activity: Activity,
+                sync: PlayGamesSync,
+            ) {
+                reviewCallsWhenApplied += fakeInAppReview.calls.size
+                fakePlayGamesSyncApplier.apply(activity, sync)
+            }
+        }
 
     @BindValue
     @JvmField
@@ -497,6 +505,7 @@ class SudokuActivityCompletionTest {
 
             scenario.onActivity { activity -> activity.viewModel.playGamesSync.value shouldBe null }
             fakePlayGamesSyncApplier.applied.size shouldBe 1
+            reviewCallsWhenApplied shouldBe listOf(0)
             fakeInAppReview.calls.single().shouldBeInstanceOf<ShowIfPossible>()
             syncCalculations.get() shouldBe 1
         }
