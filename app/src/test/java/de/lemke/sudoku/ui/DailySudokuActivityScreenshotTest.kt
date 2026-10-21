@@ -43,6 +43,7 @@ import org.robolectric.annotation.GraphicsMode
 @UninstallModules(ClockModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
+// sdk = [36]: Robolectric's SDK 37 shadows lack InputManager.getInstance().
 @Config(application = HiltTestApplication::class, sdk = [36])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class DailySudokuActivityScreenshotTest {
