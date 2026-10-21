@@ -36,7 +36,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface DailyNotificationToggleResult {
@@ -148,7 +147,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onInvalidSudokuDeletionHandled(result: InvalidSudokuDeletion.Result) {
-        invalidSudokuDeletion.update { if (it == result) InvalidSudokuDeletion.Idle else it }
+        invalidSudokuDeletion.compareAndSet(result, InvalidSudokuDeletion.Idle)
     }
 
     fun onExportDestinationPicked(uri: Uri) =
@@ -167,7 +166,7 @@ class SettingsViewModel @Inject constructor(
         }
 
     fun onDataTransferHandled(result: DataTransfer.Result) {
-        dataTransfer.update { if (it == result) DataTransfer.Idle else it }
+        dataTransfer.compareAndSet(result, DataTransfer.Idle)
     }
 
     private fun startDataTransfer(

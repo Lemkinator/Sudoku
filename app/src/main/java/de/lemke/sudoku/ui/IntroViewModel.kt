@@ -25,7 +25,6 @@ import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import java.io.Serializable
 import javax.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -68,7 +67,7 @@ class IntroViewModel @Inject constructor(
     fun onNotificationPermissionResult(isGranted: Boolean) = setNotificationsEnabledAndAdvance(isGranted)
 
     fun onNotificationChoiceHandled(result: NotificationChoice.Result) {
-        notificationChoice.update { if (it == result) NotificationChoice.Pending else it }
+        notificationChoice.compareAndSet(result, NotificationChoice.Pending)
     }
 
     private fun setNotificationsEnabledAndAdvance(enabled: Boolean) {

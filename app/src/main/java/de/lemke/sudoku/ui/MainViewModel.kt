@@ -30,7 +30,6 @@ import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The import of a sudoku file opened with the app. The activity opens or reports a [Result] and then reports it handled. */
@@ -77,7 +76,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun onImportedSudokuHandled(result: ImportedSudoku.Result) {
-        importedSudoku.update { if (it == result) ImportedSudoku.Idle else it }
+        importedSudoku.compareAndSet(result, ImportedSudoku.Idle)
     }
 
     suspend fun onScreenReady(): PlayGamesSync {

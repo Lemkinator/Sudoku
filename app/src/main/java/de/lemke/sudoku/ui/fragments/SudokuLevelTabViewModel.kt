@@ -178,7 +178,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     }
 
     fun onLevelStartHandled(result: LevelStart.Result) {
-        levelStart.update { if (it == result) LevelStart.Idle else it }
+        levelStart.compareAndSet(result, LevelStart.Idle)
     }
 
     private suspend fun saveNextLevel(sudoku: Sudoku): LevelStart =
@@ -199,6 +199,6 @@ class SudokuLevelTabViewModel @Inject constructor(
     }
 
     fun onRevealHandled(sudokuId: SudokuId) {
-        reveal.update { if (it == sudokuId) null else it }
+        reveal.compareAndSet(sudokuId, null)
     }
 }
