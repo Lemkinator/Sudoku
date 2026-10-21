@@ -31,8 +31,8 @@ value class SelectionIndices(val size: SudokuSize) {
     fun targetOf(index: Int): SelectionTarget {
         require(index in fields.first..hintButton) { "Selection index $index is outside 0..$hintButton" }
         return when {
-            index in fields -> SelectionTarget.FIELD
-            index in numberButtons -> SelectionTarget.NUMBER_BUTTON
+            index <= fields.last -> SelectionTarget.FIELD
+            index <= numberButtons.last -> SelectionTarget.NUMBER_BUTTON
             index == deleteButton -> SelectionTarget.DELETE_BUTTON
             else -> SelectionTarget.HINT_BUTTON
         }
