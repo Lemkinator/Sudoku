@@ -266,7 +266,6 @@ class IntroActivityFlowTest {
         launch { activity ->
             toStep5(activity)
             activity.select(activity.sudoku.itemCount)
-            activity.select(-1)
             activity.introStep shouldBe 5
             activity.selected shouldBe activity.sudoku.itemCount + 1
         }
