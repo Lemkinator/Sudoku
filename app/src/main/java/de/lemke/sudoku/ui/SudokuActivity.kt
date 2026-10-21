@@ -384,7 +384,7 @@ class SudokuActivity : AppCompatActivity() {
             in selectionIndices.fields -> selectFromField(newSelected)
             in selectionIndices.numberButtons -> selectFromNumberButton(newSelected)
             selectionIndices.deleteButton -> selectFromDeleteButton(newSelected)
-            selectionIndices.hintButton -> selectFromHintButton(newSelected)
+            else -> selectFromHintButton(newSelected)
         }
     }
 

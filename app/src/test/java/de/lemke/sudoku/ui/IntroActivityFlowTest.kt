@@ -262,6 +262,16 @@ class IntroActivityFlowTest {
         }
 
     @Test
+    fun `tapping another button at step 5 keeps the selected number button`() =
+        launch { activity ->
+            toStep5(activity)
+            activity.select(activity.sudoku.itemCount)
+            activity.select(-1)
+            activity.introStep shouldBe 5
+            activity.selected shouldBe activity.sudoku.itemCount + 1
+        }
+
+    @Test
     fun `tapping the correct field at step 5 places the number and advances to step 6`() =
         launch { activity ->
             toStep5(activity)
