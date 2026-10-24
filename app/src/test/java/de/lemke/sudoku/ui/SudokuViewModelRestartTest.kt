@@ -63,13 +63,14 @@ class SudokuViewModelRestartTest {
     fun `restartPolicy follows the decision table`() {
         val table =
             mapOf(
-                SudokuKind.Normal to listOf(false, true, true, false),
-                SudokuKind.Level(2) to listOf(false, false, true, false),
-                SudokuKind.Daily(today.toLocalDate()) to listOf(false, false, true, false),
+                SudokuKind.Normal to mapOf(Phase.Playing to false, Phase.Won to true, Phase.Lost to true, Phase.Expired to false),
+                SudokuKind.Level to mapOf(Phase.Playing to false, Phase.Won to false, Phase.Lost to true, Phase.Expired to false),
+                SudokuKind.Daily(today.toLocalDate()) to
+                    mapOf(Phase.Playing to false, Phase.Won to false, Phase.Lost to true, Phase.Expired to false),
             )
 
         table.forEach { (kind, expected) ->
-            Phase.entries.map { restartPolicy(kind, it) } shouldBe expected
+            Phase.entries.associateWith { restartPolicy(kind, it) } shouldBe expected
         }
     }
 

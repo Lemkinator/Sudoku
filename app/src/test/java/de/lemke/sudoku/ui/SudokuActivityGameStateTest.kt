@@ -206,7 +206,7 @@ class SudokuActivityGameStateTest {
     }
 
     @Test
-    fun `an error and a tap reported while the game restarts change nothing`() {
+    fun `an error, a tap and a tick reported while the game restarts change nothing`() {
         launch(formulaicSudoku(solved = false)) { scenario ->
             lateinit var listener: GameListener
             scenario.onActivity { activity ->
@@ -222,6 +222,8 @@ class SudokuActivityGameStateTest {
             scenario.onActivity { activity ->
                 listener.onError()
                 listener.onFieldClicked(Position.create(1, activity.sudoku.size))
+                listener.onTimeChanged()
+                idleMainLooper()
 
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
                 activity.selected.shouldBeNull()

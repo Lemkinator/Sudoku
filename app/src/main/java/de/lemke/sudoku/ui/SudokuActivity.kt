@@ -63,8 +63,6 @@ import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
@@ -680,7 +678,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun setSubtitle() {
-        val errorLimit = userSettings.errorLimit
+        val errorLimit = playing?.errorLimit ?: 0
         val subtitle =
             getString(R.string.current_time, sudoku.timeString) + " | " +
                 getString(
@@ -688,8 +686,6 @@ class SudokuActivity : AppCompatActivity() {
                     sudoku.progress,
                 ) + " | " +
                 when {
-                    sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, MODE_DAILY_ERROR_LIMIT)
-                    sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, MODE_LEVEL_ERROR_LIMIT)
                     errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
                     else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
                 } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""

@@ -74,7 +74,7 @@ class SudokuViewModelPhaseTest {
     fun `a level sudoku has its level and the level error limit`() {
         val sudoku = testSudoku(modeLevel = 4).apply { errorsMade = 3 }
 
-        playing(sudoku).game.value.shouldBePlaying(SudokuKind.Level(4), 3, Phase.Lost)
+        playing(sudoku).game.value.shouldBePlaying(SudokuKind.Level, 3, Phase.Lost)
     }
 
     @Test

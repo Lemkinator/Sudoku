@@ -73,7 +73,7 @@ sealed interface SudokuGame {
 sealed interface SudokuKind {
     data object Normal : SudokuKind
 
-    data class Level(val level: Int) : SudokuKind
+    data object Level : SudokuKind
 
     data class Daily(val date: LocalDate) : SudokuKind
 }
@@ -135,7 +135,7 @@ internal fun restartPolicy(
             }
         }
 
-        is SudokuKind.Level, is SudokuKind.Daily -> {
+        SudokuKind.Level, is SudokuKind.Daily -> {
             when (phase) {
                 Phase.Lost -> true
                 Phase.Playing, Phase.Won, Phase.Expired -> false
@@ -155,7 +155,7 @@ private data class PendingSummary(
 private fun Sudoku.kind(): SudokuKind =
     when {
         isDailySudoku -> SudokuKind.Daily(created.toLocalDate())
-        isSudokuLevel -> SudokuKind.Level(modeLevel)
+        isSudokuLevel -> SudokuKind.Level
         else -> SudokuKind.Normal
     }
 
@@ -203,7 +203,9 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onGameStarted(ready: SudokuGame.Ready) {
-        game.compareAndSet(ready, playingOf(ready.sudoku, ready.sudoku.kind(), expired = ready.sudoku.isExpired()))
+        val kind = ready.sudoku.kind()
+        val expired = kind is SudokuKind.Daily && kind.date != LocalDate.now(clock)
+        game.compareAndSet(ready, playingOf(ready.sudoku, kind, expired))
     }
 
     fun onRestart() {
@@ -278,7 +280,7 @@ class SudokuViewModel @Inject constructor(
         playGamesSync.compareAndSet(sync, null)
     }
 
-    /** Decides the phase again and starts the timer of a sudoku that can still be played. */
+    /** Moves a playing sudoku to won or lost and starts the timer of one that is still playable. */
     fun onResumed() {
         refreshPhase()
         val playing = game.value as? SudokuGame.Playing ?: return
@@ -298,8 +300,6 @@ class SudokuViewModel @Inject constructor(
         game.update { if (it is SudokuGame.Playing) playingOf(it.sudoku, it.kind, expired = it.phase == Phase.Expired) else it }
     }
 
-    private fun Sudoku.isExpired(): Boolean = isDailySudoku && created.toLocalDate() != LocalDate.now(clock)
-
     private fun playingOf(
         sudoku: Sudoku,
         kind: SudokuKind,
@@ -308,7 +308,7 @@ class SudokuViewModel @Inject constructor(
         val errorLimit =
             when (kind) {
                 is SudokuKind.Daily -> MODE_DAILY_ERROR_LIMIT
-                is SudokuKind.Level -> MODE_LEVEL_ERROR_LIMIT
+                SudokuKind.Level -> MODE_LEVEL_ERROR_LIMIT
                 SudokuKind.Normal -> userSettings.errorLimit
             }
         val phase =
