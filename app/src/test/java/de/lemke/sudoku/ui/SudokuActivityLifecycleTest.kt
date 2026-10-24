@@ -367,6 +367,7 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `menu_reset restarts the game and clears progress`() =
         launch(formulaicSudoku()) { activity ->
+            activity.userSettings.errorLimit = 1
             activity.select(1)
             activity.select(activity.sudoku.itemCount)
             activity.sudoku.errorsMade shouldBe 1

@@ -63,8 +63,6 @@ import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.dateFormatShort
@@ -126,7 +124,8 @@ class SudokuActivity : AppCompatActivity() {
             }
     internal var notesEnabled = false
     internal var selected: Int? = null
-    private var gameEnded = false
+    private val playing get() = viewModel.game.value as? SudokuGame.Playing
+    private val gameEnded get() = playing?.ended == true
     private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
     internal val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
@@ -191,7 +190,7 @@ class SudokuActivity : AppCompatActivity() {
                 )
             it.title = getString(if (sudoku.resumed) R.string.commonutils_pause else R.string.commonutils_resume)
         }
-        menu?.findItem(R.id.menu_reset)?.isVisible = gameEnded
+        menu?.findItem(R.id.menu_reset)?.isVisible = playing?.canRestart == true
         menu?.findItem(R.id.menu_pause_play)?.isVisible = !gameEnded
         return super.onPrepareOptionsMenu(menu)
     }
@@ -237,12 +236,13 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             is SudokuGame.Ready -> {
-                initSudoku(game.sudoku)
                 viewModel.onGameStarted(game)
+                initSudoku(game.sudoku)
             }
 
             is SudokuGame.Playing -> {
                 if (!this::sudoku.isInitialized) initSudoku(game.sudoku)
+                invalidateOptionsMenu()
             }
         }
     }
@@ -277,21 +277,24 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame() {
         if (!this::sudoku.isInitialized) return
         binding.resumeButton.transformTo(binding.gameLayout)
-        gameEnded = !viewModel.resumeTimer(sudoku)
+        viewModel.onResumed()
         animateGameButtonsVisibility(!gameEnded)
         invalidateOptionsMenu()
-        checkErrorLimit()
-        if (userSettings.keepScreenOn) window.addFlags(FLAG_KEEP_SCREEN_ON)
+        updateKeepScreenOn()
+    }
+
+    private fun updateKeepScreenOn() {
+        if (!userSettings.keepScreenOn) return
+        if (gameEnded) window.clearFlags(FLAG_KEEP_SCREEN_ON) else window.addFlags(FLAG_KEEP_SCREEN_ON)
     }
 
     private fun pauseGame() {
         sudoku.stopTimer()
-        if (sudoku.completed) return
+        if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
+        if (gameEnded) return
         if (binding.gameLayout.isVisible) binding.gameLayout.transformTo(binding.resumeButton)
         animateGameButtonsVisibility(false)
-        gameEnded = false
         invalidateOptionsMenu()
-        if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
         viewModel.onPaused()
     }
 
@@ -309,10 +312,10 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onSudokuCompleted() {
         setSubtitle()
-        gameEnded = true
-        invalidateOptionsMenu()
         animateGameButtonsVisibility(false)
         viewModel.onCompleted()
+        invalidateOptionsMenu()
+        updateKeepScreenOn()
     }
 
     private fun onCompletionResult(result: SudokuCompletion.Result) {
@@ -351,34 +354,29 @@ class SudokuActivity : AppCompatActivity() {
         viewModel.onPlayGamesSyncHandled(sync)
     }
 
-    private fun checkErrorLimit(): Boolean {
-        val errorLimit =
-            when {
-                sudoku.isDailySudoku -> MODE_DAILY_ERROR_LIMIT
-                sudoku.isSudokuLevel -> MODE_LEVEL_ERROR_LIMIT
-                else -> userSettings.errorLimit
-            }
-        if (sudoku.errorLimitReached(errorLimit)) {
-            sudoku.stopTimer()
-            setSubtitle()
-            animateGameButtonsVisibility(false)
-            gameEnded = true
-            invalidateOptionsMenu()
-            AlertDialog
-                .Builder(this@SudokuActivity)
-                .setTitle(R.string.gameover)
-                .setMessage(getString(R.string.error_limit_reached, errorLimit))
-                .setPositiveButton(R.string.restart) { _, _ -> singleLaunch { viewModel.onRestart() } }
-                .setNeutralButton(commonutilsR.string.commonutils_ok, null)
-                .showOnce(GAME_OVER_DIALOG_TAG)
-                ?.let { gameOverDialog = it }
-            return true
-        }
-        return false
+    private fun onErrorLimitReached(playing: SudokuGame.Playing) {
+        sudoku.stopTimer()
+        setSubtitle()
+        animateGameButtonsVisibility(false)
+        invalidateOptionsMenu()
+        updateKeepScreenOn()
+        showGameOver(playing)
+    }
+
+    private fun showGameOver(playing: SudokuGame.Playing) {
+        AlertDialog
+            .Builder(this@SudokuActivity)
+            .setTitle(R.string.gameover)
+            .setMessage(getString(R.string.error_limit_reached, playing.errorLimit))
+            .setPositiveButton(R.string.restart) { _, _ -> singleLaunch { viewModel.onRestart() } }
+            .setNeutralButton(commonutilsR.string.commonutils_ok, null)
+            .showOnce(GAME_OVER_DIALOG_TAG)
+            ?.let { gameOverDialog = it }
     }
 
     internal fun select(newSelected: Int?) {
-        if (checkErrorLimit()) return
+        val phase = playing?.phase
+        if (phase == null || phase == Phase.Lost) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         val current = selected
         if (current == null) {
@@ -680,7 +678,7 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun setSubtitle() {
-        val errorLimit = userSettings.errorLimit
+        val errorLimit = playing?.errorLimit ?: 0
         val subtitle =
             getString(R.string.current_time, sudoku.timeString) + " | " +
                 getString(
@@ -688,8 +686,6 @@ class SudokuActivity : AppCompatActivity() {
                     sudoku.progress,
                 ) + " | " +
                 when {
-                    sudoku.isDailySudoku -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, MODE_DAILY_ERROR_LIMIT)
-                    sudoku.isSudokuLevel -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, MODE_LEVEL_ERROR_LIMIT)
                     errorLimit == 0 -> getString(R.string.current_errors, sudoku.errorsMade)
                     else -> getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
                 } + if (sudoku.isNormalSudoku) " | " + getString(R.string.current_hints, sudoku.hintsUsed) else ""
@@ -795,7 +791,8 @@ class SudokuActivity : AppCompatActivity() {
         }
 
         override fun onError() {
-            checkErrorLimit()
+            viewModel.onErrorMade()
+            playing?.takeIf { it.phase == Phase.Lost }?.let(::onErrorLimitReached)
         }
 
         override fun onTimeChanged() {
