@@ -107,7 +107,7 @@ class SudokuActivityGameOverTest {
         block: (SudokuActivity) -> Unit,
     ) = launchScenario(sudoku) { scenario -> scenario.onActivity(block) }
 
-    private fun SudokuActivity.keepsScreenOn() = (window.attributes.flags and FLAG_KEEP_SCREEN_ON) != 0
+    private fun SudokuActivity.keepsScreenOn() = window.attributes.flags and FLAG_KEEP_SCREEN_ON != 0
 
     private fun SudokuActivity.menuItems(): Pair<MenuItem, MenuItem> {
         val menu = RoboMenu(this)
