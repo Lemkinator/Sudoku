@@ -117,8 +117,7 @@ android {
     }
     lint {
         warningsAsErrors = true
-        // The private AAR dependencies surface hundreds of unactionable warnings.
-        checkDependencies = false
+        checkDependencies = true
         // Explicit: pins intent against future AGP default changes.
         checkReleaseBuilds = true
         abortOnError = true
