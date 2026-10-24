@@ -126,8 +126,8 @@ class SudokuActivity : AppCompatActivity() {
             }
     internal var notesEnabled = false
     internal var selected: Int? = null
-    private var gameEnded = false
     private val playing get() = viewModel.game.value as? SudokuGame.Playing
+    private val gameEnded get() = playing?.ended == true
     private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
     internal val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
@@ -192,7 +192,7 @@ class SudokuActivity : AppCompatActivity() {
                 )
             it.title = getString(if (sudoku.resumed) R.string.commonutils_pause else R.string.commonutils_resume)
         }
-        menu?.findItem(R.id.menu_reset)?.isVisible = gameEnded
+        menu?.findItem(R.id.menu_reset)?.isVisible = playing?.canRestart == true
         menu?.findItem(R.id.menu_pause_play)?.isVisible = !gameEnded
         return super.onPrepareOptionsMenu(menu)
     }
@@ -244,6 +244,7 @@ class SudokuActivity : AppCompatActivity() {
 
             is SudokuGame.Playing -> {
                 if (!this::sudoku.isInitialized) initSudoku(game.sudoku)
+                invalidateOptionsMenu()
             }
         }
     }
@@ -279,21 +280,23 @@ class SudokuActivity : AppCompatActivity() {
         if (!this::sudoku.isInitialized) return
         binding.resumeButton.transformTo(binding.gameLayout)
         viewModel.onResumed()
-        gameEnded = playing?.ended == true
         animateGameButtonsVisibility(!gameEnded)
         invalidateOptionsMenu()
-        checkErrorLimit()
-        if (userSettings.keepScreenOn) window.addFlags(FLAG_KEEP_SCREEN_ON)
+        updateKeepScreenOn()
+    }
+
+    private fun updateKeepScreenOn() {
+        if (!userSettings.keepScreenOn) return
+        if (gameEnded) window.clearFlags(FLAG_KEEP_SCREEN_ON) else window.addFlags(FLAG_KEEP_SCREEN_ON)
     }
 
     private fun pauseGame() {
         sudoku.stopTimer()
-        if (sudoku.completed) return
+        if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
+        if (gameEnded) return
         if (binding.gameLayout.isVisible) binding.gameLayout.transformTo(binding.resumeButton)
         animateGameButtonsVisibility(false)
-        gameEnded = false
         invalidateOptionsMenu()
-        if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
         viewModel.onPaused()
     }
 
@@ -311,10 +314,10 @@ class SudokuActivity : AppCompatActivity() {
 
     private fun onSudokuCompleted() {
         setSubtitle()
-        gameEnded = true
-        invalidateOptionsMenu()
         animateGameButtonsVisibility(false)
         viewModel.onCompleted()
+        invalidateOptionsMenu()
+        updateKeepScreenOn()
     }
 
     private fun onCompletionResult(result: SudokuCompletion.Result) {
@@ -353,29 +356,29 @@ class SudokuActivity : AppCompatActivity() {
         viewModel.onPlayGamesSyncHandled(sync)
     }
 
-    private fun checkErrorLimit(): Boolean {
-        val playing = playing
-        if (playing?.errorLimitReached == true) {
-            sudoku.stopTimer()
-            setSubtitle()
-            animateGameButtonsVisibility(false)
-            gameEnded = true
-            invalidateOptionsMenu()
-            AlertDialog
-                .Builder(this@SudokuActivity)
-                .setTitle(R.string.gameover)
-                .setMessage(getString(R.string.error_limit_reached, playing.errorLimit))
-                .setPositiveButton(R.string.restart) { _, _ -> singleLaunch { viewModel.onRestart() } }
-                .setNeutralButton(commonutilsR.string.commonutils_ok, null)
-                .showOnce(GAME_OVER_DIALOG_TAG)
-                ?.let { gameOverDialog = it }
-            return true
-        }
-        return false
+    private fun onErrorLimitReached(playing: SudokuGame.Playing) {
+        sudoku.stopTimer()
+        setSubtitle()
+        animateGameButtonsVisibility(false)
+        invalidateOptionsMenu()
+        updateKeepScreenOn()
+        showGameOver(playing)
+    }
+
+    private fun showGameOver(playing: SudokuGame.Playing) {
+        AlertDialog
+            .Builder(this@SudokuActivity)
+            .setTitle(R.string.gameover)
+            .setMessage(getString(R.string.error_limit_reached, playing.errorLimit))
+            .setPositiveButton(R.string.restart) { _, _ -> singleLaunch { viewModel.onRestart() } }
+            .setNeutralButton(commonutilsR.string.commonutils_ok, null)
+            .showOnce(GAME_OVER_DIALOG_TAG)
+            ?.let { gameOverDialog = it }
     }
 
     internal fun select(newSelected: Int?) {
-        if (checkErrorLimit()) return
+        val phase = playing?.phase
+        if (phase == null || phase == Phase.Lost) return
         if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
         val current = selected
         if (current == null) {
@@ -793,7 +796,7 @@ class SudokuActivity : AppCompatActivity() {
 
         override fun onError() {
             viewModel.onErrorMade()
-            checkErrorLimit()
+            playing?.takeIf { it.phase == Phase.Lost }?.let(::onErrorLimitReached)
         }
 
         override fun onTimeChanged() {

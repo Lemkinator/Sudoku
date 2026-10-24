@@ -17,74 +17,30 @@
 package de.lemke.sudoku.ui
 
 import android.app.Application
-import androidx.lifecycle.SavedStateHandle
-import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
-import de.lemke.sudoku.AdjustableClock
-import de.lemke.sudoku.data.FakeSudokuShareFiles
-import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.GenerateFieldsUseCase
-import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
-import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
-import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
-import de.lemke.sudoku.domain.GetSudokuUseCase
-import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
-import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
-import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.testSudoku
-import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
-import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class SudokuViewModelPhaseTest {
-    private val clock = AdjustableClock(Instant.parse("2026-01-15T12:00:00Z"))
-    private val repository = FakeSudokusRepository()
-    private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+    private val rig = SudokuViewModelRig()
+    private val clock = rig.clock
+    private val userSettings = rig.userSettings
+    private val today = LocalDateTime.of(2026, 1, 15, 0, 0)
 
-    private fun playing(sudoku: Sudoku): SudokuViewModel {
-        repository.store(sudoku)
-        val dispatcher = Dispatchers.Main
-        val generateFields = GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator())
-        return SudokuViewModel(
-            SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.id.value)),
-            GetSudokuUseCase(repository, dispatcher),
-            GenerateSudokuUseCase(generateFields, dispatcher),
-            GenerateSudokuLevelUseCase(generateFields, dispatcher),
-            GetMaxSudokuLevelUseCase(repository, dispatcher),
-            QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
-            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
-            CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
-            userSettings,
-            clock,
-        ).also {
-            idleMainLooper()
-            it.onGameStarted(SudokuGame.Ready(sudoku))
-        }
-    }
+    private fun playing(sudoku: Sudoku) = rig.playing(sudoku)
 
     private fun daily(created: LocalDateTime) = testSudoku(modeLevel = MODE_DAILY, created = created)
-
-    private val today = LocalDateTime.of(2026, 1, 15, 0, 0)
 
     @Test
     fun `a normal sudoku in progress is playing with the limit of the settings`() {
@@ -152,6 +108,18 @@ class SudokuViewModelPhaseTest {
     }
 
     @Test
+    fun `onErrorMade saves the sudoku with the error that ended it`() {
+        val sudoku = testSudoku()
+        val viewModel = playing(sudoku)
+        sudoku.errorsMade = 3
+
+        viewModel.onErrorMade()
+        idleMainLooper()
+
+        rig.repository.saves.map { it.rows.sudoku.errorsMade to it.onlyUpdate } shouldBe listOf(3 to true)
+    }
+
+    @Test
     fun `today's daily sudoku stays playing with a running timer after the clock passes midnight`() {
         val sudoku = daily(today)
         val viewModel = playing(sudoku)
@@ -164,6 +132,17 @@ class SudokuViewModelPhaseTest {
         viewModel.game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 15)), 3, Phase.Playing)
         sudoku.resumed shouldBe true
         sudoku.stopTimer()
+    }
+
+    @Test
+    fun `onResumed before the sudoku plays starts no timer`() {
+        val sudoku = testSudoku()
+        val viewModel = rig.ready(sudoku)
+
+        viewModel.onResumed()
+
+        viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
+        sudoku.resumed shouldBe false
     }
 
     @Test

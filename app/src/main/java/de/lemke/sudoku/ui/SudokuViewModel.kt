@@ -65,7 +65,7 @@ sealed interface SudokuGame {
         val phase: Phase,
     ) : SudokuGame {
         val ended: Boolean get() = phase != Phase.Playing
-        val errorLimitReached: Boolean get() = sudoku.errorLimitReached(errorLimit)
+        val canRestart: Boolean get() = restartPolicy(kind, phase)
     }
 }
 
@@ -121,6 +121,27 @@ sealed interface SudokuCompletion {
 
     data object Failed : Result
 }
+
+/** Whether a sudoku of [kind] in [phase] can be restarted, which erases its record. */
+internal fun restartPolicy(
+    kind: SudokuKind,
+    phase: Phase,
+): Boolean =
+    when (kind) {
+        SudokuKind.Normal -> {
+            when (phase) {
+                Phase.Won, Phase.Lost -> true
+                Phase.Playing, Phase.Expired -> false
+            }
+        }
+
+        is SudokuKind.Level, is SudokuKind.Daily -> {
+            when (phase) {
+                Phase.Lost -> true
+                Phase.Playing, Phase.Won, Phase.Expired -> false
+            }
+        }
+    }
 
 /** A shown completion summary the player has not dismissed yet, kept in the saved state. */
 private data class PendingSummary(
@@ -186,8 +207,9 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onRestart() {
-        if (completion.value != SudokuCompletion.Idle) return
-        val sudoku = (game.value as? SudokuGame.Playing ?: return).sudoku
+        val playing = game.value as? SudokuGame.Playing
+        if (playing == null || !playing.canRestart || completion.value != SudokuCompletion.Idle) return
+        val sudoku = playing.sudoku
         game.value = SudokuGame.Restarting
         viewModelScope.launch {
             wrapUp?.join()
@@ -263,7 +285,10 @@ class SudokuViewModel @Inject constructor(
         if (!playing.ended) playing.sudoku.startTimer(viewModelScope, clock)
     }
 
-    fun onErrorMade() = refreshPhase()
+    fun onErrorMade() {
+        refreshPhase()
+        savePlayingSudokuProgress()
+    }
 
     fun onPaused() = savePlayingSudokuProgress()
 

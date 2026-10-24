@@ -171,7 +171,7 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("onRestart reports restarting until the sudoku is saved, and a second restart saves once") {
-            val sudoku = testSudoku()
+            val sudoku = testSudoku(completed = true)
             val viewModel = playing(sudoku)
             val saved = CompletableDeferred<Unit>()
             repository.beforeSave = { saved.await() }
@@ -358,6 +358,8 @@ class SudokuViewModelTest : ShouldSpec(
         should("progress saves and a restart save run one after another in the order they were started") {
             val sudoku = testSudoku().apply { fields[1].value = 1 }
             val viewModel = playing(sudoku)
+            sudoku.errorsMade = 3
+            viewModel.onResumed()
             val firstSaved = CompletableDeferred<Unit>()
             repository.beforeSave = { firstSaved.await() }
 

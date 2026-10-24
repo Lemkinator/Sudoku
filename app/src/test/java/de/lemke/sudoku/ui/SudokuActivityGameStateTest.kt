@@ -36,6 +36,7 @@ import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.GameListener
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
@@ -179,6 +180,7 @@ class SudokuActivityGameStateTest {
         val sudoku = formulaicSudoku(solved = false)
         launch(sudoku) { scenario ->
             scenario.onActivity { activity ->
+                activity.userSettings.errorLimit = 1
                 activity.select(1)
                 activity.select(activity.sudoku.itemCount)
                 activity.sudoku.errorsMade shouldBe 1
@@ -200,6 +202,32 @@ class SudokuActivityGameStateTest {
                 activity.sudoku.id shouldBe sudoku.id
                 activity.sudoku[1].value.shouldBeNull()
             }
+        }
+    }
+
+    @Test
+    fun `an error and a tap reported while the game restarts change nothing`() {
+        launch(formulaicSudoku(solved = false)) { scenario ->
+            lateinit var listener: GameListener
+            scenario.onActivity { activity ->
+                activity.userSettings.errorLimit = 1
+                activity.select(1)
+                activity.select(activity.sudoku.itemCount)
+                listener = checkNotNull(activity.sudoku.gameListener)
+                pausableDefaultDispatcher.pause()
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
+            }
+            idleMainLooper()
+
+            scenario.onActivity { activity ->
+                listener.onError()
+                listener.onFieldClicked(Position.create(1, activity.sudoku.size))
+
+                activity.viewModel.game.value shouldBe SudokuGame.Restarting
+                activity.selected.shouldBeNull()
+            }
+            pausableDefaultDispatcher.resume()
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
         }
     }
 

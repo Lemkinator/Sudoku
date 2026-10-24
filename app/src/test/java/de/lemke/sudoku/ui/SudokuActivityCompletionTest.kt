@@ -432,29 +432,23 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `recreating the activity while the game-over dialog shows replaces it with one new one without a restart`() {
+    fun `recreating the activity while the game-over dialog shows dismisses it and keeps the lost game without a new dialog`() {
         val sudokuId = SudokuId.generate()
         fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1).copy(errorsMade = MODE_LEVEL_ERROR_LIMIT))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
-            dialog.isShowing shouldBe true
-
             scenario.recreate()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             idleMainLooper()
 
-            dialog.isShowing shouldBe false
-            val newDialog = (ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>() - dialog).single()
-            newDialog.isShowing shouldBe true
-            newDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error limit reached (3)."
+            ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().filter { it.isShowing } shouldBe emptyList()
             scenario.onActivity { activity ->
                 activity.sudoku.id shouldBe sudokuId
                 activity.sudoku.errorsMade shouldBe MODE_LEVEL_ERROR_LIMIT
                 activity.viewModel.game.value
                     .shouldBeInstanceOf<SudokuGame.Playing>()
+                    .phase shouldBe Phase.Lost
             }
         }
     }
