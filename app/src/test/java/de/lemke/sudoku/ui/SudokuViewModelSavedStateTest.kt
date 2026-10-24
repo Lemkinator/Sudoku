@@ -20,8 +20,10 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
+import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.data.FakeSudokuShareFiles
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
@@ -41,6 +43,7 @@ import java.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -64,6 +67,7 @@ class SudokuViewModelSavedStateTest {
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+            UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
             Clock.systemDefaultZone(),
         ).also { idleMainLooper() }
     }

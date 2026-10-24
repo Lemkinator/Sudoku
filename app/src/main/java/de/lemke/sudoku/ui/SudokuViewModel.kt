@@ -20,6 +20,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -29,6 +30,8 @@ import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
+import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import java.io.Serializable
@@ -40,6 +43,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The sudoku the activity plays. The activity starts a [Ready] sudoku and then reports it started. */
@@ -54,7 +58,32 @@ sealed interface SudokuGame {
 
     data class Ready(val sudoku: Sudoku) : SudokuGame
 
-    data class Playing(val sudoku: Sudoku) : SudokuGame
+    data class Playing(
+        val sudoku: Sudoku,
+        val kind: SudokuKind,
+        val errorLimit: Int,
+        val phase: Phase,
+    ) : SudokuGame {
+        val ended: Boolean get() = phase != Phase.Playing
+        val errorLimitReached: Boolean get() = sudoku.errorLimitReached(errorLimit)
+    }
+}
+
+/** What a sudoku is played as. A [Daily] sudoku carries the day it was created for. */
+sealed interface SudokuKind {
+    data object Normal : SudokuKind
+
+    data class Level(val level: Int) : SudokuKind
+
+    data class Daily(val date: LocalDate) : SudokuKind
+}
+
+/** How far the played sudoku is. [Expired] is a daily sudoku of an earlier day, which can no longer be played. */
+enum class Phase {
+    Playing,
+    Won,
+    Lost,
+    Expired,
 }
 
 /** The sudoku that follows a completed one. */
@@ -102,6 +131,13 @@ private data class PendingSummary(
     }
 }
 
+private fun Sudoku.kind(): SudokuKind =
+    when {
+        isDailySudoku -> SudokuKind.Daily(created.toLocalDate())
+        isSudokuLevel -> SudokuKind.Level(modeLevel)
+        else -> SudokuKind.Normal
+    }
+
 private const val KEY_PENDING_SUMMARY = "pending_summary"
 
 @HiltViewModel
@@ -114,6 +150,7 @@ class SudokuViewModel @Inject constructor(
     private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
+    private val userSettings: UserSettings,
     private val clock: Clock,
 ) : ViewModel() {
     val game: StateFlow<SudokuGame>
@@ -145,7 +182,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onGameStarted(ready: SudokuGame.Ready) {
-        game.compareAndSet(ready, SudokuGame.Playing(ready.sudoku))
+        game.compareAndSet(ready, playingOf(ready.sudoku, ready.sudoku.kind(), expired = ready.sudoku.isExpired()))
     }
 
     fun onRestart() {
@@ -186,6 +223,7 @@ class SudokuViewModel @Inject constructor(
     }
 
     fun onCompleted() {
+        refreshPhase()
         val playing = game.value as? SudokuGame.Playing
         if (playing == null || !playing.sudoku.completed || completion.value != SudokuCompletion.Idle) return
         val completed = playing.sudoku
@@ -218,16 +256,45 @@ class SudokuViewModel @Inject constructor(
         playGamesSync.compareAndSet(sync, null)
     }
 
-    /** Starts the timer of a sudoku that can still be played and returns whether it started. */
-    fun resumeTimer(sudoku: Sudoku): Boolean {
-        val ended = sudoku.completed || (sudoku.isDailySudoku && sudoku.created.toLocalDate() != LocalDate.now(clock))
-        if (!ended) sudoku.startTimer(viewModelScope, clock)
-        return !ended
+    /** Decides the phase again and starts the timer of a sudoku that can still be played. */
+    fun onResumed() {
+        refreshPhase()
+        val playing = game.value as? SudokuGame.Playing ?: return
+        if (!playing.ended) playing.sudoku.startTimer(viewModelScope, clock)
     }
+
+    fun onErrorMade() = refreshPhase()
 
     fun onPaused() = savePlayingSudokuProgress()
 
     fun onProgressChanged() = savePlayingSudokuProgress()
+
+    private fun refreshPhase() {
+        game.update { if (it is SudokuGame.Playing) playingOf(it.sudoku, it.kind, expired = it.phase == Phase.Expired) else it }
+    }
+
+    private fun Sudoku.isExpired(): Boolean = isDailySudoku && created.toLocalDate() != LocalDate.now(clock)
+
+    private fun playingOf(
+        sudoku: Sudoku,
+        kind: SudokuKind,
+        expired: Boolean,
+    ): SudokuGame.Playing {
+        val errorLimit =
+            when (kind) {
+                is SudokuKind.Daily -> MODE_DAILY_ERROR_LIMIT
+                is SudokuKind.Level -> MODE_LEVEL_ERROR_LIMIT
+                SudokuKind.Normal -> userSettings.errorLimit
+            }
+        val phase =
+            when {
+                sudoku.completed -> Phase.Won
+                expired -> Phase.Expired
+                sudoku.errorLimitReached(errorLimit) -> Phase.Lost
+                else -> Phase.Playing
+            }
+        return SudokuGame.Playing(sudoku, kind, errorLimit, phase)
+    }
 
     private fun savePlayingSudokuProgress() {
         (game.value as? SudokuGame.Playing)?.let { queueSudokuSave.launch(it.sudoku, onlyUpdate = true) }

@@ -127,6 +127,7 @@ class SudokuActivity : AppCompatActivity() {
     internal var notesEnabled = false
     internal var selected: Int? = null
     private var gameEnded = false
+    private val playing get() = viewModel.game.value as? SudokuGame.Playing
     private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
     internal val colorPrimary get() = ColorStateList.valueOf(getColor(R.color.primary_color_themed))
@@ -237,8 +238,8 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             is SudokuGame.Ready -> {
-                initSudoku(game.sudoku)
                 viewModel.onGameStarted(game)
+                initSudoku(game.sudoku)
             }
 
             is SudokuGame.Playing -> {
@@ -277,7 +278,8 @@ class SudokuActivity : AppCompatActivity() {
     fun resumeGame() {
         if (!this::sudoku.isInitialized) return
         binding.resumeButton.transformTo(binding.gameLayout)
-        gameEnded = !viewModel.resumeTimer(sudoku)
+        viewModel.onResumed()
+        gameEnded = playing?.ended == true
         animateGameButtonsVisibility(!gameEnded)
         invalidateOptionsMenu()
         checkErrorLimit()
@@ -352,13 +354,8 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun checkErrorLimit(): Boolean {
-        val errorLimit =
-            when {
-                sudoku.isDailySudoku -> MODE_DAILY_ERROR_LIMIT
-                sudoku.isSudokuLevel -> MODE_LEVEL_ERROR_LIMIT
-                else -> userSettings.errorLimit
-            }
-        if (sudoku.errorLimitReached(errorLimit)) {
+        val playing = playing
+        if (playing?.errorLimitReached == true) {
             sudoku.stopTimer()
             setSubtitle()
             animateGameButtonsVisibility(false)
@@ -367,7 +364,7 @@ class SudokuActivity : AppCompatActivity() {
             AlertDialog
                 .Builder(this@SudokuActivity)
                 .setTitle(R.string.gameover)
-                .setMessage(getString(R.string.error_limit_reached, errorLimit))
+                .setMessage(getString(R.string.error_limit_reached, playing.errorLimit))
                 .setPositiveButton(R.string.restart) { _, _ -> singleLaunch { viewModel.onRestart() } }
                 .setNeutralButton(commonutilsR.string.commonutils_ok, null)
                 .showOnce(GAME_OVER_DIALOG_TAG)
@@ -795,6 +792,7 @@ class SudokuActivity : AppCompatActivity() {
         }
 
         override fun onError() {
+            viewModel.onErrorMade()
             checkErrorLimit()
         }
 

@@ -19,9 +19,11 @@ package de.lemke.sudoku.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import de.lemke.commonutils.clearForTest
+import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.SudokuShareFiles
+import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.sudokuFromDb
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
@@ -57,6 +59,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 private fun SavedStateHandle.restoredAfterProcessDeath(): SavedStateHandle = SavedStateHandle(keys().associateWith { get<Any>(it) })
 
@@ -103,6 +106,7 @@ class SudokuViewModelTest : ShouldSpec(
                 QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
                 ShareSudokuUseCase(shareFiles, shareDispatcher),
                 CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+                UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
                 clock,
             )
         }
@@ -142,7 +146,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onGameStarted moves the ready sudoku to playing") {
             val sudoku = testSudoku()
 
-            playing(sudoku).game.value shouldBe SudokuGame.Playing(sudoku)
+            playing(sudoku).game.value shouldBe SudokuGame.Playing(sudoku, SudokuKind.Normal, 3, Phase.Playing)
         }
 
         should("onGameStarted for another sudoku keeps the ready one") {
@@ -199,7 +203,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onRestart()
 
-            viewModel.game.value shouldBe SudokuGame.Playing(completed)
+            viewModel.game.value shouldBe SudokuGame.Playing(completed, SudokuKind.Normal, 3, Phase.Won)
             completed.completed shouldBe true
             saved.complete(Unit)
             viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
@@ -213,7 +217,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onRestart()
 
-            viewModel.game.value shouldBe SudokuGame.Playing(completed)
+            viewModel.game.value shouldBe SudokuGame.Playing(completed, SudokuKind.Normal, 3, Phase.Won)
             completed.completed shouldBe true
             repository.savedIds shouldBe listOf(completed.id to true)
         }
@@ -270,7 +274,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onFollowUp(FollowUp.NEW_GAME)
 
-            viewModel.game.value shouldBe SudokuGame.Playing(unfinished)
+            viewModel.game.value shouldBe SudokuGame.Playing(unfinished, SudokuKind.Normal, 3, Phase.Playing)
             repository.saves shouldBe emptyList()
         }
 
@@ -418,11 +422,11 @@ class SudokuViewModelTest : ShouldSpec(
             maxLevelReads shouldBe 0
         }
 
-        should("resumeTimer starts the timer of a sudoku in progress") {
+        should("onResumed starts the timer of a sudoku in progress") {
             val sudoku = testSudoku(updated = LocalDateTime.of(2026, 1, 15, 11, 0))
             val viewModel = playing(sudoku)
 
-            viewModel.resumeTimer(sudoku) shouldBe true
+            viewModel.onResumed()
             mainScheduler().advanceTimeBy(1000)
             mainScheduler().runCurrent()
             val resumed = sudoku.resumed
@@ -433,7 +437,7 @@ class SudokuViewModelTest : ShouldSpec(
             sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
         }
 
-        should("resumeTimer starts the timer of a daily sudoku created on the clock's date") {
+        should("onResumed starts the timer of a daily sudoku created on the clock's date") {
             val sudoku =
                 testSudoku(
                     modeLevel = Sudoku.MODE_DAILY,
@@ -442,7 +446,7 @@ class SudokuViewModelTest : ShouldSpec(
                 )
             val viewModel = playing(sudoku)
 
-            viewModel.resumeTimer(sudoku) shouldBe true
+            viewModel.onResumed()
             mainScheduler().advanceTimeBy(1000)
             mainScheduler().runCurrent()
             sudoku.stopTimer()
@@ -451,7 +455,7 @@ class SudokuViewModelTest : ShouldSpec(
             sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
         }
 
-        should("resumeTimer ends a daily sudoku created before the clock's date without a timer") {
+        should("onResumed ends a daily sudoku created before the clock's date without a timer") {
             val sudoku =
                 testSudoku(
                     modeLevel = Sudoku.MODE_DAILY,
@@ -460,7 +464,7 @@ class SudokuViewModelTest : ShouldSpec(
                 )
             val viewModel = playing(sudoku)
 
-            viewModel.resumeTimer(sudoku) shouldBe false
+            viewModel.onResumed()
             mainScheduler().advanceTimeBy(1000)
             mainScheduler().runCurrent()
 
@@ -469,11 +473,11 @@ class SudokuViewModelTest : ShouldSpec(
             sudoku.updated shouldBe LocalDateTime.of(2026, 1, 14, 23, 59)
         }
 
-        should("resumeTimer ends a completed sudoku without a timer") {
+        should("onResumed ends a completed sudoku without a timer") {
             val sudoku = testSudoku(completed = true, updated = LocalDateTime.of(2026, 1, 15, 11, 0))
             val viewModel = playing(sudoku)
 
-            viewModel.resumeTimer(sudoku) shouldBe false
+            viewModel.onResumed()
             mainScheduler().advanceTimeBy(1000)
             mainScheduler().runCurrent()
 
