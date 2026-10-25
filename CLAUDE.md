@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew test                   # Run unit tests
 ./gradlew connectedAndroidTest   # Run instrumented tests (device required)
 ./gradlew spotlessCheck detekt   # Static analysis (formatting + code smells)
+./gradlew buildHealth            # Dependency analysis (unused and misconfigured dependencies)
 ```
 
 Debug builds append `.debug` to the app ID — can be installed alongside release.
@@ -138,7 +139,7 @@ The finish dialog's summary stays in the `SavedStateHandle` until the player dis
 
 ## Static Analysis
 
-Four tools run as part of `./gradlew build`:
+Four tools run as part of `./gradlew build`, and dependency analysis runs separately through `buildHealth`:
 
 - **Spotless** — enforces formatting via ktlint (sole ktlint driver;
   Detekt has no ktlint wrapper). Fix violations with
@@ -168,6 +169,11 @@ Four tools run as part of `./gradlew build`:
     `application = HiltTestApplication::class` without `@HiltAndroidTest`, such as an early-entry-point test, declares
     `@get:Rule val closeTestResources = HiltTestRule.closeResourcesRule()` instead.
   - Runs as part of `./gradlew test`.
+- **Dependency analysis** — `./gradlew buildHealth` runs in the `check-formatting` CI job. It fails on unused
+  dependencies, incorrect configurations and unused annotation processors; other advice warns. The `dependencyAnalysis {}`
+  block in the root `build.gradle.kts` holds the facade bundles and the narrow guava exclude. Each bundle names its
+  primary and only the transitive internals the report lists, so it never masks a declared artifact. The `leakcanary`
+  bundle also folds the `testDebug` leakcanary advice. Report: `build/reports/dependency-analysis/build-health-report.txt`.
 
 **ktlint rule overrides** — two rules disabled in `.editorconfig` to match
 community practice (NowInAndroid, Pokedex both use the inline form):
