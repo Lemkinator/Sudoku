@@ -29,7 +29,10 @@ import java.time.temporal.ChronoUnit.SECONDS
 
 private const val EMPTY_CELL = '.'
 
-/** The game of [entry], or null if the entry is broken. [zone] places the updated stamp on the device clock. */
+/**
+ * The game of [entry], or null if the entry is broken. A broken entry fails a shape check; a given or hint cell needs no value that
+ * matches its solution, because `sudokuFromDb` reads such a game too. [zone] places the updated stamp on the device clock.
+ */
 fun sudokuFromBackup(
     entry: SudokuBackupEntry,
     zone: ZoneId,
@@ -149,9 +152,8 @@ private fun BoardBackup.fieldOrNull(
     val given = index in givens
     val hint = index in hints
     val validValue = cell == EMPTY_CELL || value != null
-    val settled = !(given || hint) || value == answer
     val validNotes = noteDigits.all { it.toDigitOrNull(size) != null }
-    return if (answer != null && validValue && settled && validNotes) {
+    return if (answer != null && validValue && validNotes) {
         Field(
             position = Position.create(index, size),
             solution = answer,

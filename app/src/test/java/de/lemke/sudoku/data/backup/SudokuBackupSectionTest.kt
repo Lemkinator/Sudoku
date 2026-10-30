@@ -33,6 +33,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Clock
 import java.time.Instant
@@ -280,6 +281,28 @@ class SudokuBackupSectionTest : BackupSectionContract<SudokuBackupEntry>() {
             section.replace(local, merged)
 
             section.exportEntries() shouldBe listOf(merged)
+        }
+
+    @Test
+    fun `a game with a given cell off its solution survives an export and an import`(): Unit =
+        runBlocking {
+            val sudoku = testSudoku()
+            sudoku[0].value = if (sudoku[0].solution == 1) 2 else 1
+            store(sudoku)
+            val exported = section.exportEntries()
+
+            section.clear()
+            section.insert(exported)
+
+            exported.map { it.id } shouldBe listOf(sudoku.id.value)
+            section.exportEntries() shouldBe exported
+            database
+                .sudokuDao()
+                .getById(sudoku.id.value)
+                .shouldNotBeNull()
+                .fields
+                .first { it.index == 0 }
+                .value shouldBe sudoku[0].value
         }
 
     @Test

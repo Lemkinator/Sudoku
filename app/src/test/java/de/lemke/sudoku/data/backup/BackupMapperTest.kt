@@ -203,10 +203,6 @@ class BackupMapperTest : ShouldSpec(
                     "a note belongs to a cell below the board" to backupEntry().run { copy(board = board.copy(notes = mapOf(-1 to "1"))) },
                     "a given lies outside the board" to backupEntry().run { copy(board = board.copy(givens = board.givens + 16)) },
                     "a hint lies before the board" to backupEntry().run { copy(board = board.copy(hints = listOf(-1))) },
-                    "a given cell is empty" to backupEntry().run { copy(board = board.copy(values = ".." + board.values.drop(2))) },
-                    "a given cell holds another digit" to
-                        backupEntry().run { copy(board = board.copy(values = "2" + board.values.drop(1))) },
-                    "a hint cell is empty" to backupEntry().run { copy(board = board.copy(hints = listOf(1))) },
                     "notes belong to a cell outside the board" to backupEntry().run { copy(board = board.copy(notes = mapOf(16 to "1"))) },
                     "a note is no digit of the size" to backupEntry().run { copy(board = board.copy(notes = mapOf(1 to "15"))) },
                 )
@@ -230,6 +226,21 @@ class BackupMapperTest : ShouldSpec(
             val entry = backupEntry().run { copy(board = board.copy(values = board.values.replaceRange(10, 11, "4"), hints = listOf(10))) }
 
             sudokuFromBackup(entry, BERLIN).shouldNotBeNull().fields[10].hint shouldBe true
+        }
+
+        should("round trip a game whose given and hint cells hold another digit or none") {
+            val sudoku =
+                gameOf(SudokuSize.FOUR).apply {
+                    fields[0].value = 4
+                    fields[1].value = null
+                    fields[3].value = null
+                }
+
+            val restored = sudokuFromBackup(sudokuToBackup(sudoku, BERLIN).shouldNotBeNull(), BERLIN).shouldNotBeNull()
+
+            restored.fields.map { it.value } shouldBe sudoku.fields.map { it.value }
+            restored.fields.map { it.given } shouldBe sudoku.fields.map { it.given }
+            restored.fields.map { it.hint } shouldBe sudoku.fields.map { it.hint }
         }
 
         should("write no entry for a game with a solution that has no digit") {
