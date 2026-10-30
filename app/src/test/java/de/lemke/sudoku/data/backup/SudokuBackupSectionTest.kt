@@ -26,8 +26,14 @@ import de.lemke.commonutils.backup.core.BackupSection
 import de.lemke.commonutils.backup.core.BackupTransaction
 import de.lemke.commonutils.backup.core.EntryCheck
 import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.DefaultSudokusRepository
+import de.lemke.sudoku.data.database.FieldDb
+import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.SudokuDb
 import de.lemke.sudoku.data.database.fieldToDb
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.di.BackupModule
+import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -35,14 +41,19 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import java.time.Clock
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
+import java.util.TimeZone
 import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.serialization.json.JsonObject
 import org.junit.After
 import org.junit.Before
@@ -53,12 +64,14 @@ import org.robolectric.annotation.Config
 
 private val BERLIN = ZoneId.of("Europe/Berlin")
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class SudokuBackupSectionTest : BackupSectionContract<SudokuBackupEntry>() {
     private lateinit var database: AppDatabase
     private lateinit var section: SudokuBackupSection
     private val transaction = DirectBackupTransaction()
+    private lateinit var defaultZone: TimeZone
 
     @Before
     fun setUp() {
@@ -70,11 +83,14 @@ class SudokuBackupSectionTest : BackupSectionContract<SudokuBackupEntry>() {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        section = SudokuBackupSection(database.sudokuDao(), Clock.fixed(Instant.parse("2026-06-01T10:00:00Z"), BERLIN))
+        defaultZone = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone(BERLIN))
+        section = SudokuBackupSection(database.sudokuDao())
     }
 
     @After
     fun tearDown() {
+        TimeZone.setDefault(defaultZone)
         database.close()
     }
 
@@ -303,6 +319,61 @@ class SudokuBackupSectionTest : BackupSectionContract<SudokuBackupEntry>() {
                 .fields
                 .first { it.index == 0 }
                 .value shouldBe sudoku[0].value
+        }
+
+    @Test
+    fun `an export stamps a game with the zone of the device at the time of the call`(): Unit =
+        runBlocking {
+            store(testSudoku(created = LocalDateTime.of(2026, 5, 2, 8, 0)))
+
+            section
+                .exportEntries()
+                .single()
+                .created.offset shouldBe ZoneOffset.ofHours(2)
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+
+            section
+                .exportEntries()
+                .single()
+                .created.offset shouldBe ZoneOffset.ofHours(-4)
+        }
+
+    @Test
+    fun `a replace that fails partway rolls back and lets a queued save run`(): Unit =
+        runBlocking {
+            val kept = listOf(testSudoku(), testSudoku())
+            store(*kept.toTypedArray())
+            val before = section.exportEntries()
+            val dao = database.sudokuDao()
+            val dispatcher = UnconfinedTestDispatcher()
+            val queue = QueueSudokuSaveUseCase(DefaultSudokusRepository(dao), CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
+            var inserts = 0
+            val failingDao =
+                object : SudokuDao by dao {
+                    override suspend fun insert(
+                        sudoku: SudokuDb,
+                        fields: List<FieldDb>,
+                    ) {
+                        check(++inserts < 2) { "disk full" }
+                        dao.insert(sudoku, fields)
+                    }
+                }
+            val failing = SudokuBackupSection(failingDao)
+            val queued = testSudoku()
+            lateinit var queuedSave: Deferred<Unit>
+
+            shouldThrow<IllegalStateException> {
+                BackupModule.provideBackupTransaction(database, queue).run {
+                    failing.clear()
+                    queuedSave = queue(queued)
+                    failing.insert(listOf(backupEntry(id = "a"), backupEntry(id = "b"), backupEntry(id = "c")))
+                }
+            }.message shouldBe "disk full"
+            queuedSave.await()
+
+            val after = section.exportEntries()
+            after.map { it.id }.toSet() shouldBe (before.map { it.id } + queued.id.value).toSet()
+            after.filter { it.id != queued.id.value }.toSet() shouldBe before.toSet()
         }
 
     @Test

@@ -45,7 +45,6 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import java.time.Clock
 import java.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -80,7 +79,7 @@ class SettingsViewModelTest {
             DeleteInvalidSudokusUseCase(sudokusRepository, dispatcher),
             sectionLabels,
             BackupEngine(
-                setOf(SudokuBackupSection(database.sudokuDao(), Clock.systemUTC())),
+                setOf(SudokuBackupSection(database.sudokuDao())),
                 DirectBackupTransaction(),
                 BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup")),
                 { "2026-10-30T12:00:00Z" },

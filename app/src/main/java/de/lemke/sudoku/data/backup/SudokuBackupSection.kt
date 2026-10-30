@@ -25,8 +25,8 @@ import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuWithFields
 import de.lemke.sudoku.data.database.sudokuFromDb
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
-import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.JsonObject
@@ -34,17 +34,17 @@ import kotlinx.serialization.json.JsonObject
 /** All saved games. A normal sudoku clashes by id, a daily one by day and a level one by size and level. */
 class SudokuBackupSection @Inject constructor(
     private val dao: SudokuDao,
-    private val clock: Clock,
 ) : MergeableSection<SudokuBackupEntry, SudokuBackupKey> {
     override val id: String = ID
     override val version: Int = 1
     override val minReadableVersion: Int = 1
     override val serializer: KSerializer<SudokuBackupEntry> = SudokuBackupEntry.serializer()
 
+    private val zone: ZoneId get() = ZoneId.systemDefault()
     private val newest = newerWins<SudokuBackupEntry, Instant>({ it.updated.toInstant() }, encodedOrder(serializer))
     private val furthest =
         higherRankWins<SudokuBackupEntry, Int, Instant>(
-            { progressOf(it, clock.zone) },
+            { progressOf(it, zone) },
             { it.updated.toInstant() },
             encodedOrder(serializer),
         )
@@ -55,14 +55,14 @@ class SudokuBackupSection @Inject constructor(
     ): JsonObject = error("The sudokus section has no format before version $version")
 
     override fun validate(entry: SudokuBackupEntry): EntryCheck =
-        if (sudokuFromBackup(entry, clock.zone) == null) EntryCheck.Invalid("The game is broken") else EntryCheck.Valid
+        if (sudokuFromBackup(entry, zone) == null) EntryCheck.Invalid("The game is broken") else EntryCheck.Valid
 
     override suspend fun exportEntries(): List<SudokuBackupEntry> = dao.getAll().mapNotNull(::entryOf)
 
     override suspend fun clear() = dao.deleteAll()
 
     override suspend fun insert(entries: List<SudokuBackupEntry>) {
-        entries.mapNotNull { sudokuFromBackup(it, clock.zone) }.forEach {
+        entries.mapNotNull { sudokuFromBackup(it, zone) }.forEach {
             val rows = sudokuWithFieldsToDb(it)
             dao.insert(rows.sudoku, rows.fields)
         }
@@ -108,7 +108,7 @@ class SudokuBackupSection @Inject constructor(
         insert(listOf(merged))
     }
 
-    private fun entryOf(rows: SudokuWithFields): SudokuBackupEntry? = sudokuFromDb(rows)?.let { sudokuToBackup(it, clock.zone) }
+    private fun entryOf(rows: SudokuWithFields): SudokuBackupEntry? = sudokuFromDb(rows)?.let { sudokuToBackup(it, zone) }
 
     companion object {
         const val ID = "sudokus"
