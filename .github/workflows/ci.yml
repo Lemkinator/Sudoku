@@ -265,13 +265,7 @@ jobs:
               fi
             done
             expected=0
-            # The androidTest APK packs the common-utils testFixtures; BackupSectionContract is abstract and has
-            # no androidTest subclass, so its @Test methods are in the dex but never run.
-            count_tests='/^Class #[0-9]+ annotations:/ { pending = 0 }
-              /^  VISIBILITY_RUNTIME Lorg\/junit\/Test;/ { pending++ }
-              /^  Class descriptor/ { if ($0 !~ /BackupSectionContract;/) n += pending; pending = 0 }
-              END { print n + 0 }'
-            if [ ${#dexes[@]} -gt 0 ] && ! expected=$("$dexdump" -a "${dexes[@]}" | awk "$count_tests"); then
+            if [ ${#dexes[@]} -gt 0 ] && ! expected=$("$dexdump" -a "${dexes[@]}" | awk '/^  VISIBILITY_RUNTIME Lorg\/junit\/Test;/ { n++ } END { print n + 0 }'); then
               echo "::error::$module: $dexdump failed on the dex files of $apk"
               status=1
               continue
