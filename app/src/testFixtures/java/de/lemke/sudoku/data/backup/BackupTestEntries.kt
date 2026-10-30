@@ -20,7 +20,8 @@ import de.lemke.sudoku.domain.model.Sudoku
 import java.time.OffsetDateTime
 
 const val FOUR_SOLUTION = "1234341223414123"
-private val FOUR_GIVENS = listOf(0, 3, 6, 9, 12, 15)
+private const val GIVEN_STEP = 3
+val FOUR_GIVENS = FOUR_SOLUTION.indices.filter { it % GIVEN_STEP == 0 }
 
 /**
  * A 4x4 game over [FOUR_SOLUTION] whose given cells are every third one. The first [solvedCells] of the ten other

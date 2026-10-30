@@ -1,4 +1,0 @@
-{"entries":[
-{"id":"11111111-aaaa","size":4,"difficulty":"MEDIUM","modeLevel":0,"created":"2026-05-02T08:00:00+02:00","updated":"2026-05-02T08:10:00+02:00","seconds":600,"regionalHighlightingUsed":true,"numberHighlightingUsed":false,"eraserUsed":true,"isChecklist":false,"isReverseChecklist":false,"checklistNumber":0,"hintsUsed":1,"notesMade":3,"errorsMade":2,"board":{"solution":"1234341223414123","values":"12.4..1..34.4..3","givens":[0,3,6,9,12,15],"hints":[10],"notes":{"2":"13","4":"34"}}},
-{"id":"22222222-bbbb","size":4,"difficulty":"EASY","modeLevel":-1,"created":"2026-05-03T07:30:00+02:00","updated":"2026-05-03T07:30:00+02:00","seconds":0,"board":{"solution":"1234341223414123","values":"1..4..1..3..4..3","givens":[0,3,6,9,12,15]}}
-]}
