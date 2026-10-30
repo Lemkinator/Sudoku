@@ -130,7 +130,8 @@ The finish dialog's summary stays in the `SavedStateHandle` until the player dis
 restore runs inside `QueueSudokuSaveUseCase.exclusive`, so no queued game save interleaves with it. Backups are signed
 (`di/BackupSigningModule`): the build reads Gradle property or env var `backupSigningKey` / `BACKUP_SIGNING_KEY` (GitHub secret
 of the release workflow, and the owner's `~/.gradle/gradle.properties`) into `BuildConfig`. Without it a build signs with the
-public local key, so such builds and release builds cannot read each other's backups. Never commit or print the release key.
+public local key, so such builds and release builds cannot read each other's backups. The signature stops edits to a backup outside the app, not a determined attacker, because the key ships in the release APK.
+Never commit or print the release key.
 
 ## Notable Dependencies
 

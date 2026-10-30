@@ -25,6 +25,10 @@ import de.lemke.commonutils.backup.core.BackupSigner
 import de.lemke.sudoku.BuildConfig
 import java.util.Base64
 
+/**
+ * Provides the backup signer. The signature stops edits to a backup outside the app, not a determined attacker, because the
+ * signing key ships in the release APK.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object BackupSigningModule {
