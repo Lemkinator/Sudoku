@@ -32,6 +32,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
@@ -50,11 +51,12 @@ private fun boardOf(
 private fun gameOf(
     size: SudokuSize,
     notes: List<Char> = emptyList(),
+    id: String = "nine",
 ): Sudoku {
     val cellCount = size.cellCount
     val created = LocalDateTime.of(2026, 5, 2, 8, 0, 0, 123_000_000)
     return Sudoku.create(
-        sudokuId = SudokuId("nine"),
+        sudokuId = SudokuId(id),
         size = size,
         difficulty = Difficulty.HARD,
         modeLevel = 7,
@@ -141,6 +143,21 @@ class BackupMapperTest : ShouldSpec(
             board.keys shouldBe setOf("solution", "values", "givens", "hints", "notes")
             engineJson.decodeFromJsonElement(SudokuBackupEntry.serializer(), written) shouldBe entry
             engineJson.decodeFromJsonElement(SudokuBackupEntry.serializer(), withoutOptional) shouldBe entry
+        }
+
+        should("keep the games of a large library well below the size limit of a section") {
+            val allNotes = ('1'..'9').toList()
+            val entries =
+                List(4_400) { index ->
+                    val size = if (index % 11 == 0) SudokuSize.SIXTEEN else SudokuSize.NINE
+                    val game = gameOf(size, notes = if (index % 2 == 0) allNotes else emptyList(), id = "game-$index")
+                    sudokuToBackup(game, BERLIN).shouldNotBeNull()
+                }
+            val engineJson = Json { encodeDefaults = true }
+
+            val bytes = engineJson.encodeToString(ListSerializer(SudokuBackupEntry.serializer()), entries).encodeToByteArray().size
+
+            (bytes < 8 * 1024 * 1024) shouldBe true
         }
 
         should("write a 16x16 game with the letters A to G for the digits 10 to 16") {
