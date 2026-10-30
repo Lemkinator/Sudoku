@@ -115,6 +115,16 @@ class BackupMapperTest : ShouldSpec(
             restored.fields.map { it.notes } shouldBe sudoku.fields.map { it.notes }
         }
 
+        should("round trip an entry with hints and notes through JSON that omits defaults") {
+            val entry = sudokuToBackup(gameOf(SudokuSize.NINE, notes = listOf('2', '7')), BERLIN).shouldNotBeNull()
+
+            val json = Json.encodeToString(SudokuBackupEntry.serializer(), entry)
+
+            json.contains("\"hints\":[1]") shouldBe true
+            json.contains("\"notes\":{\"2\":\"27\"}") shouldBe true
+            Json.decodeFromString(SudokuBackupEntry.serializer(), json) shouldBe entry
+        }
+
         should("write a 16x16 game with the letters A to G for the digits 10 to 16") {
             val sudoku = gameOf(SudokuSize.SIXTEEN)
 
@@ -189,6 +199,8 @@ class BackupMapperTest : ShouldSpec(
                     "values hold a digit beyond the size" to backupEntry().run { copy(board = board.copy(values = "1..4..1..3..4..5")) },
                     "a given is listed twice" to backupEntry().run { copy(board = board.copy(givens = board.givens + 0)) },
                     "a cell is given and hint" to backupEntry().run { copy(board = board.copy(hints = listOf(0))) },
+                    "a given lies below the board" to backupEntry().run { copy(board = board.copy(givens = board.givens + -1)) },
+                    "a note belongs to a cell below the board" to backupEntry().run { copy(board = board.copy(notes = mapOf(-1 to "1"))) },
                     "a given lies outside the board" to backupEntry().run { copy(board = board.copy(givens = board.givens + 16)) },
                     "a hint lies before the board" to backupEntry().run { copy(board = board.copy(hints = listOf(-1))) },
                     "a given cell is empty" to backupEntry().run { copy(board = board.copy(values = ".." + board.values.drop(2))) },

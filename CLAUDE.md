@@ -139,7 +139,8 @@ public local key, so such builds and release builds cannot read each other's bac
 - `com.google.dagger:hilt-android` — DI
 - `androidx.room` — Persistence
 - `com.google.android.gms:play-services-games-v2` — Play Games achievements/leaderboards
-- `io.kjson:kjson` — JSON serialization for import/export
+- `io.kjson:kjson` — JSON for the single-sudoku share and import
+- `org.jetbrains.kotlinx:kotlinx-serialization-json` — the backup sections (`data/backup/`)
 
 `app/src/main/res/values/games-ids.xml` is the verbatim Play Console export; never edit it.
 

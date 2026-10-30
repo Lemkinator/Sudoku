@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,14 +27,8 @@ import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
-import de.lemke.sudoku.domain.ExportDataUseCase
-import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
-import de.lemke.sudoku.domain.model.DataExportResult
-import de.lemke.sudoku.domain.model.DataImportResult
-import de.lemke.sudoku.domain.model.ExportProgress
-import de.lemke.sudoku.domain.model.ImportProgress
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,31 +56,6 @@ sealed interface InvalidSudokuDeletion {
     data object Finished : Result
 }
 
-/** An export or import of all sudokus. The screen shows the progress of a [Running] one and a [Result], then reports it handled. */
-sealed interface DataTransfer {
-    sealed interface Running : DataTransfer
-
-    sealed interface Result : DataTransfer
-
-    data object Idle : DataTransfer
-
-    data class Exporting(
-        val progress: ExportProgress,
-    ) : Running
-
-    data class Importing(
-        val progress: ImportProgress,
-    ) : Running
-
-    data class Exported(
-        val result: DataExportResult,
-    ) : Result
-
-    data class Imported(
-        val result: DataImportResult,
-    ) : Result
-}
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userSettings: UserSettings,
@@ -95,8 +63,6 @@ class SettingsViewModel @Inject constructor(
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
     private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
-    private val exportData: ExportDataUseCase,
-    private val importData: ImportDataUseCase,
     val sectionLabels: Set<BackupSectionLabel>,
     backupEngine: BackupEngine,
     backupDocuments: BackupDocuments,
@@ -106,9 +72,6 @@ class SettingsViewModel @Inject constructor(
 
     val invalidSudokuDeletion: StateFlow<InvalidSudokuDeletion>
         field = MutableStateFlow<InvalidSudokuDeletion>(InvalidSudokuDeletion.Idle)
-
-    val dataTransfer: StateFlow<DataTransfer>
-        field = MutableStateFlow<DataTransfer>(DataTransfer.Idle)
 
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
@@ -160,34 +123,6 @@ class SettingsViewModel @Inject constructor(
 
     fun onInvalidSudokuDeletionHandled(result: InvalidSudokuDeletion.Result) {
         invalidSudokuDeletion.compareAndSet(result, InvalidSudokuDeletion.Idle)
-    }
-
-    fun onExportDestinationPicked(uri: Uri) =
-        startDataTransfer(DataTransfer.Exporting(ExportProgress.Reading)) {
-            DataTransfer.Exported(exportData(uri) { dataTransfer.value = DataTransfer.Exporting(it) })
-        }
-
-    fun onExportDestinationMissing() {
-        if (dataTransfer.value is DataTransfer.Running) return
-        dataTransfer.value = DataTransfer.Exported(DataExportResult.WriteFailed)
-    }
-
-    fun onImportFilePicked(uri: Uri) =
-        startDataTransfer(DataTransfer.Importing(ImportProgress.Reading)) {
-            DataTransfer.Imported(importData(uri) { dataTransfer.value = DataTransfer.Importing(it) })
-        }
-
-    fun onDataTransferHandled(result: DataTransfer.Result) {
-        dataTransfer.compareAndSet(result, DataTransfer.Idle)
-    }
-
-    private fun startDataTransfer(
-        running: DataTransfer.Running,
-        work: suspend () -> DataTransfer.Result,
-    ) {
-        if (dataTransfer.value is DataTransfer.Running) return
-        dataTransfer.value = running
-        viewModelScope.launch { dataTransfer.value = work() }
     }
 
     private fun setDailySudokuNotification(enabled: Boolean) {

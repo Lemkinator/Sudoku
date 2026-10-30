@@ -20,16 +20,11 @@ import android.net.Uri
 import java.io.File
 import java.io.FileNotFoundException
 
-/**
- * Serves the documents added for a [Uri] and reads assets from the app's asset sources.
- * Records every successful write in [written].
- */
+/** Serves the documents added for a [Uri] and reads assets from the app's asset sources. */
 class FakeSudokuDocuments(
     private val assetsDir: File = File("src/main/assets"),
 ) : SudokuDocuments {
     private val documents = mutableMapOf<Uri, Pair<DocumentInfo, String?>>()
-    private val unwritable = mutableSetOf<Uri>()
-    val written = mutableMapOf<Uri, String>()
 
     fun addDocument(
         uri: Uri,
@@ -39,20 +34,7 @@ class FakeSudokuDocuments(
         documents[uri] = info to content
     }
 
-    fun refuseWrites(uri: Uri) {
-        unwritable += uri
-    }
-
     override fun readText(uri: Uri): String = documents[uri]?.second ?: throw FileNotFoundException("No content for $uri")
-
-    override fun writeText(
-        uri: Uri,
-        text: String,
-    ): Boolean {
-        if (uri in unwritable) return false
-        written[uri] = text
-        return true
-    }
 
     override fun readAsset(path: String): String = File(assetsDir, path).readText()
 

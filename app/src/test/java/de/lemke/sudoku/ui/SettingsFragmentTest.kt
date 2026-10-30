@@ -17,14 +17,9 @@
 package de.lemke.sudoku.ui
 
 import android.Manifest.permission.POST_NOTIFICATIONS
-import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context.NOTIFICATION_SERVICE
-import android.content.Intent
-import android.content.pm.ProviderInfo
-import android.net.Uri
 import android.os.Looper
-import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
@@ -47,30 +42,16 @@ import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.SudokuWithFields
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.di.SudokusRepositoryModule
-import de.lemke.sudoku.domain.FakeDocumentProvider
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.domain.model.SudokuSize
-import dev.oneuiproject.oneui.dialog.ProgressDialog
-import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import io.kotest.matchers.types.shouldBeInstanceOf
-import java.io.File
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
@@ -84,10 +65,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowContentResolver
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
-import dev.oneuiproject.oneui.design.R as designR
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(SudokusRepositoryModule::class)
@@ -209,324 +188,6 @@ class SettingsFragmentTest {
             val activity = shadowOf(fragment.requireActivity())
             activity.nextStartedActivity?.component?.className shouldBe IntroActivity::class.java.name
             activity.nextStartedActivity shouldBe null
-        }
-
-    // endregion
-
-    // region exportData / importData
-
-    @Test
-    fun `tapping the importData preference twice shows one confirmation dialog`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("importData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            ShadowDialog.getShownDialogs().count { it.isShowing } shouldBe 1
-        }
-
-    @Test
-    fun `tapping the import confirmation's ok button twice launches one document picker`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("importData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val okButton = (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE)
-            okButton.performClick()
-            okButton.performClick()
-            idleMainLooper()
-            val activity = shadowOf(fragment.requireActivity())
-            activity.nextStartedActivity?.action shouldBe android.content.Intent.ACTION_OPEN_DOCUMENT
-            activity.nextStartedActivity shouldBe null
-        }
-
-    @Test
-    fun `the import confirmation's ok button shows the error toast once when no app can pick a document`() =
-        launch { fragment ->
-            shadowOf(ApplicationProvider.getApplicationContext<HiltTestApplication>()).checkActivities(true)
-            val pref = fragment.pref<PreferenceScreen>("importData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            idleMainLooper()
-            shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBeNull()
-            ShadowToast.shownToastCount() shouldBe 1
-            ShadowToast.getTextOfLatestToast() shouldBe "Error: Opening content is not supported on your device."
-        }
-
-    @Test
-    fun `exportData preference launches a create-document picker`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("exportData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val started = shadowOf(fragment.requireActivity()).nextStartedActivity
-            started.shouldNotBeNull()
-            started.action shouldBe android.content.Intent.ACTION_CREATE_DOCUMENT
-        }
-
-    @Test
-    fun `importData preference shows a confirmation dialog`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("importData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val dialog = ShadowDialog.getLatestDialog()
-            dialog.shouldNotBeNull()
-            dialog.isShowing.shouldBeTrue()
-        }
-
-    @Test
-    fun `importData preference's ok button launches a document picker`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("importData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            idleMainLooper()
-            dialog.isShowing.shouldBeFalse()
-        }
-
-    @Test
-    fun `exportData's result callback ignores a cancelled picker`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("exportData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val shadowActivity = shadowOf(fragment.requireActivity())
-            val started = shadowActivity.peekNextStartedActivityForResult()!!
-            shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
-            idleMainLooper()
-            ShadowDialog.getLatestDialog().shouldBeNull()
-        }
-
-    @Test
-    fun `exportData's result callback shows the file error dialog for an OK result without a destination`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("exportData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val shadowActivity = shadowOf(fragment.requireActivity())
-            val started = shadowActivity.peekNextStartedActivityForResult()!!
-            shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent())
-            idleMainLooper()
-            val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
-            resultDialog.isShowing.shouldBeTrue()
-            resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
-        }
-
-    @Test
-    fun `exportData's result callback shows the file error dialog for an OK result with a null data intent`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("exportData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val shadowActivity = shadowOf(fragment.requireActivity())
-            val started = shadowActivity.peekNextStartedActivityForResult()!!
-            shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, null)
-            idleMainLooper()
-            val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
-            resultDialog.isShowing.shouldBeTrue()
-            resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
-        }
-
-    @Test
-    fun `exportData's result callback exports to the picked destination on RESULT_OK`() =
-        launch { fragment ->
-            val destinationFile = File.createTempFile("settings-fragment-export", ".json")
-            try {
-                val pref = fragment.pref<PreferenceScreen>("exportData")
-                pref.onPreferenceClickListener?.onPreferenceClick(pref)
-                val shadowActivity = shadowOf(fragment.requireActivity())
-                val started = shadowActivity.peekNextStartedActivityForResult()!!
-                shadowActivity.receiveResult(
-                    started.intent,
-                    Activity.RESULT_OK,
-                    Intent().apply { data = Uri.fromFile(destinationFile) },
-                )
-                idleMainLooper()
-                destinationFile.readText() shouldBe "[]"
-            } finally {
-                destinationFile.delete()
-            }
-        }
-
-    private fun pickExportDestination(
-        fragment: SettingsActivity.SettingsFragment,
-        destination: Uri,
-    ) {
-        val pref = fragment.pref<PreferenceScreen>("exportData")
-        pref.onPreferenceClickListener?.onPreferenceClick(pref)
-        val shadowActivity = shadowOf(fragment.requireActivity())
-        val started = shadowActivity.peekNextStartedActivityForResult()!!
-        shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent().apply { data = destination })
-        idleMainLooper()
-    }
-
-    @Test
-    fun `exportData shows the progress dialog while the export runs and the success dialog once it finished`() =
-        launch { fragment ->
-            val destinationFile = File.createTempFile("settings-fragment-export", ".json")
-            try {
-                getAllGate = CompletableDeferred()
-
-                pickExportDestination(fragment, Uri.fromFile(destinationFile))
-
-                val progressDialog = ShadowDialog.getLatestDialog().shouldBeInstanceOf<ProgressDialog>()
-                progressDialog.isShowing.shouldBeTrue()
-                progressDialog.findViewById<TextView>(designR.id.message)?.text?.toString() shouldBe
-                    fragment.getString(R.string.export_data_ongoing)
-
-                getAllGate.complete(Unit)
-                idleMainLooper()
-
-                progressDialog.isShowing.shouldBeFalse()
-                val successDialog = ShadowDialog.getLatestDialog() as AlertDialog
-                successDialog.isShowing.shouldBeTrue()
-                successDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe
-                    fragment.getString(R.string.export_data_success)
-            } finally {
-                destinationFile.delete()
-            }
-        }
-
-    @Test
-    fun `exportData shows the file error dialog instead of crashing when the provider fails to open the destination`() =
-        launch { fragment ->
-            val authority = "settings.export.denied"
-            val provider =
-                FakeDocumentProvider(
-                    File.createTempFile("settings-fragment-export", ".json").apply { deleteOnExit() },
-                    "application/json",
-                    exists = true,
-                    openFailure = SecurityException("Permission Denial"),
-                )
-            provider.attachInfo(ApplicationProvider.getApplicationContext(), ProviderInfo().apply { this.authority = authority })
-            ShadowContentResolver.registerProviderInternal(authority, provider)
-
-            pickExportDestination(fragment, Uri.parse("content://$authority/document/export"))
-
-            val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
-            resultDialog.isShowing.shouldBeTrue()
-            resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString() shouldBe "Error creating file"
-        }
-
-    @Test
-    fun `importData's result callback shows an error toast when no file was selected`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("importData")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            idleMainLooper()
-            val shadowActivity = shadowOf(fragment.requireActivity())
-            val started = shadowActivity.peekNextStartedActivityForResult()!!
-            shadowActivity.receiveResult(started.intent, Activity.RESULT_CANCELED, null)
-            idleMainLooper()
-            ShadowToast.getTextOfLatestToast() shouldBe fragment.getString(R.string.error_no_file_selected)
-        }
-
-    @Test
-    fun `importData's result callback imports the picked file on RESULT_OK`() =
-        launch { fragment ->
-            val sourceFile = File.createTempFile("settings-fragment-import", ".json")
-            sourceFile.writeText("[]")
-            try {
-                val pref = fragment.pref<PreferenceScreen>("importData")
-                pref.onPreferenceClickListener?.onPreferenceClick(pref)
-                val confirmDialog = ShadowDialog.getLatestDialog() as AlertDialog
-                confirmDialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-                idleMainLooper()
-                val shadowActivity = shadowOf(fragment.requireActivity())
-                val started = shadowActivity.peekNextStartedActivityForResult()!!
-                shadowActivity.receiveResult(
-                    started.intent,
-                    Activity.RESULT_OK,
-                    Intent().apply { data = Uri.fromFile(sourceFile) },
-                )
-                idleMainLooper()
-                val resultDialog = ShadowDialog.getLatestDialog().shouldNotBeNull()
-                resultDialog shouldNotBe confirmDialog
-                resultDialog.isShowing.shouldBeTrue()
-            } finally {
-                sourceFile.delete()
-            }
-        }
-
-    private fun registerImportDocument(
-        authority: String,
-        exports: List<SudokuExport>,
-    ): Uri = registerImportDocument(authority, exports.stringifyJSON(), "application/json")
-
-    private fun registerImportDocument(
-        authority: String,
-        content: String,
-        mimeType: String,
-    ): Uri {
-        val file = File.createTempFile("settings-fragment-import", ".json").apply { deleteOnExit() }
-        file.writeText(content)
-        val provider = FakeDocumentProvider(file, mimeType, exists = true, openFailure = null)
-        provider.attachInfo(ApplicationProvider.getApplicationContext(), ProviderInfo().apply { this.authority = authority })
-        ShadowContentResolver.registerProviderInternal(authority, provider)
-        return Uri.parse("content://$authority/document/import")
-    }
-
-    private fun exportOfSize(size: Int): SudokuExport =
-        sudokuToExport(
-            Sudoku.create(
-                sudokuId = SudokuId.generate(),
-                size = SudokuSize.FOUR,
-                difficulty = Difficulty.VERY_EASY,
-                modeLevel = Sudoku.MODE_NORMAL,
-                fields = MutableList(SudokuSize.FOUR.cellCount) { Field(position = Position.create(it, SudokuSize.FOUR), solution = 1) },
-            ),
-        ).copy(size = size)
-
-    private fun importResultMessage(
-        fragment: SettingsActivity.SettingsFragment,
-        uri: Uri,
-    ): String? {
-        val pref = fragment.pref<PreferenceScreen>("importData")
-        pref.onPreferenceClickListener?.onPreferenceClick(pref)
-        (ShadowDialog.getLatestDialog() as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-        idleMainLooper()
-        val shadowActivity = shadowOf(fragment.requireActivity())
-        val started = shadowActivity.peekNextStartedActivityForResult()!!
-        shadowActivity.receiveResult(started.intent, Activity.RESULT_OK, Intent().apply { data = uri })
-        idleMainLooper()
-        val resultDialog = ShadowDialog.getLatestDialog() as AlertDialog
-        return resultDialog.findViewById<TextView>(android.R.id.message)?.text?.toString()
-    }
-
-    @Test
-    fun `importData's result dialog keeps the plain success message when nothing is skipped`() =
-        launch { fragment ->
-            val uri = registerImportDocument("settings.import.none", listOf(exportOfSize(4)))
-
-            importResultMessage(fragment, uri) shouldBe "Data imported successfully."
-        }
-
-    @Test
-    fun `importData's result dialog names one skipped sudoku`() =
-        launch { fragment ->
-            val uri = registerImportDocument("settings.import.one", listOf(exportOfSize(4), exportOfSize(5)))
-
-            importResultMessage(fragment, uri) shouldBe "Data imported successfully. 1 invalid Sudoku was skipped."
-        }
-
-    @Test
-    fun `importData's result dialog counts two skipped sudokus`() =
-        launch { fragment ->
-            val uri = registerImportDocument("settings.import.two", listOf(exportOfSize(5), exportOfSize(4), exportOfSize(0)))
-
-            importResultMessage(fragment, uri) shouldBe "Data imported successfully. 2 invalid Sudokus were skipped."
-        }
-
-    @Test
-    fun `importData's result dialog shows the invalid-file error for a document with the wrong mime type`() =
-        launch { fragment ->
-            val uri = registerImportDocument("settings.import.wrongmime", listOf(exportOfSize(4)).stringifyJSON(), "text/plain")
-
-            importResultMessage(fragment, uri) shouldBe "Error: No valid file."
-        }
-
-    @Test
-    fun `importData's result dialog shows the invalid-JSON error for malformed JSON`() =
-        launch { fragment ->
-            val uri = registerImportDocument("settings.import.malformed", "[{not json", "application/json")
-
-            importResultMessage(fragment, uri) shouldBe "Error: No valid JSON file."
         }
 
     // endregion
@@ -728,22 +389,6 @@ class SettingsFragmentTest {
             fragment.removePref<PreferenceScreen>("intro")
             fragment.initIntroPreference()
             fragment.findPreference<PreferenceScreen>("intro").shouldBeNull()
-        }
-
-    @Test
-    fun `exportData init logs and no-ops when the preference is missing`() =
-        launch { fragment ->
-            fragment.removePref<PreferenceScreen>("exportData")
-            fragment.initExportDataPreference()
-            fragment.findPreference<PreferenceScreen>("exportData").shouldBeNull()
-        }
-
-    @Test
-    fun `importData init logs and no-ops when the preference is missing`() =
-        launch { fragment ->
-            fragment.removePref<PreferenceScreen>("importData")
-            fragment.initImportDataPreference()
-            fragment.findPreference<PreferenceScreen>("importData").shouldBeNull()
         }
 
     @Test

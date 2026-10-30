@@ -35,12 +35,6 @@ interface SudokuDocuments {
     /** Reads the document at [uri]; throws [FileNotFoundException] when its provider has no content for it. */
     fun readText(uri: Uri): String
 
-    /** Writes [text] to the document at [uri]; returns false when its provider opens no stream for it. */
-    fun writeText(
-        uri: Uri,
-        text: String,
-    ): Boolean
-
     fun readAsset(path: String): String
 
     fun describe(uri: Uri): DocumentInfo
@@ -53,21 +47,6 @@ class DefaultSudokuDocuments @Inject constructor(
         val stream = context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content for $uri")
         return stream.reader().use { it.readText() }
     }
-
-    override fun writeText(
-        uri: Uri,
-        text: String,
-    ): Boolean =
-        when (val stream = context.contentResolver.openOutputStream(uri)) {
-            null -> {
-                false
-            }
-
-            else -> {
-                stream.writer().use { writer -> writer.write(text) }
-                true
-            }
-        }
 
     override fun readAsset(path: String): String =
         context.assets

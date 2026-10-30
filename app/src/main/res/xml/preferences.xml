@@ -73,14 +73,6 @@
         android:title="@string/commonutils_dev_options"
         app:isPreferenceVisible="false">
         <PreferenceScreen
-            android:key="exportData"
-            android:summary="@string/export_data_summary"
-            android:title="@string/export_data" />
-        <PreferenceScreen
-            android:key="importData"
-            android:summary="@string/import_data_summary"
-            android:title="@string/import_data" />
-        <PreferenceScreen
             android:key="deleteInvalidSudokus"
             android:summary="@string/delete_invalid_sudokus_summary"
             android:title="@string/delete_invalid_sudokus" />
