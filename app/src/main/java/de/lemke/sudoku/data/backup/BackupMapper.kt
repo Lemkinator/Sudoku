@@ -30,8 +30,9 @@ import java.time.temporal.ChronoUnit.SECONDS
 private const val EMPTY_CELL = '.'
 
 /**
- * The game of [entry], or null if the entry is broken. A broken entry fails a shape check; a given or hint cell needs no value that
- * matches its solution, because `sudokuFromDb` reads such a game too. [zone] places the updated stamp on the device clock.
+ * The game of [entry], or null if the entry is broken. A broken entry fails a shape check, has a mode level below
+ * [Sudoku.MODE_DAILY], negative seconds, or a note digit beyond its board size. A given or hint cell needs no value that matches its
+ * solution. [zone] places the updated stamp on the device clock.
  */
 fun sudokuFromBackup(
     entry: SudokuBackupEntry,
@@ -66,8 +67,16 @@ fun sudokuFromBackup(
     }
 }
 
-/** The entry of [sudoku], or null if a solution or value has no digit char. [zone] gives the offset of both stamps. */
+/**
+ * The entry of [sudoku], or null if a solution or value has no digit char or [sudokuFromBackup] cannot read the entry back, so every
+ * written entry restores. [zone] gives the offset of both stamps.
+ */
 fun sudokuToBackup(
+    sudoku: Sudoku,
+    zone: ZoneId,
+): SudokuBackupEntry? = entryOrNull(sudoku, zone)?.takeIf { sudokuFromBackup(it, zone) != null }
+
+private fun entryOrNull(
     sudoku: Sudoku,
     zone: ZoneId,
 ): SudokuBackupEntry? =

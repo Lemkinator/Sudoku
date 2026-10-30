@@ -305,5 +305,23 @@ class BackupMapperTest : ShouldSpec(
 
             sudokuToBackup(sudoku, BERLIN).shouldBeNull()
         }
+
+        should("write no entry for a game with negative seconds") {
+            val sudoku = gameOf(SudokuSize.FOUR).apply { seconds = -5 }
+
+            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
+        }
+
+        should("write no entry for a game with a mode level below daily") {
+            val sudoku = gameOf(SudokuSize.FOUR).copy(modeLevel = -2)
+
+            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
+        }
+
+        should("write no entry for a game with a note digit beyond its board size") {
+            val sudoku = gameOf(SudokuSize.FOUR, notes = listOf('1', '5'))
+
+            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
+        }
     },
 )
