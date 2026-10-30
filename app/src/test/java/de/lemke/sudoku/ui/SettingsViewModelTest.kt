@@ -19,11 +19,23 @@ package de.lemke.sudoku.ui
 import android.app.Application
 import android.net.Uri
 import android.os.Looper
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import de.lemke.commonutils.backup.BackupSectionLabel
+import de.lemke.commonutils.backup.BackupState
+import de.lemke.commonutils.backup.DirectBackupTransaction
+import de.lemke.commonutils.backup.FakeBackupDocuments
+import de.lemke.commonutils.backup.core.BackupApp
+import de.lemke.commonutils.backup.core.BackupEngine
+import de.lemke.commonutils.backup.core.BackupFileExtension
 import de.lemke.commonutils.freshTestPreferences
+import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
 import de.lemke.sudoku.data.FakeSudokuDocuments
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.backup.SudokuBackupSection
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.data.database.sudokuToExport
@@ -48,6 +60,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import java.time.Duration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -59,6 +72,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -75,6 +89,9 @@ class SettingsViewModelTest {
     private val sudokuDocuments = FakeSudokuDocuments()
     private val exportUri = Uri.parse("content://files/export.json")
     private val importUri = Uri.parse("content://files/import.json")
+    private val database =
+        Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java).allowMainThreadQueries().build()
+    private val sectionLabels = setOf(BackupSectionLabel("sudokus", R.string.backup_section_sudokus))
     private val viewModel by lazy { newViewModel() }
 
     private fun newViewModel(dispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()): SettingsViewModel {
@@ -87,8 +104,20 @@ class SettingsViewModelTest {
             DeleteInvalidSudokusUseCase(sudokusRepository, dispatcher),
             ExportDataUseCase(sudokuDocuments, GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher),
             ImportDataUseCase(sudokuDocuments, sudokusRepository, dispatcher),
+            sectionLabels,
+            BackupEngine(
+                setOf(SudokuBackupSection(database.sudokuDao(), Clock.systemUTC())),
+                DirectBackupTransaction(),
+                BackupApp("sudoku", 1, BackupFileExtension(".sudoku")),
+                { "2026-10-30T12:00:00Z" },
+            ),
+            FakeBackupDocuments(),
+            dispatcher,
         )
     }
+
+    @After
+    fun closeDatabase() = database.close()
 
     private fun storeInvalidSudoku(): SudokuId =
         testSudoku().also { sudokusRepository.insertRows(sudokuWithFieldsToDb(it).copy(fields = emptyList())) }.id
@@ -96,6 +125,16 @@ class SettingsViewModelTest {
     private fun addImportFile(vararg exports: SudokuExport) = sudokuDocuments.addDocument(importUri, exports.toList().stringifyJSON())
 
     private fun idleFor(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
+
+    @Test
+    fun `backup starts idle`() {
+        viewModel.backup.state.value shouldBe BackupState.Idle
+    }
+
+    @Test
+    fun `sectionLabels are the labels of the bound backup sections`() {
+        viewModel.sectionLabels shouldBe sectionLabels
+    }
 
     @Test
     fun `dailySudokuNotificationHour reads through to userSettings`() {

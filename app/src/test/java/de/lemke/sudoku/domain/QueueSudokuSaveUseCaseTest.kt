@@ -20,6 +20,7 @@ import android.app.Application
 import android.util.Log
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.testSudoku
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -28,7 +29,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -114,6 +117,51 @@ class QueueSudokuSaveUseCaseTest {
             failed.getCompletionExceptionOrNull().shouldBeInstanceOf<IllegalStateException>()
             saved shouldBe listOf(null to false)
             failureLogs().shouldBeEmpty()
+        }
+
+    @Test
+    fun `run an exclusive block only after every earlier save finished`() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(onlyUpdate = false, gate)
+            queueSudokuSave(testSudoku())
+
+            val savesSeenByBlock = async { queueSudokuSave.exclusive { sudokusRepository.saves.size } }
+            runCurrent()
+
+            savesSeenByBlock.isCompleted shouldBe false
+            gate.complete(Unit)
+            savesSeenByBlock.await() shouldBe 1
+        }
+
+    @Test
+    fun `hold a save queued during an exclusive block until the block ends`() =
+        runTest {
+            val queueSudokuSave = queue()
+            var savesDuringBlock = -1
+
+            val queuedDuringBlock =
+                queueSudokuSave.exclusive {
+                    val queued = queueSudokuSave(testSudoku())
+                    savesDuringBlock = sudokusRepository.saves.size
+                    queued
+                }
+            queuedDuringBlock.await()
+
+            savesDuringBlock shouldBe 0
+            sudokusRepository.saves.size shouldBe 1
+        }
+
+    @Test
+    fun `release the saves queued behind an exclusive block that failed`() =
+        runTest {
+            val queueSudokuSave = queue()
+
+            shouldThrow<IllegalStateException> { queueSudokuSave.exclusive { error("restore failed") } }.message shouldBe "restore failed"
+            queueSudokuSave(testSudoku()).await()
+
+            sudokusRepository.saves.size shouldBe 1
         }
 
     @Test

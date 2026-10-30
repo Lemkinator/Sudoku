@@ -45,6 +45,7 @@ import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.DocumentPick
 import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
+import de.lemke.commonutils.ui.utils.bindBackupPreferences
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.initCommonUtilsPreferences
 import de.lemke.commonutils.ui.utils.launchCreateDocument
@@ -120,6 +121,7 @@ class SettingsActivity : AppCompatActivity() {
         ) {
             addPreferencesFromResource(commonutilsR.xml.preferences_design)
             addPreferencesFromResource(R.xml.preferences)
+            addPreferencesFromResource(commonutilsR.xml.preferences_backup)
             addPreferencesFromResource(commonutilsR.xml.preferences_more_info)
         }
 
@@ -142,6 +144,7 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
             initCommonUtilsPreferences(userSettings)
+            bindBackupPreferences(viewModel.sectionLabels) { viewModel.backup }
             initPreferences()
         }
 

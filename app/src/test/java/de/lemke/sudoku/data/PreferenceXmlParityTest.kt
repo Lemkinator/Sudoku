@@ -38,6 +38,7 @@ class PreferenceXmlParityTest {
         assertPreferenceXmlBoundToSettings(
             commonutilsR.xml.preferences_design,
             R.xml.preferences,
+            commonutilsR.xml.preferences_backup,
             commonutilsR.xml.preferences_more_info,
             factory = { prefs -> UserSettings(prefs, CoroutineScope(Dispatchers.Unconfined)) },
         )

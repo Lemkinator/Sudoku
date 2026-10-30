@@ -20,6 +20,11 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.lemke.commonutils.backup.BackupDocuments
+import de.lemke.commonutils.backup.BackupSectionLabel
+import de.lemke.commonutils.backup.BackupStateHolder
+import de.lemke.commonutils.backup.core.BackupEngine
+import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
@@ -33,6 +38,7 @@ import de.lemke.sudoku.domain.model.ExportProgress
 import de.lemke.sudoku.domain.model.ImportProgress
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -91,7 +97,13 @@ class SettingsViewModel @Inject constructor(
     private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
     private val exportData: ExportDataUseCase,
     private val importData: ImportDataUseCase,
+    val sectionLabels: Set<BackupSectionLabel>,
+    backupEngine: BackupEngine,
+    backupDocuments: BackupDocuments,
+    @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
+    val backup = BackupStateHolder(viewModelScope, backupEngine, backupDocuments, defaultDispatcher)
+
     val invalidSudokuDeletion: StateFlow<InvalidSudokuDeletion>
         field = MutableStateFlow<InvalidSudokuDeletion>(InvalidSudokuDeletion.Idle)
 

@@ -109,6 +109,7 @@
     <string name="no_limit">No limit</string>
     <string name="error_limit_reached">Error limit reached (%1$d).</string>
 
+    <string name="backup_section_sudokus">Sudokus</string>
     <string name="export_data">Export data</string>
     <string name="export_data_summary">Export JSON file</string>
     <string name="export_data_ongoing">Data is being exported…</string>
