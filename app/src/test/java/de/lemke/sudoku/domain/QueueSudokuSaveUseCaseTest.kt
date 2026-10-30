@@ -165,6 +165,27 @@ class QueueSudokuSaveUseCaseTest {
         }
 
     @Test
+    fun `keep later saves behind an earlier save when the exclusive caller is cancelled while waiting`() =
+        runTest {
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(onlyUpdate = false, gate)
+            queueSudokuSave(testSudoku())
+
+            val waiting = async { queueSudokuSave.exclusive { } }
+            runCurrent()
+            waiting.cancel()
+            val later = queueSudokuSave(testSudoku(), onlyUpdate = true)
+            runCurrent()
+
+            later.isCompleted shouldBe false
+            sudokusRepository.saves.size shouldBe 0
+            gate.complete(Unit)
+            later.await()
+            saved shouldBe listOf(null to false, null to true)
+        }
+
+    @Test
     fun `launch saves the rows after every earlier save`() {
         val sudoku = testSudoku()
         val gate = CompletableDeferred<Unit>()

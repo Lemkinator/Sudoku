@@ -116,6 +116,8 @@ jobs:
 
       - name: Prepare Play Store release
         if: steps.version_info.outputs.changed == 'true'
+        env:
+          BACKUP_SIGNING_KEY: ${{ secrets.BACKUP_SIGNING_KEY }}
         run: |
           ./gradlew :app:bundleRelease --stacktrace
           mkdir -p app/build/outputs/whatsNew
