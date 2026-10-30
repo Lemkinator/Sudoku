@@ -50,7 +50,7 @@ data class SudokuBackupEntry(
 data class BoardBackup(
     val solution: String,
     val values: String,
-    val givens: List<Int> = emptyList(),
+    val givens: List<Int>,
     val hints: List<Int> = emptyList(),
     val notes: Map<Int, String> = emptyMap(),
 )

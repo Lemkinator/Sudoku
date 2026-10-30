@@ -33,6 +33,8 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 
 private val BERLIN = ZoneId.of("Europe/Berlin")
 private val NEW_YORK = ZoneId.of("America/New_York")
@@ -123,6 +125,22 @@ class BackupMapperTest : ShouldSpec(
             json.contains("\"hints\":[1]") shouldBe true
             json.contains("\"notes\":{\"2\":\"27\"}") shouldBe true
             Json.decodeFromString(SudokuBackupEntry.serializer(), json) shouldBe entry
+        }
+
+        should("read a board whose json lacks the hints and the notes") {
+            val entry = backupEntry()
+            val engineJson =
+                Json {
+                    ignoreUnknownKeys = true
+                    encodeDefaults = true
+                }
+            val written = engineJson.encodeToJsonElement(SudokuBackupEntry.serializer(), entry).jsonObject
+            val board = written.getValue("board").jsonObject
+            val withoutOptional = JsonObject(written + ("board" to JsonObject(board - "hints" - "notes")))
+
+            board.keys shouldBe setOf("solution", "values", "givens", "hints", "notes")
+            engineJson.decodeFromJsonElement(SudokuBackupEntry.serializer(), written) shouldBe entry
+            engineJson.decodeFromJsonElement(SudokuBackupEntry.serializer(), withoutOptional) shouldBe entry
         }
 
         should("write a 16x16 game with the letters A to G for the digits 10 to 16") {
