@@ -48,6 +48,8 @@ enum class Difficulty(
     companion object {
         fun fromInt(value: Int?): Difficulty = entries.getOrNull(value ?: -1) ?: MEDIUM
 
+        fun fromNameOrNull(name: String): Difficulty? = entries.firstOrNull { it.name == name }
+
         fun getLocalString(
             ordinal: Int,
             resources: Resources,

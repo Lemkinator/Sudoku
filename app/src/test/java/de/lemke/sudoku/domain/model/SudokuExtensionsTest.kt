@@ -362,6 +362,20 @@ class SudokuExtensionsTest : ShouldSpec(
             (-1).toSudokuChar().shouldBeNull()
         }
 
+        should("map digit chars back to their value") {
+            '1'.toSudokuInt() shouldBe 1
+            '9'.toSudokuInt() shouldBe 9
+            'A'.toSudokuInt() shouldBe 10
+            'G'.toSudokuInt() shouldBe 16
+        }
+
+        should("map chars outside the sudoku digits to null") {
+            '0'.toSudokuInt().shouldBeNull()
+            'H'.toSudokuInt().shouldBeNull()
+            'a'.toSudokuInt().shouldBeNull()
+            '.'.toSudokuInt().shouldBeNull()
+        }
+
         should("format monthAndYear as full month name and year") {
             LocalDateTime.of(2024, 3, 15, 10, 30).monthAndYear shouldBe "March 2024"
         }
