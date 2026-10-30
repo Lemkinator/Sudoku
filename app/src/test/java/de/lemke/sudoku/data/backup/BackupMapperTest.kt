@@ -129,6 +129,16 @@ class BackupMapperTest : ShouldSpec(
             Json.decodeFromString(SudokuBackupEntry.serializer(), json) shouldBe entry
         }
 
+        should("leave out the empty hints and notes when defaults are not encoded") {
+            val entry = backupEntry()
+
+            val json = Json.encodeToString(SudokuBackupEntry.serializer(), entry)
+
+            json.contains("\"hints\"") shouldBe false
+            json.contains("\"notes\"") shouldBe false
+            Json.decodeFromString(SudokuBackupEntry.serializer(), json) shouldBe entry
+        }
+
         should("read a board whose json lacks the hints and the notes") {
             val entry = backupEntry()
             val engineJson =
@@ -210,6 +220,12 @@ class BackupMapperTest : ShouldSpec(
                     ).replace("2026-05-02T08:00:00+02:00", "2026-05-02T08:00:00")
 
             shouldThrow<SerializationException> { Json.decodeFromString(SudokuBackupEntry.serializer(), json) }
+        }
+
+        should("refuse a board without givens when decoding") {
+            shouldThrow<SerializationException> {
+                Json.decodeFromString(BoardBackup.serializer(), """{"solution":"1234341223414123","values":"1..4..1..3..4..3"}""")
+            }
         }
 
         should("refuse an entry without a board when decoding") {
