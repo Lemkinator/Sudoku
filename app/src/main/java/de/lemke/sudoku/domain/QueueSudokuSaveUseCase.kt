@@ -31,7 +31,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 
 /** Saves sudokus one after another in the application scope, so no save overtakes an earlier one or ends with a screen. */
 @Singleton
@@ -61,7 +60,7 @@ class QueueSudokuSaveUseCase @Inject constructor(
 
     /**
      * Runs [block] after every earlier save has ended. Saves queued meanwhile wait until [block] and every earlier save
-     * have ended, even when [block] fails or its caller is canceled.
+     * have ended, even when [block] fails or its caller is canceled. [block] must not queue a save and await it, or it deadlocks.
      */
     suspend fun <R> exclusive(block: suspend () -> R): R {
         val finished = CompletableDeferred<Unit>()
@@ -70,10 +69,7 @@ class QueueSudokuSaveUseCase @Inject constructor(
             previous?.join()
             return block()
         } finally {
-            applicationScope.launch(defaultDispatcher) {
-                previous?.join()
-                finished.complete(Unit)
-            }
+            previous?.invokeOnCompletion { finished.complete(Unit) } ?: finished.complete(Unit)
         }
     }
 

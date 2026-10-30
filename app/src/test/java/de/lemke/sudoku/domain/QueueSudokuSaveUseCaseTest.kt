@@ -28,11 +28,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -183,6 +185,25 @@ class QueueSudokuSaveUseCaseTest {
             gate.complete(Unit)
             later.await()
             saved shouldBe listOf(null to false, null to true)
+        }
+
+    @Test
+    fun `hold a later save until the block ends when the exclusive caller is cancelled while it runs`() =
+        runTest {
+            val blockGate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+
+            val running = async { queueSudokuSave.exclusive { withContext(NonCancellable) { blockGate.await() } } }
+            runCurrent()
+            running.cancel()
+            val later = queueSudokuSave(testSudoku())
+            runCurrent()
+
+            later.isCompleted shouldBe false
+            sudokusRepository.saves.size shouldBe 0
+            blockGate.complete(Unit)
+            later.await()
+            sudokusRepository.saves.size shouldBe 1
         }
 
     @Test
