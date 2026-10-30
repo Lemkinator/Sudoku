@@ -40,6 +40,7 @@ import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldMatch
 import io.kotest.matchers.string.shouldStartWith
@@ -258,15 +259,17 @@ class SettingsBackupTest {
         launch { activity ->
             store(*twoGames())
             activity.exportTo(backupFile)
+            var original = ""
+            var rewritten = ""
             rewriteBackup { name, bytes ->
-                if (name ==
-                    "sections/sudokus.json"
-                ) {
-                    bytes.decodeToString().replace("\"seconds\":0", "\"seconds\":99").encodeToByteArray()
+                if (name == "sections/sudokus.json") {
+                    original = bytes.decodeToString()
+                    original.replace("\"seconds\":0", "\"seconds\":99").also { rewritten = it }.encodeToByteArray()
                 } else {
                     bytes
                 }
             }
+            rewritten shouldNotBe original
             runBlocking { sudokuDao.deleteAll() }
 
             activity.pickImportFile(backupFile)
