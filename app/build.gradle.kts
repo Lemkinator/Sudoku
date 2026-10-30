@@ -17,6 +17,7 @@
 @file:OptIn(ExperimentalRoborazziApi::class)
 
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import java.util.Base64
 
 plugins {
     alias(libs.plugins.android.application)
@@ -40,7 +41,11 @@ fun getProperty(key: String): String? = rootProject.findProperty(key)?.toString(
 // Public on purpose: builds without the release key (CI test runs, forks) sign with it, so their backups only
 // protect against hand edits.
 val localBackupSigningKey = "bG9jYWwtYmFja3VwLWtleS1ub3QtYS1zZWNyZXQtMDE="
-val releaseBackupSigningKey = getProperty("backupSigningKey")?.takeIf { it.isNotBlank() }
+val releaseBackupSigningKey =
+    getProperty("backupSigningKey")?.trim()?.takeIf { it.isNotEmpty() }?.also { key ->
+        val keySize = runCatching { Base64.getDecoder().decode(key).size }.getOrNull()
+        check(keySize == 32) { "backupSigningKey must be the Base64 of exactly 32 bytes" }
+    }
 
 android {
     namespace = "de.lemke.sudoku"
