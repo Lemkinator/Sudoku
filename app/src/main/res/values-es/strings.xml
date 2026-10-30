@@ -96,25 +96,7 @@
     <string name="no_limit">Sin límite</string>
     <string name="error_limit_reached">Límite de errores alcanzado (%1$d).</string>
 
-    <string name="export_data">Exportar datos</string>
-    <string name="export_data_summary">Exportar archivo JSON</string>
-    <string name="export_data_ongoing">Exportando datos…</string>
-    <string name="export_data_ongoing_writing_file">Escribiendo datos en el archivo…</string>
-    <string name="export_data_success">Datos exportados correctamente.</string>
-    <string name="import_data">Importar datos</string>
-    <string name="import_data_summary">Importar archivo JSON</string>
-    <string name="import_data_ongoing">Importando datos…</string>
-    <string name="import_data_ongoing_processing">Procesando datos…</string>
-    <string name="import_data_success">Datos importados correctamente.</string>
-    <plurals name="import_data_success_skipped">
-        <item quantity="one">Datos importados correctamente. Se omitió %d sudoku no válido.</item>
-        <item quantity="many">Datos importados correctamente. Se omitieron %d sudokus no válidos.</item>
-        <item quantity="other">Datos importados correctamente. Se omitieron %d sudokus no válidos.</item>
-    </plurals>
-    <string name="import_data_error_no_valid_json">Error: No se seleccionó un archivo JSON válido.</string>
-    <string name="import_data_error_no_valid_file">Error: No se seleccionó un archivo válido.</string>
-    <string name="import_data_message">¡Atención! La importación puede llevar algún tiempo. Los datos existentes podrían ser sobrescritos. En la siguiente pantalla, selecciona el archivo JSON creado al exportar (por ejemplo, \"sudoku_export_[Fecha].json\").</string>
-    <string name="error_no_file_selected">Error: No se seleccionó ningún archivo</string>
+    <string name="backup_section_sudokus">Sudokus</string>
 
     <!--Difficulties-->
     <string name="very_easy">Muy Fácil</string>

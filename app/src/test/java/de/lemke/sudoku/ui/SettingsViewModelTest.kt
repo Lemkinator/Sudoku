@@ -17,48 +17,40 @@
 package de.lemke.sudoku.ui
 
 import android.app.Application
-import android.net.Uri
 import android.os.Looper
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import de.lemke.commonutils.backup.BackupSectionLabel
+import de.lemke.commonutils.backup.DirectBackupTransaction
+import de.lemke.commonutils.backup.FakeBackupDocuments
+import de.lemke.commonutils.backup.core.BackupApp
+import de.lemke.commonutils.backup.core.BackupEngine
+import de.lemke.commonutils.backup.core.BackupFileExtension
 import de.lemke.commonutils.freshTestPreferences
+import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
-import de.lemke.sudoku.data.FakeSudokuDocuments
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.backup.SudokuBackupSection
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.SudokuExport
-import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
-import de.lemke.sudoku.domain.ExportDataUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
-import de.lemke.sudoku.domain.ImportDataUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
-import de.lemke.sudoku.domain.model.DataExportResult
-import de.lemke.sudoku.domain.model.DataImportResult
-import de.lemke.sudoku.domain.model.ExportProgress
-import de.lemke.sudoku.domain.model.ImportProgress
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.testSudoku
-import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -72,9 +64,9 @@ class SettingsViewModelTest {
     private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
     private val dailyNotifications = FakeDailyNotifications()
     private val sudokusRepository = FakeSudokusRepository()
-    private val sudokuDocuments = FakeSudokuDocuments()
-    private val exportUri = Uri.parse("content://files/export.json")
-    private val importUri = Uri.parse("content://files/import.json")
+    private val database =
+        Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java).allowMainThreadQueries().build()
+    private val sectionLabels = setOf(BackupSectionLabel("sudokus", R.string.backup_section_sudokus))
     private val viewModel by lazy { newViewModel() }
 
     private fun newViewModel(dispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()): SettingsViewModel {
@@ -85,15 +77,23 @@ class SettingsViewModelTest {
             SetDailyNotificationEnabledUseCase(userSettings, sendDailyNotification),
             IsNotificationPermissionGrantedUseCase(dailyNotifications),
             DeleteInvalidSudokusUseCase(sudokusRepository, dispatcher),
-            ExportDataUseCase(sudokuDocuments, GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher),
-            ImportDataUseCase(sudokuDocuments, sudokusRepository, dispatcher),
+            sectionLabels,
+            BackupEngine(
+                setOf(SudokuBackupSection(database.sudokuDao())),
+                DirectBackupTransaction(),
+                BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup")),
+                { "2026-10-30T12:00:00Z" },
+            ),
+            FakeBackupDocuments(),
+            dispatcher,
         )
     }
 
+    @After
+    fun closeDatabase() = database.close()
+
     private fun storeInvalidSudoku(): SudokuId =
         testSudoku().also { sudokusRepository.insertRows(sudokuWithFieldsToDb(it).copy(fields = emptyList())) }.id
-
-    private fun addImportFile(vararg exports: SudokuExport) = sudokuDocuments.addDocument(importUri, exports.toList().stringifyJSON())
 
     private fun idleFor(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
 
@@ -253,197 +253,4 @@ class SettingsViewModelTest {
         settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Running
         sudokusRepository.deletedIds shouldBe listOf(first, second)
     }
-
-    @Test
-    fun `dataTransfer starts Idle`() {
-        newViewModel().dataTransfer.value shouldBe DataTransfer.Idle
-    }
-
-    @Test
-    fun `dataTransfer forwards each export progress step and ends Exported`() =
-        runTest {
-            sudokusRepository.store(testSudoku(), testSudoku())
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            val transfers = mutableListOf<DataTransfer>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { settingsViewModel.dataTransfer.toList(transfers) }
-
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exporting(ExportProgress.Reading)
-            runCurrent()
-
-            transfers shouldBe
-                listOf(
-                    DataTransfer.Idle,
-                    DataTransfer.Exporting(ExportProgress.Reading),
-                    DataTransfer.Exporting(ExportProgress.Converting(done = 0, total = 2)),
-                    DataTransfer.Exporting(ExportProgress.Converting(done = 1, total = 2)),
-                    DataTransfer.Exporting(ExportProgress.Converting(done = 2, total = 2)),
-                    DataTransfer.Exporting(ExportProgress.Writing),
-                    DataTransfer.Exported(DataExportResult.Written),
-                )
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.Written)
-        }
-
-    @Test
-    fun `dataTransfer ends Exported with WriteFailed when the use case cannot write the destination`() =
-        runTest {
-            sudokuDocuments.refuseWrites(exportUri)
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            runCurrent()
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.WriteFailed)
-        }
-
-    @Test
-    fun `dataTransfer ends Exported with WriteFailed when the picker reports no destination`() {
-        viewModel.onExportDestinationMissing()
-
-        viewModel.dataTransfer.value shouldBe DataTransfer.Exported(DataExportResult.WriteFailed)
-    }
-
-    @Test
-    fun `a missing export destination does not replace a running transfer`() =
-        runTest {
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            settingsViewModel.onExportDestinationPicked(exportUri)
-
-            settingsViewModel.onExportDestinationMissing()
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exporting(ExportProgress.Reading)
-        }
-
-    @Test
-    fun `dataTransfer forwards each import progress step and ends Imported with the use case's result`() =
-        runTest {
-            addImportFile(sudokuToExport(testSudoku()), sudokuToExport(testSudoku()).copy(size = 5), sudokuToExport(testSudoku()))
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            val transfers = mutableListOf<DataTransfer>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { settingsViewModel.dataTransfer.toList(transfers) }
-
-            settingsViewModel.onImportFilePicked(importUri)
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Importing(ImportProgress.Reading)
-            runCurrent()
-
-            transfers shouldBe
-                listOf(
-                    DataTransfer.Idle,
-                    DataTransfer.Importing(ImportProgress.Reading),
-                    DataTransfer.Importing(ImportProgress.Parsing(done = 0, total = 3)),
-                    DataTransfer.Importing(ImportProgress.Parsing(done = 1, total = 3)),
-                    DataTransfer.Importing(ImportProgress.Parsing(done = 2, total = 3)),
-                    DataTransfer.Importing(ImportProgress.Parsing(done = 3, total = 3)),
-                    DataTransfer.Importing(ImportProgress.Saving(done = 0, total = 2)),
-                    DataTransfer.Importing(ImportProgress.Saving(done = 1, total = 2)),
-                    DataTransfer.Importing(ImportProgress.Saving(done = 2, total = 2)),
-                    DataTransfer.Imported(DataImportResult.Imported(skippedCount = 1)),
-                )
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Imported(DataImportResult.Imported(skippedCount = 1))
-        }
-
-    @Test
-    fun `dataTransfer ends Imported with InvalidFile when the use case rejects the file`() =
-        runTest {
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-
-            settingsViewModel.onImportFilePicked(importUri)
-            runCurrent()
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Imported(DataImportResult.InvalidFile)
-        }
-
-    @Test
-    fun `dataTransfer refuses a second export or an import while an export runs`() =
-        runTest {
-            val reading = CompletableDeferred<Unit>()
-            var exportReads = 0
-            sudokusRepository.beforeGetAllSudokus = {
-                exportReads++
-                reading.await()
-            }
-            addImportFile(sudokuToExport(testSudoku()))
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            runCurrent()
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            settingsViewModel.onImportFilePicked(importUri)
-            runCurrent()
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Exporting(ExportProgress.Reading)
-            exportReads shouldBe 1
-            sudokusRepository.saves.shouldBeEmpty()
-            reading.complete(Unit)
-        }
-
-    @Test
-    fun `dataTransfer refuses an export or a second import while an import runs`() =
-        runTest {
-            addImportFile(sudokuToExport(testSudoku()))
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-
-            settingsViewModel.onImportFilePicked(importUri)
-            settingsViewModel.onImportFilePicked(importUri)
-            settingsViewModel.onExportDestinationPicked(exportUri)
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Importing(ImportProgress.Reading)
-            runCurrent()
-            sudokusRepository.saves.size shouldBe 1
-            sudokuDocuments.written.shouldBeEmpty()
-        }
-
-    @Test
-    fun `dataTransfer resets to Idle once the result is handled`() =
-        runTest {
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            runCurrent()
-
-            settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Idle
-        }
-
-    @Test
-    fun `dataTransfer keeps the current result when a different result is reported handled`() =
-        runTest {
-            addImportFile(sudokuToExport(testSudoku()))
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            settingsViewModel.onImportFilePicked(importUri)
-            runCurrent()
-
-            settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Imported(DataImportResult.Imported(skippedCount = 0))
-        }
-
-    @Test
-    fun `dataTransfer keeps a new transfer running when a stale handled call arrives`() =
-        runTest {
-            addImportFile(sudokuToExport(testSudoku()))
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            runCurrent()
-            settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
-            settingsViewModel.onImportFilePicked(importUri)
-
-            settingsViewModel.onDataTransferHandled(DataTransfer.Exported(DataExportResult.Written))
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Importing(ImportProgress.Reading)
-        }
-
-    @Test
-    fun `dataTransfer starts a new transfer while an unhandled result is pending`() =
-        runTest {
-            sudokuDocuments.addDocument(importUri, "{}")
-            val settingsViewModel = newViewModel(StandardTestDispatcher(testScheduler))
-            settingsViewModel.onExportDestinationPicked(exportUri)
-            runCurrent()
-
-            settingsViewModel.onImportFilePicked(importUri)
-            runCurrent()
-
-            settingsViewModel.dataTransfer.value shouldBe DataTransfer.Imported(DataImportResult.InvalidJson)
-        }
 }

@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -54,6 +55,21 @@ class QueueSudokuSaveUseCase @Inject constructor(
                     previous?.join()
                     sudokusRepository.saveSudokuRows(rows, onlyUpdate)
                 }.also { lastSave = it }
+        }
+    }
+
+    /**
+     * Runs [block] after every earlier save has ended. Saves queued meanwhile wait until [block] and every earlier save
+     * have ended, even when [block] fails or its caller is canceled. [block] must not queue a save and await it, or it deadlocks.
+     */
+    suspend fun <R> exclusive(block: suspend () -> R): R {
+        val finished = CompletableDeferred<Unit>()
+        val previous = synchronized(lock) { lastSave.also { lastSave = finished } }
+        try {
+            previous?.join()
+            return block()
+        } finally {
+            previous?.invokeOnCompletion { finished.complete(Unit) } ?: finished.complete(Unit)
         }
     }
 

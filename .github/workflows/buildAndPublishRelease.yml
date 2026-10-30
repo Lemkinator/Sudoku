@@ -76,8 +76,16 @@ jobs:
         if: steps.version_info.outputs.changed == 'true'
         run: chmod +x ./gradlew && ./gradlew :benchmarks:pixel9Api35Setup -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
 
+      - name: Check backup signing key
+        if: steps.version_info.outputs.changed == 'true'
+        env:
+          BACKUP_SIGNING_KEY: ${{ secrets.BACKUP_SIGNING_KEY }}
+        run: '[ -n "$BACKUP_SIGNING_KEY" ] || { echo "::error::BACKUP_SIGNING_KEY secret missing"; exit 1; }'
+
       - name: Build APK
         if: steps.version_info.outputs.changed == 'true'
+        env:
+          BACKUP_SIGNING_KEY: ${{ secrets.BACKUP_SIGNING_KEY }}
         run: |
           chmod +x ./gradlew && ./gradlew :app:assembleRelease \
             -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect --stacktrace
@@ -108,6 +116,8 @@ jobs:
 
       - name: Prepare Play Store release
         if: steps.version_info.outputs.changed == 'true'
+        env:
+          BACKUP_SIGNING_KEY: ${{ secrets.BACKUP_SIGNING_KEY }}
         run: |
           ./gradlew :app:bundleRelease --stacktrace
           mkdir -p app/build/outputs/whatsNew

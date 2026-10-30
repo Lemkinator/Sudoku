@@ -17,6 +17,7 @@
 package de.lemke.sudoku
 
 import com.lemonappdev.konsist.api.Konsist
+import de.lemke.commonutils.assertBackupConventions
 import de.lemke.commonutils.assertClassBodyOrder
 import de.lemke.commonutils.assertHiltTestRuleConventions
 import de.lemke.commonutils.assertLaunchLatchConventions
@@ -39,6 +40,9 @@ class CodingConventionsTest : ShouldSpec() {
         }
         should("declare no extension on a common-utils type") {
             codeScope.assertNoCommonUtilsTypeExtensions()
+        }
+        should("keep Room entities out of the backup format") {
+            codeScope.assertBackupConventions()
         }
         should("mock no type of this project") {
             Konsist.scopeFromTest().assertNoMockedOwnTypes()

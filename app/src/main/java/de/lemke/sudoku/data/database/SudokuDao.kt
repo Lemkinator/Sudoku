@@ -76,10 +76,20 @@ interface SudokuDao {
     suspend fun getById(id: String): SudokuWithFields?
 
     @Transaction
+    @Query("SELECT * FROM sudoku WHERE id IN (:ids)")
+    suspend fun getByIds(ids: List<String>): List<SudokuWithFields>
+
+    @Transaction
     @Query("SELECT * FROM sudoku WHERE modeLevel = 0 AND updated = (SELECT MAX(updated) FROM sudoku WHERE modeLevel = 0)")
     suspend fun getRecentlyUpdatedNormalSudoku(): SudokuWithFields?
 
     @Transaction
     @Delete
     suspend fun delete(vararg sudokus: SudokuDb)
+
+    @Query("DELETE FROM sudoku WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM sudoku")
+    suspend fun deleteAll()
 }

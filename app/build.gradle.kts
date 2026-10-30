@@ -17,11 +17,13 @@
 @file:OptIn(ExperimentalRoborazziApi::class)
 
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import java.util.Base64
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.aboutlibraries)
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotless)
@@ -35,6 +37,15 @@ plugins {
 fun String.toEnvVarStyle(): String = replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
 
 fun getProperty(key: String): String? = rootProject.findProperty(key)?.toString() ?: System.getenv(key.toEnvVarStyle())
+
+// Public on purpose: builds without the release key (CI test runs, forks) sign with it, so their backups only
+// protect against hand edits.
+val localBackupSigningKey = "bG9jYWwtYmFja3VwLWtleS1ub3QtYS1zZWNyZXQtMDE="
+val releaseBackupSigningKey =
+    getProperty("backupSigningKey")?.trim()?.takeIf { it.isNotEmpty() }?.also { key ->
+        val keySize = runCatching { Base64.getDecoder().decode(key).size }.getOrNull()
+        check(keySize == 32) { "backupSigningKey must be the Base64 of exactly 32 bytes" }
+    }
 
 android {
     namespace = "de.lemke.sudoku"
@@ -62,6 +73,8 @@ android {
         versionName = "3.5.6"
         testInstrumentationRunner = "de.lemke.sudoku.HiltTestRunner"
         buildConfigField("boolean", "FIRST_RUN_SKIPPABLE", "false")
+        buildConfigField("String", "BACKUP_SIGNING_KEY", "\"${releaseBackupSigningKey ?: localBackupSigningKey}\"")
+        buildConfigField("String", "BACKUP_KEY_ID", "\"${if (releaseBackupSigningKey == null) "local" else "release"}\"")
     }
     // Hosts the fake Hilt modules shared by testDebugUnitTest and connectedDebugAndroidTest.
     @Suppress("UnstableApiUsage")
@@ -200,6 +213,7 @@ dependencies {
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
     implementation(libs.bundles.json)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.room.runtime)
     implementation(libs.hilt.android)
     ksp(libs.room.compiler)
@@ -310,7 +324,7 @@ kover {
             verify {
                 rule {
                     minBound(99, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
-                    minBound(96, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
+                    minBound(97, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
                 }
             }
         }

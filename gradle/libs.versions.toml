@@ -17,7 +17,7 @@ androidx-test-runner = "1.7.0"
 arch-core-testing = "2.2.0"
 async-layout-inflater = "1.1.0"
 benchmark-macro = "1.5.0"
-common-utils = "1.5.7"
+common-utils = "1.5.8"
 coroutines = "1.11.0"
 dependency-analysis = "3.19.2"
 detekt = "2.0.0-alpha.6"
@@ -31,6 +31,7 @@ kjson = "9.10"
 konsist = "0.18.1"
 kotest = "6.2.6"
 kotlin = "2.4.21"
+kotlinx-serialization = "1.12.0"
 kover = "0.9.11"
 ksp = "2.3.12"
 # Used via spotless { kotlin { ktlint(libs.versions.ktlint.get()) } } — version-only ref, no library/plugin alias
@@ -76,6 +77,7 @@ konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanary" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 oneui-design = { module = "io.github.tribalfs:oneui-design", version.ref = "oneui-design" }
@@ -107,6 +109,7 @@ dependency-analysis = { id = "com.autonomousapps.dependency-analysis", version.r
 detekt = { id = "dev.detekt", version.ref = "detekt" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }

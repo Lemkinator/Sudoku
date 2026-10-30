@@ -527,6 +527,13 @@ fun Int?.toSudokuChar(): Char? =
         else -> null
     }
 
+fun Char.toSudokuInt(): Int? =
+    when (this) {
+        in '1'..'0' + MAX_STANDARD_DIGIT -> this - '0'
+        in 'A'..'A' + (MAX_LARGE_DIGIT - LARGE_DIGIT_OFFSET) -> this - 'A' + LARGE_DIGIT_OFFSET
+        else -> null
+    }
+
 val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 val LocalDateTime.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
 val LocalDate.formatFull: String get() = format(ofLocalizedDate(FULL))
