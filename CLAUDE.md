@@ -126,6 +126,12 @@ the rows on the calling thread and runs the writes one after another in `@Applic
 cannot cancel a save. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
 The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
 
+**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudoku` files) into common-utils' backup. A
+restore runs inside `QueueSudokuSaveUseCase.exclusive`, so no queued game save interleaves with it. Backups are signed
+(`di/BackupSigningModule`): the build reads Gradle property or env var `backupSigningKey` / `BACKUP_SIGNING_KEY` (GitHub secret
+of the release workflow, and the owner's `~/.gradle/gradle.properties`) into `BuildConfig`. Without it a build signs with the
+public local key, so such builds and release builds cannot read each other's backups. Never commit or print the release key.
+
 ## Notable Dependencies
 
 - `dev.oneuiproject:oneui-design` — Samsung OneUI UI components (GitHub Maven repo)

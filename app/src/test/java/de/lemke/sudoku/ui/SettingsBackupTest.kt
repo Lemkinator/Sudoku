@@ -45,6 +45,9 @@ import io.kotest.matchers.string.shouldMatch
 import io.kotest.matchers.string.shouldStartWith
 import java.io.File
 import java.time.LocalDateTime
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -220,5 +223,68 @@ class SettingsBackupTest {
             latestDialog().click(AlertDialog.BUTTON_POSITIVE)
 
             storedGames() shouldBe inFile
+        }
+
+    private fun rewriteBackup(transform: (name: String, bytes: ByteArray) -> ByteArray?) {
+        val entries = ZipFile(backupFile).use { zip -> zip.entries().toList().map { it.name to zip.getInputStream(it).readBytes() } }
+        ZipOutputStream(backupFile.outputStream()).use { out ->
+            entries.forEach { (name, bytes) ->
+                transform(name, bytes)?.let {
+                    out.putNextEntry(ZipEntry(name))
+                    out.write(it)
+                    out.closeEntry()
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `an export holds a signature naming the signing key`() =
+        launch { activity ->
+            store(*twoGames())
+
+            activity.exportTo(backupFile)
+
+            val signature =
+                ZipFile(
+                    backupFile,
+                ).use { zip -> zip.getInputStream(zip.getEntry("signature.json")).readBytes().decodeToString() }
+            signature shouldContain "\"keyId\":\"test\""
+        }
+
+    @Test
+    fun `a file with an edited section is refused and writes nothing`() =
+        launch { activity ->
+            store(*twoGames())
+            activity.exportTo(backupFile)
+            rewriteBackup { name, bytes ->
+                if (name ==
+                    "sections/sudokus.json"
+                ) {
+                    bytes.decodeToString().replace("\"seconds\":0", "\"seconds\":99").encodeToByteArray()
+                } else {
+                    bytes
+                }
+            }
+            runBlocking { sudokuDao.deleteAll() }
+
+            activity.pickImportFile(backupFile)
+
+            latestDialog().message() shouldBe "This backup was changed outside the app."
+            storedGames().shouldBeEmpty()
+        }
+
+    @Test
+    fun `an unsigned file is refused with the same text and writes nothing`() =
+        launch { activity ->
+            store(*twoGames())
+            activity.exportTo(backupFile)
+            rewriteBackup { name, bytes -> if (name == "signature.json") null else bytes }
+            runBlocking { sudokuDao.deleteAll() }
+
+            activity.pickImportFile(backupFile)
+
+            latestDialog().message() shouldBe "This backup was changed outside the app."
+            storedGames().shouldBeEmpty()
         }
 }

@@ -23,6 +23,7 @@ jobs:
       RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
       RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      BACKUP_SIGNING_KEY: ${{ secrets.BACKUP_SIGNING_KEY }}
 
     steps:
       - name: Checkout code
@@ -75,6 +76,10 @@ jobs:
       - name: Setup GMD
         if: steps.version_info.outputs.changed == 'true'
         run: chmod +x ./gradlew && ./gradlew :benchmarks:pixel9Api35Setup -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect
+
+      - name: Check backup signing key
+        if: steps.version_info.outputs.changed == 'true'
+        run: '[ -n "$BACKUP_SIGNING_KEY" ] || { echo "::error::BACKUP_SIGNING_KEY secret missing"; exit 1; }'
 
       - name: Build APK
         if: steps.version_info.outputs.changed == 'true'
