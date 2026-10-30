@@ -44,7 +44,7 @@ abstract class BackupModule {
 
     companion object {
         @Provides
-        fun provideBackupApp(): BackupApp = BackupApp("sudoku", BuildConfig.VERSION_CODE.toLong(), BackupFileExtension(".sudoku"))
+        fun provideBackupApp(): BackupApp = BackupApp("sudoku", BuildConfig.VERSION_CODE.toLong(), BackupFileExtension(".sudokubackup"))
 
         @Provides
         fun provideBackupTransaction(

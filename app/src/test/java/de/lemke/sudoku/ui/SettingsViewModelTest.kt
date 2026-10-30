@@ -83,7 +83,7 @@ class SettingsViewModelTest {
             BackupEngine(
                 setOf(SudokuBackupSection(database.sudokuDao(), Clock.systemUTC())),
                 DirectBackupTransaction(),
-                BackupApp("sudoku", 1, BackupFileExtension(".sudoku")),
+                BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup")),
                 { "2026-10-30T12:00:00Z" },
             ),
             FakeBackupDocuments(),

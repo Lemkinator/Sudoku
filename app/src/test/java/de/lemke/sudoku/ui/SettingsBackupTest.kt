@@ -78,7 +78,7 @@ class SettingsBackupTest {
     @Inject
     lateinit var testDispatchers: TestDispatchers
 
-    private val backupFile = File.createTempFile("settings-backup", ".sudoku")
+    private val backupFile = File.createTempFile("settings-backup", ".sudokubackup")
 
     @Before
     fun setup() {
@@ -151,7 +151,7 @@ class SettingsBackupTest {
     }
 
     @Test
-    fun `the export picker offers an octet-stream document named after the app and the sudoku extension`() =
+    fun `the export picker offers an octet-stream document named after the app and the sudokubackup extension`() =
         launch { activity ->
             store(*twoGames())
             activity.click("commonutilsExportBackup")
@@ -160,7 +160,8 @@ class SettingsBackupTest {
 
             picker.action shouldBe Intent.ACTION_CREATE_DOCUMENT
             picker.type shouldBe "application/octet-stream"
-            picker.getStringExtra(Intent.EXTRA_TITLE)!! shouldMatch Regex(".+_backup_\\d{4}_\\d{2}_\\d{2}_\\d{2}_\\d{2}_\\d{2}\\.sudoku")
+            picker.getStringExtra(Intent.EXTRA_TITLE)!! shouldMatch
+                Regex(".+_backup_\\d{4}_\\d{2}_\\d{2}_\\d{2}_\\d{2}_\\d{2}\\.sudokubackup")
         }
 
     @Test
