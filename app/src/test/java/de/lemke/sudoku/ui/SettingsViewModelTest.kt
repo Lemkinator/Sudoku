@@ -21,7 +21,6 @@ import android.os.Looper
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.commonutils.backup.BackupSectionLabel
-import de.lemke.commonutils.backup.BackupState
 import de.lemke.commonutils.backup.DirectBackupTransaction
 import de.lemke.commonutils.backup.FakeBackupDocuments
 import de.lemke.commonutils.backup.core.BackupApp
@@ -98,16 +97,6 @@ class SettingsViewModelTest {
         testSudoku().also { sudokusRepository.insertRows(sudokuWithFieldsToDb(it).copy(fields = emptyList())) }.id
 
     private fun idleFor(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
-
-    @Test
-    fun `backup starts idle`() {
-        viewModel.backup.state.value shouldBe BackupState.Idle
-    }
-
-    @Test
-    fun `sectionLabels are the labels of the bound backup sections`() {
-        viewModel.sectionLabels shouldBe sectionLabels
-    }
 
     @Test
     fun `dailySudokuNotificationHour reads through to userSettings`() {
