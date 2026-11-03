@@ -20,15 +20,16 @@ import android.content.res.Resources
 import de.lemke.sudoku.R
 
 enum class Difficulty(
+    val code: Int,
     private val givensFour: Int,
     private val givensNine: Int,
     private val givensSixteen: Int,
 ) {
-    VERY_EASY(givensFour = 10, givensNine = 50, givensSixteen = 196),
-    EASY(givensFour = 9, givensNine = 40, givensSixteen = 176),
-    MEDIUM(givensFour = 7, givensNine = 35, givensSixteen = 156),
-    HARD(givensFour = 6, givensNine = 30, givensSixteen = 136),
-    EXPERT(givensFour = 4, givensNine = 23, givensSixteen = 116),
+    VERY_EASY(code = 0, givensFour = 10, givensNine = 50, givensSixteen = 196),
+    EASY(code = 1, givensFour = 9, givensNine = 40, givensSixteen = 176),
+    MEDIUM(code = 2, givensFour = 7, givensNine = 35, givensSixteen = 156),
+    HARD(code = 3, givensFour = 6, givensNine = 30, givensSixteen = 136),
+    EXPERT(code = 4, givensFour = 4, givensNine = 23, givensSixteen = 116),
     ;
 
     // Persisted/serialized as this ordinal (see fromInt/getLocalString(ordinal, ...)); entry order is the contract.
@@ -47,6 +48,8 @@ enum class Difficulty(
 
     companion object {
         fun fromInt(value: Int?): Difficulty = entries.getOrNull(value ?: -1) ?: MEDIUM
+
+        fun fromCodeOrNull(code: Int): Difficulty? = entries.firstOrNull { it.code == code }
 
         fun fromNameOrNull(name: String): Difficulty? = entries.firstOrNull { it.name == name }
 

@@ -29,6 +29,16 @@ class DifficultyTest : ShouldSpec(
             Difficulty.EXPERT.value shouldBe 4
         }
 
+        should("keep stable difficulty codes") {
+            Difficulty.entries.map { it.code } shouldBe listOf(0, 1, 2, 3, 4)
+        }
+
+        should("map a code back to its difficulty") {
+            Difficulty.entries.forEach { Difficulty.fromCodeOrNull(it.code) shouldBe it }
+            Difficulty.fromCodeOrNull(5) shouldBe null
+            Difficulty.fromCodeOrNull(-1) shouldBe null
+        }
+
         should("map a valid ordinal back to its difficulty via fromInt") {
             Difficulty.entries.forEach { difficulty ->
                 Difficulty.fromInt(difficulty.ordinal) shouldBe difficulty
