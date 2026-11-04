@@ -130,7 +130,7 @@ class SudokuViewModelTest : ShouldSpec(
                 GenerateSudokuLevelUseCase(generateFields, generateDispatcher),
                 GetMaxSudokuLevelUseCase(repository, dispatcher),
                 QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
-                ShareSudokuUseCase(shareFiles, shareDispatcher),
+                ShareSudokuUseCase(shareFiles, clock, shareDispatcher),
                 CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
                 UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
                 clock,

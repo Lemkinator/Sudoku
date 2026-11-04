@@ -25,8 +25,8 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeSudokuDocuments
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
@@ -36,9 +36,9 @@ import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.testSudoku
-import io.kjson.stringifyJSON
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,7 +58,8 @@ class MainViewModelTest {
     private val sudokusRepository = FakeSudokusRepository()
     private val sudokuDocuments = FakeSudokuDocuments()
     private val dispatcher = UnconfinedTestDispatcher()
-    private val uri = Uri.parse("content://files/opened.json")
+    private val clock = Clock.systemDefaultZone()
+    private val uri = Uri.parse("content://files/opened.sudoku")
     private var savedStateHandle = SavedStateHandle()
     private val viewModel = newViewModel()
 
@@ -68,7 +69,7 @@ class MainViewModelTest {
         val getAllSudokus = GetAllSudokusUseCase(sudokusRepository, dispatcher)
         return MainViewModel(
             userSettings,
-            ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), dispatcher),
+            ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), clock, dispatcher),
             SendDailyNotificationUseCase(dailyNotifications, userSettings),
             CalculatePlayGamesSyncUseCase(getAllSudokus, dispatcher),
             savedStateHandle,
@@ -76,7 +77,7 @@ class MainViewModelTest {
     }
 
     private fun addImportFile() =
-        sudokuDocuments.addDocument(uri, sudokuToExport(testSudoku(sudokuId = SudokuId("imported"))).stringifyJSON())
+        sudokuDocuments.addDocument(uri, SudokuFileCodec.encode(testSudoku(sudokuId = SudokuId("imported")), clock.zone))
 
     private fun gateSaves(gate: CompletableDeferred<Unit>) {
         sudokusRepository.beforeSave = { gate.await() }
@@ -179,7 +180,7 @@ class MainViewModelTest {
     @Test
     fun `onFileOpened imports a different file opened later`() {
         addImportFile()
-        val otherUri = Uri.parse("content://files/other.json")
+        val otherUri = Uri.parse("content://files/other.sudoku")
         viewModel.onFileOpened(uri)
         idleMainLooper()
         viewModel.onFileOpened(otherUri)

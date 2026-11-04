@@ -212,7 +212,6 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
-    implementation(libs.bundles.json)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.room.runtime)
     implementation(libs.hilt.android)

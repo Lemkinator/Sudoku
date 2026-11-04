@@ -23,11 +23,9 @@ dependency-analysis = "3.20.0"
 detekt = "2.0.0-alpha.6"
 documentfile = "1.1.0"
 hilt = "2.60.1"
-json-kotlin-schema = "0.58"
 junit-android-framework = "2.0.2"
 junit-jupiter = "6.1.3"
 junit4 = "4.13.2"
-kjson = "9.10"
 konsist = "0.18.1"
 kotest = "6.2.6"
 kotlin = "2.4.21"
@@ -67,12 +65,10 @@ documentfile = { module = "androidx.documentfile:documentfile", version.ref = "d
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
-json-kotlin-schema = { module = "net.pwall.json:json-kotlin-schema", version.ref = "json-kotlin-schema" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-jupiter" }
 junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-jupiter" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
-kjson = { module = "io.kjson:kjson", version.ref = "kjson" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
@@ -95,7 +91,6 @@ uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = 
 
 [bundles]
 android-test = ["androidx-test-core", "androidx-test-runner", "androidx-test-ext-junit"]
-json = ["kjson", "json-kotlin-schema"]
 robolectric-test = ["robolectric", "roborazzi", "androidx-test-core", "androidx-test-espresso-core"]
 unit-test = ["kotest-runner-junit5", "kotest-assertions-core", "kotest-property", "mockk", "turbine", "coroutines-test"]
 

@@ -30,12 +30,10 @@ data class DocumentInfo(
     val mimeType: String?,
 )
 
-/** Reads and writes picked documents and reads bundled assets as text. */
+/** Reads picked documents. */
 interface SudokuDocuments {
     /** Reads the document at [uri]; throws [FileNotFoundException] when its provider has no content for it. */
-    fun readText(uri: Uri): String
-
-    fun readAsset(path: String): String
+    fun readBytes(uri: Uri): ByteArray
 
     fun describe(uri: Uri): DocumentInfo
 }
@@ -43,16 +41,10 @@ interface SudokuDocuments {
 class DefaultSudokuDocuments @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) : SudokuDocuments {
-    override fun readText(uri: Uri): String {
+    override fun readBytes(uri: Uri): ByteArray {
         val stream = context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content for $uri")
-        return stream.reader().use { it.readText() }
+        return stream.use { it.readBytes() }
     }
-
-    override fun readAsset(path: String): String =
-        context.assets
-            .open(path)
-            .reader()
-            .use { it.readText() }
 
     override fun describe(uri: Uri): DocumentInfo {
         val document = DocumentFile.fromSingleUri(context, uri) ?: return DocumentInfo(exists = false, readable = false, mimeType = null)

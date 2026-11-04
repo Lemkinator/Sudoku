@@ -24,10 +24,10 @@ import javax.inject.Inject
 
 /** Writes a shared sudoku to a file other apps can read. */
 interface SudokuShareFiles {
-    /** Writes [json] to a cache file named after [sudoku] and returns it. */
+    /** Writes [bytes] to a cache file named after [sudoku] and returns it. */
     suspend fun write(
         sudoku: Sudoku,
-        json: String,
+        bytes: ByteArray,
     ): File
 }
 
@@ -36,10 +36,10 @@ class DefaultSudokuShareFiles @Inject constructor(
 ) : SudokuShareFiles {
     override suspend fun write(
         sudoku: Sudoku,
-        json: String,
+        bytes: ByteArray,
     ): File {
         val size = sudoku.info.size.getLocalString(context.resources)
         val fileName = "Sudoku ($size ${sudoku.info.difficulty.getLocalString(context.resources)}).sudoku"
-        return File(context.cacheDir, fileName).apply { writeText(json) }
+        return File(context.cacheDir, fileName).apply { writeBytes(bytes) }
     }
 }

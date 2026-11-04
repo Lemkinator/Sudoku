@@ -40,7 +40,7 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.SudokuExport
+import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
@@ -49,12 +49,12 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
-import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.time.Duration
 import java.time.LocalDateTime
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -138,18 +138,15 @@ class SudokuActivityShareTest {
     private fun levelSudokuWithAnEntry(): Sudoku =
         formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Level(3)).let { it.copy(board = it.board.with(1, it.board[1].copy(value = 2))) }
 
-    private fun sharedSudoku(activity: SudokuActivity): SudokuExport {
+    private fun sharedSudoku(activity: SudokuActivity): Sudoku {
         val chooser = shadowOf(activity).nextStartedActivity
         chooser.action shouldBe Intent.ACTION_CHOOSER
         chooser.getStringExtra(Intent.EXTRA_TITLE) shouldBe "Share Sudoku"
         val send = IntentCompat.getParcelableExtra(chooser, Intent.EXTRA_INTENT, Intent::class.java)!!
         send.type shouldBe "application/sudoku"
         val uri = IntentCompat.getParcelableExtra(send, Intent.EXTRA_STREAM, Uri::class.java)!!
-        return activity.contentResolver
-            .openInputStream(uri)!!
-            .bufferedReader()
-            .use { it.readText() }
-            .parseJSON<SudokuExport>()
+        val bytes = activity.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+        return SudokuFileCodec.decode(bytes, ZoneId.systemDefault())!!
     }
 
     @Test
@@ -214,7 +211,7 @@ class SudokuActivityShareTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             pausableIoDispatcher.resume()
             awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
-            sharedSudoku(activity).fields[1].value shouldBe 2
+            sharedSudoku(activity).board[1].value shouldBe 2
             shadowOf(activity).nextStartedActivity shouldBe null
             dialog.isShowing shouldBe false
         }
@@ -238,7 +235,7 @@ class SudokuActivityShareTest {
             pausableIoDispatcher.resume()
             scenario.onActivity { activity ->
                 awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
-                sharedSudoku(activity).fields[1].value shouldBe 2
+                sharedSudoku(activity).board[1].value shouldBe 2
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
         }
@@ -287,9 +284,9 @@ class SudokuActivityShareTest {
         launch(levelSudokuWithAnEntry()) { activity ->
             shareVia(activity, R.id.radioButtonInitial)
             val shared = sharedSudoku(activity)
-            shared.modeLevel shouldBe 0
-            shared.fields[0].value shouldBe 1
-            shared.fields[1].value shouldBe null
+            shared.info.mode shouldBe GameMode.Normal
+            shared.board[0].value shouldBe 1
+            shared.board[1].value shouldBe null
         }
 
     @Test
@@ -297,9 +294,9 @@ class SudokuActivityShareTest {
         launch(levelSudokuWithAnEntry()) { activity ->
             shareVia(activity, R.id.radioButtonCurrent)
             val shared = sharedSudoku(activity)
-            shared.modeLevel shouldBe 0
-            shared.fields[0].value shouldBe 1
-            shared.fields[1].value shouldBe 2
+            shared.info.mode shouldBe GameMode.Normal
+            shared.board[0].value shouldBe 1
+            shared.board[1].value shouldBe 2
         }
 
     @Test

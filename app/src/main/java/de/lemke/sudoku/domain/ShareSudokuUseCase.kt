@@ -18,21 +18,21 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.SudokuShareFiles
-import de.lemke.sudoku.data.database.sudokuToExport
+import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.domain.model.Sudoku
-import io.kjson.JSONConfig
-import io.kjson.stringifyJSON
 import java.io.File
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 class ShareSudokuUseCase @Inject constructor(
     private val sudokuShareFiles: SudokuShareFiles,
+    private val clock: Clock,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(sudoku: Sudoku): File =
         withContext(ioDispatcher) {
-            sudokuShareFiles.write(sudoku, sudokuToExport(sudoku).stringifyJSON(JSONConfig { includeNulls = true }))
+            sudokuShareFiles.write(sudoku, SudokuFileCodec.encode(sudoku, clock.zone))
         }
 }

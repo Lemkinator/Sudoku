@@ -108,7 +108,7 @@ CLAUDE.md convention).
 Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the DAO code (`di/SudokusRepositoryModule.kt`).
 
 **Boundaries:** framework and Play Games calls sit behind interfaces with a `Default*` implementation bound in `di/`:
-`SudokuDocuments` (picked documents and assets), `SudokuShareFiles` (shared sudoku files), `DailyNotifications`
+`SudokuDocuments` (picked documents), `SudokuShareFiles` (shared sudoku files), `DailyNotifications`
 (notification channel, alarm and permission state), `GamesSignIn`, `PlayGamesIntentProvider` and `PlayGamesSyncApplier`.
 Use cases and ViewModels take no `Context`.
 
@@ -128,7 +128,7 @@ A refused next-level start (its level is already saved) also restarts the level 
 cannot cancel a save. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
 The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
 
-**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game) into common-utils' backup. A
+**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game, a protobuf-wire message written by `SudokuFileCodec`) into common-utils' backup. A
 restore runs inside `QueueSudokuSaveUseCase.exclusive`, so no queued game save interleaves with it. Backups are signed
 (`di/BackupSigningModule`): the build reads Gradle property or env var `backupSigningKey` / `BACKUP_SIGNING_KEY` (GitHub secret
 of the release workflow, and the owner's `~/.gradle/gradle.properties`) into `BuildConfig`. Without it a build signs with the
@@ -142,7 +142,6 @@ Never commit or print the release key.
 - `com.google.dagger:hilt-android` — DI
 - `androidx.room` — Persistence
 - `com.google.android.gms:play-services-games-v2` — Play Games achievements/leaderboards
-- `io.kjson:kjson` — JSON for the single-sudoku share and import
 - `org.jetbrains.kotlinx:kotlinx-serialization-json` — the backup sections (`data/backup/`)
 
 `app/src/main/res/values/games-ids.xml` is the verbatim Play Console export; never edit it.

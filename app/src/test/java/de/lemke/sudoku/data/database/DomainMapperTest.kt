@@ -175,12 +175,6 @@ class DomainMapperTest : ShouldSpec(
             sudokuFromDb(rows.copy(fields = rows.fields + extra)).shouldBeNull()
         }
 
-        should("sudokuFromExport returns null when an undecodable exported field comes on top of every cell") {
-            val export = sudokuToExport(sudoku())
-
-            sudokuFromExport(export.copy(fields = export.fields + FieldExport(index = 16, solution = 1))).shouldBeNull()
-        }
-
         should("sudokuFromDb round-trips a valid sudoku") {
             val sudoku = sudoku()
 
@@ -222,151 +216,12 @@ class DomainMapperTest : ShouldSpec(
             restored.shouldNotBeNull().board shouldBe sudoku.board
         }
 
-        should("sudokuFromExport restores the cells in cell order from unordered fields") {
-            val sudoku = sudoku()
-            val export = sudokuToExport(sudoku)
-
-            val restored = sudokuFromExport(export.copy(fields = export.fields.reversed()))
-
-            restored.shouldNotBeNull().board shouldBe sudoku.board
-        }
-
-        should("fieldFromExport returns null when the stored solution is null") {
-            fieldFromExport(FieldExport(index = 0, solution = null), size = SudokuSize.FOUR).shouldBeNull()
-        }
-
-        should("fieldFromExport defaults notes to empty when absent") {
-            val export = FieldExport(index = 0, solution = 1, notes = null)
-
-            val field = fieldFromExport(export, size = SudokuSize.FOUR)
-
-            field.shouldNotBeNull()
-            field.cell.notes shouldBe NoteMask.EMPTY
-        }
-
-        should("fieldFromExport restores notes characters when present") {
-            val export = FieldExport(index = 0, solution = 1, notes = "12")
-
-            val field = fieldFromExport(export, size = SudokuSize.FOUR)
-
-            field.shouldNotBeNull()
-            field.cell.notes shouldBe NoteMask.of(1, 2)
-        }
-
-        should("fieldToExport blanks out false flags and empty notes to null") {
-            val export = fieldToExport(0, Cell(solution = 1))
-
-            export.given.shouldBeNull()
-            export.hint.shouldBeNull()
-            export.notes.shouldBeNull()
-        }
-
-        should("fieldToExport keeps true flags and non-empty notes") {
-            val given = fieldToExport(0, Cell(solution = 1, value = 1, origin = CellOrigin.GIVEN, notes = NoteMask.of(3)))
-            val hint = fieldToExport(0, Cell(solution = 1, value = 1, origin = CellOrigin.HINT))
-
-            given.given shouldBe true
-            given.hint.shouldBeNull()
-            given.notes shouldBe "3"
-            hint.hint shouldBe true
-            hint.given.shouldBeNull()
-        }
-
-        should("sudokuFromExport returns null when the field count does not match size squared") {
-            val export = sudokuToExport(sudoku())
-
-            sudokuFromExport(export.copy(fields = export.fields.dropLast(1))).shouldBeNull()
-        }
-
-        listOf(-1, 16).forEach { index ->
-            should("fieldFromExport returns null for the out-of-range index $index") {
-                fieldFromExport(FieldExport(index = index, solution = 1), SudokuSize.FOUR).shouldBeNull()
-            }
-        }
-
-        should("fieldFromExport keeps the first and last valid index") {
-            fieldFromExport(FieldExport(index = 0, solution = 1), SudokuSize.FOUR)?.index shouldBe 0
-            fieldFromExport(FieldExport(index = 15, solution = 1), SudokuSize.FOUR)?.index shouldBe 15
-        }
-
-        should("sudokuFromExport returns null when two exported fields share an index") {
-            val export = sudokuToExport(sudoku())
-            val fields = export.fields.mapIndexed { i, f -> if (i == 5) f.copy(index = 4) else f }
-
-            sudokuFromExport(export.copy(fields = fields)).shouldBeNull()
-        }
-
-        should("sudokuFromExport returns null when an exported field index is out of range") {
-            val export = sudokuToExport(sudoku())
-            val fields = export.fields.mapIndexed { i, f -> if (i == 5) f.copy(index = 16) else f }
-
-            sudokuFromExport(export.copy(fields = fields)).shouldBeNull()
-        }
-
-        should("sudokuFromExport returns null for a size that is not a supported sudoku size") {
-            val export = sudokuToExport(sudoku()).let { it.copy(size = -2, fields = it.fields.take(4)) }
-
-            sudokuFromExport(export).shouldBeNull()
-        }
-
-        should("sudokuFromExport returns null for a 6x6 export with a matching field count") {
-            val export = sudokuToExport(sudoku()).copy(size = 6, fields = List(36) { FieldExport(index = it, solution = it % 6 + 1) })
-
-            sudokuFromExport(export).shouldBeNull()
-        }
-
-        listOf(
-            Triple(SudokuSize.FOUR, 16, 3),
-            Triple(SudokuSize.NINE, 81, 8),
-            Triple(SudokuSize.SIXTEEN, 256, 15),
-        ).forEach { (size, fieldCount, lastBlock) ->
-            should("sudokuToExport and sudokuFromExport round-trip a $size sudoku") {
-                val sudoku = sudoku(size)
-
-                val restored = sudokuFromExport(sudokuToExport(sudoku))
-
-                restored.shouldNotBeNull()
-                restored.info.size shouldBe size
-                restored.board.cells.size shouldBe fieldCount
-                restored.board.position(fieldCount - 1).block shouldBe lastBlock
-                restored.board.cells.map { it.solution } shouldBe sudoku.board.cells.map { it.solution }
-            }
-        }
-
-        should("sudokuToExport and sudokuFromExport round-trip a sudoku with all flags unset") {
-            val sudoku = sudoku()
-
-            sudokuFromExport(sudokuToExport(sudoku)) shouldBe sudoku
-        }
-
-        should("sudokuToExport and sudokuFromExport round-trip a sudoku with all flags set") {
-            val base = sudoku()
-            val sudoku =
-                base.copy(
-                    info =
-                        base.info.copy(
-                            regionalHighlightingUsed = true,
-                            numberHighlightingUsed = true,
-                            eraserUsed = true,
-                            isChecklist = true,
-                            isReverseChecklist = true,
-                            checklistNumber = 5,
-                            hintsUsed = 2,
-                            notesMade = 3,
-                            errorsMade = 1,
-                        ),
-                )
-
-            sudokuFromExport(sudokuToExport(sudoku)) shouldBe sudoku
-        }
-
         context("a game of every mode") {
             listOf(GameMode.Normal, GameMode.Daily, GameMode.Level(7)).forEach { mode ->
-                should("round-trip $mode through the stored rows and the export") {
+                should("round-trip $mode through the stored rows") {
                     val sudoku = sudoku(mode = mode)
 
                     sudokuFromDb(sudokuWithFieldsToDb(sudoku)) shouldBe sudoku
-                    sudokuFromExport(sudokuToExport(sudoku)) shouldBe sudoku
                 }
             }
 
@@ -376,26 +231,6 @@ class DomainMapperTest : ShouldSpec(
 
                 row.modeLevel shouldBe 7
                 row.difficulty shouldBe 3
-            }
-
-            should("export the legacy mode level and the difficulty code") {
-                val base = sudoku(mode = GameMode.Daily)
-                val export = sudokuToExport(base.copy(info = base.info.copy(difficulty = Difficulty.EXPERT)))
-
-                export.modeLevel shouldBe -1
-                export.difficulty shouldBe 4
-            }
-        }
-
-        context("a game that is unreadable") {
-            should("sudokuFromDb returns null for a mode level that names no mode") {
-                val rows = sudokuWithFieldsToDb(sudoku())
-
-                sudokuFromDb(rows.copy(sudoku = rows.sudoku.copy(modeLevel = -2))).shouldBeNull()
-            }
-
-            should("sudokuFromExport returns null for a mode level that names no mode") {
-                sudokuFromExport(sudokuToExport(sudoku()).copy(modeLevel = -2)).shouldBeNull()
             }
 
             should("sudokuFromDb reads an unknown difficulty code as medium") {
@@ -411,13 +246,6 @@ class DomainMapperTest : ShouldSpec(
                     val sudoku = sudoku()
 
                     sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 2) f.copy(value = value) else f }).shouldBeNull()
-                }
-
-                should("sudokuFromExport returns null for the exported value $value on a 4x4 board") {
-                    val export = sudokuToExport(sudoku())
-                    val fields = export.fields.mapIndexed { i, f -> if (i == 2) f.copy(value = value) else f }
-
-                    sudokuFromExport(export.copy(fields = fields)).shouldBeNull()
                 }
             }
 
@@ -459,13 +287,6 @@ class DomainMapperTest : ShouldSpec(
             should("drop a note that is no digit of the board") {
                 fieldFromDb(fieldDb(notes = "1x59A3"))?.cell?.notes shouldBe NoteMask.of(1, 3)
                 fieldFromDb(fieldDb(gameSize = 16, solution = 16, notes = "1A"))?.cell?.notes shouldBe NoteMask.of(1, 10)
-            }
-
-            should("read the same cell from an export field") {
-                val field = FieldExport(index = 2, solution = 3, value = null, given = true, notes = "4x9")
-
-                fieldFromExport(field, SudokuSize.FOUR) shouldBe
-                    IndexedCell(2, Cell(solution = 3, value = 3, origin = CellOrigin.GIVEN, notes = NoteMask.of(4)))
             }
         }
 

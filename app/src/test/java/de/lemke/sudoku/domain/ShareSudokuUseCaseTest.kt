@@ -20,8 +20,7 @@ import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.DefaultSudokuShareFiles
-import de.lemke.sudoku.data.database.FieldExport
-import de.lemke.sudoku.data.database.SudokuExport
+import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.CellOrigin
@@ -32,9 +31,9 @@ import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
-import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
 import java.io.File
+import java.time.Clock
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -47,16 +46,17 @@ import org.robolectric.annotation.Config
 private fun testCells(size: SudokuSize): List<Cell> =
     (0 until size.cellCount).map { index ->
         val solution = (index % size.value) + 1
+        val origin =
+            when {
+                index % 3 == 0 -> CellOrigin.GIVEN
+                index == 1 -> CellOrigin.HINT
+                else -> CellOrigin.PLAYER
+            }
         Cell(
             solution = solution,
-            value = solution.takeIf { index % 2 == 0 },
-            origin =
-                when {
-                    index % 3 == 0 -> CellOrigin.GIVEN
-                    index == 1 -> CellOrigin.HINT
-                    else -> CellOrigin.PLAYER
-                },
-            notes = if (index == 2) NoteMask.of(1, 2) else NoteMask.EMPTY,
+            value = solution.takeIf { origin != CellOrigin.PLAYER || index % 2 == 0 },
+            origin = origin,
+            notes = if (index == 5) NoteMask.of(1, 2) else NoteMask.EMPTY,
         )
     }
 
@@ -87,49 +87,19 @@ private fun testSudoku(
 @Config(application = Application::class, sdk = [36])
 class ShareSudokuUseCaseTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val useCase = ShareSudokuUseCase(DefaultSudokuShareFiles(context), UnconfinedTestDispatcher())
+    private val clock = Clock.systemUTC()
+    private val useCase = ShareSudokuUseCase(DefaultSudokuShareFiles(context), clock, UnconfinedTestDispatcher())
 
     @Test
-    fun `invoke writes the exported sudoku as JSON to the returned cache file`() =
+    fun `invoke writes the sudoku in the file format to the returned cache file`() =
         runTest {
             val sudoku = testSudoku()
 
             val file = useCase(sudoku)
 
             file shouldBe File(context.cacheDir, "Sudoku (4×4 Hard).sudoku")
-            file.readText().parseJSON<SudokuExport>() shouldBe
-                SudokuExport(
-                    id = "share-test-id",
-                    size = 4,
-                    difficulty = 3,
-                    modeLevel = 0,
-                    created = LocalDateTime.of(2024, 1, 1, 12, 0),
-                    updated = LocalDateTime.of(2024, 1, 2, 13, 30),
-                    seconds = 120,
-                    checklistNumber = 2,
-                    hintsUsed = 3,
-                    notesMade = 5,
-                    errorsMade = 1,
-                    fields =
-                        listOf(
-                            FieldExport(index = 0, solution = 1, value = 1, given = true),
-                            FieldExport(index = 1, solution = 2, hint = true),
-                            FieldExport(index = 2, solution = 3, value = 3, notes = "12"),
-                            FieldExport(index = 3, solution = 4, given = true),
-                            FieldExport(index = 4, solution = 1, value = 1),
-                            FieldExport(index = 5, solution = 2),
-                            FieldExport(index = 6, solution = 3, value = 3, given = true),
-                            FieldExport(index = 7, solution = 4),
-                            FieldExport(index = 8, solution = 1, value = 1),
-                            FieldExport(index = 9, solution = 2, given = true),
-                            FieldExport(index = 10, solution = 3, value = 3),
-                            FieldExport(index = 11, solution = 4),
-                            FieldExport(index = 12, solution = 1, value = 1, given = true),
-                            FieldExport(index = 13, solution = 2),
-                            FieldExport(index = 14, solution = 3, value = 3),
-                            FieldExport(index = 15, solution = 4, given = true),
-                        ),
-                )
+            file.readBytes() shouldBe SudokuFileCodec.encode(sudoku, clock.zone)
+            SudokuFileCodec.decode(file.readBytes(), clock.zone) shouldBe sudoku
         }
 
     @Test

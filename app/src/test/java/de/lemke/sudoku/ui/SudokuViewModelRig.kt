@@ -64,7 +64,7 @@ class SudokuViewModelRig {
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
-            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
+            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), clock, dispatcher),
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
             userSettings,
             clock,
