@@ -114,7 +114,8 @@ class SudokuActivityLifecycleTest {
             completed = allCorrect,
         )
 
-    private fun idleFor(seconds: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(seconds))
+    // One multi-second idleFor lets every tick slip 15 ms of Robolectric time, so ticks fall behind; whole seconds stay exact.
+    private fun idleFor(seconds: Long) = repeat(seconds.toInt()) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
 
     // region resumeGame
 
@@ -504,7 +505,7 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `the subtitle shows the elapsed time`() =
         launch(formulaicSudoku()) { activity ->
-            idleFor(66)
+            idleFor(65)
             idleMainLooper()
             activity.sudoku.info.seconds shouldBe 65
 

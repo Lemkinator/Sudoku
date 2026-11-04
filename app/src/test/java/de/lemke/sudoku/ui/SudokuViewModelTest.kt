@@ -694,6 +694,19 @@ class SudokuViewModelTest : ShouldSpec(
                 .sudoku.info.seconds shouldBe 3
         }
 
+        should("the timer counts a minute and 6 seconds in 66 seconds of virtual time") {
+            val viewModel = playing(testSudoku())
+
+            viewModel.onResumed()
+            mainScheduler().advanceTimeBy(66_000)
+            mainScheduler().runCurrent()
+            viewModel.onPaused()
+
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 66
+        }
+
         should("onResumed twice still ticks once per second") {
             val viewModel = playing(testSudoku())
 
