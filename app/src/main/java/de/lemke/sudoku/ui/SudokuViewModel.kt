@@ -112,13 +112,16 @@ sealed interface SudokuShare {
 }
 
 /**
- * The wrap-up of the completed sudoku. The activity shows a [Summary] until the player dismisses it, and reports a
- * [Failed] wrap-up handled once it showed it.
+ * The wrap-up of the completed sudoku. It is [Pending] from the winning move until the activity reports the win shown,
+ * and no restart can overwrite the sudoku before then. The activity shows a [Summary] until the player dismisses it,
+ * and reports a [Failed] wrap-up handled once it showed it.
  */
 sealed interface SudokuCompletion {
     sealed interface Result : SudokuCompletion
 
     data object Idle : SudokuCompletion
+
+    data object Pending : SudokuCompletion
 
     data object Running : SudokuCompletion
 
@@ -129,6 +132,13 @@ sealed interface SudokuCompletion {
 
     data object Failed : Result
 }
+
+private val SudokuCompletion.wrapUpStarted: Boolean
+    get() =
+        when (this) {
+            SudokuCompletion.Idle, SudokuCompletion.Pending -> false
+            SudokuCompletion.Running, is SudokuCompletion.Result -> true
+        }
 
 /** Whether a sudoku of [kind] in [phase] can be restarted, which erases its record. */
 internal fun restartPolicy(
@@ -261,7 +271,7 @@ class SudokuViewModel @Inject constructor(
     fun onCompleted() {
         refreshPhase()
         val playing = game.value as? SudokuGame.Playing
-        if (playing == null || !playing.sudoku.completed || completion.value != SudokuCompletion.Idle) return
+        if (playing == null || !playing.sudoku.completed || completion.value.wrapUpStarted) return
         val completed = playing.sudoku
         completion.value = SudokuCompletion.Running
         wrapUp =
@@ -294,38 +304,43 @@ class SudokuViewModel @Inject constructor(
 
     /** Moves a playing sudoku to won or lost, and starts the timer of one that is still playable. */
     fun onResumed() {
-        game.update { if (it is SudokuGame.Playing) it.refreshed().copy(running = true) else it }
+        updatePlaying { it.refreshed().copy(running = true) }
         updateTicker()
     }
 
     fun onPaused() {
-        game.update { if (it is SudokuGame.Playing) it.copy(running = false) else it }
+        updatePlaying { it.copy(running = false) }
         updateTicker()
         (game.value as? SudokuGame.Playing)?.takeIf { it.phase == Phase.Playing }?.let { queueSudokuSave.launch(it.sudoku) }
     }
 
-    /** Applies [move] to a running sudoku and queues one save; returns whether the board accepted it. */
-    fun onMove(move: BoardMove): Boolean {
+    /** Applies [move] to a running sudoku and queues one save; returns the sudoku after the move, or null when it was refused. */
+    fun onMove(move: BoardMove): Sudoku? {
         val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing }
         val played = playing?.let { it.sudoku.play(move) }
         if (playing != null && played != null) {
             game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
+            if (played.sudoku.completed) completion.value = SudokuCompletion.Pending
             updateTicker()
             queueSudokuSave.launch(played.sudoku)
         }
-        return played != null
+        return played?.sudoku
     }
 
     fun onMoveShown(result: MoveResult) {
-        game.update { if (it is SudokuGame.Playing && it.lastMove == result) it.copy(lastMove = null) else it }
+        updatePlaying { if (it.lastMove == result) it.copy(lastMove = null) else it }
     }
 
     fun onHighlightingUsed(highlighting: Highlighting) {
-        game.update { if (it is SudokuGame.Playing) it.copy(sudoku = it.sudoku.withHighlightingUsed(highlighting)) else it }
+        updatePlaying { it.copy(sudoku = it.sudoku.withHighlightingUsed(highlighting)) }
     }
 
     private fun refreshPhase() {
-        game.update { if (it is SudokuGame.Playing) it.refreshed() else it }
+        updatePlaying { it.refreshed() }
+    }
+
+    private fun updatePlaying(transform: (SudokuGame.Playing) -> SudokuGame.Playing) {
+        game.update { if (it is SudokuGame.Playing) transform(it) else it }
     }
 
     private fun SudokuGame.Playing.refreshed(): SudokuGame.Playing =
@@ -344,11 +359,7 @@ class SudokuViewModel @Inject constructor(
     private suspend fun tickEverySecond() {
         while (true) {
             delay(TICK_MILLIS)
-            game.update {
-                (it as SudokuGame.Playing).let { playing ->
-                    playing.copy(sudoku = playing.sudoku.tick(LocalDateTime.now(clock)))
-                }
-            }
+            updatePlaying { it.copy(sudoku = it.sudoku.tick(LocalDateTime.now(clock))) }
         }
     }
 

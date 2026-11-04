@@ -114,8 +114,6 @@ class SudokuActivityLifecycleTest {
             completed = allCorrect,
         )
 
-    private val SudokuActivity.playing: SudokuGame.Playing get() = viewModel.game.value as SudokuGame.Playing
-
     private fun idleFor(seconds: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(seconds))
 
     // region resumeGame
@@ -125,7 +123,7 @@ class SudokuActivityLifecycleTest {
         launch(formulaicSudoku()) { activity ->
             activity.playing.running.shouldBeTrue()
             idleFor(3)
-            activity.sudoku.info.seconds shouldBeGreaterThan 0
+            activity.sudoku.info.seconds shouldBe 3
         }
 
     @Test
@@ -171,6 +169,7 @@ class SudokuActivityLifecycleTest {
                 idleFor(3)
                 secondsAtPause = it.sudoku.info.seconds
             }
+            secondsAtPause shouldBe 3
             scenario.moveToState(Lifecycle.State.CREATED)
             idleFor(3)
             scenario.onActivity { activity ->
@@ -348,14 +347,14 @@ class SudokuActivityLifecycleTest {
         }
 
     @Test
-    fun `onPrepareOptionsMenu skips the game items a menu does not hold`() =
+    fun `onPrepareOptionsMenu offers share while a sudoku is playing`() =
         launch(formulaicSudoku()) { activity ->
             val menu = RoboMenu(activity)
             val share = menu.add(0, R.id.menu_share, 0, "Share").apply { isVisible = false }
 
             activity.onPrepareOptionsMenu(menu).shouldBeTrue()
 
-            share.isVisible.shouldBeFalse()
+            share.isVisible.shouldBeTrue()
         }
 
     // endregion
@@ -455,10 +454,9 @@ class SudokuActivityLifecycleTest {
     }
 
     @Test
-    fun `onPrepareOptionsMenu and resumeGame are no-ops before the sudoku ever initializes`() {
+    fun `resumeGame is a no-op before the sudoku ever initializes`() {
         val activity = Robolectric.buildActivity(SudokuActivity::class.java).get()
 
-        activity.onPrepareOptionsMenu(null).shouldBeFalse()
         activity.resumeGame()
     }
 
@@ -506,7 +504,9 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `the subtitle shows the elapsed time`() =
         launch(formulaicSudoku()) { activity ->
-            idleFor(65)
+            idleFor(66)
+            idleMainLooper()
+            activity.sudoku.info.seconds shouldBe 65
 
             val subtitle =
                 activity.binding.sudokuToolbarLayout.expandedSubtitle
@@ -514,8 +514,7 @@ class SudokuActivityLifecycleTest {
             subtitle shouldBe
                 activity.binding.sudokuToolbarLayout.collapsedSubtitle
                     .toString()
-            subtitle.contains(activity.sudoku.info.timeString).shouldBeTrue()
-            activity.sudoku.info.seconds shouldBeGreaterThan 60
+            subtitle shouldBe "01:05 | 0% | Errors: 0/3 | Hints: 0"
         }
 
     // endregion

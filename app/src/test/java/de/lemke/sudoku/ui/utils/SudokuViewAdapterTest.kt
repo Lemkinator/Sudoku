@@ -93,9 +93,27 @@ class SudokuViewAdapterTest {
         val fieldView = adapter.fieldViews[PLAIN_INDEX]
         awaitInflated(fieldView)
 
-        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)), setOf(PLAIN_INDEX))
+        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)))
 
         fieldView.fieldViewValue?.text.toString() shouldBe "3"
+    }
+
+    @Test
+    fun `render refreshes every field view whose cell differs from the board it replaces`() {
+        val first = adapter.fieldViews[PLAIN_INDEX]
+        val second = adapter.fieldViews[PLAIN_INDEX + 1]
+        awaitInflated(first)
+        awaitInflated(second)
+
+        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)))
+        adapter.render(
+            adapter.board
+                .with(PLAIN_INDEX + 1, adapter.board[PLAIN_INDEX + 1].copy(value = 2))
+                .with(PLAIN_INDEX, adapter.board[PLAIN_INDEX].copy(value = 4)),
+        )
+
+        first.fieldViewValue?.text.toString() shouldBe "4"
+        second.fieldViewValue?.text.toString() shouldBe "2"
     }
 
     @Test
@@ -103,7 +121,7 @@ class SudokuViewAdapterTest {
         val fieldView = adapter.fieldViews[GIVEN_INDEX]
         val previous = fieldView.cell
 
-        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)), setOf(PLAIN_INDEX))
+        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)))
 
         fieldView.cell shouldBe previous
     }
@@ -135,7 +153,7 @@ class SudokuViewAdapterTest {
     @Test
     fun `selecting a hint field does not highlight neighbors even when highlightNeighbors is true`() {
         val solution = board[PLAIN_INDEX].solution
-        adapter.render(board.with(PLAIN_INDEX, Cell(solution, solution, CellOrigin.HINT)), setOf(PLAIN_INDEX))
+        adapter.render(board.with(PLAIN_INDEX, Cell(solution, solution, CellOrigin.HINT)))
 
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
 

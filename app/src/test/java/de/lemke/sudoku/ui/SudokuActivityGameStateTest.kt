@@ -42,7 +42,6 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -60,6 +59,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.fakes.RoboMenu
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
@@ -200,19 +200,55 @@ class SudokuActivityGameStateTest {
             idleMainLooper()
 
             scenario.onActivity { activity ->
+                val shownDialogs = ShadowDialog.getShownDialogs().size
                 activity.gameAdapter.onFieldClicked(1)
-                activity.viewModel.onMove(BoardMove.Enter(1, 4)) shouldBe false
+                activity.viewModel.onMove(BoardMove.Enter(1, 4)).shouldBeNull()
                 activity.onKeyUp(KeyEvent.KEYCODE_1, KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_1)).shouldBeFalse()
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)).shouldBeTrue()
-                shouldThrow<IllegalStateException> { activity.sudoku }
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share)).shouldBeTrue()
+                activity.sudokuButtons[0].performClick()
+                activity.binding.deleteButton.performClick()
+                activity.binding.hintButton.performClick()
                 idleMainLooper()
 
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
                 activity.selected.shouldBeNull()
+                ShadowDialog.getShownDialogs().size shouldBe shownDialogs
             }
             pausableDefaultDispatcher.resume()
             awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
         }
+    }
+
+    @Test
+    fun `the menu offers neither pause, restart nor share while the game restarts`() {
+        launch(formulaicSudoku(solved = false)) { scenario ->
+            scenario.onActivity { activity ->
+                activity.userSettings.errorLimit = 1
+                activity.select(1)
+                activity.select(activity.sudoku.info.size.cellCount)
+                activity.visibleMenuItems() shouldBe setOf(R.id.menu_reset, R.id.menu_share)
+                pausableDefaultDispatcher.pause()
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
+            }
+            idleMainLooper()
+
+            scenario.onActivity { activity ->
+                activity.viewModel.game.value shouldBe SudokuGame.Restarting
+                activity.visibleMenuItems() shouldBe emptySet()
+            }
+            pausableDefaultDispatcher.resume()
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
+            scenario.onActivity { activity -> activity.visibleMenuItems() shouldBe setOf(R.id.menu_pause_play, R.id.menu_share) }
+        }
+    }
+
+    private fun SudokuActivity.visibleMenuItems(): Set<Int> {
+        val menu = RoboMenu(this)
+        val ids = listOf(R.id.menu_pause_play, R.id.menu_reset, R.id.menu_share)
+        ids.forEach { menu.add(0, it, 0, "item") }
+        onPrepareOptionsMenu(menu)
+        return ids.filter { menu.findItem(it).isVisible }.toSet()
     }
 
     @Test

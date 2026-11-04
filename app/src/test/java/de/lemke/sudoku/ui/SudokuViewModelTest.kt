@@ -47,6 +47,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
 import java.time.Clock
@@ -342,13 +343,28 @@ class SudokuViewModelTest : ShouldSpec(
         should("onPaused saves the playing sudoku as it was at the pause") {
             val sudoku = testSudoku().withValue(1, 2)
             val viewModel = playing(sudoku)
-            val saved = CompletableDeferred<Unit>()
-            repository.beforeSave = { saved.await() }
 
             viewModel.onPaused()
-            saved.complete(Unit)
 
             repository.saves shouldBe listOf(sudoku)
+        }
+
+        should("onPaused of a won sudoku saves nothing") {
+            val viewModel = playing(testSudoku(completed = true))
+
+            viewModel.onPaused()
+
+            viewModel.playingGame().phase shouldBe Phase.Won
+            repository.saves shouldBe emptyList()
+        }
+
+        should("onPaused of a lost sudoku saves nothing") {
+            val viewModel = playing(testSudoku().withErrors(3))
+
+            viewModel.onPaused()
+
+            viewModel.playingGame().phase shouldBe Phase.Lost
+            repository.saves shouldBe emptyList()
         }
 
         should("onPaused stops the running state of the playing sudoku") {
@@ -365,7 +381,7 @@ class SudokuViewModelTest : ShouldSpec(
             val viewModel = playing(sudoku)
             viewModel.onResumed()
 
-            viewModel.onMove(BoardMove.Enter(1, 2)) shouldBe true
+            viewModel.onMove(BoardMove.Enter(1, 2)) shouldBe viewModel.playingGame().sudoku
 
             repository.saves shouldBe listOf(viewModel.playingGame().sudoku)
             repository.saves
@@ -396,7 +412,7 @@ class SudokuViewModelTest : ShouldSpec(
             val viewModel = playing(sudoku)
             viewModel.onResumed()
 
-            viewModel.onMove(BoardMove.Enter(0, 2)) shouldBe false
+            viewModel.onMove(BoardMove.Enter(0, 2)).shouldBeNull()
 
             viewModel.game.value shouldBe playingOf(sudoku, running = true)
             repository.saves shouldBe emptyList()
@@ -405,7 +421,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("a move before a sudoku plays is rejected") {
             val viewModel = viewModel()
 
-            viewModel.onMove(BoardMove.Enter(1, 2)) shouldBe false
+            viewModel.onMove(BoardMove.Enter(1, 2)).shouldBeNull()
 
             viewModel.game.value shouldBe SudokuGame.NotFound
             repository.saves shouldBe emptyList()
@@ -446,7 +462,7 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.onPaused()
             repository.saves.size shouldBe 1
 
-            viewModel.onMove(BoardMove.Enter(1, 2)) shouldBe false
+            viewModel.onMove(BoardMove.Enter(1, 2)).shouldBeNull()
 
             viewModel
                 .playingGame()
@@ -458,7 +474,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("a move before the sudoku resumed is ignored") {
             val viewModel = playing(testSudoku())
 
-            viewModel.onMove(BoardMove.Enter(1, 2)) shouldBe false
+            viewModel.onMove(BoardMove.Enter(1, 2)).shouldBeNull()
 
             viewModel
                 .playingGame()
@@ -472,7 +488,7 @@ class SudokuViewModelTest : ShouldSpec(
             repository.store(sudoku)
             val viewModel = viewModel(SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.info.id.value)))
 
-            viewModel.onMove(BoardMove.Enter(1, 2)) shouldBe false
+            viewModel.onMove(BoardMove.Enter(1, 2)).shouldBeNull()
 
             viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
             repository.saves shouldBe emptyList()
@@ -510,11 +526,31 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.onMove(BoardMove.Enter(1, 2))
 
             viewModel.playingGame().phase shouldBe Phase.Won
+            viewModel.completion.value shouldBe SudokuCompletion.Pending
             viewModel
                 .playingGame()
                 .lastMove
                 ?.completed
                 ?.board shouldBe true
+        }
+
+        should("onRestart while the win is shown keeps the won sudoku until its wrap-up ran") {
+            val almost = testSudoku(completed = true).withValue(1, null)
+            val viewModel = playing(almost)
+            viewModel.onResumed()
+            val won = checkNotNull(viewModel.onMove(BoardMove.Enter(1, 2)))
+
+            viewModel.onRestart()
+
+            viewModel.playingGame().phase shouldBe Phase.Won
+            viewModel.completion.value shouldBe SudokuCompletion.Pending
+            viewModel.onCompleted()
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
+            viewModel.onCompletionDismissed(SudokuCompletion.Summary(won, FollowUp.NEW_GAME))
+            viewModel.onRestart()
+            viewModel.game.value shouldBe SudokuGame.Ready(won.restarted())
+            repository.saves shouldBe listOf(won, won, won.restarted())
+            syncCalculations shouldBe 1
         }
 
         should("lastMove holds the result of the move until onMoveShown clears it") {
@@ -779,6 +815,18 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.completion.value shouldBe SudokuCompletion.Running
             saved.complete(Unit)
+            viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+            repository.saves shouldBe listOf(completed)
+            syncCalculations shouldBe 1
+        }
+
+        should("onCompleted after the summary is shown wraps up once") {
+            val completed = testSudoku(completed = true)
+            val viewModel = playing(completed)
+            viewModel.onCompleted()
+
+            viewModel.onCompleted()
+
             viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
             repository.saves shouldBe listOf(completed)
             syncCalculations shouldBe 1

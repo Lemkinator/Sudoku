@@ -50,6 +50,12 @@ class SelectionIndicesTest : ShouldSpec(
             indices.buttons shouldBe 256..273
         }
 
+        should("select the number button at an index counted from the first number button") {
+            val indices = SelectionIndices(SudokuSize.NINE)
+            indices.numberButton(0) shouldBe 81
+            indices.numberButton(8) shouldBe 89
+        }
+
         should("map every index of a 4x4 board to its control") {
             val indices = SelectionIndices(SudokuSize.FOUR)
             indices.targetOf(0) shouldBe SelectionTarget.FIELD

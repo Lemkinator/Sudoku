@@ -18,6 +18,7 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.os.Looper
+import androidx.lifecycle.lifecycleScope
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -26,8 +27,9 @@ import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.ui.utils.FieldRegion
+import de.lemke.sudoku.ui.utils.animateFields
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
@@ -124,20 +126,22 @@ class IntroActivityAnimationTest {
         }
 
     @Test
-    fun `animate with animateSudoku drives the whole-board branch of matchesAnimation`() =
+    fun `pulsing the whole board finishes after every field pulsed`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.info.size)
-            val job = activity.animate(position, animateSudoku = true)
-            job.shouldNotBeNull()
+            val job = activity.lifecycleScope.animateFields(activity.gameAdapter.fieldViews, position, setOf(FieldRegion.BOARD))
+            job.isCompleted shouldBe false
             idle(2000)
+            job.isCompleted shouldBe true
         }
 
     @Test
-    fun `animate with every flag false is a no-op`() =
+    fun `pulsing no region finishes at once`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.info.size)
-            val job = activity.animate(position)
-            job.shouldBeNull()
+            val job = activity.lifecycleScope.animateFields(activity.gameAdapter.fieldViews, position, emptySet())
+            idle(1)
+            job.isCompleted shouldBe true
         }
 
     @Test
@@ -246,20 +250,16 @@ class IntroActivityAnimationTest {
         }
 
     @Test
-    fun `animate with only animateColumn drives the column-only branch of matchesAnimation`() =
+    fun `pulsing a column and a block finishes after their fields pulsed`() =
         launch { activity ->
             val position = Position.create(0, activity.sudoku.info.size)
-            val job = activity.animate(position, animateColumn = true)
-            job.shouldNotBeNull()
+            val job =
+                activity.lifecycleScope.animateFields(
+                    activity.gameAdapter.fieldViews,
+                    position,
+                    setOf(FieldRegion.COLUMN, FieldRegion.BLOCK),
+                )
             idle(2000)
-        }
-
-    @Test
-    fun `animate with only animateBlock drives the block-only branch of matchesAnimation`() =
-        launch { activity ->
-            val position = Position.create(0, activity.sudoku.info.size)
-            val job = activity.animate(position, animateBlock = true)
-            job.shouldNotBeNull()
-            idle(2000)
+            job.isCompleted shouldBe true
         }
 }

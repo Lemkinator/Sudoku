@@ -91,6 +91,32 @@ class SudokuActivitySelectionTest {
         sudokuId: SudokuId,
     ): Sudoku = testSudoku(size = size, difficulty = Difficulty.VERY_EASY, sudokuId = sudokuId)
 
+    @Test
+    fun `tapping a number, the delete and the hint button selects each control`() =
+        launch { activity ->
+            val cellCount = activity.sudoku.info.size.cellCount
+
+            activity.sudokuButtons[1].performClick()
+            activity.selected shouldBe cellCount + 1
+            activity.binding.deleteButton.performClick()
+            activity.selected shouldBe cellCount + 4
+            activity.binding.hintButton.performClick()
+            activity.selected shouldBe cellCount + 5
+        }
+
+    @Test
+    fun `entering a digit into a given field changes nothing and keeps the number button selected`() =
+        launch { activity ->
+            val cellCount = activity.sudoku.info.size.cellCount
+            val before = activity.sudoku.board
+            activity.select(cellCount)
+
+            activity.select(0)
+
+            activity.sudoku.board shouldBe before
+            activity.selected shouldBe cellCount
+        }
+
     // region selectFromNothing
 
     @Test

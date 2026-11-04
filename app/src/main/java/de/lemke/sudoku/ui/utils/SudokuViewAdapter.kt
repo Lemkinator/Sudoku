@@ -51,12 +51,12 @@ class SudokuViewAdapter(
         (holder.itemView as FieldView).init(board, index, this)
     }
 
-    fun render(
-        board: Board,
-        changed: Set<Int>,
-    ) {
+    fun render(board: Board) {
+        val previous = this.board
         this.board = board
-        changed.forEach { fieldViews[it].update(board) }
+        board.cells.indices
+            .filter { board[it] != previous[it] }
+            .forEach { fieldViews[it].update(board) }
     }
 
     fun selectFieldView(

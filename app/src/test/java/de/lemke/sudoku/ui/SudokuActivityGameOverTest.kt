@@ -177,7 +177,7 @@ class SudokuActivityGameOverTest {
         launch(almostLost(GameMode.Level(2))) { activity ->
             activity.makeAnError()
 
-            activity.viewModel.onMove(BoardMove.Enter(2, 4)) shouldBe false
+            activity.viewModel.onMove(BoardMove.Enter(2, 4)).shouldBeNull()
 
             ShadowDialog
                 .getShownDialogs()

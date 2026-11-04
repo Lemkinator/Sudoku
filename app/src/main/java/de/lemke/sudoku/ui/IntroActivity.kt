@@ -51,13 +51,14 @@ import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
 import de.lemke.sudoku.domain.model.BoardMove
-import de.lemke.sudoku.domain.model.CompletedRegions
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import de.lemke.sudoku.ui.utils.FieldView
 import de.lemke.sudoku.ui.utils.SelectionIndices
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
+import de.lemke.sudoku.ui.utils.animateFields
+import de.lemke.sudoku.ui.utils.fieldRegions
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -83,11 +84,6 @@ private const val DEMO_NUMBER_BUTTON_INDEX_7 = 7
 private const val DEMO_ROW_INDEX_3 = 3
 private const val DEMO_ROW_INDEX_4 = 4
 private const val DEMO_FIELD_HIGHLIGHT_SCALE = 1.5f
-
-private const val ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS = 200L
-private const val FIELD_ANIMATION_FADE_ALPHA = 0.4f
-private const val FIELD_ANIMATION_SCALE = 1.6f
-private const val FIELD_ANIMATION_ROTATION_DEGREES = 100f
 
 @AndroidEntryPoint
 class IntroActivity : AppCompatActivity() {
@@ -249,91 +245,9 @@ class IntroActivity : AppCompatActivity() {
     private fun play(move: BoardMove): Boolean {
         val played = sudoku.play(move) ?: return false
         sudoku = played.sudoku
-        gameAdapter.render(sudoku.board, played.result.changed)
-        lifecycleScope.launch { checkRowColumnBlockCompleted(sudoku.board.position(move.index), played.result.completed) }
+        gameAdapter.render(sudoku.board)
+        lifecycleScope.animateFields(gameAdapter.fieldViews, sudoku.board.position(move.index), played.result.completed.fieldRegions())
         return true
-    }
-
-    internal fun checkRowColumnBlockCompleted(
-        position: Position,
-        completed: CompletedRegions,
-    ) {
-        animate(position, animateRow = completed.row, animateColumn = completed.column, animateBlock = completed.block)
-    }
-
-    internal fun animate(
-        position: Position,
-        animateRow: Boolean = false,
-        animateColumn: Boolean = false,
-        animateBlock: Boolean = false,
-        animateSudoku: Boolean = false,
-    ): Job? {
-        if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
-        val delay = 60L / sudoku.info.size.blockSize
-        lifecycleScope.launch {
-            gameAdapter.fieldViews
-                .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
-                .reversed()
-                .forEach {
-                    if (animateSudoku) {
-                        animateField(it.fieldViewValue, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
-                    } else {
-                        animateField(it.fieldViewValue)
-                    }
-                }
-        }
-        return lifecycleScope.launch {
-            gameAdapter.fieldViews
-                .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a > b } }
-                .forEach {
-                    if (animateSudoku) {
-                        animateField(it.fieldViewValue, ROW_COLUMN_BLOCK_ANIMATION_DURATION_MILLIS, delay)
-                    } else {
-                        animateField(it.fieldViewValue)
-                    }
-                }
-        }
-    }
-
-    private fun matchesAnimation(
-        fieldView: FieldView,
-        position: Position,
-        animateRow: Boolean,
-        animateColumn: Boolean,
-        animateBlock: Boolean,
-        animateSudoku: Boolean,
-        compare: (Int, Int) -> Boolean,
-    ): Boolean =
-        (animateRow && fieldView.position.row == position.row && compare(fieldView.position.column, position.column)) ||
-            (animateColumn && fieldView.position.column == position.column && compare(fieldView.position.row, position.row)) ||
-            (animateBlock && fieldView.position.block == position.block && compare(fieldView.position.index, position.index)) ||
-            (animateSudoku && compare(fieldView.position.index, position.index))
-
-    private suspend fun animateField(
-        fieldTextView: TextView?,
-        duration: Long = 250L,
-        delay: Long = 120L,
-    ) {
-        fieldTextView?.let {
-            it
-                .animate()
-                .alpha(FIELD_ANIMATION_FADE_ALPHA)
-                .scaleX(FIELD_ANIMATION_SCALE)
-                .scaleY(FIELD_ANIMATION_SCALE)
-                .rotation(FIELD_ANIMATION_ROTATION_DEGREES)
-                .setDuration(duration)
-                .withEndAction {
-                    it
-                        .animate()
-                        .alpha(1f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .rotation(0f)
-                        .setDuration(duration)
-                        .start()
-                }.start()
-        }
-        delay((delay / sudoku.info.size.blockSize).milliseconds)
     }
 
     internal fun startAnimation(currentIntroStep: Int) {
