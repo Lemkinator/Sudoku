@@ -74,7 +74,27 @@ class BoardTest : ShouldSpec(
             fresh4() shouldNotBe fresh9()
         }
 
-        should("describe itself by size and cells") { fresh4().toString() shouldBe "Board(size=FOUR, cells=${fresh4().cells})" }
+        should("describe itself by size and cells") {
+            fresh4().toString() shouldBe
+                "Board(size=FOUR, cells=[" +
+                "Cell(solution=1, value=1, origin=GIVEN, notes=NoteMask(bits=0)), " +
+                "Cell(solution=2, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=3, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=4, value=4, origin=GIVEN, notes=NoteMask(bits=0)), " +
+                "Cell(solution=3, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=4, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=1, value=1, origin=GIVEN, notes=NoteMask(bits=0)), " +
+                "Cell(solution=2, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=2, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=3, value=3, origin=GIVEN, notes=NoteMask(bits=0)), " +
+                "Cell(solution=4, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=1, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=4, value=4, origin=GIVEN, notes=NoteMask(bits=0)), " +
+                "Cell(solution=1, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=2, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
+                "Cell(solution=3, value=3, origin=GIVEN, notes=NoteMask(bits=0))" +
+                "])"
+        }
 
         should("reject a board with 15 of 16 cells") {
             shouldThrow<IllegalArgumentException> { Board(SudokuSize.FOUR, fresh4().cells.take(15)) }
