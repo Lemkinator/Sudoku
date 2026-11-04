@@ -33,9 +33,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
@@ -68,24 +71,32 @@ private fun solutionFor(index: Int): Int {
 }
 
 private fun sudokuFixture(
-    modeLevel: Int = Sudoku.MODE_NORMAL,
+    mode: GameMode = GameMode.Normal,
     errorsMade: Int = 0,
     hintsUsed: Int = 0,
     completed: Boolean = false,
     created: LocalDateTime = LocalDateTime.of(2024, 3, 15, 10, 30),
 ): Sudoku =
-    Sudoku.create(
-        size = SIZE,
-        difficulty = Difficulty.EASY,
-        modeLevel = modeLevel,
-        errorsMade = errorsMade,
-        hintsUsed = hintsUsed,
-        created = created,
-        fields =
-            MutableList(SIZE.cellCount) { index ->
-                val solution = solutionFor(index)
-                Field(Position.create(index, SIZE), solution = solution, value = if (completed) solution else null, given = completed)
-            },
+    Sudoku(
+        info =
+            GameInfo(
+                id = SudokuId.generate(),
+                size = SIZE,
+                difficulty = Difficulty.EASY,
+                mode = mode,
+                created = created,
+                updated = created,
+                errorsMade = errorsMade,
+                hintsUsed = hintsUsed,
+            ),
+        board =
+            Board(
+                SIZE,
+                List(SIZE.cellCount) { index ->
+                    val solution = solutionFor(index)
+                    if (completed) Cell(solution, solution, CellOrigin.GIVEN) else Cell(solution)
+                },
+            ),
     )
 
 @RunWith(RobolectricTestRunner::class)
@@ -112,19 +123,19 @@ class SudokuListAdapterTest {
         mode: Mode,
     ): String =
         buildString {
-            append(context.getString(R.string.current_time, sudoku.timeString))
+            append(context.getString(R.string.current_time, sudoku.info.timeString))
             if (!sudoku.completed) {
                 append(" | ").append(context.getString(R.string.current_progress, sudoku.progress))
             }
             append(" | ").append(
                 if (errorLimit == 0) {
-                    context.getString(R.string.current_errors, sudoku.errorsMade)
+                    context.getString(R.string.current_errors, sudoku.info.errorsMade)
                 } else {
-                    context.getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+                    context.getString(R.string.current_errors_with_limit, sudoku.info.errorsMade, errorLimit)
                 },
             )
             if (mode == Mode.NORMAL) {
-                append(" | ").append(context.getString(R.string.current_hints, sudoku.hintsUsed))
+                append(" | ").append(context.getString(R.string.current_hints, sudoku.info.hintsUsed))
             }
         }
 
@@ -204,9 +215,9 @@ class SudokuListAdapterTest {
             ),
         )
 
-        adapter.revealPositionOf(headingSudoku.id) shouldBe 0
-        adapter.revealPositionOf(secondSudoku.id) shouldBe 2
-        adapter.revealPositionOf(olderSudoku.id) shouldBe 3
+        adapter.revealPositionOf(headingSudoku.info.id) shouldBe 0
+        adapter.revealPositionOf(secondSudoku.info.id) shouldBe 2
+        adapter.revealPositionOf(olderSudoku.info.id) shouldBe 3
         adapter.revealPositionOf(SudokuId("absent")) shouldBe RecyclerView.NO_POSITION
     }
 
@@ -216,7 +227,7 @@ class SudokuListAdapterTest {
         val adapter = buildAdapter()
         adapter.submitList(listOf(SudokuItem(sudoku, "16.01.26"), SeparatorItem("15.01.26")))
 
-        adapter.revealPositionOf(sudoku.id) shouldBe 0
+        adapter.revealPositionOf(sudoku.info.id) shouldBe 0
     }
 
     @Test
@@ -286,7 +297,7 @@ class SudokuListAdapterTest {
 
     @Test
     fun `onBindViewHolder in LEVEL mode with the error limit reached shows the level and error icon`() {
-        val sudoku = sudokuFixture(modeLevel = 5, errorsMade = 3)
+        val sudoku = sudokuFixture(mode = GameMode.Level(5), errorsMade = 3)
         val adapter = buildAdapter(mode = Mode.LEVEL, errorLimit = 3)
         adapter.submitList(listOf(SudokuItem(sudoku, "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
@@ -344,12 +355,12 @@ class SudokuListAdapterTest {
 
     @Test
     fun `onBindViewHolder with a HIGHLIGHT payload rebinds a sudoku item's content`() {
-        val sudoku = sudokuFixture()
-        val adapter = buildAdapter(errorLimit = 3)
+        val sudoku = sudokuFixture(errorsMade = 3)
+        val adapter = buildAdapter(errorLimit = 0)
         adapter.submitList(listOf(SudokuItem(sudoku, "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
         adapter.onBindViewHolder(holder, 0)
-        sudoku.errorsMade = 3
+        adapter.errorLimit = 3
 
         adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.HIGHLIGHT))
 
@@ -377,13 +388,13 @@ class SudokuListAdapterTest {
         val adapter = buildAdapter()
         val recyclerView = layoutRecyclerViewWith(adapter)
 
-        adapter.submitList(listOf(SudokuItem(listSudoku(idA, Sudoku.MODE_NORMAL, 0, 0, 0, created), "A"), separator))
+        adapter.submitList(listOf(SudokuItem(listSudoku(idA, GameMode.Normal, 0, 0, 0, created), "A"), separator))
         recyclerView.awaitSmallText(0, "00:00 | 0% | Errors: 0 | Hints: 0") shouldBe "00:00 | 0% | Errors: 0 | Hints: 0"
 
-        adapter.submitList(listOf(SudokuItem(listSudoku(idA, Sudoku.MODE_NORMAL, 16, 2, 75, created), "A"), separator))
+        adapter.submitList(listOf(SudokuItem(listSudoku(idA, GameMode.Normal, 16, 2, 75, created), "A"), separator))
         recyclerView.awaitSmallText(0, "01:15 | Errors: 2 | Hints: 0") shouldBe "01:15 | Errors: 2 | Hints: 0"
 
-        adapter.submitList(listOf(SudokuItem(listSudoku(SudokuId.generate(), Sudoku.MODE_NORMAL, 4, 1, 30, created), "B")))
+        adapter.submitList(listOf(SudokuItem(listSudoku(SudokuId.generate(), GameMode.Normal, 4, 1, 30, created), "B")))
         recyclerView.awaitSmallText(0, "00:30 | 25% | Errors: 1 | Hints: 0") shouldBe "00:30 | 25% | Errors: 1 | Hints: 0"
         adapter.itemCount shouldBe 1
     }

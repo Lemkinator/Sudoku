@@ -50,7 +50,8 @@ import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.sudoku.R
 import de.lemke.sudoku.databinding.ActivityIntroBinding
-import de.lemke.sudoku.domain.model.GameListener
+import de.lemke.sudoku.domain.model.BoardMove
+import de.lemke.sudoku.domain.model.CompletedRegions
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.tutorialSudoku
@@ -106,7 +107,7 @@ class IntroActivity : AppCompatActivity() {
         }
 
     var sudoku: Sudoku = tutorialSudoku()
-    private val selectionIndices get() = SelectionIndices(sudoku.size)
+    private val selectionIndices get() = SelectionIndices(sudoku.info.size)
 
     @SuppressLint("RestrictedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -212,13 +213,18 @@ class IntroActivity : AppCompatActivity() {
     private fun initSudoku() {
         binding.sudokuToolbarLayout.setTitle(getString(R.string.intro))
         refreshHintButton()
-        binding.gameRecycler.layoutManager = GridLayoutManager(this, sudoku.size.value)
-        gameAdapter = SudokuViewAdapter(this, sudoku)
+        binding.gameRecycler.layoutManager = GridLayoutManager(this, sudoku.info.size.value)
+        gameAdapter =
+            SudokuViewAdapter(
+                this,
+                sudoku.board,
+                onFieldClicked = { index -> lifecycleScope.launch { select(index) } },
+                onFieldLongClicked = { index -> play(BoardMove.Erase(index)) },
+                onHighlightingUsed = {},
+            )
         binding.gameRecycler.adapter = gameAdapter
         binding.gameRecycler.seslSetFillBottomEnabled(true)
         binding.gameRecycler.seslSetLastRoundedCorner(true)
-        sudoku.gameListener = SudokuGameListener()
-        sudoku.timer = Job()
         initSudokuButtons()
     }
 
@@ -234,19 +240,25 @@ class IntroActivity : AppCompatActivity() {
         sudokuButtons.add(binding.numberButton9)
         for (index in sudokuButtons.indices) {
             sudokuButtons[index].isVisible = true
-            sudokuButtons[index].setOnClickListener { lifecycleScope.launch { select(sudoku.itemCount + index) } }
+            sudokuButtons[index].setOnClickListener { lifecycleScope.launch { select(sudoku.info.size.cellCount + index) } }
         }
         binding.deleteButton.setOnClickListener { lifecycleScope.launch { select(selectionIndices.deleteButton) } }
         binding.hintButton.setOnClickListener { lifecycleScope.launch { select(selectionIndices.hintButton) } }
     }
 
-    internal fun checkRowColumnBlockCompleted(position: Position) {
-        animate(
-            position,
-            animateRow = sudoku.isRowCompleted(position.row),
-            animateColumn = sudoku.isColumnCompleted(position.column),
-            animateBlock = sudoku.isBlockCompleted(position.block),
-        )
+    private fun play(move: BoardMove): Boolean {
+        val played = sudoku.play(move) ?: return false
+        sudoku = played.sudoku
+        gameAdapter.render(sudoku.board, played.result.changed)
+        lifecycleScope.launch { checkRowColumnBlockCompleted(sudoku.board.position(move.index), played.result.completed) }
+        return true
+    }
+
+    internal fun checkRowColumnBlockCompleted(
+        position: Position,
+        completed: CompletedRegions,
+    ) {
+        animate(position, animateRow = completed.row, animateColumn = completed.column, animateBlock = completed.block)
     }
 
     internal fun animate(
@@ -257,7 +269,7 @@ class IntroActivity : AppCompatActivity() {
         animateSudoku: Boolean = false,
     ): Job? {
         if (!animateRow && !animateColumn && !animateBlock && !animateSudoku) return null
-        val delay = 60L / sudoku.size.blockSize
+        val delay = 60L / sudoku.info.size.blockSize
         lifecycleScope.launch {
             gameAdapter.fieldViews
                 .filter { matchesAnimation(it, position, animateRow, animateColumn, animateBlock, animateSudoku) { a, b -> a <= b } }
@@ -321,7 +333,7 @@ class IntroActivity : AppCompatActivity() {
                         .start()
                 }.start()
         }
-        delay((delay / sudoku.size.blockSize).milliseconds)
+        delay((delay / sudoku.info.size.blockSize).milliseconds)
     }
 
     internal fun startAnimation(currentIntroStep: Int) {
@@ -513,11 +525,11 @@ class IntroActivity : AppCompatActivity() {
         binding.hintButton.backgroundTintList = ColorStateList.valueOf(getColor(android.R.color.transparent))
         if (i != null) {
             when (i) {
-                sudoku.size.value -> {
+                sudoku.info.size.value -> {
                     binding.deleteButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
                 }
 
-                sudoku.size.value + 1 -> {
+                sudoku.info.size.value + 1 -> {
                     binding.hintButton.backgroundTintList = ColorStateList.valueOf(colorPrimary)
                 }
 
@@ -526,7 +538,7 @@ class IntroActivity : AppCompatActivity() {
                     gameAdapter.highlightNumber(i + 1)
                 }
             }
-            selected = sudoku.itemCount + i
+            selected = sudoku.info.size.cellCount + i
         } else {
             selected = null
             gameAdapter.highlightNumber(null)
@@ -534,8 +546,8 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun refreshHintButton() {
-        binding.hintButton.isVisible = sudoku.isHintAvailable
-        binding.hintButton.text = getString(R.string.hint, sudoku.availableHints)
+        binding.hintButton.isVisible = sudoku.info.isHintAvailable
+        binding.hintButton.text = getString(R.string.hint, sudoku.info.availableHints)
     }
 
     internal fun select(newSelected: Int?) {
@@ -560,8 +572,8 @@ class IntroActivity : AppCompatActivity() {
 
             in selectionIndices.buttons -> {
                 val button = newSelected!!
-                if (introStep == INTRO_STEP_4 && button == sudoku.itemCount + 1) {
-                    selectButton(button - sudoku.itemCount)
+                if (introStep == INTRO_STEP_4 && button == sudoku.info.size.cellCount + 1) {
+                    selectButton(button - sudoku.info.size.cellCount)
                     nextIntroStep()
                 }
             }
@@ -571,7 +583,7 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun selectFromField(newSelected: Int?) {
-        val position = Position.create(selected!!, sudoku.size)
+        val position = Position.create(selected!!, sudoku.info.size)
         when (newSelected) {
             null -> {
                 selected = null
@@ -579,8 +591,8 @@ class IntroActivity : AppCompatActivity() {
 
             in selectionIndices.numberButtons -> {
                 val number = newSelected!!
-                if (introStep == INTRO_STEP_3 && number == sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4) {
-                    sudoku.move(position, number - sudoku.itemCount + 1, false)
+                if (introStep == INTRO_STEP_3 && number == sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4) {
+                    play(BoardMove.Enter(position.index, number - sudoku.info.size.cellCount + 1))
                     selected = null
                     gameAdapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
                     nextIntroStep()
@@ -597,11 +609,11 @@ class IntroActivity : AppCompatActivity() {
 
             in selectionIndices.fields -> {
                 val field = newSelected!!
-                val number = selected!! - sudoku.itemCount + 1
+                val number = selected!! - sudoku.info.size.cellCount + 1
                 if ((introStep == INTRO_STEP_5 && field == DEMO_CELL_INDEX_49) ||
                     (introStep == INTRO_STEP_6 && field == DEMO_CELL_INDEX_24)
                 ) {
-                    sudoku.move(field, number, false)
+                    play(BoardMove.Enter(field, number))
                     gameAdapter.highlightNumber(number)
                     nextIntroStep()
                 }
@@ -652,24 +664,5 @@ class IntroActivity : AppCompatActivity() {
     companion object {
         const val KEY_OPENED_FROM_SETTINGS = "openedFromSettings"
         private const val NOTIFICATIONS_DIALOG_TAG = "notifications"
-    }
-
-    inner class SudokuGameListener : GameListener {
-        override fun onTimeChanged() { /* no-op */ }
-
-        override fun onError() { /* no-op */ }
-
-        override fun onCompleted(position: Position) { /* no-op */ }
-
-        override fun onFieldClicked(position: Position) {
-            lifecycleScope.launch { select(position.index) }
-        }
-
-        override fun onFieldChanged(position: Position) {
-            gameAdapter.updateFieldView(position.index)
-            lifecycleScope.launch {
-                checkRowColumnBlockCompleted(position)
-            }
-        }
     }
 }

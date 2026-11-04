@@ -30,7 +30,7 @@ import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.CellOrigin
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -175,18 +175,20 @@ class IntroActivityFlowTest {
     fun `tapping the wrong number at step 3 does not place a value`() =
         launch { activity ->
             toStep3(activity)
-            activity.select(activity.sudoku.itemCount)
+            activity.select(activity.sudoku.info.size.cellCount)
             activity.introStep shouldBe 3
-            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+            activity.sudoku.board[DEMO_CELL_INDEX_4]
+                .value
+                .shouldBeNull()
         }
 
     @Test
     fun `tapping the correct number at step 3 places it and advances to step 4`() =
         launch { activity ->
             toStep3(activity)
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
             activity.introStep shouldBe 4
-            activity.sudoku[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
+            activity.sudoku.board[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
             activity.selected.shouldBeNull()
         }
 
@@ -196,14 +198,14 @@ class IntroActivityFlowTest {
 
     private fun toStep4(activity: IntroActivity) {
         toStep3(activity)
-        activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
+        activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
     }
 
     @Test
     fun `tapping the wrong number button at step 4 does not select it`() =
         launch { activity ->
             toStep4(activity)
-            activity.select(activity.sudoku.itemCount)
+            activity.select(activity.sudoku.info.size.cellCount)
             activity.introStep shouldBe 4
             activity.selected.shouldBeNull()
         }
@@ -212,9 +214,9 @@ class IntroActivityFlowTest {
     fun `tapping number 2 at step 4 selects the button and advances to step 5`() =
         launch { activity ->
             toStep4(activity)
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.introStep shouldBe 5
-            activity.selected shouldBe activity.sudoku.itemCount + 1
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
         }
 
     @Test
@@ -224,7 +226,7 @@ class IntroActivityFlowTest {
             activity.sudokuButtons[1].performClick()
             idleMainLooper()
             activity.introStep shouldBe 5
-            activity.selected shouldBe activity.sudoku.itemCount + 1
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
         }
 
     @Test
@@ -249,7 +251,7 @@ class IntroActivityFlowTest {
 
     private fun toStep5(activity: IntroActivity) {
         toStep4(activity)
-        activity.select(activity.sudoku.itemCount + 1)
+        activity.select(activity.sudoku.info.size.cellCount + 1)
     }
 
     @Test
@@ -258,16 +260,18 @@ class IntroActivityFlowTest {
             toStep5(activity)
             activity.select(1)
             activity.introStep shouldBe 5
-            activity.sudoku[DEMO_CELL_INDEX_49].value.shouldBeNull()
+            activity.sudoku.board[DEMO_CELL_INDEX_49]
+                .value
+                .shouldBeNull()
         }
 
     @Test
     fun `tapping another button at step 5 keeps the selected number button`() =
         launch { activity ->
             toStep5(activity)
-            activity.select(activity.sudoku.itemCount)
+            activity.select(activity.sudoku.info.size.cellCount)
             activity.introStep shouldBe 5
-            activity.selected shouldBe activity.sudoku.itemCount + 1
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
         }
 
     @Test
@@ -276,8 +280,8 @@ class IntroActivityFlowTest {
             toStep5(activity)
             activity.select(DEMO_CELL_INDEX_49)
             activity.introStep shouldBe 6
-            activity.sudoku[DEMO_CELL_INDEX_49].value shouldBe 2
-            activity.selected shouldBe activity.sudoku.itemCount + 1
+            activity.sudoku.board[DEMO_CELL_INDEX_49].value shouldBe 2
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
         }
 
     // endregion
@@ -295,7 +299,9 @@ class IntroActivityFlowTest {
             toStep6(activity)
             activity.select(1)
             activity.introStep shouldBe 6
-            activity.sudoku[DEMO_CELL_INDEX_24].value.shouldBeNull()
+            activity.sudoku.board[DEMO_CELL_INDEX_24]
+                .value
+                .shouldBeNull()
         }
 
     @Test
@@ -304,7 +310,7 @@ class IntroActivityFlowTest {
             toStep6(activity)
             activity.select(DEMO_CELL_INDEX_24)
             activity.introStep shouldBe 7
-            activity.sudoku[DEMO_CELL_INDEX_24].value shouldBe 2
+            activity.sudoku.board[DEMO_CELL_INDEX_24].value shouldBe 2
             activity.binding.introTitle.isVisible
                 .shouldBeTrue()
             activity.binding.introTitleText.text
@@ -395,41 +401,53 @@ class IntroActivityFlowTest {
     @Test
     fun `selectButton highlights the delete button`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size.value)
+            activity.selectButton(activity.sudoku.info.size.value)
             activity.binding.deleteButton.backgroundTintList
                 ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value
         }
 
     @Test
     fun `selectButton highlights the hint button`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size.value + 1)
+            activity.selectButton(activity.sudoku.info.size.value + 1)
             activity.binding.hintButton.backgroundTintList
                 ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value + 1
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value + 1
         }
 
     // endregion
 
-    // region SudokuGameListener
+    // region board callbacks
 
     @Test
     fun `onFieldClicked routes through select the same way a tap on the board would`() =
         launch { activity ->
             toStep2(activity)
-            activity.sudoku.gameListener?.onFieldClicked(Position.create(DEMO_CELL_INDEX_4, activity.sudoku.size))
+            activity.gameAdapter.onFieldClicked(DEMO_CELL_INDEX_4)
             activity.introStep shouldBe 3
         }
 
     @Test
-    fun `onTimeChanged, onError and onCompleted are no-ops on the onboarding board`() =
+    fun `a long click on a given field of the onboarding board is not consumed`() =
         launch { activity ->
-            val listener = activity.sudoku.gameListener
-            listener?.onTimeChanged()
-            listener?.onError()
-            listener?.onCompleted(Position.create(0, activity.sudoku.size))
-            activity.introStep shouldBe 0
+            activity.gameAdapter.onFieldLongClicked(0).shouldBeFalse()
+            activity.sudoku.board[0].value shouldBe activity.sudoku.board[0].solution
+        }
+
+    @Test
+    fun `a long click on a value the player entered erases it`() =
+        launch { activity ->
+            toStep3(activity)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+
+            activity.gameAdapter.onFieldLongClicked(DEMO_CELL_INDEX_4).shouldBeTrue()
+
+            activity.sudoku.board[DEMO_CELL_INDEX_4]
+                .value
+                .shouldBeNull()
+            activity.sudoku.info.eraserUsed
+                .shouldBeTrue()
         }
 
     // endregion
@@ -582,7 +600,7 @@ class IntroActivityFlowTest {
     @Test
     fun `select is a no-op when the delete button is currently selected`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.size.value)
+            activity.selectButton(activity.sudoku.info.size.value)
             val selectedBefore = activity.selected
             activity.select(0)
             activity.selected shouldBe selectedBefore
@@ -600,7 +618,7 @@ class IntroActivityFlowTest {
     @Test
     fun `selecting the step-4 target button outside step 4 does not advance`() =
         launch { activity ->
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.introStep shouldBe 0
             activity.selected.shouldBeNull()
         }
@@ -627,22 +645,26 @@ class IntroActivityFlowTest {
     fun `tapping the delete button while a field is selected is a no-op`() =
         launch { activity ->
             toStep3(activity)
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value)
+            activity.select(activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value)
             activity.selected shouldBe DEMO_CELL_INDEX_4
             activity.introStep shouldBe 3
-            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+            activity.sudoku.board[DEMO_CELL_INDEX_4]
+                .value
+                .shouldBeNull()
         }
 
     @Test
     fun `tapping the hint button while a field is selected is a no-op`() =
         launch { activity ->
             toStep3(activity)
-            activity.select(activity.sudoku.itemCount + activity.sudoku.size.value + 1)
+            activity.select(activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value + 1)
             activity.selected shouldBe DEMO_CELL_INDEX_4
             activity.introStep shouldBe 3
-            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
-            activity.sudoku[DEMO_CELL_INDEX_4].hint.shouldBeFalse()
-            activity.sudoku.hintsUsed shouldBe 0
+            activity.sudoku.board[DEMO_CELL_INDEX_4]
+                .value
+                .shouldBeNull()
+            activity.sudoku.board[DEMO_CELL_INDEX_4].origin shouldBe CellOrigin.PLAYER
+            activity.sudoku.info.hintsUsed shouldBe 0
         }
 
     @Test
@@ -650,9 +672,11 @@ class IntroActivityFlowTest {
         launch { activity ->
             toStep3(activity)
             activity.introStep = 99
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
             activity.introStep shouldBe 99
-            activity.sudoku[DEMO_CELL_INDEX_4].value.shouldBeNull()
+            activity.sudoku.board[DEMO_CELL_INDEX_4]
+                .value
+                .shouldBeNull()
         }
 
     @Test
@@ -669,7 +693,7 @@ class IntroActivityFlowTest {
         launch { activity ->
             toStep5(activity)
             val selectedBefore = activity.selected
-            activity.select(activity.sudoku.itemCount + 2)
+            activity.select(activity.sudoku.info.size.cellCount + 2)
             activity.selected shouldBe selectedBefore
             activity.introStep shouldBe 5
         }
@@ -681,6 +705,6 @@ class IntroActivityFlowTest {
             activity.introStep = 99
             activity.select(DEMO_CELL_INDEX_4)
             activity.introStep shouldBe 99
-            activity.sudoku[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
+            activity.sudoku.board[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
         }
 }

@@ -17,9 +17,8 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
+import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.sfuhrm.sudoku.Creator
 import de.sfuhrm.sudoku.GameSchemas
@@ -34,7 +33,7 @@ class GenerateFieldsUseCase @Inject constructor(
     suspend operator fun invoke(
         size: SudokuSize,
         difficulty: Difficulty,
-    ): MutableList<Field> =
+    ): Board =
         withContext(defaultDispatcher) {
             val schema =
                 when (size) {
@@ -45,16 +44,8 @@ class GenerateFieldsUseCase @Inject constructor(
             val gameMatrix = solvedBoardGenerator.generate(schema)
             val matrix = gameMatrix.array
             val riddle = Creator.createRiddle(gameMatrix, difficulty.numbersToRemove(size)).array
-            return@withContext MutableList(size.cellCount) { index ->
-                val position = Position.create(index, size)
-                val value = riddle[position.row][position.column]
-                val solutionValue = matrix[position.row][position.column]
-                Field(
-                    position = position,
-                    value = if (value == schema.unsetValue) null else value.toInt(),
-                    solution = solutionValue.toInt(),
-                    given = value == solutionValue,
-                )
-            }
+            val solution = matrix.flatMap { row -> row.map { it.toInt() } }
+            val givens = solution.indices.filter { riddle[it / size.value][it % size.value] == matrix[it / size.value][it % size.value] }
+            return@withContext Board.of(size, solution, givens.toSet())
         }
 }

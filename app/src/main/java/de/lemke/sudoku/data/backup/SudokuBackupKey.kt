@@ -16,7 +16,8 @@
 
 package de.lemke.sudoku.data.backup
 
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.legacyGameModeOrNull
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.LocalDate
 
@@ -38,8 +39,8 @@ sealed interface SudokuBackupKey {
 
 /** The entry must be valid, so its size is known. */
 fun SudokuBackupEntry.key(): SudokuBackupKey =
-    when {
-        modeLevel == Sudoku.MODE_DAILY -> SudokuBackupKey.Daily(created.toLocalDate())
-        modeLevel > Sudoku.MODE_NORMAL -> SudokuBackupKey.Level(SudokuSize.fromValue(size), modeLevel)
-        else -> SudokuBackupKey.Normal(id)
+    when (val mode = legacyGameModeOrNull(modeLevel)!!) {
+        GameMode.Daily -> SudokuBackupKey.Daily(created.toLocalDate())
+        is GameMode.Level -> SudokuBackupKey.Level(SudokuSize.fromValue(size), mode.number)
+        GameMode.Normal -> SudokuBackupKey.Normal(id)
     }

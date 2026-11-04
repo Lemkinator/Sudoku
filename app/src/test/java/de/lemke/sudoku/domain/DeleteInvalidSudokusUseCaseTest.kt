@@ -38,8 +38,8 @@ class DeleteInvalidSudokusUseCaseTest : ShouldSpec(
 
             useCase()
 
-            sudokusRepository.deletedIds shouldBe listOf(invalid.id)
-            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(valid.id.value)
+            sudokusRepository.deletedIds shouldBe listOf(invalid.info.id)
+            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(valid.info.id.value)
         }
     },
 )

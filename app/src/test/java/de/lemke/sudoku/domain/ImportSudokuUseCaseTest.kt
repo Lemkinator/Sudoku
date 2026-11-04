@@ -78,9 +78,9 @@ class ImportSudokuUseCaseTest {
             val result = useCase(uri)
 
             result.shouldNotBeNull()
-            result.id shouldBe sudoku.id
-            result.fields.size shouldBe sudoku.fields.size
-            sudokusRepository.saves.map { it.rows.sudoku.id to it.onlyUpdate } shouldBe listOf(sudoku.id.value to false)
+            result.info.id shouldBe sudoku.info.id
+            result.board.cells.size shouldBe sudoku.board.cells.size
+            sudokusRepository.saves.map { it.info.id } shouldBe listOf(sudoku.info.id)
         }
 
     @Test

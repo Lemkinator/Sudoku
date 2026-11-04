@@ -48,17 +48,13 @@ import kotlinx.coroutines.test.runTest
 private val NEW_YEAR_NOON = LocalDateTime.of(2026, 1, 1, 12, 0)
 
 private fun wonSudoku(): Sudoku =
-    testSudoku(sudokuId = SudokuId("won"), created = NEW_YEAR_NOON, completed = true).apply {
-        seconds = 90
-        errorsMade = 1
-        notesMade = 2
+    testSudoku(sudokuId = SudokuId("won"), created = NEW_YEAR_NOON, completed = true).let {
+        it.copy(info = it.info.copy(seconds = 90, errorsMade = 1, notesMade = 2))
     }
 
 private fun startedSudoku(): Sudoku =
-    testSudoku(sudokuId = SudokuId("started"), created = NEW_YEAR_NOON.plusDays(1)).apply {
-        seconds = 30
-        hintsUsed = 2
-        eraserUsed = true
+    testSudoku(sudokuId = SudokuId("started"), created = NEW_YEAR_NOON.plusDays(1)).let {
+        it.copy(info = it.info.copy(seconds = 30, hintsUsed = 2, eraserUsed = true))
     }
 
 private val noStatistics =

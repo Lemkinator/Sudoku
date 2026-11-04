@@ -21,7 +21,7 @@ import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -46,8 +46,8 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
         }
 
         should("re-filters the repository's sudokus when userSettings.filterFlags changes") {
-            val normal4x4 = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL)
-            val normal9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL)
+            val normal4x4 = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, mode = GameMode.Normal)
+            val normal9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, mode = GameMode.Normal)
             sudokusRepository.saveSudoku(normal4x4)
             sudokusRepository.saveSudoku(normal9x9)
             userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuSize.FOUR.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL

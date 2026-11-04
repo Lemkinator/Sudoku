@@ -35,7 +35,7 @@ class FakeSudokuShareFiles(
         sudoku: Sudoku,
         json: String,
     ): File {
-        writes += Write(sudoku.id, json)
+        writes += Write(sudoku.info.id, json)
         return file
     }
 }

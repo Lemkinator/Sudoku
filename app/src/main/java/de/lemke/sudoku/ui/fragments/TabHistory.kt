@@ -166,7 +166,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             } else {
                 if (sudokuListItem is SudokuItem) {
                     viewHolder.itemView.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.id.value),
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.info.id.value),
                     )
                 }
             }

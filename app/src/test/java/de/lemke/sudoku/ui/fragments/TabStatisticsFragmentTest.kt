@@ -32,11 +32,9 @@ import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.MainActivity
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -82,33 +80,12 @@ class TabStatisticsFragmentTest {
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
-    private fun completedSudoku(seconds: Int): Sudoku {
-        val size = SudokuSize.FOUR
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = MODE_NORMAL,
-            seconds = seconds,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
-                },
-        )
-    }
+    private fun completedSudoku(seconds: Int): Sudoku =
+        testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY, completed = true).let {
+            it.copy(info = it.info.copy(seconds = seconds))
+        }
 
-    private fun startedSudoku(): Sudoku {
-        val size = SudokuSize.FOUR
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = MODE_NORMAL,
-            fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
-        )
-    }
+    private fun startedSudoku(): Sudoku = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY)
 
     private fun launch(block: (TabStatistics) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->

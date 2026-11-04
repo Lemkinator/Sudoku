@@ -29,18 +29,6 @@ data class Board(val size: SudokuSize, val cells: List<Cell>) {
         }
     }
 
-    operator fun get(index: Int): Cell = cells[index]
-
-    fun position(index: Int): Position = Position.create(index, size)
-
-    fun rowOf(index: Int): List<Int> = rowIndices(position(index).row)
-
-    fun columnOf(index: Int): List<Int> = columnIndices(position(index).column)
-
-    fun blockOf(index: Int): List<Int> = blockIndices(position(index).block)
-
-    fun peers(index: Int): Set<Int> = (rowOf(index) + columnOf(index) + blockOf(index)).toSet() - index
-
     val completed: Boolean get() = cells.all { it.correct }
 
     val progress: Int
@@ -54,10 +42,22 @@ data class Board(val size: SudokuSize, val cells: List<Cell>) {
         get() =
             cells
                 .filter { it.correct }
-                .groupingBy { checkNotNull(it.value) }
+                .groupingBy { it.solution }
                 .eachCount()
                 .filterValues { it >= size.value }
                 .keys
+
+    operator fun get(index: Int): Cell = cells[index]
+
+    fun position(index: Int): Position = Position.create(index, size)
+
+    fun rowOf(index: Int): List<Int> = rowIndices(position(index).row)
+
+    fun columnOf(index: Int): List<Int> = columnIndices(position(index).column)
+
+    fun blockOf(index: Int): List<Int> = blockIndices(position(index).block)
+
+    fun peers(index: Int): Set<Int> = (rowOf(index) + columnOf(index) + blockOf(index)).toSet() - index
 
     fun isRowCompleted(row: Int): Boolean = rowIndices(row).all { cells[it].correct }
 

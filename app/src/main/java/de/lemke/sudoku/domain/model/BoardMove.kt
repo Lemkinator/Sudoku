@@ -59,7 +59,7 @@ fun Board.apply(move: BoardMove): MoveResult? {
         is BoardMove.ToggleNote -> toggleNote(move, cell)
         is BoardMove.ClearNotes -> clearNotes(move, cell)
         is BoardMove.Erase -> erase(move, cell)
-        is BoardMove.RevealHint -> placeCorrect(move, cell.copy(value = cell.solution, origin = CellOrigin.HINT))
+        is BoardMove.RevealHint -> placeCorrect(move, cell.solution, cell.copy(value = cell.solution, origin = CellOrigin.HINT))
     }
 }
 
@@ -73,7 +73,7 @@ private fun Board.enter(
         }
 
         move.digit == cell.solution -> {
-            placeCorrect(move, cell.copy(value = move.digit))
+            placeCorrect(move, move.digit, cell.copy(value = move.digit))
         }
 
         else -> {
@@ -118,9 +118,9 @@ private fun Board.erase(
 
 private fun Board.placeCorrect(
     move: BoardMove,
+    digit: Int,
     placed: Cell,
 ): MoveResult {
-    val digit = checkNotNull(placed.value)
     val changed = mutableSetOf(move.index)
     var next = with(move.index, placed.copy(notes = NoteMask.EMPTY))
     peers(move.index).forEach { peer ->

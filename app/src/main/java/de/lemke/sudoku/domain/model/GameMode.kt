@@ -19,22 +19,6 @@ package de.lemke.sudoku.domain.model
 sealed interface GameMode {
     val code: Int
 
-    data object Normal : GameMode {
-        override val code = CODE_NORMAL
-    }
-
-    data object Daily : GameMode {
-        override val code = CODE_DAILY
-    }
-
-    data class Level(val number: Int) : GameMode {
-        init {
-            require(number >= 1) { "Level number must be positive: $number" }
-        }
-
-        override val code = CODE_LEVEL
-    }
-
     companion object {
         private const val CODE_NORMAL = 0
         private const val CODE_DAILY = 1
@@ -50,5 +34,21 @@ sealed interface GameMode {
                 CODE_LEVEL -> level?.takeIf { it >= 1 }?.let(::Level)
                 else -> null
             }
+    }
+
+    data object Normal : GameMode {
+        override val code = CODE_NORMAL
+    }
+
+    data object Daily : GameMode {
+        override val code = CODE_DAILY
+    }
+
+    data class Level(val number: Int) : GameMode {
+        init {
+            require(number >= 1) { "Level number must be positive: $number" }
+        }
+
+        override val code = CODE_LEVEL
     }
 }

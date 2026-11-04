@@ -32,8 +32,8 @@ import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.PlayGamesSync
-import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.testSudoku
 import io.kjson.stringifyJSON
@@ -62,7 +62,7 @@ class MainViewModelTest {
     private var savedStateHandle = SavedStateHandle()
     private val viewModel = newViewModel()
 
-    private val savedIds: List<String> get() = sudokusRepository.saves.map { it.rows.sudoku.id }
+    private val savedIds: List<String> get() = sudokusRepository.saves.map { it.info.id.value }
 
     private fun newViewModel(): MainViewModel {
         val getAllSudokus = GetAllSudokusUseCase(sudokusRepository, dispatcher)
@@ -210,8 +210,8 @@ class MainViewModelTest {
         runTest {
             sudokusRepository.store(
                 testSudoku(completed = true),
-                testSudoku(modeLevel = 1, completed = true),
-                testSudoku(modeLevel = Sudoku.MODE_DAILY, completed = true),
+                testSudoku(mode = GameMode.Level(1), completed = true),
+                testSudoku(mode = GameMode.Daily, completed = true),
                 testSudoku(),
             )
             viewModel.onScreenReady() shouldBe

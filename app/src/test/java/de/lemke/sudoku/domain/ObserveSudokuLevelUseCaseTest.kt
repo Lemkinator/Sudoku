@@ -32,7 +32,7 @@ class ObserveSudokuLevelUseCaseTest : ShouldSpec(
         val sudokusRepository = FakeSudokusRepository()
         val useCase = ObserveSudokuLevelUseCase(sudokusRepository, UnconfinedTestDispatcher())
 
-        should("maps each sudoku to a SudokuItem labeled with its modeLevel") {
+        should("maps each sudoku to a SudokuItem labeled with its level number") {
             val sudoku = testLevelSudoku(SudokuSize.NINE, level = 5)
             sudokusRepository.saveSudoku(sudoku)
 

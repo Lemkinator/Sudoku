@@ -40,12 +40,12 @@ import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuLevelActivity
 import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
@@ -119,7 +119,7 @@ class SudokuLevelTabListRefreshTest {
     private fun completedLevelOne(): Sudoku =
         listSudoku(
             sudokuId = SudokuId.generate(),
-            modeLevel = 1,
+            mode = GameMode.Level(1),
             filled = 16,
             errorsMade = 0,
             seconds = 40,
@@ -133,22 +133,14 @@ class SudokuLevelTabListRefreshTest {
     ): Sudoku =
         listSudoku(
             sudokuId = currentLevelId,
-            modeLevel = 2,
+            mode = GameMode.Level(2),
             filled = filled,
             errorsMade = errorsMade,
             seconds = seconds,
             created = LocalDateTime.of(2026, 1, 15, 9, 0),
         )
 
-    private fun dailySudoku(): Sudoku {
-        val size = SudokuSize.NINE
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.EASY,
-            modeLevel = Sudoku.MODE_DAILY,
-            fields = MutableList(size.cellCount) { Field(Position.create(it, size), solution = it % size.value + 1) },
-        )
-    }
+    private fun dailySudoku(): Sudoku = testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily, difficulty = Difficulty.EASY)
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
@@ -165,9 +157,9 @@ class SudokuLevelTabListRefreshTest {
             idleMainLooper()
 
             val sudoku = topSudoku(viewModel)
-            sudoku.id shouldBe currentLevelId
-            sudoku.errorsMade shouldBe 2
-            sudoku.seconds shouldBe 75
+            sudoku.info.id shouldBe currentLevelId
+            sudoku.info.errorsMade shouldBe 2
+            sudoku.info.seconds shouldBe 75
             sudoku.progress shouldBe 50
             sudoku.completed shouldBe false
         } finally {
@@ -199,18 +191,18 @@ class SudokuLevelTabListRefreshTest {
         idleMainLooper()
         collection.cancel()
         val nextLevel = topSudoku(viewModel)
-        nextLevel.modeLevel shouldBe 2
+        nextLevel.info.mode shouldBe GameMode.Level(2)
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
         viewModel.confirmSudokuStart(0, nextLevel)
         idleMainLooper()
 
-        viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
+        viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
 
-        runBlocking { getSudoku(nextLevel.id) } shouldBe null
+        runBlocking { getSudoku(nextLevel.info.id) } shouldBe null
         val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()
-        saved.errorsMade shouldBe 2
-        saved.seconds shouldBe 75
+        saved.info.errorsMade shouldBe 2
+        saved.info.seconds shouldBe 75
         saved.progress shouldBe 50
     }
 
@@ -226,9 +218,9 @@ class SudokuLevelTabListRefreshTest {
             viewModel.confirmSudokuStart(0, nextLevel)
             idleMainLooper()
 
-            viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.id)
+            viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
             runBlocking { getMaxSudokuLevel(SudokuSize.FOUR) } shouldBe 2
-            runBlocking { getSudoku(nextLevel.id) }.shouldNotBeNull().modeLevel shouldBe 2
+            runBlocking { getSudoku(nextLevel.info.id) }.shouldNotBeNull().info.mode shouldBe GameMode.Level(2)
         } finally {
             collection.cancel()
         }
@@ -248,7 +240,7 @@ class SudokuLevelTabListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
             idleMainLooper()
-            scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).seconds shouldBe 75 }
+            scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).info.seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idleMainLooper()
 
@@ -273,13 +265,13 @@ class SudokuLevelTabListRefreshTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
             idleMainLooper()
-            scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).seconds shouldBe 0 }
+            scenario.onActivity { activity -> topSudoku(levelTab(activity).viewModel).info.seconds shouldBe 0 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idleMainLooper()
 
             scenario.onActivity { activity ->
                 levelList(activity).awaitSmallText(0, "01:15 | 50% | Errors: 2/3") shouldBe "01:15 | 50% | Errors: 2/3"
-                topSudoku(levelTab(activity).viewModel).seconds shouldBe 75
+                topSudoku(levelTab(activity).viewModel).info.seconds shouldBe 75
             }
         }
     }

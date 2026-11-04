@@ -34,8 +34,8 @@ import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.MainActivity
@@ -98,7 +98,7 @@ class TabHistoryListRefreshTest {
     private fun olderSudoku(): Sudoku =
         listSudoku(
             sudokuId = SudokuId.generate(),
-            modeLevel = MODE_NORMAL,
+            mode = GameMode.Normal,
             filled = 0,
             errorsMade = 0,
             seconds = 0,
@@ -113,7 +113,7 @@ class TabHistoryListRefreshTest {
     ): Sudoku =
         listSudoku(
             sudokuId = playedId,
-            modeLevel = MODE_NORMAL,
+            mode = GameMode.Normal,
             filled = filled,
             errorsMade = errorsMade,
             seconds = seconds,
@@ -136,9 +136,9 @@ class TabHistoryListRefreshTest {
             idleMainLooper()
 
             val sudoku = topSudoku(viewModel)
-            sudoku.id shouldBe playedId
-            sudoku.errorsMade shouldBe 2
-            sudoku.seconds shouldBe 75
+            sudoku.info.id shouldBe playedId
+            sudoku.info.errorsMade shouldBe 2
+            sudoku.info.seconds shouldBe 75
             sudoku.progress shouldBe 100
             sudoku.completed shouldBe true
         } finally {
@@ -161,7 +161,7 @@ class TabHistoryListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
             idleMainLooper()
-            scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).seconds shouldBe 75 }
+            scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).info.seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idleMainLooper()
 
@@ -187,13 +187,13 @@ class TabHistoryListRefreshTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(playedSudoku(filled = 16, errorsMade = 2, seconds = 75, updated = LocalDateTime.of(2026, 1, 15, 10, 30)))
             idleMainLooper()
-            scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).seconds shouldBe 0 }
+            scenario.onActivity { activity -> topSudoku(historyViewModel(activity)).info.seconds shouldBe 0 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idleMainLooper()
 
             scenario.onActivity { activity ->
                 historyList(activity).awaitSmallText(1, "01:15 | Errors: 2/3 | Hints: 0") shouldBe "01:15 | Errors: 2/3 | Hints: 0"
-                topSudoku(historyViewModel(activity)).seconds shouldBe 75
+                topSudoku(historyViewModel(activity)).info.seconds shouldBe 75
             }
         }
     }

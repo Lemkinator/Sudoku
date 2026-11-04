@@ -28,8 +28,8 @@ import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
@@ -58,7 +58,7 @@ private data class ShownDailies(
 
 private fun DailySudokuUiState.shown() =
     ShownDailies(
-        sudokus = sudokus.map { item -> if (item is SudokuItem) item.sudoku.id.value else "separator" },
+        sudokus = sudokus.map { item -> if (item is SudokuItem) item.sudoku.info.id.value else "separator" },
         isLoading = isLoading,
     )
 
@@ -89,7 +89,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         fun dailySudoku(
             created: LocalDateTime,
             completed: Boolean = false,
-        ) = testSudoku(modeLevel = MODE_DAILY, created = created, completed = completed)
+        ) = testSudoku(mode = GameMode.Daily, created = created, completed = completed)
 
         should("observe today's daily sudokus only while state is collected and map them to the UI state") {
             val today = dailySudoku(created = LocalDateTime.of(2026, 1, 15, 9, 0))
@@ -100,7 +100,7 @@ class DailySudokuViewModelTest : ShouldSpec(
             repository.activeObservers shouldBe 0
             viewModel.state.value shouldBe DailySudokuUiState()
             viewModel.state.test {
-                expectMostRecentItem().shown() shouldBe ShownDailies(sudokus = listOf("separator", today.id.value), isLoading = false)
+                expectMostRecentItem().shown() shouldBe ShownDailies(sudokus = listOf("separator", today.info.id.value), isLoading = false)
                 repository.activeObservers shouldBe 1
             }
         }
@@ -120,8 +120,8 @@ class DailySudokuViewModelTest : ShouldSpec(
                     cancelAndIgnoreRemainingEvents()
                 }
 
-                repository.saves.map { it.rows.sudoku.modeLevel to it.rows.sudoku.created } shouldBe
-                    listOf(MODE_DAILY to LocalDateTime.of(2026, 1, 15, 12, 0))
+                repository.saves.map { it.info.mode to it.info.created } shouldBe
+                    listOf(GameMode.Daily to LocalDateTime.of(2026, 1, 15, 12, 0))
             }
         }
 
@@ -134,7 +134,10 @@ class DailySudokuViewModelTest : ShouldSpec(
 
             viewModel.state.test {
                 expectMostRecentItem().shown() shouldBe
-                    ShownDailies(sudokus = listOf("separator", today.id.value, "separator", lastMonth.id.value), isLoading = false)
+                    ShownDailies(
+                        sudokus = listOf("separator", today.info.id.value, "separator", lastMonth.info.id.value),
+                        isLoading = false,
+                    )
             }
             viewModel.loadFailed.value shouldBe false
         }

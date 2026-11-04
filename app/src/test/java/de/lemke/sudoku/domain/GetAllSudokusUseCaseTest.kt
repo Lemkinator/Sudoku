@@ -18,7 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -45,13 +45,13 @@ class GetAllSudokusUseCaseTest : ShouldSpec(
                     testSudoku(
                         size = SudokuSize.FOUR,
                         difficulty = Difficulty.EASY,
-                        modeLevel = Sudoku.MODE_NORMAL,
+                        mode = GameMode.Normal,
                         created = LocalDateTime.of(2026, 1, 2, 10, 0),
                     ),
                     testSudoku(
                         size = SudokuSize.NINE,
                         difficulty = Difficulty.HARD,
-                        modeLevel = Sudoku.MODE_DAILY,
+                        mode = GameMode.Daily,
                         created = LocalDateTime.of(2026, 1, 1, 10, 0),
                     ),
                 )
@@ -61,9 +61,9 @@ class GetAllSudokusUseCaseTest : ShouldSpec(
         }
 
         should("filters out sudokus that don't match the given flags") {
-            val normal9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL)
-            val daily9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY)
-            val normal4x4 = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_NORMAL)
+            val normal9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, mode = GameMode.Normal)
+            val daily9x9 = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, mode = GameMode.Daily)
+            val normal4x4 = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, mode = GameMode.Normal)
             listOf(normal9x9, daily9x9, normal4x4).forEach { sudokusRepository.saveSudoku(it) }
             val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 

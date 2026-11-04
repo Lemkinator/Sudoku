@@ -43,11 +43,13 @@ import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
+import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
-import de.lemke.sudoku.testLevelSudoku
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.fragments.SudokuLevelTab
 import de.lemke.sudoku.ui.fragments.SudokuLevelTabViewModel
 import io.kotest.matchers.shouldBe
@@ -105,7 +107,12 @@ class SudokuLevelActivityTest {
             ).use { scenario ->
                 scenario.waitUntil { levelList().adapter?.itemCount == COMPLETED_LEVELS + 1 && levelList().isSettled }
                 var nextLevelId: SudokuId? = null
-                scenario.onActivity { nextLevelId = it.topLevelItem().sudoku.id }
+                scenario.onActivity {
+                    nextLevelId =
+                        it
+                            .topLevelItem()
+                            .sudoku.info.id
+                }
                 scenario.moveToState(Lifecycle.State.CREATED)
                 runBlocking { saveSudoku(completedLevel(COMPLETED_LEVELS + 1, checkNotNull(nextLevelId))) }
                 scenario.waitUntil { topLevelItem().label == "${COMPLETED_LEVELS + 2}" }
@@ -125,9 +132,13 @@ class SudokuLevelActivityTest {
         level: Int,
         sudokuId: SudokuId,
     ): Sudoku =
-        testLevelSudoku(size = SudokuSize.FOUR, level = level, sudokuId = sudokuId).apply {
-            fields.forEach { it.value = it.solution }
-        }
+        testSudoku(
+            size = SudokuSize.FOUR,
+            mode = GameMode.Level(level),
+            difficulty = Difficulty.VERY_EASY,
+            sudokuId = sudokuId,
+            completed = true,
+        )
 
     private fun SudokuLevelActivity.levelTab(): SudokuLevelTab =
         supportFragmentManager.fragments

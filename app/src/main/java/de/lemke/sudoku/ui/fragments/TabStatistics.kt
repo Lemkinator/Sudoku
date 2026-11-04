@@ -108,9 +108,11 @@ class TabStatistics : Fragment() {
                 if (stats.bestTimeSudoku != null) {
                     getString(
                         R.string.best_time_value,
-                        secondsToTimeString(stats.bestTimeSudoku.seconds),
-                        stats.bestTimeSudoku.size.getLocalString(resources),
-                        stats.bestTimeSudoku.difficulty.getLocalString(resources),
+                        secondsToTimeString(stats.bestTimeSudoku.info.seconds),
+                        stats.bestTimeSudoku.info.size
+                            .getLocalString(resources),
+                        stats.bestTimeSudoku.info.difficulty
+                            .getLocalString(resources),
                     )
                 } else {
                     secondsToTimeString(-1)

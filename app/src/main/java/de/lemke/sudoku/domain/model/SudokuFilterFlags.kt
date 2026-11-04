@@ -34,16 +34,16 @@ fun Int.matchesSudokuFilterFlags(sudoku: Sudoku): Boolean = matchesType(sudoku) 
 
 private fun Int.matchesType(sudoku: Sudoku): Boolean =
     this and SudokuFilterFlags.TYPE_ALL != 0 ||
-        (this and SudokuFilterFlags.TYPE_NORMAL != 0 && sudoku.isNormalSudoku) ||
-        (this and SudokuFilterFlags.TYPE_DAILY != 0 && sudoku.isDailySudoku) ||
-        (this and SudokuFilterFlags.TYPE_LEVEL != 0 && sudoku.isSudokuLevel)
+        (this and SudokuFilterFlags.TYPE_NORMAL != 0 && sudoku.info.mode == GameMode.Normal) ||
+        (this and SudokuFilterFlags.TYPE_DAILY != 0 && sudoku.info.mode == GameMode.Daily) ||
+        (this and SudokuFilterFlags.TYPE_LEVEL != 0 && sudoku.info.mode is GameMode.Level)
 
-private fun Int.matchesSize(sudoku: Sudoku): Boolean = this and SudokuFilterFlags.SIZE_ALL != 0 || this and sudoku.size.filterFlag != 0
+private fun Int.matchesSize(sudoku: Sudoku): Boolean = this and SudokuFilterFlags.SIZE_ALL != 0 || this and sudoku.info.size.filterFlag != 0
 
 private fun Int.matchesDifficulty(sudoku: Sudoku): Boolean =
     this and SudokuFilterFlags.DIFFICULTY_ALL != 0 ||
-        (this and SudokuFilterFlags.DIFFICULTY_VERY_EASY != 0 && sudoku.difficulty == Difficulty.VERY_EASY) ||
-        (this and SudokuFilterFlags.DIFFICULTY_EASY != 0 && sudoku.difficulty == Difficulty.EASY) ||
-        (this and SudokuFilterFlags.DIFFICULTY_MEDIUM != 0 && sudoku.difficulty == Difficulty.MEDIUM) ||
-        (this and SudokuFilterFlags.DIFFICULTY_HARD != 0 && sudoku.difficulty == Difficulty.HARD) ||
-        (this and SudokuFilterFlags.DIFFICULTY_EXPERT != 0 && sudoku.difficulty == Difficulty.EXPERT)
+        (this and SudokuFilterFlags.DIFFICULTY_VERY_EASY != 0 && sudoku.info.difficulty == Difficulty.VERY_EASY) ||
+        (this and SudokuFilterFlags.DIFFICULTY_EASY != 0 && sudoku.info.difficulty == Difficulty.EASY) ||
+        (this and SudokuFilterFlags.DIFFICULTY_MEDIUM != 0 && sudoku.info.difficulty == Difficulty.MEDIUM) ||
+        (this and SudokuFilterFlags.DIFFICULTY_HARD != 0 && sudoku.info.difficulty == Difficulty.HARD) ||
+        (this and SudokuFilterFlags.DIFFICULTY_EXPERT != 0 && sudoku.info.difficulty == Difficulty.EXPERT)

@@ -158,12 +158,12 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
                 binding.continueGameButton.text =
                     getString(
                         R.string.continue_game,
-                        sudoku.size.getLocalString(resources),
-                        sudoku.difficulty.getLocalString(resources),
+                        sudoku.info.size.getLocalString(resources),
+                        sudoku.info.difficulty.getLocalString(resources),
                     )
                 binding.continueGameButton.onSingleLaunchClick {
                     binding.continueGameButton.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value),
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value),
                     )
                 }
             } else {

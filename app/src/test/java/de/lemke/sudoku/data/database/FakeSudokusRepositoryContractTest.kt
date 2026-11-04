@@ -37,6 +37,6 @@ class FakeSudokusRepositoryContractTest : SudokusRepositoryContract() {
             repository.deleteSudoku(testSudoku())
             repository.deleteSudoku(stored)
 
-            repository.deletedIds shouldBe listOf(stored.id)
+            repository.deletedIds shouldBe listOf(stored.info.id)
         }
 }

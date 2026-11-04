@@ -27,10 +27,11 @@ import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.FieldDb
 import de.lemke.sudoku.data.database.SudokuDao
 import de.lemke.sudoku.data.database.SudokuDb
-import de.lemke.sudoku.data.database.fieldToDb
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.di.BackupModule
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -126,7 +127,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
             val readable = testSudoku()
             store(readable)
 
-            section.exportEntries().map { it.id } shouldBe listOf(readable.id.value)
+            section.exportEntries().map { it.id } shouldBe listOf(readable.info.id.value)
         }
 
     @Test
@@ -134,23 +135,23 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
         runBlocking {
             val sudoku = testSudoku()
             val rows = sudokuWithFieldsToDb(sudoku)
-            database.sudokuDao().insert(rows.sudoku, listOf(fieldToDb(sudoku[0], sudoku.id).copy(solution = 0)) + rows.fields.drop(1))
+            database.sudokuDao().insert(rows.sudoku, listOf(rows.fields.first().copy(solution = 0)) + rows.fields.drop(1))
             val readable = testSudoku()
             store(readable)
 
-            section.exportEntries().map { it.id } shouldBe listOf(readable.id.value)
+            section.exportEntries().map { it.id } shouldBe listOf(readable.info.id.value)
         }
 
     @Test
     fun `local entries find a game by id, day and size with level`(): Unit =
         runBlocking {
             val normal = testSudoku()
-            val daily = testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 5, 3, 7, 30))
-            val level = testSudoku(modeLevel = 3)
-            store(normal, daily, level, testSudoku(), testSudoku(modeLevel = 4))
+            val daily = testSudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 5, 3, 7, 30))
+            val level = testSudoku(mode = GameMode.Level(3))
+            store(normal, daily, level, testSudoku(), testSudoku(mode = GameMode.Level(4)))
             val keys =
                 setOf(
-                    SudokuBackupKey.Normal(normal.id.value),
+                    SudokuBackupKey.Normal(normal.info.id.value),
                     SudokuBackupKey.Daily(LocalDate.of(2026, 5, 3)),
                     SudokuBackupKey.Level(SudokuSize.FOUR, 3),
                     SudokuBackupKey.Normal("missing"),
@@ -162,9 +163,9 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
 
             local.mapValues { it.value.id } shouldBe
                 mapOf(
-                    SudokuBackupKey.Normal(normal.id.value) to normal.id.value,
-                    SudokuBackupKey.Daily(LocalDate.of(2026, 5, 3)) to daily.id.value,
-                    SudokuBackupKey.Level(SudokuSize.FOUR, 3) to level.id.value,
+                    SudokuBackupKey.Normal(normal.info.id.value) to normal.info.id.value,
+                    SudokuBackupKey.Daily(LocalDate.of(2026, 5, 3)) to daily.info.id.value,
+                    SudokuBackupKey.Level(SudokuSize.FOUR, 3) to level.info.id.value,
                 )
         }
 
@@ -172,11 +173,11 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     fun `local entries ignore daily and level games when no key asks for them`(): Unit =
         runBlocking {
             val normal = testSudoku()
-            store(normal, testSudoku(modeLevel = Sudoku.MODE_DAILY), testSudoku(modeLevel = 1))
+            store(normal, testSudoku(mode = GameMode.Daily), testSudoku(mode = GameMode.Level(1)))
 
-            val local = section.localEntries(setOf(SudokuBackupKey.Normal(normal.id.value)))
+            val local = section.localEntries(setOf(SudokuBackupKey.Normal(normal.info.id.value)))
 
-            local.keys shouldBe setOf(SudokuBackupKey.Normal(normal.id.value))
+            local.keys shouldBe setOf(SudokuBackupKey.Normal(normal.info.id.value))
         }
 
     @Test
@@ -184,16 +185,16 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
         runBlocking {
             val stored = List(3) { testSudoku() }
             store(*stored.toTypedArray())
-            val keys = stored.map { SudokuBackupKey.Normal(it.id.value) } + List(1200) { SudokuBackupKey.Normal("missing-$it") }
+            val keys = stored.map { SudokuBackupKey.Normal(it.info.id.value) } + List(1200) { SudokuBackupKey.Normal("missing-$it") }
 
-            section.localEntries(keys.toSet()).keys shouldBe stored.map { SudokuBackupKey.Normal(it.id.value) }.toSet()
+            section.localEntries(keys.toSet()).keys shouldBe stored.map { SudokuBackupKey.Normal(it.info.id.value) }.toSet()
         }
 
     @Test
     fun `replace swaps the local game for the merged one`(): Unit =
         runBlocking {
-            val local = backupEntry(id = "local", modeLevel = Sudoku.MODE_DAILY, solvedCells = 2)
-            val merged = backupEntry(id = "merged", modeLevel = Sudoku.MODE_DAILY, solvedCells = 6)
+            val local = backupEntry(id = "local", modeLevel = GameMode.Daily.toLegacyModeLevel(), solvedCells = 2)
+            val merged = backupEntry(id = "merged", modeLevel = GameMode.Daily.toLegacyModeLevel(), solvedCells = 6)
             section.insert(listOf(local))
 
             section.replace(local, merged)
@@ -204,23 +205,25 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     @Test
     fun `a game with a given cell off its solution survives an export and an import`(): Unit =
         runBlocking {
-            val sudoku = testSudoku()
-            sudoku[0].value = if (sudoku[0].solution == 1) 2 else 1
+            val base = testSudoku()
+            val given = base.board[0]
+            val offSolution = if (given.solution == 1) 2 else 1
+            val sudoku = base.copy(board = base.board.with(0, given.copy(value = offSolution)))
             store(sudoku)
             val exported = section.exportEntries()
 
             section.clear()
             section.insert(exported)
 
-            exported.map { it.id } shouldBe listOf(sudoku.id.value)
+            exported.map { it.id } shouldBe listOf(sudoku.info.id.value)
             section.exportEntries() shouldBe exported
             database
                 .sudokuDao()
-                .getById(sudoku.id.value)
+                .getById(sudoku.info.id.value)
                 .shouldNotBeNull()
                 .fields
                 .first { it.index == 0 }
-                .value shouldBe sudoku[0].value
+                .value shouldBe offSolution
         }
 
     @Test
@@ -274,8 +277,8 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
             queuedSave.await()
 
             val after = section.exportEntries()
-            after.map { it.id }.toSet() shouldBe (before.map { it.id } + queued.id.value).toSet()
-            after.filter { it.id != queued.id.value }.toSet() shouldBe before.toSet()
+            after.map { it.id }.toSet() shouldBe (before.map { it.id } + queued.info.id.value).toSet()
+            after.filter { it.id != queued.info.id.value }.toSet() shouldBe before.toSet()
         }
 
     @Test

@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
@@ -32,6 +33,7 @@ class ObserveSudokuLevelUseCase @Inject constructor(
     operator fun invoke(size: SudokuSize) =
         sudokusRepository
             .observeSudokuLevel(size)
-            .map { sudokus -> sudokus.map { SudokuListItem.SudokuItem(it, it.modeLevel.toString()) } }
-            .flowOn(defaultDispatcher)
+            .map { sudokus ->
+                sudokus.map { sudoku -> SudokuListItem.SudokuItem(sudoku, (sudoku.info.mode as GameMode.Level).number.toString()) }
+            }.flowOn(defaultDispatcher)
 }

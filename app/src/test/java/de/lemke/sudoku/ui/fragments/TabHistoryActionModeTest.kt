@@ -42,13 +42,11 @@ import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -133,15 +131,7 @@ class TabHistoryActionModeTest {
         database.close()
     }
 
-    private fun historySudoku(): Sudoku {
-        val size = SudokuSize.FOUR
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = MODE_NORMAL,
-            fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
-        )
-    }
+    private fun historySudoku(): Sudoku = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY)
 
     private fun launch(block: (TabHistory) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -191,7 +181,13 @@ class TabHistoryActionModeTest {
 
             val listener = actionModeListenerOf(drawerLayout)
             listener.onSelectAll(true)
-            fragment.sudokuListAdapter.getSelectedIds() shouldBe setOf(first, second).map { it.hashCode().toLong() }.toSet()
+            fragment.sudokuListAdapter.getSelectedIds() shouldBe
+                setOf(first, second)
+                    .map {
+                        it.info.id
+                            .hashCode()
+                            .toLong()
+                    }.toSet()
 
             listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
             idleMainLooper()
@@ -301,7 +297,7 @@ class TabHistoryActionModeTest {
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
-            started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+            started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
         }
     }
 
@@ -316,7 +312,7 @@ class TabHistoryActionModeTest {
             idleMainLooper()
 
             val activity = shadowOf(fragment.requireActivity())
-            activity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+            activity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
             activity.nextStartedActivity shouldBe null
         }
     }

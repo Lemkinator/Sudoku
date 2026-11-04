@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -126,7 +127,7 @@ private val difficultyAchievementExpectations =
 private fun wonSudoku(
     difficulty: Difficulty = VERY_EASY,
     size: SudokuSize = SudokuSize.FOUR,
-    modeLevel: Int = Sudoku.MODE_NORMAL,
+    mode: GameMode = GameMode.Normal,
     seconds: Int = 0,
     eraserUsed: Boolean = false,
     hintsUsed: Int = 0,
@@ -134,13 +135,18 @@ private fun wonSudoku(
     isChecklist: Boolean = false,
     isReverseChecklist: Boolean = false,
 ): Sudoku =
-    testSudoku(size = size, modeLevel = modeLevel, difficulty = difficulty, completed = true).apply {
-        this.seconds = seconds
-        this.eraserUsed = eraserUsed
-        this.hintsUsed = hintsUsed
-        this.notesMade = notesMade
-        this.isChecklist = isChecklist
-        this.isReverseChecklist = isReverseChecklist
+    testSudoku(size = size, mode = mode, difficulty = difficulty, completed = true).let {
+        it.copy(
+            info =
+                it.info.copy(
+                    seconds = seconds,
+                    eraserUsed = eraserUsed,
+                    hintsUsed = hintsUsed,
+                    notesMade = notesMade,
+                    isChecklist = isChecklist,
+                    isReverseChecklist = isReverseChecklist,
+                ),
+        )
     }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -219,14 +225,14 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         should("submit the base scores, counting level sudokus only toward the level leaderboard of their size") {
             val useCase =
                 calculatePlayGamesSyncOver(
-                    wonSudoku(size = SudokuSize.FOUR, modeLevel = 1),
-                    wonSudoku(size = SudokuSize.NINE, modeLevel = 1),
-                    wonSudoku(size = SudokuSize.NINE, modeLevel = 2),
-                    wonSudoku(size = SudokuSize.SIXTEEN, modeLevel = 1),
-                    wonSudoku(size = SudokuSize.SIXTEEN, modeLevel = 2),
-                    wonSudoku(size = SudokuSize.SIXTEEN, modeLevel = 3),
+                    wonSudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1)),
+                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Level(1)),
+                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Level(2)),
+                    wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(1)),
+                    wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(2)),
+                    wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(3)),
                     wonSudoku(size = SudokuSize.FOUR),
-                    wonSudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY),
+                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Daily),
                 )
 
             useCase(null).leaderboardScores shouldBe

@@ -42,14 +42,11 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokuExport
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
-import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.dateFormatShort
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
@@ -106,31 +103,9 @@ class SudokuActivityShareTest {
 
     private fun formulaicSudoku(
         size: SudokuSize,
-        modeLevel: Int = MODE_NORMAL,
+        mode: GameMode = GameMode.Normal,
         created: LocalDateTime = LocalDateTime.now(),
-    ): Sudoku {
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            sudokuId = SudokuId.generate(),
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = modeLevel,
-            created = created,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    val given = index % 3 == 0
-                    Field(
-                        position = Position.create(index, size),
-                        solution = solution,
-                        value = if (given) solution else null,
-                        given = given,
-                    )
-                },
-        )
-    }
+    ): Sudoku = testSudoku(size = size, mode = mode, difficulty = Difficulty.VERY_EASY, created = created)
 
     private fun launch(
         sudoku: Sudoku,
@@ -138,7 +113,7 @@ class SudokuActivityShareTest {
     ) {
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { it.userSettings.animationsEnabled = false }
             scenario.onActivity(block)
@@ -156,7 +131,8 @@ class SudokuActivityShareTest {
         awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
     }
 
-    private fun levelSudokuWithAnEntry(): Sudoku = formulaicSudoku(SudokuSize.FOUR, modeLevel = 3).apply { fields[1].value = 2 }
+    private fun levelSudokuWithAnEntry(): Sudoku =
+        formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Level(3)).let { it.copy(board = it.board.with(1, it.board[1].copy(value = 2))) }
 
     private fun sharedSudoku(activity: SudokuActivity): SudokuExport {
         val chooser = shadowOf(activity).nextStartedActivity
@@ -225,7 +201,7 @@ class SudokuActivityShareTest {
         val sudoku = levelSudokuWithAnEntry()
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.userSettings.animationsEnabled = false
@@ -250,14 +226,14 @@ class SudokuActivityShareTest {
         val sudoku = levelSudokuWithAnEntry()
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             lateinit var viewModel: SudokuViewModel
             scenario.onActivity { activity ->
                 activity.userSettings.animationsEnabled = false
                 viewModel = activity.viewModel
                 activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
-                viewModel.onShare(activity.sudoku.getInitialSudoku())
+                viewModel.onShare(activity.sudoku.initialCopy())
             }
             awaitMainLooperUntil { viewModel.share.value is SudokuShare.File }
             val file = viewModel.share.value as SudokuShare.File
@@ -311,8 +287,8 @@ class SudokuActivityShareTest {
 
     @Test
     fun `the title reflects a daily sudoku's date`() =
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_DAILY)) { activity ->
-            val expected = "Sudoku (${activity.sudoku.created.dateFormatShort})"
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Daily)) { activity ->
+            val expected = "Sudoku (${activity.sudoku.info.created.dateFormatShort})"
             activity.binding.sudokuToolbarLayout.expandedTitle
                 .toString() shouldBe expected
         }
@@ -320,36 +296,29 @@ class SudokuActivityShareTest {
     @Test
     fun `the subtitle shows a daily sudoku's fixed error limit instead of the user's`() {
         userSettings.errorLimit = 5
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_DAILY)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Daily)) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
     }
 
     @Test
     fun `the title reflects a sudoku level's number`() =
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = 3)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Level(3))) { activity ->
             activity.binding.sudokuToolbarLayout.expandedTitle
                 .toString() shouldBe "Sudoku (Level 3)"
         }
 
     @Test
     fun `the title reflects a normal sudoku's difficulty`() =
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_NORMAL)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Normal)) { activity ->
             activity.binding.sudokuToolbarLayout.expandedTitle
                 .toString() shouldBe "Sudoku (Very easy)"
         }
 
     @Test
-    fun `the title is the bare name for a mode level outside normal, daily and level`() =
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = -2)) { activity ->
-            activity.binding.sudokuToolbarLayout.expandedTitle
-                .toString() shouldBe "Sudoku"
-        }
-
-    @Test
     fun `the subtitle shows a sudoku level's fixed error limit instead of the user's`() {
         userSettings.errorLimit = 5
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = 3)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Level(3))) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
     }
@@ -357,7 +326,7 @@ class SudokuActivityShareTest {
     @Test
     fun `the subtitle omits the error limit for a normal sudoku with an unlimited error setting`() {
         userSettings.errorLimit = 0
-        launch(formulaicSudoku(SudokuSize.FOUR, modeLevel = MODE_NORMAL)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Normal)) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0"
         }
     }

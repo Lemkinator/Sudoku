@@ -100,8 +100,8 @@ class IntroActivityAnimationTest {
             activity.nextIntroStep()
             activity.nextIntroStep()
             activity.select(DEMO_CELL_INDEX_4)
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.introStep shouldBe 5
             idleRepeated(5, 800)
             activity.select(DEMO_CELL_INDEX_49)
@@ -114,8 +114,8 @@ class IntroActivityAnimationTest {
             activity.nextIntroStep()
             activity.nextIntroStep()
             activity.select(DEMO_CELL_INDEX_4)
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.select(DEMO_CELL_INDEX_49)
             activity.introStep shouldBe 6
             idleRepeated(5, 800)
@@ -126,7 +126,7 @@ class IntroActivityAnimationTest {
     @Test
     fun `animate with animateSudoku drives the whole-board branch of matchesAnimation`() =
         launch { activity ->
-            val position = Position.create(0, activity.sudoku.size)
+            val position = Position.create(0, activity.sudoku.info.size)
             val job = activity.animate(position, animateSudoku = true)
             job.shouldNotBeNull()
             idle(2000)
@@ -135,7 +135,7 @@ class IntroActivityAnimationTest {
     @Test
     fun `animate with every flag false is a no-op`() =
         launch { activity ->
-            val position = Position.create(0, activity.sudoku.size)
+            val position = Position.create(0, activity.sudoku.info.size)
             val job = activity.animate(position)
             job.shouldBeNull()
         }
@@ -146,8 +146,8 @@ class IntroActivityAnimationTest {
             activity.nextIntroStep()
             activity.nextIntroStep()
             activity.select(DEMO_CELL_INDEX_4)
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.select(DEMO_CELL_INDEX_49)
             activity.select(DEMO_CELL_INDEX_24)
             activity.nextIntroStep()
@@ -190,8 +190,8 @@ class IntroActivityAnimationTest {
             activity.nextIntroStep()
             activity.nextIntroStep()
             activity.select(DEMO_CELL_INDEX_4)
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.select(DEMO_CELL_INDEX_49)
             activity.introStep shouldBe 6
             idleRepeated(3, 800)
@@ -209,8 +209,8 @@ class IntroActivityAnimationTest {
             activity.nextIntroStep()
             activity.nextIntroStep()
             activity.select(DEMO_CELL_INDEX_4)
-            activity.select(activity.sudoku.itemCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.select(DEMO_CELL_INDEX_49)
             activity.select(DEMO_CELL_INDEX_24)
             activity.nextIntroStep()
@@ -248,7 +248,7 @@ class IntroActivityAnimationTest {
     @Test
     fun `animate with only animateColumn drives the column-only branch of matchesAnimation`() =
         launch { activity ->
-            val position = Position.create(0, activity.sudoku.size)
+            val position = Position.create(0, activity.sudoku.info.size)
             val job = activity.animate(position, animateColumn = true)
             job.shouldNotBeNull()
             idle(2000)
@@ -257,7 +257,7 @@ class IntroActivityAnimationTest {
     @Test
     fun `animate with only animateBlock drives the block-only branch of matchesAnimation`() =
         launch { activity ->
-            val position = Position.create(0, activity.sudoku.size)
+            val position = Position.create(0, activity.sudoku.info.size)
             val job = activity.animate(position, animateBlock = true)
             job.shouldNotBeNull()
             idle(2000)

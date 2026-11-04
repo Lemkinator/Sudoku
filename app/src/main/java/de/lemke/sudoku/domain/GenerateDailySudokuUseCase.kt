@@ -18,6 +18,8 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -47,13 +49,18 @@ class GenerateDailySudokuUseCase @Inject constructor(
                     Difficulty.MEDIUM,
                     Difficulty.HARD,
                 ).random()
-            return@withContext Sudoku.create(
-                sudokuId = SudokuId.generate(),
-                size = size,
-                difficulty = randomDifficulty,
-                fields = generateFields(size, randomDifficulty),
-                modeLevel = Sudoku.MODE_DAILY,
-                created = LocalDateTime.now(clock),
+            val now = LocalDateTime.now(clock)
+            return@withContext Sudoku(
+                info =
+                    GameInfo(
+                        id = SudokuId.generate(),
+                        size = size,
+                        difficulty = randomDifficulty,
+                        mode = GameMode.Daily,
+                        created = now,
+                        updated = now,
+                    ),
+                board = generateFields(size, randomDifficulty),
             )
         }
 }

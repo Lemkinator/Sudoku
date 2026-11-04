@@ -57,7 +57,7 @@ class SudokuViewModelRig {
         val dispatcher = Dispatchers.Main
         val generateFields = GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator())
         return SudokuViewModel(
-            SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.id.value)),
+            SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.info.id.value)),
             GetSudokuUseCase(repository, dispatcher),
             GenerateSudokuUseCase(generateFields, dispatcher),
             GenerateSudokuLevelUseCase(generateFields, dispatcher),

@@ -29,14 +29,13 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.di.ClockModule
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -83,24 +82,15 @@ class DailySudokuActivityMenuTest {
         settings.bypassOobe()
     }
 
-    private fun dailySudoku(sudokuId: SudokuId = SudokuId.generate()): Sudoku {
-        val size = SudokuSize.FOUR
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            sudokuId = sudokuId,
-            size = size,
+    private fun dailySudoku(sudokuId: SudokuId = SudokuId.generate()): Sudoku =
+        testSudoku(
+            size = SudokuSize.FOUR,
+            mode = GameMode.Daily,
             difficulty = Difficulty.VERY_EASY,
-            modeLevel = MODE_DAILY,
+            sudokuId = sudokuId,
             created = LocalDateTime.now(testClock),
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    Field(position = Position.create(index, size), solution = solution, value = solution, given = true)
-                },
+            completed = true,
         )
-    }
 
     private fun launch(block: (DailySudokuActivity) -> Unit) {
         ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
@@ -186,7 +176,7 @@ class DailySudokuActivityMenuTest {
             val started = shadowOf(activity).nextStartedActivity
             started.shouldNotBeNull()
             started.component?.className shouldBe SudokuActivity::class.java.name
-            started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+            started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
         }
 
     @Test

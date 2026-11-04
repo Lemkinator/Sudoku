@@ -21,6 +21,7 @@ import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -36,7 +37,6 @@ class GenerateSudokuLevelUseCaseTest : ShouldSpec(
         should("map every level-threshold boundary to its difficulty") {
             val cases =
                 mapOf(
-                    0 to EXPERT,
                     1 to VERY_EASY,
                     30 to VERY_EASY,
                     31 to EASY,
@@ -51,8 +51,8 @@ class GenerateSudokuLevelUseCaseTest : ShouldSpec(
             cases.forEach { (level, expectedDifficulty) ->
                 val sudoku = useCase(SudokuSize.NINE, level)
 
-                sudoku.difficulty shouldBe expectedDifficulty
-                sudoku.modeLevel shouldBe level
+                sudoku.info.difficulty shouldBe expectedDifficulty
+                sudoku.info.mode shouldBe GameMode.Level(level)
             }
         }
     },

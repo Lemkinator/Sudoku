@@ -63,6 +63,11 @@ class BoardTest : ShouldSpec(
 
         should("reject a solution beyond the size") {
             shouldThrow<IllegalArgumentException> { fresh4().with(1, Cell(0)) }
+            shouldThrow<IllegalArgumentException> { fresh4().with(1, Cell(5)) }
+        }
+
+        should("reject a value below 1") {
+            shouldThrow<IllegalArgumentException> { fresh4().with(1, Cell(2, value = 0)) }
         }
 
         should("replace one cell and keep the original board") {
@@ -122,8 +127,11 @@ class BoardTest : ShouldSpec(
 
         should("expose cell flags") {
             Cell(2, 3).error shouldBe true
+            Cell(2, 3).correct shouldBe false
             Cell(2, 2).correct shouldBe true
+            Cell(2, 2).error shouldBe false
             Cell(2).error shouldBe false
+            Cell(2).correct shouldBe false
             Cell(2, 2, CellOrigin.HINT).locked shouldBe true
             Cell(2).locked shouldBe false
         }

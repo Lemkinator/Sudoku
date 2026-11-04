@@ -72,7 +72,7 @@ the use-case injections; screens expose state, including one-off results, via `S
 ```text
 de.lemke.sudoku/
 ├── ui/           # Activities, Fragments, custom views, RecyclerView adapters, ViewModels
-├── domain/       # Use cases + domain models (Sudoku, Field, Position, Difficulty)
+├── domain/       # Use cases + domain models (Sudoku, GameInfo, Board, Position, Difficulty)
 └── data/         # Room DB + SharedPreferences-backed settings, mappers, repositories
 ```
 
@@ -85,10 +85,12 @@ because sign-in needs the Activity. It signs in through `GamesSignIn` and fetche
 `PlayGamesIntentProvider`. The silent authentication check and the intent fetch give up after 10 s and end silently.
 `PlayGamesSyncApplier` submits a calculated `PlayGamesSync`.
 
-**Domain models:** `Sudoku` (4×4/9×9/16×16), `Field` (cell with solution/value/notes), `Position` (row/col/block), `Difficulty` (
-VERY_EASY…EXPERT). Game logic lives on the domain objects themselves (`move()`, `setHint()`, `errorLimitReached()`).
+**Domain models:** `Sudoku` (4×4/9×9/16×16) is an immutable `GameInfo` (id, size, difficulty, `GameMode`, counters, stamps) plus a
+`Board`. A `Board` holds immutable `Cell`s (solution, value, `CellOrigin`, `NoteMask`); `Position` (row/col/block), `Difficulty`
+(VERY_EASY…EXPERT, stored by `code`). Moves are pure: `Board.apply(BoardMove)` returns a `MoveResult`, and `Sudoku.play(move)` adds the
+counters and returns a new `Sudoku`. The domain holds no timer and no listener; `SudokuViewModel` owns the ticker and every move.
 
-**Sudoku modes:** Normal (modeLevel = 0), Level (modeLevel > 0), Daily (modeLevel = -1).
+**Sudoku modes:** `GameMode`: `Normal`, `Daily`, `Level(number)`.
 
 ## Key Patterns
 
@@ -120,9 +122,9 @@ timeout, so Room queries run only while the screen collects. The upstream restar
 steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a `viewModelScope.async` that the upstream awaits. A
 `catch` ahead of `stateInViewModel` sets the screen's `loadFailed` state once per failed run; the next return retries.
 A refused next-level start (its level is already saved) also restarts the level list query.
-`SudokuViewModel` owns the played sudoku (`SudokuGame`) and keeps its id in the `SavedStateHandle`, so a restart or a
-follow-up game survives recreation. Every write of the played sudoku goes through `QueueSudokuSaveUseCase`: it maps
-the rows on the calling thread and runs the writes one after another in `@ApplicationScope`, so a closing screen
+`SudokuViewModel` owns the played sudoku (`SudokuGame`), its moves (`onMove`) and its one ticker job, and keeps its id in the
+`SavedStateHandle`, so a restart or a follow-up game survives recreation. Every write of the played sudoku goes through
+`QueueSudokuSaveUseCase`: it queues the immutable value and runs the writes one after another in `@ApplicationScope`, so a closing screen
 cannot cancel a save. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
 The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
 

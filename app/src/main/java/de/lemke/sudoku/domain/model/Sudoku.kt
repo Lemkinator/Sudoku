@@ -18,7 +18,6 @@ package de.lemke.sudoku.domain.model
 
 import android.content.res.Resources
 import de.lemke.sudoku.R
-import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId.systemDefault
@@ -28,17 +27,7 @@ import java.time.format.DateTimeFormatter.ofLocalizedDateTime
 import java.time.format.FormatStyle
 import java.time.format.FormatStyle.FULL
 import java.time.format.FormatStyle.MEDIUM
-import java.util.Locale
 import java.util.UUID
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-
-private const val SECONDS_PER_MINUTE = 60
-private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
-private const val PERCENT_SCALE = 100
-private const val TICK_MILLIS = 1000L
 
 private const val MAX_STANDARD_DIGIT = 9
 private val MAX_LARGE_DIGIT = SudokuSize.entries.maxOf { it.value }
@@ -51,394 +40,62 @@ value class SudokuId(val value: String) {
     }
 }
 
-class Sudoku(
-    val id: SudokuId,
-    val size: SudokuSize,
-    val difficulty: Difficulty,
-    val modeLevel: Int,
-    var regionalHighlightingUsed: Boolean,
-    var numberHighlightingUsed: Boolean,
-    var eraserUsed: Boolean,
-    var isChecklist: Boolean,
-    var isReverseChecklist: Boolean,
-    var checklistNumber: Int,
-    var hintsUsed: Int,
-    var notesMade: Int,
-    var errorsMade: Int,
-    val created: LocalDateTime,
-    var updated: LocalDateTime,
-    var seconds: Int,
-    var timer: Job?,
-    var gameListener: GameListener?,
-    val fields: MutableList<Field>,
-) {
-    val availableHints: Int
-        get() = size.hintLimit - hintsUsed
+data class Sudoku(val info: GameInfo, val board: Board) {
+    init {
+        require(info.size == board.size) { "Game size ${info.size} differs from board size ${board.size}" }
+    }
 
-    val isHintAvailable: Boolean get() = if (isNormalSudoku) hintsUsed < size.hintLimit else false
+    val completed: Boolean get() = board.completed
 
-    val isSudokuLevel: Boolean get() = modeLevel > 0
+    val progress: Int get() = board.progress
 
-    val isDailySudoku: Boolean get() = modeLevel == MODE_DAILY
-
-    val isNormalSudoku: Boolean get() = modeLevel == MODE_NORMAL
-
-    val completed: Boolean get() = fields.all { !it.error && it.value != null }
-
-    val resumed: Boolean get() = timer != null
-
-    val itemCount: Int get() = size.cellCount
-
-    val progress: Int
-        get() {
-            val total = fields.count { !it.given }
-            return if (total == 0) PERCENT_SCALE else fields.count { !it.given && it.correct } * PERCENT_SCALE / total
-        }
-
-    val timeString: String
-        get() =
-            if (seconds >= SECONDS_PER_HOUR) {
-                String.format(
-                    Locale.getDefault(),
-                    "%02d:%02d:%02d",
-                    seconds / SECONDS_PER_HOUR,
-                    seconds / SECONDS_PER_MINUTE % SECONDS_PER_MINUTE,
-                    seconds % SECONDS_PER_MINUTE,
-                )
-            } else {
-                String.format(Locale.getDefault(), "%02d:%02d", seconds / SECONDS_PER_MINUTE, seconds % SECONDS_PER_MINUTE)
+    /** Applies [move] and the counters it changes; null when the board rejects it or no hint is left. */
+    fun play(move: BoardMove): GameMove? {
+        val result = board.takeIf { move !is BoardMove.RevealHint || info.isHintAvailable }?.apply(move) ?: return null
+        val played =
+            when (move) {
+                is BoardMove.Enter -> info.withDigitEntered(move.digit)
+                is BoardMove.Erase -> info.copy(eraserUsed = true)
+                is BoardMove.RevealHint -> info.copy(hintsUsed = info.hintsUsed + 1)
+                is BoardMove.ToggleNote, is BoardMove.ClearNotes -> info
             }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as Sudoku
-        return id == other.id
+        val counted =
+            played.copy(
+                notesMade = played.notesMade + if (result.noteAdded) 1 else 0,
+                errorsMade = played.errorsMade + if (result.error) 1 else 0,
+            )
+        return GameMove(copy(info = counted, board = result.board), result)
     }
 
-    override fun hashCode(): Int = id.hashCode()
+    fun tick(now: LocalDateTime): Sudoku = copy(info = info.copy(seconds = info.seconds + 1, updated = now))
 
-    fun contentEquals(other: Sudoku): Boolean =
-        id == other.id &&
-            regionalHighlightingUsed == other.regionalHighlightingUsed &&
-            numberHighlightingUsed == other.numberHighlightingUsed &&
-            eraserUsed == other.eraserUsed &&
-            isChecklist == other.isChecklist &&
-            isReverseChecklist == other.isReverseChecklist &&
-            checklistNumber == other.checklistNumber &&
-            hintsUsed == other.hintsUsed &&
-            notesMade == other.notesMade &&
-            errorsMade == other.errorsMade &&
-            created == other.created &&
-            updated == other.updated &&
-            seconds == other.seconds &&
-            fields == other.fields
+    fun withHighlightingUsed(highlighting: Highlighting): Sudoku = copy(info = info.withHighlightingUsed(highlighting))
 
-    fun copy(
-        sudokuId: SudokuId = this.id,
-        size: SudokuSize = this.size,
-        difficulty: Difficulty = this.difficulty,
-        modeLevel: Int = this.modeLevel,
-        regionalHighlightingUsed: Boolean = this.regionalHighlightingUsed,
-        numberHighlightingUsed: Boolean = this.numberHighlightingUsed,
-        eraserUsed: Boolean = this.eraserUsed,
-        isChecklist: Boolean = this.isChecklist,
-        isReverseChecklist: Boolean = this.isReverseChecklist,
-        checklistNumber: Int = this.checklistNumber,
-        hintsUsed: Int = this.hintsUsed,
-        notesMade: Int = this.notesMade,
-        errorsMade: Int = this.errorsMade,
-        created: LocalDateTime = this.created,
-        updated: LocalDateTime = this.updated,
-        seconds: Int = this.seconds,
-        timer: Job? = this.timer,
-        gameListener: GameListener? = this.gameListener,
-        fields: MutableList<Field> = MutableList(itemCount) { this.fields[it].copy() },
-    ): Sudoku =
-        Sudoku(
-            id = sudokuId,
-            size = size,
-            difficulty = difficulty,
-            modeLevel = modeLevel,
-            regionalHighlightingUsed = regionalHighlightingUsed,
-            numberHighlightingUsed = numberHighlightingUsed,
-            eraserUsed = eraserUsed,
-            isChecklist = isChecklist,
-            isReverseChecklist = isReverseChecklist,
-            checklistNumber = checklistNumber,
-            hintsUsed = hintsUsed,
-            notesMade = notesMade,
-            errorsMade = errorsMade,
-            created = created,
-            updated = updated,
-            seconds = seconds,
-            timer = timer,
-            gameListener = gameListener,
-            fields = fields,
-        )
+    fun restarted(): Sudoku = copy(info = info.zeroed(), board = board.initial())
 
-    fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
+    fun initialCopy(): Sudoku =
+        Sudoku(info.zeroed().copy(id = SudokuId.generate(), mode = GameMode.Normal, updated = info.created), board.initial())
 
-    fun getInitialSudoku() =
-        Sudoku(
-            id = SudokuId.generate(),
-            size = size,
-            difficulty = difficulty,
-            modeLevel = MODE_NORMAL,
-            regionalHighlightingUsed = false,
-            numberHighlightingUsed = false,
-            eraserUsed = false,
-            isChecklist = false,
-            isReverseChecklist = false,
-            checklistNumber = 0,
-            hintsUsed = 0,
-            notesMade = 0,
-            errorsMade = 0,
-            created = created,
-            updated = created,
-            seconds = 0,
-            timer = null,
-            gameListener = null,
-            fields = MutableList(itemCount) { fields[it].getInitialField() },
-        )
-
-    fun reset() {
-        fields.forEach { it.reset() }
-        regionalHighlightingUsed = false
-        numberHighlightingUsed = false
-        eraserUsed = false
-        isChecklist = false
-        isReverseChecklist = false
-        checklistNumber = 0
-        hintsUsed = 0
-        notesMade = 0
-        errorsMade = 0
-        seconds = 0
-        timer?.cancel()
-        timer = null
-        gameListener = null
-    }
-
-    fun startTimer(
-        scope: CoroutineScope,
-        clock: Clock,
-        initialDelay: Long = TICK_MILLIS,
-    ) {
-        if (completed) return
-        timer?.cancel()
-        timer =
-            scope.launch {
-                delay(initialDelay)
-                while (true) {
-                    seconds++
-                    updated = LocalDateTime.now(clock)
-                    gameListener?.onTimeChanged()
-                    delay(TICK_MILLIS)
-                }
-            }
-    }
-
-    fun stopTimer() {
-        timer?.cancel()
-        timer = null
-    }
-
-    fun move(
-        index: Int,
-        value: Int?,
-        isNote: Boolean = false,
-    ) = move(Position.create(index, size), value, isNote)
-
-    fun move(
-        position: Position,
-        value: Int?,
-        isNote: Boolean = false,
-    ): Boolean {
-        val field = get(position)
-        return when {
-            timer == null || field.given || field.hint -> false
-            isNote -> moveNote(position, field, value)
-            value == null -> moveErase(position, field)
-            field.correct || field.value == value -> false
-            else -> moveSet(position, field, value)
-        }
-    }
-
-    private fun moveNote(
-        position: Position,
-        field: Field,
-        value: Int?,
-    ): Boolean {
-        if (field.value != null) return false
-        if (value != null) {
-            if (field.toggleNote(value)) notesMade++
-        } else {
-            field.notes.clear()
-        }
-        gameListener?.onFieldChanged(position)
-        return true
-    }
-
-    private fun moveErase(
-        position: Position,
-        field: Field,
-    ): Boolean {
-        if (field.value == null && field.notes.isEmpty()) return false
-        eraserUsed = true
-        if (field.value == null) field.notes.clear()
-        field.value = null
-        gameListener?.onFieldChanged(position)
-        return true
-    }
-
-    private fun moveSet(
-        position: Position,
-        field: Field,
-        value: Int,
-    ): Boolean {
-        field.value = value
-        gameListener?.onFieldChanged(position)
-        checkChecklist(value)
-        if (field.error) {
-            errorsMade++
-            gameListener?.onError()
-        } else {
-            removeNumberNotesFromNeighbors(position, value)
-        }
-        if (completed) {
-            stopTimer()
-            gameListener?.onCompleted(position)
-        }
-        return true
-    }
-
-    private fun checkChecklist(value: Int) {
-        when {
-            isChecklist -> {
-                when {
-                    value == checklistNumber -> return
-                    value > checklistNumber -> checklistNumber = value
-                    else -> isChecklist = false
-                }
-            }
-
-            isReverseChecklist -> {
-                when {
-                    value == checklistNumber -> return
-                    value < checklistNumber -> checklistNumber = value
-                    else -> isReverseChecklist = false
-                }
-            }
-
-            checklistNumber == 0 -> {
-                when (value) {
-                    1 -> isChecklist = true
-                    size.value -> isReverseChecklist = true
-                }
-            }
-        }
-        checklistNumber = value
-    }
-
-    private fun removeNumberNotesFromNeighbors(
-        position: Position,
-        value: Int?,
-    ) {
-        get(position).notes.clear()
-        gameListener?.onFieldChanged(position)
-        getNeighbors(position).forEach {
-            if (it.removeNote(value)) gameListener?.onFieldChanged(it.position)
-        }
-    }
-
-    fun setHint(index: Int) = setHint(Position.create(index, size))
-
-    fun setHint(position: Position) {
-        if (timer == null || get(position).given || get(position).hint || !isHintAvailable) return
-        hintsUsed++
-        get(position).setHint()
-        gameListener?.onFieldChanged(position)
-        removeNumberNotesFromNeighbors(position, get(position).value)
-        if (completed) {
-            stopTimer()
-            gameListener?.onCompleted(position)
-        }
-    }
-
-    operator fun get(position: Position): Field = fields[position.index]
-
-    operator fun set(
-        position: Position,
-        field: Field,
-    ) {
-        fields[position.index] = field.copy(position = position)
-    }
-
-    operator fun get(index: Int): Field = fields[index]
-
-    operator fun set(
-        index: Int,
-        field: Field,
-    ) {
-        fields[index] = field.copy(position = Position.create(index, size))
-    }
-
-    operator fun get(
-        row: Int,
-        column: Int,
-    ) = fields[Position.create(size = size, row = row, column = column).index]
-
-    operator fun set(
-        row: Int,
-        column: Int,
-        field: Field,
-    ) {
-        fields[Position.create(size = size, row = row, column = column).index] =
-            field.copy(position = Position.create(size = size, row = row, column = column))
-    }
-
-    private fun getRow(row: Int): List<Field> = fields.filter { it.position.row == row }
-
-    private fun getColumn(column: Int): List<Field> = fields.filter { it.position.column == column }
-
-    private fun getBlock(block: Int): List<Field> = fields.filter { it.position.block == block }
-
-    private fun getNeighbors(position: Position): List<Field> = getRow(position.row) + getColumn(position.column) + getBlock(position.block)
-
-    fun getNeighbors(index: Int): List<Field> = getNeighbors(Position.create(index, size))
-
-    fun isRowCompleted(row: Int): Boolean = getRow(row).all { it.correct }
-
-    fun isColumnCompleted(column: Int): Boolean = getColumn(column).all { it.correct }
-
-    fun isBlockCompleted(block: Int): Boolean = getBlock(block).all { it.correct }
-
-    fun getCompletedNumbers(): List<Pair<Int, Boolean>> {
-        val numbers = MutableList(size.value) { 0 }
-        fields.forEach { field ->
-            if (field.correct) numbers[field.value!! - 1]++
-        }
-        return numbers.mapIndexed { index, i -> Pair(index + 1, i >= size.value) }
-    }
+    fun copyAsNormal(): Sudoku = copy(info = info.copy(id = SudokuId.generate(), mode = GameMode.Normal))
 
     fun getLocalStatisticsString(resources: Resources): String =
         resources.getString(
             R.string.sudokuStatisticsString,
-            when (modeLevel) {
-                MODE_NORMAL -> resources.getString(R.string.normal_sudoku)
-                MODE_DAILY -> resources.getString(R.string.daily_sudoku)
-                else -> resources.getString(R.string.level_number, modeLevel)
+            when (val mode = info.mode) {
+                GameMode.Normal -> resources.getString(R.string.normal_sudoku)
+                GameMode.Daily -> resources.getString(R.string.daily_sudoku)
+                is GameMode.Level -> resources.getString(R.string.level_number, mode.number)
             },
-            size.value,
-            difficulty.getLocalString(resources),
-            timeString,
-            errorsMade,
-            hintsUsed,
-            notesMade,
-            resources.getString(if (regionalHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
-            resources.getString(if (numberHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
-            created.formatFull,
-            updated.formatFull,
+            info.size.value,
+            info.difficulty.getLocalString(resources),
+            info.timeString,
+            info.errorsMade,
+            info.hintsUsed,
+            info.notesMade,
+            resources.getString(if (info.regionalHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
+            resources.getString(if (info.numberHighlightingUsed) R.string.commonutils_yes else R.string.commonutils_no),
+            info.created.formatFull,
+            info.updated.formatFull,
         )
 
     fun getLocalStatisticsStringShare(resources: Resources): String =
@@ -449,67 +106,26 @@ class Sudoku(
         } + getLocalStatisticsString(resources)
 
     companion object {
-        const val MODE_NORMAL = 0
-        const val MODE_DAILY = -1
         const val MODE_LEVEL_ERROR_LIMIT = 3
         const val MODE_DAILY_ERROR_LIMIT = 3
-
-        fun create(
-            sudokuId: SudokuId = SudokuId.generate(),
-            size: SudokuSize,
-            difficulty: Difficulty,
-            modeLevel: Int,
-            regionalHighlightingUsed: Boolean = false,
-            numberHighlightingUsed: Boolean = false,
-            eraserUsed: Boolean = false,
-            isChecklist: Boolean = false,
-            isReverseChecklist: Boolean = false,
-            checklistNumber: Int = 0,
-            hintsUsed: Int = 0,
-            notesMade: Int = 0,
-            errorsMade: Int = 0,
-            created: LocalDateTime = LocalDateTime.now(),
-            updated: LocalDateTime = LocalDateTime.now(),
-            seconds: Int = 0,
-            timer: Job? = null,
-            gameListener: GameListener? = null,
-            fields: MutableList<Field>,
-        ): Sudoku =
-            Sudoku(
-                id = sudokuId,
-                size = size,
-                difficulty = difficulty,
-                modeLevel = modeLevel,
-                regionalHighlightingUsed = regionalHighlightingUsed,
-                numberHighlightingUsed = numberHighlightingUsed,
-                eraserUsed = eraserUsed,
-                isChecklist = isChecklist,
-                isReverseChecklist = isReverseChecklist,
-                checklistNumber = checklistNumber,
-                hintsUsed = hintsUsed,
-                notesMade = notesMade,
-                errorsMade = errorsMade,
-                created = created,
-                updated = updated,
-                seconds = seconds,
-                timer = timer,
-                gameListener = gameListener,
-                fields = fields,
-            )
     }
 }
 
-interface GameListener {
-    fun onFieldClicked(position: Position)
+data class GameMove(val sudoku: Sudoku, val result: MoveResult)
 
-    fun onFieldChanged(position: Position)
-
-    fun onCompleted(position: Position)
-
-    fun onError()
-
-    fun onTimeChanged()
-}
+private fun GameInfo.zeroed(): GameInfo =
+    copy(
+        seconds = 0,
+        hintsUsed = 0,
+        notesMade = 0,
+        errorsMade = 0,
+        regionalHighlightingUsed = false,
+        numberHighlightingUsed = false,
+        eraserUsed = false,
+        isChecklist = false,
+        isReverseChecklist = false,
+        checklistNumber = 0,
+    )
 
 fun Int?.toSudokuString(): CharSequence? =
     when (this) {
@@ -519,13 +135,8 @@ fun Int?.toSudokuString(): CharSequence? =
         else -> null
     }
 
-fun Int?.toSudokuChar(): Char? =
-    when (this) {
-        null -> null
-        in 1..MAX_STANDARD_DIGIT -> '0' + this
-        in LARGE_DIGIT_OFFSET..MAX_LARGE_DIGIT -> 'A' + (this - LARGE_DIGIT_OFFSET)
-        else -> null
-    }
+/** The char of a digit in `1..16`: `1`-`9`, then `A`-`G`. */
+fun Int.toSudokuDigitChar(): Char = if (this < LARGE_DIGIT_OFFSET) '0' + this else 'A' + (this - LARGE_DIGIT_OFFSET)
 
 fun Char.toSudokuInt(): Int? =
     when (this) {

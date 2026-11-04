@@ -20,7 +20,6 @@ import android.util.Log
 import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.Sudoku
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -42,21 +41,16 @@ class QueueSudokuSaveUseCase @Inject constructor(
     private val lock = Any()
     private var lastSave: Job? = null
 
-    /** Maps [sudoku] to its rows right away, so later moves do not reach this save, then saves them after every earlier one. */
-    operator fun invoke(
-        sudoku: Sudoku,
-        onlyUpdate: Boolean = false,
-    ): Deferred<Unit> {
-        val rows = sudokuWithFieldsToDb(sudoku)
-        return synchronized(lock) {
+    /** Saves [sudoku] after every earlier save. */
+    operator fun invoke(sudoku: Sudoku): Deferred<Unit> =
+        synchronized(lock) {
             val previous = lastSave
             applicationScope
                 .async(defaultDispatcher) {
                     previous?.join()
-                    sudokusRepository.saveSudokuRows(rows, onlyUpdate)
+                    sudokusRepository.saveSudoku(sudoku)
                 }.also { lastSave = it }
         }
-    }
 
     /**
      * Runs [block] after every earlier save has ended. Saves queued meanwhile wait until [block] and every earlier save
@@ -74,11 +68,8 @@ class QueueSudokuSaveUseCase @Inject constructor(
     }
 
     /** Queues [sudoku] like [invoke] for a caller that does not await the save, and logs a failed save. */
-    fun launch(
-        sudoku: Sudoku,
-        onlyUpdate: Boolean,
-    ) {
-        invoke(sudoku, onlyUpdate).invokeOnCompletion { cause ->
+    fun launch(sudoku: Sudoku) {
+        invoke(sudoku).invokeOnCompletion { cause ->
             if (cause != null && cause !is CancellationException) Log.e(TAG, "Saving sudoku failed", cause)
         }
     }

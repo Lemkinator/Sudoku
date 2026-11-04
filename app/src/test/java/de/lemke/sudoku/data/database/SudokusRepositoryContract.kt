@@ -17,11 +17,10 @@
 package de.lemke.sudoku.data.database
 
 import app.cash.turbine.test
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -42,18 +41,12 @@ abstract class SudokusRepositoryContract {
 
     private fun sudoku(
         size: SudokuSize = SudokuSize.FOUR,
-        modeLevel: Int = Sudoku.MODE_NORMAL,
+        mode: GameMode = GameMode.Normal,
         created: LocalDateTime = LocalDateTime.now(),
         updated: LocalDateTime = created,
-    ): Sudoku =
-        Sudoku.create(
-            size = size,
-            difficulty = Difficulty.EASY,
-            modeLevel = modeLevel,
-            created = created,
-            updated = updated,
-            fields = MutableList(size.cellCount) { Field(position = Position.create(it, size), solution = it % size.value + 1) },
-        )
+    ): Sudoku = testSudoku(size = size, mode = mode, created = created, updated = updated)
+
+    private fun SudokuWithFields.withoutFirstField() = copy(fields = fields.drop(1))
 
     @Test
     fun `getAllSudokus returns an empty list when nothing was saved`() =
@@ -67,13 +60,16 @@ abstract class SudokusRepositoryContract {
             val saved = sudoku()
             repository.saveSudoku(saved)
 
-            repository.getAllSudokus().single().id shouldBe saved.id
+            repository
+                .getAllSudokus()
+                .single()
+                .info.id shouldBe saved.info.id
         }
 
     @Test
     fun `getSudokuById returns null for an unknown id`() =
         runTest {
-            repository.getSudokuById(sudoku().id).shouldBeNull()
+            repository.getSudokuById(sudoku().info.id).shouldBeNull()
         }
 
     @Test
@@ -82,13 +78,13 @@ abstract class SudokusRepositoryContract {
             val saved = sudoku()
             repository.saveSudoku(saved)
 
-            repository.getSudokuById(saved.id)?.id shouldBe saved.id
+            repository.getSudokuById(saved.info.id)?.info?.id shouldBe saved.info.id
         }
 
     @Test
     fun `getRecentlyUpdatedNormalSudoku returns null when there are no normal sudokus`() =
         runTest {
-            repository.saveSudoku(sudoku(modeLevel = 1))
+            repository.saveSudoku(sudoku(mode = GameMode.Level(1)))
 
             repository.getRecentlyUpdatedNormalSudoku().shouldBeNull()
         }
@@ -101,44 +97,44 @@ abstract class SudokusRepositoryContract {
             repository.saveSudoku(older)
             repository.saveSudoku(newer)
 
-            repository.getRecentlyUpdatedNormalSudoku()?.id shouldBe newer.id
+            repository.getRecentlyUpdatedNormalSudoku()?.info?.id shouldBe newer.info.id
         }
 
     @Test
     fun `getSudokuLevel returns level sudokus for the given size ordered by level descending`() =
         runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 1))
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 2))
-            repository.saveSudoku(sudoku(size = SudokuSize.NINE, modeLevel = 1))
+            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1)))
+            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(2)))
+            repository.saveSudoku(sudoku(size = SudokuSize.NINE, mode = GameMode.Level(1)))
 
-            repository.getSudokuLevel(SudokuSize.FOUR).map { it.modeLevel } shouldBe listOf(2, 1)
+            repository.getSudokuLevel(SudokuSize.FOUR).map { it.info.mode } shouldBe listOf(GameMode.Level(2), GameMode.Level(1))
         }
 
     @Test
     fun `getAllSudokus orders by updated descending`() =
         runTest {
             val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
-            val oldest = sudoku(modeLevel = 1, updated = LocalDateTime.of(2026, 3, 13, 12, 0))
-            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val oldest = sudoku(mode = GameMode.Level(1), updated = LocalDateTime.of(2026, 3, 13, 12, 0))
+            val newest = sudoku(mode = GameMode.Daily, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
 
-            repository.getAllSudokus().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+            repository.getAllSudokus().map { it.info.id } shouldBe listOf(newest.info.id, middle.info.id, oldest.info.id)
         }
 
     @Test
     fun `observeAllSudokus orders by updated descending`() =
         runTest {
             val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
-            val oldest = sudoku(modeLevel = 1, updated = LocalDateTime.of(2026, 3, 13, 12, 0))
-            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val oldest = sudoku(mode = GameMode.Level(1), updated = LocalDateTime.of(2026, 3, 13, 12, 0))
+            val newest = sudoku(mode = GameMode.Daily, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
 
             repository.observeAllSudokus().test {
-                awaitItem().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+                awaitItem().map { it.info.id } shouldBe listOf(newest.info.id, middle.info.id, oldest.info.id)
             }
         }
 
@@ -153,57 +149,57 @@ abstract class SudokusRepositoryContract {
             repository.saveSudoku(newest)
 
             repository.observeAllNormalSudokus().test {
-                awaitItem().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+                awaitItem().map { it.info.id } shouldBe listOf(newest.info.id, middle.info.id, oldest.info.id)
             }
         }
 
     @Test
     fun `getDailySudokus orders by created descending`() =
         runTest {
-            val middle = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val middle = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 14, 12, 0))
             val oldest =
                 sudoku(
-                    modeLevel = Sudoku.MODE_DAILY,
+                    mode = GameMode.Daily,
                     created = LocalDateTime.of(2026, 3, 13, 12, 0),
                     updated = LocalDateTime.of(2026, 3, 20, 12, 0),
                 )
-            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val newest = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
 
-            repository.getDailySudokus().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+            repository.getDailySudokus().map { it.info.id } shouldBe listOf(newest.info.id, middle.info.id, oldest.info.id)
         }
 
     @Test
     fun `observeDailySudokus orders by created descending`() =
         runTest {
-            val middle = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val middle = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 14, 12, 0))
             val oldest =
                 sudoku(
-                    modeLevel = Sudoku.MODE_DAILY,
+                    mode = GameMode.Daily,
                     created = LocalDateTime.of(2026, 3, 13, 12, 0),
                     updated = LocalDateTime.of(2026, 3, 20, 12, 0),
                 )
-            val newest = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val newest = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
 
             repository.observeDailySudokus().test {
-                awaitItem().map { it.id } shouldBe listOf(newest.id, middle.id, oldest.id)
+                awaitItem().map { it.info.id } shouldBe listOf(newest.info.id, middle.info.id, oldest.info.id)
             }
         }
 
     @Test
     fun `getDailySudokus returns only daily sudokus`() =
         runTest {
-            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
-            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
+            repository.saveSudoku(sudoku(mode = GameMode.Daily))
+            repository.saveSudoku(sudoku(mode = GameMode.Normal))
 
             val dailies = repository.getDailySudokus()
             dailies shouldHaveSize 1
-            dailies.single().isDailySudoku shouldBe true
+            dailies.single().info.mode shouldBe GameMode.Daily
         }
 
     @Test
@@ -225,31 +221,31 @@ abstract class SudokusRepositoryContract {
 
             repository.deleteSudoku(sudoku())
 
-            storedIds() shouldBe setOf(kept.id.value)
+            storedIds() shouldBe setOf(kept.info.id.value)
         }
 
     @Test
     fun `saveSudoku replaces the existing daily sudoku for the same day`() =
         runTest {
             val day = LocalDateTime.now()
-            val first = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
+            val first = sudoku(mode = GameMode.Daily, created = day)
             repository.saveSudoku(first)
 
-            val second = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
+            val second = sudoku(mode = GameMode.Daily, created = day)
             repository.saveSudoku(second)
 
             val all = repository.getAllSudokus()
             all shouldHaveSize 1
-            all.single().id shouldBe second.id
+            all.single().info.id shouldBe second.info.id
         }
 
     @Test
     fun `saveSudoku keeps daily sudokus from different days`() =
         runTest {
-            val first = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now().minusDays(1))
+            val first = sudoku(mode = GameMode.Daily, created = LocalDateTime.now().minusDays(1))
             repository.saveSudoku(first)
 
-            val second = sudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now())
+            val second = sudoku(mode = GameMode.Daily, created = LocalDateTime.now())
             repository.saveSudoku(second)
 
             repository.getAllSudokus() shouldHaveSize 2
@@ -258,105 +254,93 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `saveSudoku replaces the existing level sudoku for the same size and level`() =
         runTest {
-            val first = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            val first = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
             repository.saveSudoku(first)
 
-            val second = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            val second = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
             repository.saveSudoku(second)
 
             val all = repository.getAllSudokus()
             all shouldHaveSize 1
-            all.single().id shouldBe second.id
+            all.single().info.id shouldBe second.info.id
         }
 
     @Test
     fun `saveSudoku keeps an unreadable level sudoku for the same size and level`() =
         runTest {
-            val unreadable = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            insertRows(SudokuWithFields(sudokuToDb(unreadable), unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) }))
+            val unreadable = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
+            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
 
-            val second = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            val second = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
             repository.saveSudoku(second)
 
-            storedIds() shouldBe setOf(unreadable.id.value, second.id.value)
+            storedIds() shouldBe setOf(unreadable.info.id.value, second.info.id.value)
         }
 
     @Test
     fun `saveSudoku keeps an unreadable daily sudoku for the same day`() =
         runTest {
             val day = LocalDateTime.now()
-            val unreadable = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            insertRows(SudokuWithFields(sudokuToDb(unreadable), unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) }))
+            val unreadable = sudoku(mode = GameMode.Daily, created = day)
+            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
 
-            val second = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
+            val second = sudoku(mode = GameMode.Daily, created = day)
             repository.saveSudoku(second)
 
-            storedIds() shouldBe setOf(unreadable.id.value, second.id.value)
+            storedIds() shouldBe setOf(unreadable.info.id.value, second.info.id.value)
         }
 
     @Test
     fun `saveSudoku replaces the readable level sudoku behind an unreadable one for the same size and level`() =
         runTest {
-            val unreadable = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            insertRows(SudokuWithFields(sudokuToDb(unreadable), unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) }))
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 3))
+            val unreadable = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
+            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
+            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3)))
 
-            val third = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            val third = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
             repository.saveSudoku(third)
 
-            storedIds() shouldBe setOf(unreadable.id.value, third.id.value)
+            storedIds() shouldBe setOf(unreadable.info.id.value, third.info.id.value)
         }
 
     @Test
     fun `saveSudoku replaces the readable daily sudoku behind an unreadable one for the same day`() =
         runTest {
             val day = LocalDateTime.of(2026, 3, 14, 12, 0)
-            val unreadable = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
-            insertRows(SudokuWithFields(sudokuToDb(unreadable), unreadable.fields.drop(1).map { fieldToDb(it, unreadable.id) }))
-            repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY, created = day.minusSeconds(1)))
+            val unreadable = sudoku(mode = GameMode.Daily, created = day)
+            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
+            repository.saveSudoku(sudoku(mode = GameMode.Daily, created = day.minusSeconds(1)))
 
-            val third = sudoku(modeLevel = Sudoku.MODE_DAILY, created = day)
+            val third = sudoku(mode = GameMode.Daily, created = day)
             repository.saveSudoku(third)
 
-            storedIds() shouldBe setOf(unreadable.id.value, third.id.value)
+            storedIds() shouldBe setOf(unreadable.info.id.value, third.info.id.value)
         }
 
     @Test
     fun `saveSudoku does not delete the daily sudoku being updated`() =
         runTest {
-            val daily = sudoku(modeLevel = Sudoku.MODE_DAILY)
+            val daily = sudoku(mode = GameMode.Daily)
             repository.saveSudoku(daily)
 
             repository.saveSudoku(daily)
 
             val all = repository.getAllSudokus()
             all shouldHaveSize 1
-            all.single().id shouldBe daily.id
+            all.single().info.id shouldBe daily.info.id
         }
 
     @Test
     fun `saveSudoku does not delete the level sudoku being updated`() =
         runTest {
-            val level = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
+            val level = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
             repository.saveSudoku(level)
 
             repository.saveSudoku(level)
 
             val all = repository.getAllSudokus()
             all shouldHaveSize 1
-            all.single().id shouldBe level.id
-        }
-
-    @Test
-    fun `saveSudoku with onlyUpdate true skips the level dedup even for a matching level`() =
-        runTest {
-            val first = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(first)
-
-            val second = sudoku(size = SudokuSize.FOUR, modeLevel = 3)
-            repository.saveSudoku(second, onlyUpdate = true)
-
-            repository.getAllSudokus() shouldHaveSize 2
+            all.single().info.id shouldBe level.info.id
         }
 
     @Test
@@ -368,8 +352,8 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `getMaxSudokuLevel returns the highest existing level for the size`() =
         runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 1))
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 5))
+            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1)))
+            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(5)))
 
             repository.getMaxSudokuLevel(SudokuSize.FOUR) shouldBe 5
         }
@@ -377,7 +361,7 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `getMaxSudokuLevel ignores daily sudokus`() =
         runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY))
+            repository.saveSudoku(sudoku(size = SudokuSize.NINE, mode = GameMode.Daily))
 
             repository.getMaxSudokuLevel(SudokuSize.NINE) shouldBe 0
         }
@@ -399,14 +383,12 @@ abstract class SudokusRepositoryContract {
             val valid = sudoku(size = SudokuSize.FOUR)
             repository.saveSudoku(valid)
             val invalid = sudoku(size = SudokuSize.FOUR)
-            insertRows(
-                SudokuWithFields(sudokuToDb(invalid), invalid.fields.take(invalid.fields.size - 1).map { fieldToDb(it, invalid.id) }),
-            )
+            insertRows(sudokuWithFieldsToDb(invalid).let { it.copy(fields = it.fields.dropLast(1)) })
             storedIds() shouldHaveSize 2
 
             repository.deleteInvalidSudokus()
 
-            storedIds() shouldBe setOf(valid.id.value)
+            storedIds() shouldBe setOf(valid.info.id.value)
         }
 
     @Test
@@ -415,16 +397,14 @@ abstract class SudokusRepositoryContract {
             val valid = sudoku(size = SudokuSize.FOUR)
             repository.saveSudoku(valid)
             val invalid = sudoku(size = SudokuSize.FOUR)
-            val fields =
-                invalid.fields
-                    .map { fieldToDb(it, invalid.id) }
-                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
-            insertRows(SudokuWithFields(sudokuToDb(invalid), fields))
+            val rows = sudokuWithFieldsToDb(invalid)
+            val fields = rows.fields.mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
+            insertRows(rows.copy(fields = fields))
             storedIds() shouldHaveSize 2
 
             repository.deleteInvalidSudokus()
 
-            storedIds() shouldBe setOf(valid.id.value)
+            storedIds() shouldBe setOf(valid.info.id.value)
         }
 
     @Test
@@ -436,14 +416,14 @@ abstract class SudokusRepositoryContract {
             insertRows(
                 SudokuWithFields(
                     sudokuToDb(invalid).copy(size = 0),
-                    listOf(fieldToDb(invalid.fields.first(), invalid.id).copy(gameSize = 0)),
+                    listOf(sudokuWithFieldsToDb(invalid).fields.first().copy(gameSize = 0)),
                 ),
             )
             storedIds() shouldHaveSize 2
 
             repository.deleteInvalidSudokus()
 
-            storedIds() shouldBe setOf(valid.id.value)
+            storedIds() shouldBe setOf(valid.info.id.value)
         }
 
     @Test
@@ -473,7 +453,7 @@ abstract class SudokusRepositoryContract {
 
             repository.deleteInvalidSudokus()
 
-            storedIds() shouldBe setOf(valid.id.value)
+            storedIds() shouldBe setOf(valid.info.id.value)
         }
 
     @Test
@@ -485,7 +465,7 @@ abstract class SudokusRepositoryContract {
                 val saved = sudoku()
                 repository.saveSudoku(saved)
 
-                awaitItem().single().id shouldBe saved.id
+                awaitItem().single().info.id shouldBe saved.info.id
             }
         }
 
@@ -496,11 +476,11 @@ abstract class SudokusRepositoryContract {
             repository.saveSudoku(saved)
 
             repository.observeAllSudokus().test {
-                awaitItem().single().id shouldBe saved.id
+                awaitItem().single().info.id shouldBe saved.info.id
 
                 repository.saveSudoku(saved)
 
-                awaitItem().single().id shouldBe saved.id
+                awaitItem().single().info.id shouldBe saved.info.id
             }
         }
 
@@ -511,11 +491,11 @@ abstract class SudokusRepositoryContract {
                 awaitItem().shouldBeEmpty()
 
                 // Every write re-emits, even one that leaves the filtered list unchanged.
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
+                repository.saveSudoku(sudoku(mode = GameMode.Daily))
                 awaitItem().shouldBeEmpty()
 
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
-                awaitItem().single().isNormalSudoku shouldBe true
+                repository.saveSudoku(sudoku(mode = GameMode.Normal))
+                awaitItem().single().info.mode shouldBe GameMode.Normal
             }
         }
 
@@ -525,11 +505,11 @@ abstract class SudokusRepositoryContract {
             repository.observeSudokuLevel(SudokuSize.FOUR).test {
                 awaitItem().shouldBeEmpty()
 
-                repository.saveSudoku(sudoku(size = SudokuSize.NINE, modeLevel = 1))
+                repository.saveSudoku(sudoku(size = SudokuSize.NINE, mode = GameMode.Level(1)))
                 awaitItem().shouldBeEmpty()
 
-                repository.saveSudoku(sudoku(size = SudokuSize.FOUR, modeLevel = 1))
-                awaitItem().single().size shouldBe SudokuSize.FOUR
+                repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1)))
+                awaitItem().single().info.size shouldBe SudokuSize.FOUR
             }
         }
 
@@ -539,11 +519,11 @@ abstract class SudokusRepositoryContract {
             repository.observeDailySudokus().test {
                 awaitItem().shouldBeEmpty()
 
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_NORMAL))
+                repository.saveSudoku(sudoku(mode = GameMode.Normal))
                 awaitItem().shouldBeEmpty()
 
-                repository.saveSudoku(sudoku(modeLevel = Sudoku.MODE_DAILY))
-                awaitItem().single().isDailySudoku shouldBe true
+                repository.saveSudoku(sudoku(mode = GameMode.Daily))
+                awaitItem().single().info.mode shouldBe GameMode.Daily
             }
         }
 }

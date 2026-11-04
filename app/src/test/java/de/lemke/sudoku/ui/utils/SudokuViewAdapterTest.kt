@@ -19,9 +19,13 @@ package de.lemke.sudoku.ui.utils
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import de.lemke.commonutils.idleMainLooper
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
+import de.lemke.sudoku.domain.model.Highlighting
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import org.junit.Before
@@ -38,15 +42,23 @@ private const val PLAIN_INDEX = 1
 @Config(sdk = [36])
 class SudokuViewAdapterTest {
     private lateinit var context: AppCompatActivity
-    private lateinit var sudoku: Sudoku
+    private lateinit var board: Board
     private lateinit var adapter: SudokuViewAdapter
+    private val highlightingsUsed = mutableListOf<Highlighting>()
 
     @Before
     fun setUp() {
         context = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
-        sudoku = testLevelSudoku(size = SudokuSize.FOUR)
-        adapter = SudokuViewAdapter(context, sudoku)
-        for (index in 0 until sudoku.itemCount) {
+        board = testLevelSudoku(size = SudokuSize.FOUR).board
+        adapter =
+            SudokuViewAdapter(
+                context,
+                board,
+                onFieldClicked = {},
+                onFieldLongClicked = { false },
+                onHighlightingUsed = { highlightingsUsed += it },
+            )
+        for (index in board.cells.indices) {
             val holder = adapter.onCreateViewHolder(FrameLayout(context), 0)
             adapter.onBindViewHolder(holder, index)
         }
@@ -62,8 +74,8 @@ class SudokuViewAdapterTest {
     }
 
     @Test
-    fun `getItemCount matches the sudoku's item count`() {
-        adapter.itemCount shouldBe sudoku.itemCount
+    fun `getItemCount matches the board's cell count`() {
+        adapter.itemCount shouldBe 16
     }
 
     @Test
@@ -77,24 +89,33 @@ class SudokuViewAdapterTest {
     }
 
     @Test
-    fun `updateFieldView refreshes the bound field view's display`() {
+    fun `render refreshes the changed field view's display`() {
         val fieldView = adapter.fieldViews[PLAIN_INDEX]
         awaitInflated(fieldView)
-        fieldView.field.value = 3
 
-        adapter.updateFieldView(PLAIN_INDEX)
+        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)), setOf(PLAIN_INDEX))
 
         fieldView.fieldViewValue?.text.toString() shouldBe "3"
     }
 
     @Test
+    fun `render leaves a field view that is not changed on its previous cell`() {
+        val fieldView = adapter.fieldViews[GIVEN_INDEX]
+        val previous = fieldView.cell
+
+        adapter.render(board.with(PLAIN_INDEX, board[PLAIN_INDEX].copy(value = 3)), setOf(PLAIN_INDEX))
+
+        fieldView.cell shouldBe previous
+    }
+
+    @Test
     fun `selecting a non-given, non-hint field with highlightNeighbors true highlights its row, column and block`() {
-        val expectedNeighbors = sudoku.getNeighbors(PLAIN_INDEX).map { it.position.index }.toSet()
+        val expectedNeighbors = board.peers(PLAIN_INDEX) + PLAIN_INDEX
 
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
 
-        sudoku.regionalHighlightingUsed shouldBe true
-        for (i in 0 until sudoku.itemCount) {
+        highlightingsUsed shouldContain Highlighting.REGIONAL
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlighted shouldBe (i in expectedNeighbors)
         }
         adapter.fieldViews[PLAIN_INDEX].isSelected shouldBe true
@@ -104,8 +125,8 @@ class SudokuViewAdapterTest {
     fun `selecting a given field does not highlight neighbors even when highlightNeighbors is true`() {
         adapter.selectFieldView(GIVEN_INDEX, highlightNeighbors = true, highlightNumber = false)
 
-        sudoku.regionalHighlightingUsed shouldBe true
-        for (i in 0 until sudoku.itemCount) {
+        highlightingsUsed shouldContain Highlighting.REGIONAL
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlighted shouldBe false
         }
         adapter.fieldViews[GIVEN_INDEX].isSelected shouldBe true
@@ -113,12 +134,13 @@ class SudokuViewAdapterTest {
 
     @Test
     fun `selecting a hint field does not highlight neighbors even when highlightNeighbors is true`() {
-        sudoku[PLAIN_INDEX].hint = true
+        val solution = board[PLAIN_INDEX].solution
+        adapter.render(board.with(PLAIN_INDEX, Cell(solution, solution, CellOrigin.HINT)), setOf(PLAIN_INDEX))
 
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
 
-        sudoku.regionalHighlightingUsed shouldBe true
-        for (i in 0 until sudoku.itemCount) {
+        highlightingsUsed shouldContain Highlighting.REGIONAL
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlighted shouldBe false
         }
         adapter.fieldViews[PLAIN_INDEX].isSelected shouldBe true
@@ -126,13 +148,13 @@ class SudokuViewAdapterTest {
 
     @Test
     fun `selecting a field with highlightNeighbors false does not touch highlighting state`() {
-        val expectedNeighbors = sudoku.getNeighbors(PLAIN_INDEX).map { it.position.index }.toSet()
+        val expectedNeighbors = board.peers(PLAIN_INDEX) + PLAIN_INDEX
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
-        sudoku.regionalHighlightingUsed shouldBe true
+        highlightingsUsed shouldContain Highlighting.REGIONAL
 
         adapter.selectFieldView(GIVEN_INDEX, highlightNeighbors = false, highlightNumber = false)
 
-        for (i in 0 until sudoku.itemCount) {
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlighted shouldBe (i in expectedNeighbors)
         }
         adapter.fieldViews[GIVEN_INDEX].isSelected shouldBe true
@@ -145,7 +167,7 @@ class SudokuViewAdapterTest {
 
         adapter.selectFieldView(null, highlightNeighbors = true, highlightNumber = true)
 
-        for (i in 0 until sudoku.itemCount) {
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlighted shouldBe false
             adapter.fieldViews[i].isSelected shouldBe false
             adapter.fieldViews[i].isHighlightedNumber shouldBe false
@@ -165,7 +187,7 @@ class SudokuViewAdapterTest {
     @Test
     fun `re-selecting the same position does not recompute neighbor highlighting`() {
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
-        val neighborIndex = sudoku.getNeighbors(PLAIN_INDEX).map { it.position.index }.first { it != PLAIN_INDEX }
+        val neighborIndex = board.peers(PLAIN_INDEX).first()
         adapter.fieldViews[neighborIndex].isHighlighted = false
 
         adapter.selectFieldView(PLAIN_INDEX, highlightNeighbors = true, highlightNumber = false)
@@ -179,21 +201,24 @@ class SudokuViewAdapterTest {
 
         adapter.highlightNumber(null)
 
-        sudoku.numberHighlightingUsed shouldBe true
-        for (i in 0 until sudoku.itemCount) {
+        highlightingsUsed shouldContain Highlighting.NUMBER
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlightedNumber shouldBe false
         }
     }
 
     @Test
     fun `highlightNumber marks only fields whose value matches`() {
-        val matching = (0 until sudoku.itemCount).filter { sudoku[it].value == 3 }.toSet()
+        val matching =
+            board.cells.indices
+                .filter { board[it].value == 3 }
+                .toSet()
         matching.shouldNotBeEmpty()
 
         adapter.highlightNumber(3)
 
-        sudoku.numberHighlightingUsed shouldBe true
-        for (i in 0 until sudoku.itemCount) {
+        highlightingsUsed shouldContain Highlighting.NUMBER
+        for (i in board.cells.indices) {
             adapter.fieldViews[i].isHighlightedNumber shouldBe (i in matching)
         }
     }

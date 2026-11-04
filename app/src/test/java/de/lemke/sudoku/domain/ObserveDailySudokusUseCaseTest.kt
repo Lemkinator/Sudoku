@@ -21,7 +21,7 @@ import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.monthAndYear
@@ -55,16 +55,16 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
         val completedThisMonth =
             testSudoku(
                 size = SudokuSize.NINE,
-                modeLevel = Sudoku.MODE_DAILY,
+                mode = GameMode.Daily,
                 difficulty = VERY_EASY,
                 created = LocalDateTime.of(2026, 2, 5, 9, 0),
                 completed = true,
             )
-        val uncompletedToday = testSudoku(size = SudokuSize.NINE, modeLevel = Sudoku.MODE_DAILY, difficulty = VERY_EASY, created = today)
+        val uncompletedToday = testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily, difficulty = VERY_EASY, created = today)
         val uncompletedLastMonth =
             testSudoku(
                 size = SudokuSize.NINE,
-                modeLevel = Sudoku.MODE_DAILY,
+                mode = GameMode.Daily,
                 difficulty = VERY_EASY,
                 created = LocalDateTime.of(2026, 1, 20, 9, 0),
             )
@@ -88,11 +88,11 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             useCase(todayDate).test {
                 awaitItem().shape() shouldBe
                     listOf(
-                        "separator" to completedThisMonth.created.monthAndYear,
-                        "item" to completedThisMonth.created.monthAndYear,
-                        "item" to uncompletedToday.created.monthAndYear,
-                        "separator" to uncompletedLastMonth.created.monthAndYear,
-                        "item" to uncompletedLastMonth.created.monthAndYear,
+                        "separator" to completedThisMonth.info.created.monthAndYear,
+                        "item" to completedThisMonth.info.created.monthAndYear,
+                        "item" to uncompletedToday.info.created.monthAndYear,
+                        "separator" to uncompletedLastMonth.info.created.monthAndYear,
+                        "item" to uncompletedLastMonth.info.created.monthAndYear,
                     )
                 cancelAndIgnoreRemainingEvents()
             }
@@ -104,9 +104,9 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             useCase(todayDate).test {
                 awaitItem().shape() shouldBe
                     listOf(
-                        "separator" to completedThisMonth.created.monthAndYear,
-                        "item" to completedThisMonth.created.monthAndYear,
-                        "item" to uncompletedToday.created.monthAndYear,
+                        "separator" to completedThisMonth.info.created.monthAndYear,
+                        "item" to completedThisMonth.info.created.monthAndYear,
+                        "item" to uncompletedToday.info.created.monthAndYear,
                     )
                 cancelAndIgnoreRemainingEvents()
             }
@@ -118,9 +118,9 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             useCase().test {
                 awaitItem().shape() shouldBe
                     listOf(
-                        "separator" to completedThisMonth.created.monthAndYear,
-                        "item" to completedThisMonth.created.monthAndYear,
-                        "item" to uncompletedToday.created.monthAndYear,
+                        "separator" to completedThisMonth.info.created.monthAndYear,
+                        "item" to completedThisMonth.info.created.monthAndYear,
+                        "item" to uncompletedToday.info.created.monthAndYear,
                     )
                 cancelAndIgnoreRemainingEvents()
             }

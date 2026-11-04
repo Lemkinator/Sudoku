@@ -35,6 +35,7 @@ import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -128,7 +129,7 @@ class SudokuLevelTabGenerationTest {
     private fun levelOne(filled: Int): Sudoku =
         listSudoku(
             sudokuId = levelOneId,
-            modeLevel = 1,
+            mode = GameMode.Level(1),
             filled = filled,
             errorsMade = 0,
             seconds = 40,

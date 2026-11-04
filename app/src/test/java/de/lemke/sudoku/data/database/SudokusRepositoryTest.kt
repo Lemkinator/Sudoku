@@ -19,11 +19,7 @@ package de.lemke.sudoku.data.database
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import java.util.concurrent.Executor
@@ -58,24 +54,13 @@ class SudokusRepositoryTest {
         database.close()
     }
 
-    private fun sudoku(): Sudoku =
-        Sudoku.create(
-            size = SudokuSize.FOUR,
-            difficulty = Difficulty.EASY,
-            modeLevel = Sudoku.MODE_NORMAL,
-            fields =
-                MutableList(
-                    SudokuSize.FOUR.cellCount,
-                ) { Field(position = Position.create(it, SudokuSize.FOUR), solution = it % 4 + 1) },
-        )
-
     @Test
     fun `sudokuDao insert and getAll round-trip a raw field row with a null solution`() =
         runTest {
-            val sudoku = sudoku()
+            val sudoku = testSudoku()
             val fields =
-                sudoku.fields
-                    .map { fieldToDb(it, sudoku.id) }
+                sudokuWithFieldsToDb(sudoku)
+                    .fields
                     .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
             database.sudokuDao().insert(sudokuToDb(sudoku), fields)
 
@@ -87,10 +72,10 @@ class SudokusRepositoryTest {
     @Test
     fun `sudokuDao observeAll round-trips a raw field row with a null solution`() =
         runTest {
-            val sudoku = sudoku()
+            val sudoku = testSudoku()
             val fields =
-                sudoku.fields
-                    .map { fieldToDb(it, sudoku.id) }
+                sudokuWithFieldsToDb(sudoku)
+                    .fields
                     .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
 
             database.sudokuDao().observeAll().test {

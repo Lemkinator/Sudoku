@@ -70,10 +70,10 @@ class TabHistoryViewModel @Inject constructor(
             .transform { newHistory ->
                 val sudokus = newHistory.filterIsInstance<SudokuItem>().map { it.sudoku }
                 val previous = previousUpdates
-                previousUpdates = sudokus.associate { it.id to it.updated }
+                previousUpdates = sudokus.associate { it.info.id to it.info.updated }
                 emit(newHistory)
                 if (previous != null) {
-                    sudokus.firstOrNull { previous[it.id] != it.updated }?.let { reveal.value = it.id }
+                    sudokus.firstOrNull { previous[it.info.id] != it.info.updated }?.let { reveal.value = it.info.id }
                 }
             }.catch { e ->
                 if (e is CancellationException) throw e

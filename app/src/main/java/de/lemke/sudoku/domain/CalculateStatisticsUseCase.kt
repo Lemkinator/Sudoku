@@ -31,7 +31,7 @@ class CalculateStatisticsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(sudokus: List<Sudoku>): SudokuStatistics =
         withContext(defaultDispatcher) {
-            val sortedAsc = sudokus.sortedBy { it.updated }
+            val sortedAsc = sudokus.sortedBy { it.info.updated }
             val completed = sortedAsc.filter { it.completed }
             val n = sudokus.size
             val c = completed.size
@@ -39,48 +39,48 @@ class CalculateStatisticsUseCase @Inject constructor(
                 gamesStarted = n,
                 gamesCompleted = c,
                 winRate = winRate(n, c),
-                bestTimeSudoku = completed.minByOrNull { it.seconds },
-                averageTime = if (c == 0) -1 else average(completed, c) { it.seconds.toLong() },
-                winsWithoutErrors = completed.count { it.errorsMade == 0 },
-                mostErrors = sudokus.maxOfOrNull { it.errorsMade } ?: 0,
-                averageErrors = average(completed, c) { it.errorsMade.toLong() },
-                winsWithoutHints = completed.count { it.hintsUsed == 0 },
-                mostHints = sudokus.maxOfOrNull { it.hintsUsed } ?: 0,
-                averageHints = average(completed, c) { it.hintsUsed.toLong() },
-                winsWithoutNotes = completed.count { it.notesMade == 0 },
-                mostNotes = sudokus.maxOfOrNull { it.notesMade } ?: 0,
-                averageNotes = average(completed, c) { it.notesMade.toLong() },
+                bestTimeSudoku = completed.minByOrNull { it.info.seconds },
+                averageTime = if (c == 0) -1 else average(completed, c) { it.info.seconds.toLong() },
+                winsWithoutErrors = completed.count { it.info.errorsMade == 0 },
+                mostErrors = sudokus.maxOfOrNull { it.info.errorsMade } ?: 0,
+                averageErrors = average(completed, c) { it.info.errorsMade.toLong() },
+                winsWithoutHints = completed.count { it.info.hintsUsed == 0 },
+                mostHints = sudokus.maxOfOrNull { it.info.hintsUsed } ?: 0,
+                averageHints = average(completed, c) { it.info.hintsUsed.toLong() },
+                winsWithoutNotes = completed.count { it.info.notesMade == 0 },
+                mostNotes = sudokus.maxOfOrNull { it.info.notesMade } ?: 0,
+                averageNotes = average(completed, c) { it.info.notesMade.toLong() },
                 mostGamesStartedDifficulty =
                     sudokus
-                        .groupingBy { it.difficulty }
+                        .groupingBy { it.info.difficulty }
                         .eachCount()
                         .maxByOrNull { it.value }
                         ?.key,
                 mostGamesWonDifficulty =
                     completed
-                        .groupingBy { it.difficulty }
+                        .groupingBy { it.info.difficulty }
                         .eachCount()
                         .maxByOrNull { it.value }
                         ?.key,
                 mostGamesStartedSize =
                     sudokus
-                        .groupingBy { it.size }
+                        .groupingBy { it.info.size }
                         .eachCount()
                         .maxByOrNull { it.value }
                         ?.key,
                 mostGamesWonSize =
                     completed
-                        .groupingBy { it.size }
+                        .groupingBy { it.info.size }
                         .eachCount()
                         .maxByOrNull { it.value }
                         ?.key,
                 currentGameStreak = currentGameStreak(sortedAsc),
                 bestGameStreak = bestGameStreak(sortedAsc),
-                totalSecondsPlayed = sudokus.sumOf { it.seconds.toLong() },
-                hintUsageRate = usageRate(sudokus, n) { it.hintsUsed > 0 },
-                notesUsageRate = usageRate(sudokus, n) { it.notesMade > 0 },
-                eraserUsageRate = usageRate(sudokus, n) { it.eraserUsed },
-                perfectGames = completed.count { it.errorsMade == 0 && it.hintsUsed == 0 },
+                totalSecondsPlayed = sudokus.sumOf { it.info.seconds.toLong() },
+                hintUsageRate = usageRate(sudokus, n) { it.info.hintsUsed > 0 },
+                notesUsageRate = usageRate(sudokus, n) { it.info.notesMade > 0 },
+                eraserUsageRate = usageRate(sudokus, n) { it.info.eraserUsed },
+                perfectGames = completed.count { it.info.errorsMade == 0 && it.info.hintsUsed == 0 },
             )
         }
 

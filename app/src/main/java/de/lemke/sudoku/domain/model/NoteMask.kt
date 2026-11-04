@@ -19,15 +19,15 @@ package de.lemke.sudoku.domain.model
 /** A set of pencil-mark digits; digit `d` occupies bit `d - 1`. */
 @JvmInline
 value class NoteMask(val bits: Int) {
+    val count: Int get() = Integer.bitCount(bits)
+
+    val digits: List<Int> get() = (1..Int.SIZE_BITS).filter { it in this }
+
     operator fun contains(digit: Int): Boolean = digit in 1..Int.SIZE_BITS && bits and bitOf(digit) != 0
 
     fun toggled(digit: Int): NoteMask = NoteMask(bits xor bitOf(digit))
 
     operator fun minus(digit: Int): NoteMask = NoteMask(bits and bitOf(digit).inv())
-
-    val count: Int get() = Integer.bitCount(bits)
-
-    val digits: List<Int> get() = (1..Int.SIZE_BITS).filter { it in this }
 
     fun isEmpty(): Boolean = bits == 0
 

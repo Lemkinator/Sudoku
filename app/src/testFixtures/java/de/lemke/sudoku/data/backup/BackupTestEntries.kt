@@ -16,7 +16,8 @@
 
 package de.lemke.sudoku.data.backup
 
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.toLegacyModeLevel
+import de.lemke.sudoku.domain.model.GameMode
 import java.time.OffsetDateTime
 
 const val FOUR_SOLUTION = "1234341223414123"
@@ -29,7 +30,7 @@ val FOUR_GIVENS = FOUR_SOLUTION.indices.filter { it % GIVEN_STEP == 0 }
  */
 fun backupEntry(
     id: String = "game",
-    modeLevel: Int = Sudoku.MODE_NORMAL,
+    modeLevel: Int = GameMode.Normal.toLegacyModeLevel(),
     created: String = "2026-05-02T08:00:00+02:00",
     updated: String = created,
     solvedCells: Int = 0,

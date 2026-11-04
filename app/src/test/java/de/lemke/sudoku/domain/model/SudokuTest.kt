@@ -16,965 +16,508 @@
 
 package de.lemke.sudoku.domain.model
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import java.time.Clock
-import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneOffset
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
 
-private val fixedClock: Clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
+private val SOLUTIONS = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
+private val CREATED = LocalDateTime.of(2026, 1, 15, 12, 0)
+
+private fun gameInfo(
+    id: SudokuId = SudokuId("sudoku-test"),
+    size: SudokuSize = SudokuSize.FOUR,
+    difficulty: Difficulty = Difficulty.EASY,
+    mode: GameMode = GameMode.Normal,
+    hintsUsed: Int = 0,
+): GameInfo =
+    GameInfo(id = id, size = size, difficulty = difficulty, mode = mode, created = CREATED, updated = CREATED, hintsUsed = hintsUsed)
+
+private fun fourByFour(
+    given: Set<Int> = emptySet(),
+    values: Map<Int, Int?> = emptyMap(),
+    hints: Set<Int> = emptySet(),
+    notes: Map<Int, NoteMask> = emptyMap(),
+    info: GameInfo = gameInfo(),
+): Sudoku =
+    Sudoku(
+        info = info,
+        board =
+            Board(
+                SudokuSize.FOUR,
+                SOLUTIONS.mapIndexed { index, solution ->
+                    Cell(
+                        solution = solution,
+                        value = if (index in values) values[index] else solution.takeIf { index in given },
+                        origin =
+                            when (index) {
+                                in given -> CellOrigin.GIVEN
+                                in hints -> CellOrigin.HINT
+                                else -> CellOrigin.PLAYER
+                            },
+                        notes = notes[index] ?: NoteMask.EMPTY,
+                    )
+                },
+            ),
+    )
+
+private fun Sudoku.played(vararg moves: BoardMove): Sudoku = moves.fold(this) { sudoku, move -> checkNotNull(sudoku.play(move)).sudoku }
+
+private fun cellsOf(
+    size: SudokuSize,
+    solution: Int = 1,
+): Board = Board(size, List(size.cellCount) { Cell(solution) })
 
 class SudokuTest : ShouldSpec(
     {
-        should("report 100% progress instead of throwing when every field is given") {
-            val sudoku =
-                Sudoku.create(
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.VERY_EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    fields =
-                        mutableListOf(
-                            Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 1, given = true),
-                            Field(position = Position.create(1, SudokuSize.FOUR), solution = 2, value = 2, given = true),
-                        ),
-                )
+        context("progress") {
+            should("report 100% progress instead of throwing when every cell is given") {
+                fourByFour(given = (0..15).toSet()).progress shouldBe 100
+            }
 
-            sudoku.progress shouldBe 100
-        }
+            should("compute progress as the percentage of non-given cells solved correctly") {
+                val sudoku = fourByFour(given = (2..15).toSet(), values = mapOf(0 to 1, 1 to null))
 
-        should("compute progress as the percentage of non-given fields solved correctly") {
-            val sudoku =
-                Sudoku.create(
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.VERY_EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    fields =
-                        mutableListOf(
-                            Field(position = Position.create(0, SudokuSize.FOUR), solution = 1, value = 1, given = true),
-                            Field(position = Position.create(1, SudokuSize.FOUR), solution = 2, value = 2, given = false),
-                            Field(position = Position.create(2, SudokuSize.FOUR), solution = 3, value = null, given = false),
-                        ),
-                )
-
-            sudoku.progress shouldBe 50
-        }
-
-        should("get and set a field by index") {
-            val sudoku = fourByFourSudoku()
-
-            val field = sudoku[5]
-            sudoku[5] = field.copy(value = 3)
-
-            sudoku[5].value shouldBe 3
-            sudoku[5].position shouldBe Position.create(5, SudokuSize.FOUR)
-        }
-
-        should("get and set a field by position") {
-            val sudoku = fourByFourSudoku()
-            val position = Position.create(6, SudokuSize.FOUR)
-
-            sudoku[position] = sudoku[position].copy(value = 2)
-
-            sudoku[position].value shouldBe 2
-            sudoku[position].position shouldBe position
-        }
-
-        should("get and set a field by row and column") {
-            val sudoku = fourByFourSudoku()
-
-            sudoku[1, 2] = sudoku[1, 2].copy(value = 4)
-
-            sudoku[1, 2].value shouldBe 4
-            sudoku[1, 2].position shouldBe Position.create(size = SudokuSize.FOUR, row = 1, column = 2)
-        }
-
-        should("consider two sudokus with the same id equal even with differing other fields") {
-            val id = SudokuId.generate()
-            val first = fourByFourSudoku(sudokuId = id, difficulty = Difficulty.EASY)
-            val second = fourByFourSudoku(sudokuId = id, difficulty = Difficulty.HARD)
-
-            (first == second) shouldBe true
-            first.hashCode() shouldBe second.hashCode()
-        }
-
-        should("consider a sudoku equal to itself") {
-            val sudoku = fourByFourSudoku()
-
-            (sudoku == sudoku) shouldBe true
-        }
-
-        should("consider sudokus with different ids not equal") {
-            val first = fourByFourSudoku(sudokuId = SudokuId.generate())
-            val second = fourByFourSudoku(sudokuId = SudokuId.generate())
-
-            (first == second) shouldBe false
-        }
-
-        should("never equal an instance of a different class") {
-            val sudoku = fourByFourSudoku()
-
-            sudoku.equals("not a sudoku") shouldBe false
-        }
-
-        should("never equal null") {
-            val sudoku = fourByFourSudoku()
-            val other: Any? = null
-
-            sudoku.equals(other) shouldBe false
-        }
-
-        should("take the hint limit from the board's sudoku size") {
-            val hintLimitBySize = mapOf(SudokuSize.FOUR to 1, SudokuSize.NINE to 3, SudokuSize.SIXTEEN to 8)
-
-            hintLimitBySize.forEach { (size, hintLimit) ->
-                val sudoku =
-                    Sudoku.create(
-                        size = size,
-                        difficulty = Difficulty.VERY_EASY,
-                        modeLevel = Sudoku.MODE_NORMAL,
-                        fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
-                    )
-
-                sudoku.availableHints shouldBe hintLimit
+                sudoku.progress shouldBe 50
             }
         }
 
-        should("generate unique ids") {
-            val first = SudokuId.generate()
-            val second = SudokuId.generate()
+        context("equality") {
+            should("equal a sudoku with the same info and board, with the same hash code") {
+                val first = fourByFour(given = setOf(0))
+                val second = fourByFour(given = setOf(0))
 
-            (first == second) shouldBe false
-        }
-
-        should("format timeString as hh:mm:ss once an hour has elapsed") {
-            val sudoku = fourByFourSudoku().apply { seconds = 3725 }
-
-            sudoku.timeString shouldBe "01:02:05"
-        }
-
-        should("format timeString as mm:ss below one hour") {
-            val sudoku = fourByFourSudoku().apply { seconds = 125 }
-
-            sudoku.timeString shouldBe "02:05"
-        }
-
-        should("contentEquals is true for two sudokus sharing identical content, including the same field list") {
-            // Field has no equals(), so contentEquals compares fields by reference.
-            val id = SudokuId.generate()
-            val now = LocalDateTime.of(2026, 1, 1, 12, 0)
-            val fields = MutableList(16) { index -> Field(position = Position.create(index, SudokuSize.FOUR), solution = (index % 4) + 1) }
-
-            fun sudokuAt(now: LocalDateTime) =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.VERY_EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = now,
-                    updated = now,
-                    fields = fields,
-                )
-            val first = sudokuAt(now)
-            val second = sudokuAt(now)
-
-            first.contentEquals(second) shouldBe true
-        }
-
-        should("contentEquals is false once a tracked field differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { numberHighlightingUsed = !numberHighlightingUsed }
-
-            first.numberHighlightingUsed shouldNotBe second.numberHighlightingUsed
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once eraserUsed differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { eraserUsed = true }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once isChecklist differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { isChecklist = true }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once isReverseChecklist differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { isReverseChecklist = true }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once checklistNumber differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { checklistNumber = 1 }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once hintsUsed differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { hintsUsed = 1 }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once notesMade differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { notesMade = 1 }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once errorsMade differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { errorsMade = 1 }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once created differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val sameUpdated = LocalDateTime.of(2026, 1, 1, 12, 0)
-            val first = contentEqualsBaseSudoku(id, fields, created = LocalDateTime.of(2026, 1, 1, 12, 0), updated = sameUpdated)
-            val second = contentEqualsBaseSudoku(id, fields, created = LocalDateTime.of(2026, 1, 2, 12, 0), updated = sameUpdated)
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once updated differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val sameCreated = LocalDateTime.of(2026, 1, 1, 12, 0)
-            val first = contentEqualsBaseSudoku(id, fields, created = sameCreated, updated = sameCreated)
-            val second = contentEqualsBaseSudoku(id, fields, created = sameCreated, updated = sameCreated.plusHours(1))
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("contentEquals is false once seconds differs") {
-            val id = SudokuId.generate()
-            val fields = sharedFieldList()
-            val first = contentEqualsBaseSudoku(id, fields)
-            val second = contentEqualsBaseSudoku(id, fields).apply { seconds = 1 }
-
-            first.contentEquals(second) shouldBe false
-        }
-
-        should("reset cancels a running timer") {
-            runTest {
-                val sudoku = fourByFourSudoku()
-                sudoku.startTimer(backgroundScope, fixedClock)
-                val running = sudoku.timer
-                running.shouldNotBeNull()
-
-                sudoku.reset()
-
-                sudoku.timer shouldBe null
-                running.isCancelled.shouldBeTrue()
+                first shouldBe second
+                first.hashCode() shouldBe second.hashCode()
             }
-        }
 
-        should("reset still clears progress when no timer is running") {
-            val sudoku =
-                fourByFourSudoku().apply {
-                    seconds = 42
-                    errorsMade = 2
+            val base = fourByFour()
+            mapOf(
+                "id" to base.copy(info = base.info.copy(id = SudokuId("other"))),
+                "difficulty" to base.copy(info = base.info.copy(difficulty = Difficulty.HARD)),
+                "mode" to base.copy(info = base.info.copy(mode = GameMode.Daily)),
+                "regionalHighlightingUsed" to base.copy(info = base.info.copy(regionalHighlightingUsed = true)),
+                "numberHighlightingUsed" to base.copy(info = base.info.copy(numberHighlightingUsed = true)),
+                "eraserUsed" to base.copy(info = base.info.copy(eraserUsed = true)),
+                "isChecklist" to base.copy(info = base.info.copy(isChecklist = true)),
+                "isReverseChecklist" to base.copy(info = base.info.copy(isReverseChecklist = true)),
+                "checklistNumber" to base.copy(info = base.info.copy(checklistNumber = 2)),
+                "hintsUsed" to base.copy(info = base.info.copy(hintsUsed = 1)),
+                "notesMade" to base.copy(info = base.info.copy(notesMade = 1)),
+                "errorsMade" to base.copy(info = base.info.copy(errorsMade = 1)),
+                "created" to base.copy(info = base.info.copy(created = CREATED.plusDays(1))),
+                "updated" to base.copy(info = base.info.copy(updated = CREATED.plusDays(1))),
+                "seconds" to base.copy(info = base.info.copy(seconds = 1)),
+                "a cell value" to base.copy(board = base.board.with(0, base.board[0].copy(value = 1))),
+                "a cell note" to base.copy(board = base.board.with(0, base.board[0].copy(notes = NoteMask.of(1)))),
+            ).forEach { (name, other) ->
+                should("not equal a sudoku that differs in the $name") {
+                    base shouldNotBe other
                 }
+            }
 
-            sudoku.reset()
-
-            sudoku.seconds shouldBe 0
-            sudoku.errorsMade shouldBe 0
-            sudoku.timer shouldBe null
+            should("reject a board of another size than the game") {
+                shouldThrow<IllegalArgumentException> { Sudoku(gameInfo(size = SudokuSize.FOUR), cellsOf(SudokuSize.NINE)) }
+            }
         }
 
-        context("move, setHint and timer") {
-            should("return false and not mutate the field when no timer is running") {
-                val sudoku =
-                    Sudoku.create(
+        context("info") {
+            should("take the hint limit from the board's sudoku size") {
+                val hintLimitBySize = mapOf(SudokuSize.FOUR to 1, SudokuSize.NINE to 3, SudokuSize.SIXTEEN to 8)
+
+                hintLimitBySize.forEach { (size, hintLimit) ->
+                    Sudoku(gameInfo(size = size), cellsOf(size)).info.availableHints shouldBe hintLimit
+                }
+            }
+
+            should("generate unique ids") {
+                (SudokuId.generate() == SudokuId.generate()) shouldBe false
+            }
+
+            should("format timeString as hh:mm:ss once an hour has elapsed") {
+                gameInfo().copy(seconds = 3725).timeString shouldBe "01:02:05"
+            }
+
+            should("format timeString as mm:ss below one hour") {
+                gameInfo().copy(seconds = 125).timeString shouldBe "02:05"
+            }
+
+            should("offer a hint in a normal sudoku below the hint limit") {
+                gameInfo(hintsUsed = 0).isHintAvailable shouldBe true
+            }
+
+            should("offer no hint once the hint limit is used") {
+                gameInfo(hintsUsed = 1).isHintAvailable shouldBe false
+            }
+
+            should("offer no hint in a daily or level sudoku") {
+                gameInfo(mode = GameMode.Daily).isHintAvailable shouldBe false
+                gameInfo(mode = GameMode.Level(3)).isHintAvailable shouldBe false
+            }
+
+            should("never report the error limit reached when the limit is 0") {
+                gameInfo().copy(errorsMade = 1000).errorLimitReached(0) shouldBe false
+            }
+
+            should("not report the error limit reached while under the limit") {
+                gameInfo().copy(errorsMade = 2).errorLimitReached(3) shouldBe false
+            }
+
+            should("report the error limit reached at and above the limit") {
+                gameInfo().copy(errorsMade = 3).errorLimitReached(3) shouldBe true
+                gameInfo().copy(errorsMade = 4).errorLimitReached(3) shouldBe true
+            }
+        }
+
+        context("tick") {
+            should("add one second and stamp updated") {
+                val sudoku = fourByFour()
+                val now = CREATED.plusSeconds(1)
+
+                sudoku.tick(now).info shouldBe sudoku.info.copy(seconds = 1, updated = now)
+            }
+
+            should("leave the board unchanged") {
+                val sudoku = fourByFour(given = setOf(0))
+
+                sudoku.tick(CREATED.plusSeconds(1)).board shouldBe sudoku.board
+            }
+
+            should("add a second per tick") {
+                val sudoku = fourByFour().tick(CREATED.plusSeconds(1)).tick(CREATED.plusSeconds(2))
+
+                sudoku.info.seconds shouldBe 2
+                sudoku.info.updated shouldBe CREATED.plusSeconds(2)
+            }
+        }
+
+        context("highlighting") {
+            should("mark regional highlighting as used and nothing else") {
+                fourByFour().withHighlightingUsed(Highlighting.REGIONAL).info shouldBe gameInfo().copy(regionalHighlightingUsed = true)
+            }
+
+            should("mark number highlighting as used and nothing else") {
+                fourByFour().withHighlightingUsed(Highlighting.NUMBER).info shouldBe gameInfo().copy(numberHighlightingUsed = true)
+            }
+        }
+
+        context("restarted") {
+            val fresh = fourByFour(given = setOf(0, 3))
+
+            should("keep givens and zero counters") {
+                val played =
+                    fresh
+                        .played(BoardMove.ToggleNote(1, 4), BoardMove.Enter(2, 4), BoardMove.Erase(2), BoardMove.RevealHint(1))
+                        .withHighlightingUsed(Highlighting.REGIONAL)
+                        .withHighlightingUsed(Highlighting.NUMBER)
+                        .tick(CREATED.plusSeconds(1))
+
+                played.restarted() shouldBe fresh.copy(info = fresh.info.copy(updated = CREATED.plusSeconds(1)))
+            }
+
+            should("keep the id, the mode and the stamps") {
+                val daily = fourByFour(info = gameInfo(mode = GameMode.Daily)).tick(CREATED.plusSeconds(5))
+
+                daily.restarted().info shouldBe daily.info.copy(seconds = 0)
+            }
+
+            should("drop values, hints and notes but keep given cells") {
+                val played = fresh.played(BoardMove.Enter(1, 2), BoardMove.ToggleNote(2, 3))
+
+                played.restarted().board shouldBe fresh.board
+            }
+        }
+
+        context("initialCopy") {
+            val created = LocalDateTime.of(2024, 5, 1, 8, 0)
+            val started =
+                fourByFour(given = setOf(0), info = gameInfo(mode = GameMode.Daily).copy(created = created))
+                    .played(BoardMove.Enter(1, 2), BoardMove.ToggleNote(2, 3))
+                    .withHighlightingUsed(Highlighting.REGIONAL)
+                    .tick(created.plusMinutes(3))
+
+            should("build a fresh sudoku with a new id and normal mode") {
+                val initial = started.initialCopy()
+
+                initial.info.id shouldNotBe started.info.id
+                initial.info.mode shouldBe GameMode.Normal
+            }
+
+            should("zero every counter and flag and stamp updated with created") {
+                val initial = started.initialCopy()
+
+                initial.info shouldBe
+                    GameInfo(
+                        id = initial.info.id,
                         size = SudokuSize.FOUR,
                         difficulty = Difficulty.EASY,
-                        modeLevel = Sudoku.MODE_NORMAL,
-                        fields = testFields(),
+                        mode = GameMode.Normal,
+                        created = created,
+                        updated = created,
                     )
-
-                sudoku.move(0, 1) shouldBe false
-
-                sudoku[0].value shouldBe null
             }
 
-            should("return false for a given field") {
-                val sudoku = runningSudoku(fields = testFields(given = setOf(0)))
+            should("restore the initial board") {
+                val initial = started.initialCopy()
 
-                sudoku.move(0, 2) shouldBe false
+                initial.board shouldBe started.board.initial()
+                initial.board[0].value shouldBe 1
+                initial.board[1].value shouldBe null
+            }
+        }
 
-                sudoku[0].value shouldBe 1
-                sudoku.timer?.cancel()
+        context("copyAsNormal") {
+            should("keep the game with a new id and normal mode") {
+                val daily =
+                    fourByFour(given = setOf(0), info = gameInfo(mode = GameMode.Daily))
+                        .played(BoardMove.Enter(1, 2), BoardMove.ToggleNote(2, 3))
+                        .tick(CREATED.plusSeconds(1))
+
+                val copy = daily.copyAsNormal()
+
+                copy.info shouldBe daily.info.copy(id = copy.info.id, mode = GameMode.Normal)
+                copy.info.id shouldNotBe daily.info.id
+                copy.board shouldBe daily.board
+            }
+        }
+
+        context("play") {
+            should("count a wrong digit as one error") {
+                val moved = fourByFour().play(BoardMove.Enter(2, 4)).shouldNotBeNull()
+
+                moved.sudoku.info.errorsMade shouldBe 1
+                moved.sudoku.board[2].value shouldBe 4
+                moved.result.error shouldBe true
             }
 
-            should("return false for a hint field") {
-                val sudoku = runningSudoku(fields = testFields(hints = setOf(0), values = mapOf(0 to 2)))
+            should("count no error for the correct digit and hand back the board result") {
+                val moved = fourByFour().play(BoardMove.Enter(0, 1)).shouldNotBeNull()
 
-                sudoku.move(0, 3) shouldBe false
-
-                sudoku[0].value shouldBe 2
-                sudoku.timer?.cancel()
+                moved.sudoku.info.errorsMade shouldBe 0
+                moved.sudoku.board shouldBe moved.result.board
+                moved.result.changed shouldBe setOf(0)
             }
 
-            should("set a note, notify the listener and count it in notesMade") {
-                val listener = MoveRecordingGameListener()
-                val sudoku = runningSudoku(gameListener = listener)
+            should("reject a move on a given cell and leave the sudoku as it is") {
+                val sudoku = fourByFour(given = setOf(0))
 
-                val result = sudoku.move(0, 1, isNote = true)
+                sudoku.play(BoardMove.Enter(0, 2)) shouldBe null
+            }
 
-                result shouldBe true
-                sudoku[0].notes shouldBe mutableListOf('1')
-                sudoku.notesMade shouldBe 1
-                listener.fieldChanged shouldContain sudoku[0].position
-                sudoku.timer?.cancel()
+            should("reject a move on a hint cell") {
+                val sudoku = fourByFour(hints = setOf(0), values = mapOf(0 to 2))
+
+                sudoku.play(BoardMove.Enter(0, 3)) shouldBe null
+            }
+
+            should("set a note and count it in notesMade") {
+                val moved = fourByFour().play(BoardMove.ToggleNote(0, 1)).shouldNotBeNull().sudoku
+
+                moved.board[0].notes shouldBe NoteMask.of(1)
+                moved.info.notesMade shouldBe 1
             }
 
             should("toggle an existing note off without incrementing notesMade") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(0 to mutableListOf('1'))))
+                val moved = fourByFour(notes = mapOf(0 to NoteMask.of(1))).play(BoardMove.ToggleNote(0, 1)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, 1, isNote = true)
-
-                result shouldBe true
-                sudoku[0].notes shouldBe mutableListOf()
-                sudoku.notesMade shouldBe 0
-                sudoku.timer?.cancel()
+                moved.board[0].notes shouldBe NoteMask.EMPTY
+                moved.info.notesMade shouldBe 0
             }
 
-            should("clear all notes when noting a null value") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(0 to mutableListOf('1', '2'))))
+            should("clear all notes of a cell without counting a note") {
+                val moved = fourByFour(notes = mapOf(0 to NoteMask.of(1, 2))).play(BoardMove.ClearNotes(0)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, null, isNote = true)
-
-                result shouldBe true
-                sudoku[0].notes shouldBe mutableListOf()
-                sudoku.timer?.cancel()
+                moved.board[0].notes shouldBe NoteMask.EMPTY
+                moved.info.notesMade shouldBe 0
             }
 
-            should("return false when noting a field that already has a value") {
-                val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 2)))
-
-                val result = sudoku.move(0, 3, isNote = true)
-
-                result shouldBe false
-                sudoku[0].notes shouldBe mutableListOf()
-                sudoku.timer?.cancel()
+            should("reject a note on a cell that already has a value") {
+                fourByFour(values = mapOf(0 to 2)).play(BoardMove.ToggleNote(0, 3)) shouldBe null
             }
 
-            should("return false erasing an already empty field with no notes") {
-                val sudoku = runningSudoku()
-
-                val result = sudoku.move(0, null)
-
-                result shouldBe false
-                sudoku.eraserUsed shouldBe false
-                sudoku.timer?.cancel()
+            should("reject erasing an empty cell without notes and keep the eraser unused") {
+                fourByFour().play(BoardMove.Erase(0)) shouldBe null
             }
 
-            should("erase a field's value and mark the eraser used") {
-                val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 2)))
+            should("erase a cell's value and mark the eraser used") {
+                val moved = fourByFour(values = mapOf(0 to 2)).play(BoardMove.Erase(0)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, null)
-
-                result shouldBe true
-                sudoku[0].value shouldBe null
-                sudoku.eraserUsed shouldBe true
-                sudoku.timer?.cancel()
+                moved.board[0].value shouldBe null
+                moved.info.eraserUsed shouldBe true
             }
 
-            should("erase only the notes when the field has no value") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(0 to mutableListOf('1', '2'))))
+            should("erase only the notes when the cell has no value") {
+                val moved = fourByFour(notes = mapOf(0 to NoteMask.of(1, 2))).play(BoardMove.Erase(0)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, null)
-
-                result shouldBe true
-                sudoku[0].notes shouldBe mutableListOf()
-                sudoku.eraserUsed shouldBe true
-                sudoku.timer?.cancel()
+                moved.board[0].notes shouldBe NoteMask.EMPTY
+                moved.info.eraserUsed shouldBe true
             }
 
-            should("return false when the field is already correct") {
-                val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 1)))
-
-                sudoku.move(0, 1) shouldBe false
-                sudoku.timer?.cancel()
+            should("reject a digit in a cell that is already correct") {
+                fourByFour(values = mapOf(0 to 1)).play(BoardMove.Enter(0, 1)) shouldBe null
             }
 
-            should("return false when setting the same incorrect value again") {
-                val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 2)))
-
-                sudoku.move(0, 2) shouldBe false
-                sudoku.timer?.cancel()
+            should("reject the same incorrect digit again") {
+                fourByFour(values = mapOf(0 to 2)).play(BoardMove.Enter(0, 2)) shouldBe null
             }
 
-            should("overwrite an existing incorrect value with a different one") {
-                val sudoku = runningSudoku(fields = testFields(values = mapOf(0 to 2)))
+            should("overwrite an incorrect digit with a different one") {
+                val moved = fourByFour(values = mapOf(0 to 2)).play(BoardMove.Enter(0, 3)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, 3)
-
-                result shouldBe true
-                sudoku[0].value shouldBe 3
-                sudoku.timer?.cancel()
+                moved.board[0].value shouldBe 3
             }
 
-            should("set a correct value, notify the listener and clear a matching neighbor note") {
-                val listener = MoveRecordingGameListener()
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('1'))), gameListener = listener)
+            should("clear a matching peer note for a correct digit") {
+                val moved = fourByFour(notes = mapOf(1 to NoteMask.of(1))).play(BoardMove.Enter(0, 1)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, 1)
-
-                result shouldBe true
-                sudoku[0].value shouldBe 1
-                sudoku.errorsMade shouldBe 0
-                sudoku[1].notes shouldBe mutableListOf()
-                listener.fieldChanged shouldContain sudoku[1].position
-                sudoku.timer?.cancel()
+                moved.board[0].value shouldBe 1
+                moved.info.errorsMade shouldBe 0
+                moved.board[1].notes shouldBe NoteMask.EMPTY
             }
 
-            should("set an incorrect value, count an error and leave neighbor notes untouched") {
-                val listener = MoveRecordingGameListener()
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('2'))), gameListener = listener)
+            should("count an error for a wrong digit and leave peer notes untouched") {
+                val moved = fourByFour(notes = mapOf(1 to NoteMask.of(2))).play(BoardMove.Enter(0, 2)).shouldNotBeNull().sudoku
 
-                val result = sudoku.move(0, 2)
-
-                result shouldBe true
-                sudoku[0].value shouldBe 2
-                sudoku.errorsMade shouldBe 1
-                listener.errorCount shouldBe 1
-                sudoku[1].notes shouldBe mutableListOf('2')
-                sudoku.timer?.cancel()
+                moved.board[0].value shouldBe 2
+                moved.info.errorsMade shouldBe 1
+                moved.board[1].notes shouldBe NoteMask.of(2)
             }
 
-            should("progress and then break the forward checklist, tracking the last value afterwards") {
-                val sudoku = runningSudoku()
+            should("complete the sudoku with the last correct digit") {
+                val almost = fourByFour(given = (0..15).filter { it != 5 }.toSet())
+                almost.completed shouldBe false
 
-                sudoku.move(0, 1)
-                sudoku.isChecklist shouldBe true
-                sudoku.checklistNumber shouldBe 1
+                val moved = almost.play(BoardMove.Enter(5, SOLUTIONS[5])).shouldNotBeNull()
 
-                sudoku.move(1, 2)
-                sudoku.isChecklist shouldBe true
-                sudoku.checklistNumber shouldBe 2
-
-                sudoku.move(6, 1)
-                sudoku.isChecklist shouldBe false
-                sudoku.checklistNumber shouldBe 1
-
-                sudoku.move(2, 3)
-                sudoku.isChecklist shouldBe false
-                sudoku.isReverseChecklist shouldBe false
-                sudoku.checklistNumber shouldBe 3
-
-                sudoku.timer?.cancel()
-            }
-
-            should("ignore a repeated value while a forward checklist is active") {
-                val sudoku = runningSudoku()
-
-                sudoku.move(0, 1)
-                sudoku.move(6, 1)
-
-                sudoku.isChecklist shouldBe true
-                sudoku.checklistNumber shouldBe 1
-                sudoku.timer?.cancel()
-            }
-
-            should("not start any checklist when the first placed value is neither 1 nor size") {
-                val sudoku = runningSudoku()
-
-                sudoku.move(1, 2)
-
-                sudoku.isChecklist shouldBe false
-                sudoku.isReverseChecklist shouldBe false
-                sudoku.checklistNumber shouldBe 2
-                sudoku.timer?.cancel()
-            }
-
-            should("progress and then break the reverse checklist") {
-                val sudoku = runningSudoku()
-
-                sudoku.move(3, 4)
-                sudoku.isReverseChecklist shouldBe true
-                sudoku.checklistNumber shouldBe 4
-
-                sudoku.move(1, 2)
-                sudoku.isReverseChecklist shouldBe true
-                sudoku.checklistNumber shouldBe 2
-
-                sudoku.move(2, 3)
-                sudoku.isReverseChecklist shouldBe false
-                sudoku.checklistNumber shouldBe 3
-
-                sudoku.timer?.cancel()
-            }
-
-            should("ignore a repeated value while a reverse checklist is active") {
-                val sudoku = runningSudoku()
-
-                sudoku.move(3, 4)
-                sudoku.move(12, 4)
-
-                sudoku.isReverseChecklist shouldBe true
-                sudoku.checklistNumber shouldBe 4
-                sudoku.timer?.cancel()
-            }
-
-            should("complete the board, stop the timer and notify the listener") {
-                val listener = MoveRecordingGameListener()
-                val given = (0..15).filter { it != 5 }.toSet()
-                val sudoku = runningSudoku(fields = testFields(given = given), gameListener = listener)
-
-                val result = sudoku.move(5, solutions[5])
-
-                result shouldBe true
-                sudoku.completed shouldBe true
-                sudoku.timer shouldBe null
-                listener.completed shouldContain sudoku[5].position
-            }
-
-            should("do nothing when setting a hint while no timer is running") {
-                val sudoku =
-                    Sudoku.create(
-                        size = SudokuSize.FOUR,
-                        difficulty = Difficulty.EASY,
-                        modeLevel = Sudoku.MODE_NORMAL,
-                        fields = testFields(),
-                    )
-
-                sudoku.setHint(0)
-
-                sudoku.hintsUsed shouldBe 0
-                sudoku[0].value shouldBe null
-            }
-
-            should("do nothing when setting a hint on a given field") {
-                val sudoku = runningSudoku(fields = testFields(given = setOf(0)))
-
-                sudoku.setHint(0)
-
-                sudoku.hintsUsed shouldBe 0
-                sudoku.timer?.cancel()
-            }
-
-            should("do nothing when setting a hint on a field that already is a hint") {
-                val sudoku = runningSudoku(fields = testFields(hints = setOf(0), values = mapOf(0 to 1)))
-
-                sudoku.setHint(0)
-
-                sudoku.hintsUsed shouldBe 0
-                sudoku.timer?.cancel()
-            }
-
-            should("do nothing when no hint is available") {
-                val sudoku = runningSudoku(hintsUsed = 1)
-
-                sudoku.setHint(0)
-
-                sudoku.hintsUsed shouldBe 1
-                sudoku[0].value shouldBe null
-                sudoku.timer?.cancel()
-            }
-
-            should("set the hint value, notify the listener and clear a matching neighbor note") {
-                val listener = MoveRecordingGameListener()
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('1'))), gameListener = listener)
-
-                sudoku.setHint(0)
-
-                sudoku.hintsUsed shouldBe 1
-                sudoku[0].value shouldBe 1
-                sudoku[0].hint shouldBe true
-                sudoku[1].notes shouldBe mutableListOf()
-                listener.fieldChanged shouldContain sudoku[0].position
-                sudoku.timer?.cancel()
-            }
-
-            should("complete the board via a hint, stop the timer and notify the listener") {
-                val listener = MoveRecordingGameListener()
-                val given = (0..15).filter { it != 5 }.toSet()
-                val sudoku = runningSudoku(fields = testFields(given = given), gameListener = listener)
-
-                sudoku.setHint(5)
-
-                sudoku.completed shouldBe true
-                sudoku.timer shouldBe null
-                listener.completed shouldContain sudoku[5].position
-            }
-
-            should("do nothing when starting the timer on an already-completed sudoku") {
-                val sudoku = runningSudoku(fields = testFields(given = (0..15).toSet()))
-                sudoku.timer?.cancel()
-                sudoku.timer = null
-
-                runTest { sudoku.startTimer(backgroundScope, fixedClock) }
-
-                sudoku.timer shouldBe null
-            }
-
-            should("cancel a previously running timer before starting a new one") {
-                runTest {
-                    val sudoku = runningSudoku()
-                    val oldTimer = sudoku.timer
-                    oldTimer.shouldNotBeNull()
-
-                    sudoku.startTimer(backgroundScope, fixedClock)
-
-                    oldTimer.isCancelled.shouldBeTrue()
-                    sudoku.timer shouldNotBe oldTimer
-                    sudoku.timer.shouldNotBeNull()
-                }
-            }
-
-            should("tick once per second after the initial second, counting seconds and notifying the listener") {
-                runTest {
-                    val listener = MoveRecordingGameListener()
-                    val sudoku = runningSudoku(gameListener = listener)
-                    val staleUpdate = LocalDateTime.of(2000, 1, 1, 0, 0)
-                    sudoku.updated = staleUpdate
-
-                    sudoku.startTimer(backgroundScope, fixedClock)
-                    testScheduler.advanceTimeBy(999)
-                    testScheduler.runCurrent()
-
-                    sudoku.seconds shouldBe 0
-                    listener.timeChangedCount shouldBe 0
-
-                    testScheduler.advanceTimeBy(1)
-                    testScheduler.runCurrent()
-
-                    sudoku.seconds shouldBe 1
-                    listener.timeChangedCount shouldBe 1
-                    sudoku.updated shouldBe LocalDateTime.of(2026, 1, 15, 12, 0)
-
-                    testScheduler.advanceTimeBy(2000)
-                    testScheduler.runCurrent()
-
-                    sudoku.seconds shouldBe 3
-                    listener.timeChangedCount shouldBe 3
-                }
-            }
-
-            should("tick at once for a zero initial delay without a listener to notify") {
-                runTest {
-                    val sudoku = runningSudoku()
-
-                    sudoku.startTimer(backgroundScope, fixedClock, initialDelay = 0L)
-                    testScheduler.runCurrent()
-
-                    sudoku.seconds shouldBe 1
-                }
-            }
-
-            should("stop ticking once the timer stops") {
-                runTest {
-                    val sudoku = runningSudoku()
-                    sudoku.startTimer(backgroundScope, fixedClock)
-                    testScheduler.advanceTimeBy(1000)
-                    testScheduler.runCurrent()
-
-                    sudoku.stopTimer()
-                    testScheduler.advanceTimeBy(5000)
-                    testScheduler.runCurrent()
-
-                    sudoku.seconds shouldBe 1
-                    sudoku.timer shouldBe null
-                    sudoku.resumed.shouldBeFalse()
-                }
-            }
-
-            should("count an error without notifying when there is no listener") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('2'))))
-
-                val result = sudoku.move(0, 2)
-
-                result shouldBe true
-                sudoku.errorsMade shouldBe 1
-                sudoku.timer?.cancel()
-            }
-
-            should("leave a neighbor's unrelated note untouched when there is no listener") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('2'))))
-
-                val result = sudoku.move(0, 1)
-
-                result shouldBe true
-                sudoku[1].notes shouldBe mutableListOf('2')
-                sudoku.timer?.cancel()
-            }
-
-            should("clear a matching neighbor note without notifying when there is no listener") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('1'))))
-
-                val result = sudoku.move(0, 1)
-
-                result shouldBe true
-                sudoku[1].notes shouldBe mutableListOf()
-                sudoku.timer?.cancel()
-            }
-
-            should("complete the board via a move without notifying when there is no listener") {
-                val given = (0..15).filter { it != 5 }.toSet()
-                val sudoku = runningSudoku(fields = testFields(given = given))
-
-                val result = sudoku.move(5, solutions[5])
-
-                result shouldBe true
-                sudoku.completed shouldBe true
-                sudoku.timer shouldBe null
-            }
-
-            should("set a hint value without notifying when there is no listener") {
-                val sudoku = runningSudoku(fields = testFields(notes = mapOf(1 to mutableListOf('1'))))
-
-                sudoku.setHint(0)
-
-                sudoku.hintsUsed shouldBe 1
-                sudoku[0].value shouldBe 1
-                sudoku.timer?.cancel()
-            }
-
-            should("complete the board via a hint without notifying when there is no listener") {
-                val given = (0..15).filter { it != 5 }.toSet()
-                val sudoku = runningSudoku(fields = testFields(given = given))
-
-                sudoku.setHint(5)
-
-                sudoku.completed shouldBe true
-                sudoku.timer shouldBe null
+                moved.sudoku.completed shouldBe true
+                moved.result.completed.board shouldBe true
             }
         }
 
-        context("board queries") {
-            should("return the union of row, column and block fields as neighbors of an index") {
-                val sudoku = querySudoku()
+        context("checklist") {
+            should("keep the checklist with number 3 after entering 1, 2 and 3") {
+                val entered = fourByFour().played(BoardMove.Enter(0, 1), BoardMove.Enter(1, 2), BoardMove.Enter(2, 3))
 
-                val neighbors = sudoku.getNeighbors(0)
-
-                neighbors.map { it.position.index } shouldContainExactlyInAnyOrder listOf(0, 1, 2, 3, 0, 4, 8, 12, 0, 1, 4, 5)
+                entered.info.isChecklist shouldBe true
+                entered.info.checklistNumber shouldBe 3
             }
 
-            should("report a row completed when every field in it is correct") {
-                val sudoku = querySudoku()
+            should("progress and then break the forward checklist, tracking the last digit afterwards") {
+                var sudoku = fourByFour().played(BoardMove.Enter(0, 1))
+                sudoku.info.isChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 1
 
-                sudoku.isRowCompleted(0) shouldBe true
+                sudoku = sudoku.played(BoardMove.Enter(1, 2))
+                sudoku.info.isChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 2
+
+                sudoku = sudoku.played(BoardMove.Enter(6, 1))
+                sudoku.info.isChecklist shouldBe false
+                sudoku.info.checklistNumber shouldBe 1
+
+                sudoku = sudoku.played(BoardMove.Enter(2, 3))
+                sudoku.info.isChecklist shouldBe false
+                sudoku.info.isReverseChecklist shouldBe false
+                sudoku.info.checklistNumber shouldBe 3
             }
 
-            should("report a row not completed when a field in it is wrong or unfilled") {
-                val wrong = querySudoku(incorrect = setOf(1))
-                val unfilled = querySudoku(unfilled = setOf(2))
+            should("ignore a repeated digit while a forward checklist is active") {
+                val sudoku = fourByFour().played(BoardMove.Enter(0, 1), BoardMove.Enter(6, 1))
 
-                wrong.isRowCompleted(0) shouldBe false
-                unfilled.isRowCompleted(0) shouldBe false
+                sudoku.info.isChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 1
             }
 
-            should("report a column completed when every field in it is correct") {
-                val sudoku = querySudoku()
+            should("not start any checklist when the first digit is neither 1 nor the size") {
+                val sudoku = fourByFour().played(BoardMove.Enter(1, 2))
 
-                sudoku.isColumnCompleted(0) shouldBe true
+                sudoku.info.isChecklist shouldBe false
+                sudoku.info.isReverseChecklist shouldBe false
+                sudoku.info.checklistNumber shouldBe 2
             }
 
-            should("report a column not completed when a field in it is wrong or unfilled") {
-                val wrong = querySudoku(incorrect = setOf(4))
-                val unfilled = querySudoku(unfilled = setOf(8))
+            should("progress and then break the reverse checklist") {
+                var sudoku = fourByFour().played(BoardMove.Enter(3, 4))
+                sudoku.info.isReverseChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 4
 
-                wrong.isColumnCompleted(0) shouldBe false
-                unfilled.isColumnCompleted(0) shouldBe false
+                sudoku = sudoku.played(BoardMove.Enter(1, 2))
+                sudoku.info.isReverseChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 2
+
+                sudoku = sudoku.played(BoardMove.Enter(2, 3))
+                sudoku.info.isReverseChecklist shouldBe false
+                sudoku.info.checklistNumber shouldBe 3
             }
 
-            should("report a block completed when every field in it is correct") {
-                val sudoku = querySudoku()
+            should("ignore a repeated digit while a reverse checklist is active") {
+                val sudoku = fourByFour().played(BoardMove.Enter(3, 4), BoardMove.Enter(12, 4))
 
-                sudoku.isBlockCompleted(0) shouldBe true
+                sudoku.info.isReverseChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 4
             }
 
-            should("report a block not completed when a field in it is wrong or unfilled") {
-                val wrong = querySudoku(incorrect = setOf(1))
-                val unfilled = querySudoku(unfilled = setOf(5))
+            should("follow a wrong digit like a correct one") {
+                val sudoku = fourByFour().played(BoardMove.Enter(0, 1), BoardMove.Enter(2, 4))
 
-                wrong.isBlockCompleted(0) shouldBe false
-                unfilled.isBlockCompleted(0) shouldBe false
+                sudoku.info.isChecklist shouldBe true
+                sudoku.info.checklistNumber shouldBe 4
+            }
+        }
+
+        context("hints") {
+            should("reject a hint in a daily sudoku") {
+                fourByFour(info = gameInfo(mode = GameMode.Daily)).play(BoardMove.RevealHint(1)) shouldBe null
             }
 
-            should("report each number complete only once it appears size times correctly") {
-                val sudoku = querySudoku()
-
-                val completedNumbers = sudoku.getCompletedNumbers()
-
-                completedNumbers shouldBe listOf(1 to true, 2 to true, 3 to true, 4 to true)
+            should("reject a hint in a level sudoku") {
+                fourByFour(info = gameInfo(mode = GameMode.Level(2))).play(BoardMove.RevealHint(1)) shouldBe null
             }
 
-            should("report a number as not complete while some of its placements are wrong or unfilled") {
-                val sudoku = querySudoku(incorrect = setOf(0), unfilled = setOf(6))
+            should("reject a hint on a given cell and count no hint") {
+                fourByFour(given = setOf(0)).play(BoardMove.RevealHint(0)) shouldBe null
+            }
 
-                val completedNumbers = sudoku.getCompletedNumbers()
+            should("reject a hint on a cell that already is a hint") {
+                fourByFour(hints = setOf(0), values = mapOf(0 to 1)).play(BoardMove.RevealHint(0)) shouldBe null
+            }
 
-                completedNumbers.first { it.first == 1 }.second shouldBe false
-                completedNumbers.first { it.first == 2 }.second shouldBe true
+            should("reject a hint when no hint is available") {
+                fourByFour(info = gameInfo(hintsUsed = 1)).play(BoardMove.RevealHint(0)) shouldBe null
+            }
+
+            should("reveal the solution, count the hint and clear a matching peer note") {
+                val moved = fourByFour(notes = mapOf(1 to NoteMask.of(1))).play(BoardMove.RevealHint(0)).shouldNotBeNull().sudoku
+
+                moved.info.hintsUsed shouldBe 1
+                moved.board[0] shouldBe Cell(solution = 1, value = 1, origin = CellOrigin.HINT)
+                moved.board[1].notes shouldBe NoteMask.EMPTY
+            }
+
+            should("count a hint that reveals a cell with a wrong digit as no error") {
+                val moved = fourByFour(values = mapOf(0 to 3)).play(BoardMove.RevealHint(0)).shouldNotBeNull().sudoku
+
+                moved.info.errorsMade shouldBe 0
+                moved.board[0].value shouldBe 1
+            }
+
+            should("complete the sudoku with the last hint") {
+                val almost = fourByFour(given = (0..15).filter { it != 5 }.toSet())
+
+                almost
+                    .play(BoardMove.RevealHint(5))
+                    .shouldNotBeNull()
+                    .sudoku.completed shouldBe true
+            }
+
+            should("offer no second hint after using the only hint of a 4x4 sudoku") {
+                val moved = fourByFour().play(BoardMove.RevealHint(0)).shouldNotBeNull().sudoku
+
+                moved.info.isHintAvailable shouldBe false
+                moved.play(BoardMove.RevealHint(2)) shouldBe null
             }
         }
     },
 )
-
-private val solutions = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
-
-private fun testFields(
-    given: Set<Int> = emptySet(),
-    values: Map<Int, Int?> = emptyMap(),
-    hints: Set<Int> = emptySet(),
-    notes: Map<Int, MutableList<Char>> = emptyMap(),
-): MutableList<Field> =
-    solutions
-        .mapIndexed { index, solution ->
-            Field(
-                position = Position.create(index, SudokuSize.FOUR),
-                solution = solution,
-                value =
-                    if (index in values) {
-                        values[index]
-                    } else if (index in given) {
-                        solution
-                    } else {
-                        null
-                    },
-                given = index in given,
-                hint = index in hints,
-                notes = notes[index] ?: mutableListOf(),
-            )
-        }.toMutableList()
-
-private fun runningSudoku(
-    fields: MutableList<Field> = testFields(),
-    gameListener: GameListener? = null,
-    hintsUsed: Int = 0,
-): Sudoku =
-    Sudoku
-        .create(
-            size = SudokuSize.FOUR,
-            difficulty = Difficulty.EASY,
-            modeLevel = Sudoku.MODE_NORMAL,
-            hintsUsed = hintsUsed,
-            fields = fields,
-            gameListener = gameListener,
-        ).apply { timer = Job() }
-
-private class MoveRecordingGameListener : GameListener {
-    val fieldChanged = mutableListOf<Position>()
-    val completed = mutableListOf<Position>()
-    var errorCount = 0
-    var timeChangedCount = 0
-
-    override fun onFieldClicked(position: Position) = Unit
-
-    override fun onFieldChanged(position: Position) {
-        fieldChanged += position
-    }
-
-    override fun onCompleted(position: Position) {
-        completed += position
-    }
-
-    override fun onError() {
-        errorCount++
-    }
-
-    override fun onTimeChanged() {
-        timeChangedCount++
-    }
-}
-
-private fun solvedFields(
-    incorrect: Set<Int> = emptySet(),
-    unfilled: Set<Int> = emptySet(),
-): MutableList<Field> =
-    solutions
-        .mapIndexed { index, solution ->
-            Field(
-                position = Position.create(index, SudokuSize.FOUR),
-                solution = solution,
-                value =
-                    when (index) {
-                        in unfilled -> null
-                        in incorrect -> solution + 1
-                        else -> solution
-                    },
-            )
-        }.toMutableList()
-
-private fun querySudoku(
-    incorrect: Set<Int> = emptySet(),
-    unfilled: Set<Int> = emptySet(),
-): Sudoku =
-    Sudoku.create(
-        size = SudokuSize.FOUR,
-        difficulty = Difficulty.EASY,
-        modeLevel = Sudoku.MODE_NORMAL,
-        fields = solvedFields(incorrect, unfilled),
-    )
-
-private fun fourByFourSudoku(
-    sudokuId: SudokuId = SudokuId.generate(),
-    difficulty: Difficulty = Difficulty.VERY_EASY,
-): Sudoku =
-    Sudoku.create(
-        sudokuId = sudokuId,
-        size = SudokuSize.FOUR,
-        difficulty = difficulty,
-        modeLevel = Sudoku.MODE_NORMAL,
-        fields = MutableList(16) { index -> Field(position = Position.create(index, SudokuSize.FOUR), solution = (index % 4) + 1) },
-    )
-
-private fun sharedFieldList(): MutableList<Field> =
-    MutableList(16) { index -> Field(position = Position.create(index, SudokuSize.FOUR), solution = (index % 4) + 1) }
-
-private fun contentEqualsBaseSudoku(
-    sudokuId: SudokuId,
-    fields: MutableList<Field>,
-    created: LocalDateTime = LocalDateTime.of(2026, 1, 1, 12, 0),
-    updated: LocalDateTime = created,
-): Sudoku =
-    Sudoku.create(
-        sudokuId = sudokuId,
-        size = SudokuSize.FOUR,
-        difficulty = Difficulty.VERY_EASY,
-        modeLevel = Sudoku.MODE_NORMAL,
-        created = created,
-        updated = updated,
-        fields = fields,
-    )

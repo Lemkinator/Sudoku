@@ -36,8 +36,8 @@ import de.lemke.commonutils.read
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.MainActivity
@@ -220,7 +220,7 @@ class TabHistoryRevealTest {
     ): Sudoku =
         listSudoku(
             sudokuId = seededIds[index],
-            modeLevel = MODE_NORMAL,
+            mode = GameMode.Normal,
             filled = 0,
             errorsMade = 0,
             seconds = seconds,
@@ -234,7 +234,7 @@ class TabHistoryRevealTest {
     ): Sudoku =
         listSudoku(
             sudokuId = SudokuId.generate(),
-            modeLevel = MODE_NORMAL,
+            mode = GameMode.Normal,
             filled = 0,
             errorsMade = 0,
             seconds = seconds,
@@ -272,6 +272,7 @@ class TabHistoryRevealTest {
             .filterIsInstance<SudokuItem>()
             .firstOrNull()
             ?.sudoku
+            ?.info
             ?.id
 
     private fun MainActivity.adapterHoldsViewModelHistory(): Boolean {

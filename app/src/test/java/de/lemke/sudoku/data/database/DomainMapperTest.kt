@@ -16,10 +16,15 @@
 
 package de.lemke.sudoku.data.database
 
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
@@ -31,22 +36,71 @@ class DomainMapperTest : ShouldSpec(
     {
         val created = LocalDateTime.of(2026, 1, 1, 12, 0)
 
-        fun sudoku(size: SudokuSize = SudokuSize.FOUR) =
-            Sudoku.create(
-                size = size,
-                difficulty = Difficulty.EASY,
-                modeLevel = Sudoku.MODE_NORMAL,
-                created = created,
-                updated = created,
-                fields =
-                    MutableList(size.cellCount) {
-                        Field(position = Position.create(it, size), solution = it % size.value + 1, notes = mutableListOf('1', '2'))
-                    },
-            )
+        fun sudoku(
+            size: SudokuSize = SudokuSize.FOUR,
+            mode: GameMode = GameMode.Normal,
+        ) = Sudoku(
+            info =
+                GameInfo(
+                    id = SudokuId.generate(),
+                    size = size,
+                    difficulty = Difficulty.EASY,
+                    mode = mode,
+                    created = created,
+                    updated = created,
+                ),
+            board = Board(size, List(size.cellCount) { Cell(solution = it % size.value + 1, notes = NoteMask.of(1, 2)) }),
+        )
+
+        fun rowsWith(
+            sudoku: Sudoku,
+            change: (index: Int, field: FieldDb) -> FieldDb,
+        ): SudokuWithFields {
+            val rows = sudokuWithFieldsToDb(sudoku)
+            return rows.copy(fields = rows.fields.mapIndexed(change))
+        }
+
+        fun fieldDb(
+            gameSize: Int = 4,
+            index: Int = 0,
+            solution: Int? = 1,
+            value: Int? = null,
+            given: Boolean = false,
+            hint: Boolean = false,
+            notes: String = "",
+        ) = FieldDb(
+            sudokuId = "id",
+            gameSize = gameSize,
+            index = index,
+            solution = solution,
+            value = value,
+            given = given,
+            hint = hint,
+            notes = notes,
+        )
+
+        context("the legacy mode level") {
+            listOf(
+                GameMode.Normal to 0,
+                GameMode.Daily to -1,
+                GameMode.Level(1) to 1,
+                GameMode.Level(250) to 250,
+            ).forEach { (mode, modeLevel) ->
+                should("map $mode to $modeLevel and back") {
+                    mode.toLegacyModeLevel() shouldBe modeLevel
+                    legacyGameModeOrNull(modeLevel) shouldBe mode
+                }
+            }
+
+            listOf(-2, -100, Int.MIN_VALUE).forEach { modeLevel ->
+                should("name no mode for $modeLevel") {
+                    legacyGameModeOrNull(modeLevel).shouldBeNull()
+                }
+            }
+        }
 
         should("fieldFromDb returns null when the stored solution is null") {
-            val sudoku = sudoku()
-            val fieldDb = fieldToDb(sudoku[0], sudoku.id)
+            val fieldDb = sudokuWithFieldsToDb(sudoku()).fields[0]
 
             fieldFromDb(fieldDb.copy(solution = null)).shouldBeNull()
         }
@@ -55,62 +109,53 @@ class DomainMapperTest : ShouldSpec(
             fieldFromDb(null).shouldBeNull()
         }
 
-        should("fieldFromDb round-trips notes as a char list") {
+        should("fieldFromDb round-trips notes as a digit mask") {
             val sudoku = sudoku()
-            val fieldDb = fieldToDb(sudoku[0], sudoku.id)
+            val fieldDb = sudokuWithFieldsToDb(sudoku).fields[0]
 
             val restored = fieldFromDb(fieldDb)
 
             restored.shouldNotBeNull()
-            restored.notes shouldBe sudoku[0].notes
+            restored.cell.notes shouldBe sudoku.board[0].notes
         }
 
         should("fieldFromDb returns null for a game size that is not a supported sudoku size") {
-            val sudoku = sudoku()
-            val fieldDb = fieldToDb(sudoku[0], sudoku.id)
+            val fieldDb = sudokuWithFieldsToDb(sudoku()).fields[0]
 
             fieldFromDb(fieldDb.copy(gameSize = 6)).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when the raw field count does not match size squared") {
-            val sudoku = sudoku()
-            val sudokuWithFields =
-                SudokuWithFields(
-                    sudoku = sudokuToDb(sudoku),
-                    fields = sudoku.fields.dropLast(1).map { fieldToDb(it, sudoku.id) },
-                )
+            val rows = sudokuWithFieldsToDb(sudoku())
 
-            sudokuFromDb(sudokuWithFields).shouldBeNull()
+            sudokuFromDb(rows.copy(fields = rows.fields.dropLast(1))).shouldBeNull()
         }
 
         listOf(-1, 16).forEach { index ->
             should("fieldFromDb returns null for the out-of-range index $index") {
-                val sudoku = sudoku()
-                val fieldDb = fieldToDb(sudoku[0], sudoku.id)
+                val fieldDb = sudokuWithFieldsToDb(sudoku()).fields[0]
 
                 fieldFromDb(fieldDb.copy(index = index)).shouldBeNull()
             }
         }
 
         should("fieldFromDb keeps the first and last valid index") {
-            val sudoku = sudoku()
+            val fields = sudokuWithFieldsToDb(sudoku()).fields
 
-            fieldFromDb(fieldToDb(sudoku[0], sudoku.id))?.position?.index shouldBe 0
-            fieldFromDb(fieldToDb(sudoku[15], sudoku.id))?.position?.index shouldBe 15
+            fieldFromDb(fields[0])?.index shouldBe 0
+            fieldFromDb(fields[15])?.index shouldBe 15
         }
 
         should("sudokuFromDb returns null when two raw fields share an index") {
             val sudoku = sudoku()
-            val fields = sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 5) f.copy(index = 4) else f }
 
-            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+            sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 5) f.copy(index = 4) else f }).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when a raw field index is out of range") {
             val sudoku = sudoku()
-            val fields = sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 5) f.copy(index = 16) else f }
 
-            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+            sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 5) f.copy(index = 16) else f }).shouldBeNull()
         }
 
         should("sudokuFromDb returns null for a null input") {
@@ -119,21 +164,15 @@ class DomainMapperTest : ShouldSpec(
 
         should("sudokuFromDb returns null when a raw field has a null solution") {
             val sudoku = sudoku()
-            val fields =
-                sudoku.fields
-                    .map { fieldToDb(it, sudoku.id) }
-                    .mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
-            val sudokuWithFields = SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)
 
-            sudokuFromDb(sudokuWithFields).shouldBeNull()
+            sudokuFromDb(rowsWith(sudoku) { index, field -> if (index == 0) field.copy(solution = null) else field }).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when an undecodable raw field comes on top of every cell") {
-            val sudoku = sudoku()
-            val extra = fieldToDb(sudoku[0], sudoku.id).copy(index = 16)
-            val rows = sudoku.fields.map { fieldToDb(it, sudoku.id) } + extra
+            val rows = sudokuWithFieldsToDb(sudoku())
+            val extra = rows.fields[0].copy(index = 16)
 
-            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = rows)).shouldBeNull()
+            sudokuFromDb(rows.copy(fields = rows.fields + extra)).shouldBeNull()
         }
 
         should("sudokuFromExport returns null when an undecodable exported field comes on top of every cell") {
@@ -145,81 +184,55 @@ class DomainMapperTest : ShouldSpec(
         should("sudokuFromDb round-trips a valid sudoku") {
             val sudoku = sudoku()
 
-            val restored = sudokuFromDb(sudokuWithFieldsToDb(sudoku))
-
-            restored.shouldNotBeNull()
-            restored.id shouldBe sudoku.id
-            restored.size shouldBe SudokuSize.FOUR
-            restored.fields.size shouldBe 16
+            sudokuFromDb(sudokuWithFieldsToDb(sudoku)) shouldBe sudoku
         }
 
         should("sudokuFromDb returns null for a stored size that is not a supported sudoku size") {
             val sudokuDb = sudokuToDb(sudoku()).copy(size = 6)
-            val fields =
-                List(36) { index ->
-                    FieldDb(
-                        sudokuId = sudokuDb.id,
-                        gameSize = 6,
-                        index = index,
-                        solution = index % 6 + 1,
-                        value = null,
-                        given = false,
-                        hint = false,
-                        notes = "",
-                    )
-                }
+            val fields = List(36) { index -> fieldDb(gameSize = 6, index = index, solution = index % 6 + 1).copy(sudokuId = sudokuDb.id) }
 
             sudokuFromDb(SudokuWithFields(sudoku = sudokuDb, fields = fields)).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when a raw field has a game size that is not a supported sudoku size") {
             val sudoku = sudoku()
-            val fields =
-                sudoku.fields
-                    .map { fieldToDb(it, sudoku.id) }
-                    .mapIndexed { index, field -> if (index == 0) field.copy(gameSize = 6) else field }
 
-            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+            sudokuFromDb(rowsWith(sudoku) { index, field -> if (index == 0) field.copy(gameSize = 6) else field }).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when a raw field is stored for another sudoku size") {
             val sudoku = sudoku(SudokuSize.NINE)
-            val foreign = Field(position = Position.create(0, SudokuSize.SIXTEEN), solution = 1)
-            val fields =
-                sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 0) fieldToDb(foreign, sudoku.id) else f }
+            val foreign = fieldToDb(0, Cell(solution = 1), sudoku.info.id, SudokuSize.SIXTEEN)
 
-            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+            sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 0) foreign else f }).shouldBeNull()
         }
 
         should("sudokuFromDb returns null when a raw field index exceeds the sudoku but fits its own game size") {
             val sudoku = sudoku(SudokuSize.NINE)
-            val fields =
-                sudoku.fields.map { fieldToDb(it, sudoku.id) }.mapIndexed { i, f -> if (i == 0) f.copy(gameSize = 16, index = 200) else f }
 
-            sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = fields)).shouldBeNull()
+            sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 0) f.copy(gameSize = 16, index = 200) else f }).shouldBeNull()
         }
 
-        should("sudokuFromDb restores the fields in cell order from unordered rows") {
+        should("sudokuFromDb restores the cells in cell order from unordered rows") {
             val sudoku = sudoku()
-            val rows = sudoku.fields.map { fieldToDb(it, sudoku.id) }.reversed()
+            val rows = sudokuWithFieldsToDb(sudoku)
 
-            val restored = sudokuFromDb(SudokuWithFields(sudoku = sudokuToDb(sudoku), fields = rows))
+            val restored = sudokuFromDb(rows.copy(fields = rows.fields.reversed()))
 
-            restored.shouldNotBeNull().fields.map { it.position.index } shouldBe (0..15).toList()
-            restored[5].position.index shouldBe 5
+            restored.shouldNotBeNull().board shouldBe sudoku.board
         }
 
-        should("sudokuFromExport restores the fields in cell order from unordered fields") {
-            val export = sudokuToExport(sudoku())
+        should("sudokuFromExport restores the cells in cell order from unordered fields") {
+            val sudoku = sudoku()
+            val export = sudokuToExport(sudoku)
 
             val restored = sudokuFromExport(export.copy(fields = export.fields.reversed()))
 
-            restored.shouldNotBeNull().fields.map { it.position.index } shouldBe (0..15).toList()
+            restored.shouldNotBeNull().board shouldBe sudoku.board
         }
 
         should("fieldFromExport returns null when the stored solution is null") {
-            val export = fieldToExport(sudoku()[0])
-            fieldFromExport(export.copy(solution = null), size = SudokuSize.FOUR).shouldBeNull()
+            fieldFromExport(FieldExport(index = 0, solution = null), size = SudokuSize.FOUR).shouldBeNull()
         }
 
         should("fieldFromExport defaults notes to empty when absent") {
@@ -228,7 +241,7 @@ class DomainMapperTest : ShouldSpec(
             val field = fieldFromExport(export, size = SudokuSize.FOUR)
 
             field.shouldNotBeNull()
-            field.notes shouldBe mutableListOf()
+            field.cell.notes shouldBe NoteMask.EMPTY
         }
 
         should("fieldFromExport restores notes characters when present") {
@@ -237,20 +250,11 @@ class DomainMapperTest : ShouldSpec(
             val field = fieldFromExport(export, size = SudokuSize.FOUR)
 
             field.shouldNotBeNull()
-            field.notes shouldBe mutableListOf('1', '2')
+            field.cell.notes shouldBe NoteMask.of(1, 2)
         }
 
         should("fieldToExport blanks out false flags and empty notes to null") {
-            val field =
-                Field(
-                    position = Position.create(0, SudokuSize.FOUR),
-                    solution = 1,
-                    given = false,
-                    hint = false,
-                    notes = mutableListOf(),
-                )
-
-            val export = fieldToExport(field)
+            val export = fieldToExport(0, Cell(solution = 1))
 
             export.given.shouldBeNull()
             export.hint.shouldBeNull()
@@ -258,27 +262,20 @@ class DomainMapperTest : ShouldSpec(
         }
 
         should("fieldToExport keeps true flags and non-empty notes") {
-            val field =
-                Field(
-                    position = Position.create(0, SudokuSize.FOUR),
-                    solution = 1,
-                    given = true,
-                    hint = true,
-                    notes = mutableListOf('3'),
-                )
+            val given = fieldToExport(0, Cell(solution = 1, value = 1, origin = CellOrigin.GIVEN, notes = NoteMask.of(3)))
+            val hint = fieldToExport(0, Cell(solution = 1, value = 1, origin = CellOrigin.HINT))
 
-            val export = fieldToExport(field)
-
-            export.given shouldBe true
-            export.hint shouldBe true
-            export.notes shouldBe "3"
+            given.given shouldBe true
+            given.hint.shouldBeNull()
+            given.notes shouldBe "3"
+            hint.hint shouldBe true
+            hint.given.shouldBeNull()
         }
 
         should("sudokuFromExport returns null when the field count does not match size squared") {
-            val sudoku = sudoku()
-            val export = sudokuToExport(sudoku).copy(fields = sudoku.fields.dropLast(1).map { fieldToExport(it) })
+            val export = sudokuToExport(sudoku())
 
-            sudokuFromExport(export).shouldBeNull()
+            sudokuFromExport(export.copy(fields = export.fields.dropLast(1))).shouldBeNull()
         }
 
         listOf(-1, 16).forEach { index ->
@@ -288,8 +285,8 @@ class DomainMapperTest : ShouldSpec(
         }
 
         should("fieldFromExport keeps the first and last valid index") {
-            fieldFromExport(FieldExport(index = 0, solution = 1), SudokuSize.FOUR)?.position?.index shouldBe 0
-            fieldFromExport(FieldExport(index = 15, solution = 1), SudokuSize.FOUR)?.position?.index shouldBe 15
+            fieldFromExport(FieldExport(index = 0, solution = 1), SudokuSize.FOUR)?.index shouldBe 0
+            fieldFromExport(FieldExport(index = 15, solution = 1), SudokuSize.FOUR)?.index shouldBe 15
         }
 
         should("sudokuFromExport returns null when two exported fields share an index") {
@@ -329,51 +326,179 @@ class DomainMapperTest : ShouldSpec(
                 val restored = sudokuFromExport(sudokuToExport(sudoku))
 
                 restored.shouldNotBeNull()
-                restored.size shouldBe size
-                restored.fields.size shouldBe fieldCount
-                val lastPosition = restored.fields.last().position
-                lastPosition.block shouldBe lastBlock
-                restored.fields.map { it.solution } shouldBe sudoku.fields.map { it.solution }
+                restored.info.size shouldBe size
+                restored.board.cells.size shouldBe fieldCount
+                restored.board.position(fieldCount - 1).block shouldBe lastBlock
+                restored.board.cells.map { it.solution } shouldBe sudoku.board.cells.map { it.solution }
             }
         }
 
         should("sudokuToExport and sudokuFromExport round-trip a sudoku with all flags unset") {
             val sudoku = sudoku()
 
-            val restored = sudokuFromExport(sudokuToExport(sudoku))
-
-            restored.shouldNotBeNull()
-            restored.id shouldBe sudoku.id
-            restored.regionalHighlightingUsed shouldBe false
-            restored.checklistNumber shouldBe 0
+            sudokuFromExport(sudokuToExport(sudoku)) shouldBe sudoku
         }
 
         should("sudokuToExport and sudokuFromExport round-trip a sudoku with all flags set") {
+            val base = sudoku()
             val sudoku =
-                sudoku().apply {
-                    regionalHighlightingUsed = true
-                    numberHighlightingUsed = true
-                    eraserUsed = true
-                    isChecklist = true
-                    isReverseChecklist = true
-                    checklistNumber = 5
-                    hintsUsed = 2
-                    notesMade = 3
-                    errorsMade = 1
+                base.copy(
+                    info =
+                        base.info.copy(
+                            regionalHighlightingUsed = true,
+                            numberHighlightingUsed = true,
+                            eraserUsed = true,
+                            isChecklist = true,
+                            isReverseChecklist = true,
+                            checklistNumber = 5,
+                            hintsUsed = 2,
+                            notesMade = 3,
+                            errorsMade = 1,
+                        ),
+                )
+
+            sudokuFromExport(sudokuToExport(sudoku)) shouldBe sudoku
+        }
+
+        context("a game of every mode") {
+            listOf(GameMode.Normal, GameMode.Daily, GameMode.Level(7)).forEach { mode ->
+                should("round-trip $mode through the stored rows and the export") {
+                    val sudoku = sudoku(mode = mode)
+
+                    sudokuFromDb(sudokuWithFieldsToDb(sudoku)) shouldBe sudoku
+                    sudokuFromExport(sudokuToExport(sudoku)) shouldBe sudoku
+                }
+            }
+
+            should("store the legacy mode level and the difficulty code") {
+                val base = sudoku(mode = GameMode.Level(7))
+                val row = sudokuToDb(base.copy(info = base.info.copy(difficulty = Difficulty.HARD)))
+
+                row.modeLevel shouldBe 7
+                row.difficulty shouldBe 3
+            }
+
+            should("export the legacy mode level and the difficulty code") {
+                val base = sudoku(mode = GameMode.Daily)
+                val export = sudokuToExport(base.copy(info = base.info.copy(difficulty = Difficulty.EXPERT)))
+
+                export.modeLevel shouldBe -1
+                export.difficulty shouldBe 4
+            }
+        }
+
+        context("a game that is unreadable") {
+            should("sudokuFromDb returns null for a mode level that names no mode") {
+                val rows = sudokuWithFieldsToDb(sudoku())
+
+                sudokuFromDb(rows.copy(sudoku = rows.sudoku.copy(modeLevel = -2))).shouldBeNull()
+            }
+
+            should("sudokuFromExport returns null for a mode level that names no mode") {
+                sudokuFromExport(sudokuToExport(sudoku()).copy(modeLevel = -2)).shouldBeNull()
+            }
+
+            should("sudokuFromDb reads an unknown difficulty code as medium") {
+                val rows = sudokuWithFieldsToDb(sudoku())
+
+                val restored = sudokuFromDb(rows.copy(sudoku = rows.sudoku.copy(difficulty = 9)))
+
+                restored.shouldNotBeNull().info.difficulty shouldBe Difficulty.MEDIUM
+            }
+
+            listOf(0, 5, -1).forEach { value ->
+                should("sudokuFromDb returns null for the stored value $value on a 4x4 board") {
+                    val sudoku = sudoku()
+
+                    sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 2) f.copy(value = value) else f }).shouldBeNull()
                 }
 
-            val restored = sudokuFromExport(sudokuToExport(sudoku))
+                should("sudokuFromExport returns null for the exported value $value on a 4x4 board") {
+                    val export = sudokuToExport(sudoku())
+                    val fields = export.fields.mapIndexed { i, f -> if (i == 2) f.copy(value = value) else f }
 
-            restored.shouldNotBeNull()
-            restored.regionalHighlightingUsed shouldBe true
-            restored.numberHighlightingUsed shouldBe true
-            restored.eraserUsed shouldBe true
-            restored.isChecklist shouldBe true
-            restored.isReverseChecklist shouldBe true
-            restored.checklistNumber shouldBe 5
-            restored.hintsUsed shouldBe 2
-            restored.notesMade shouldBe 3
-            restored.errorsMade shouldBe 1
+                    sudokuFromExport(export.copy(fields = fields)).shouldBeNull()
+                }
+            }
+
+            listOf(0, 5).forEach { solution ->
+                should("sudokuFromDb returns null for the stored solution $solution on a 4x4 board") {
+                    val sudoku = sudoku()
+
+                    sudokuFromDb(rowsWith(sudoku) { i, f -> if (i == 2) f.copy(solution = solution) else f }).shouldBeNull()
+                }
+            }
+
+            should("fieldFromDb never throws for a value or solution outside the board") {
+                fieldFromDb(fieldDb(solution = 17)).shouldBeNull()
+                fieldFromDb(fieldDb(value = 17)).shouldBeNull()
+                fieldFromDb(fieldDb(gameSize = 16, solution = 16, value = 16)).shouldNotBeNull().cell.value shouldBe 16
+            }
+        }
+
+        context("a stored field becomes a cell") {
+            should("read the given flag as a given cell, also when the hint flag is set") {
+                fieldFromDb(fieldDb(value = 1, given = true))?.cell?.origin shouldBe CellOrigin.GIVEN
+                fieldFromDb(fieldDb(value = 1, given = true, hint = true))?.cell?.origin shouldBe CellOrigin.GIVEN
+            }
+
+            should("read the hint flag alone as a hint cell and no flag as a player cell") {
+                fieldFromDb(fieldDb(value = 1, hint = true))?.cell?.origin shouldBe CellOrigin.HINT
+                fieldFromDb(fieldDb(value = 1))?.cell?.origin shouldBe CellOrigin.PLAYER
+            }
+
+            should("give a given cell without value its solution") {
+                fieldFromDb(fieldDb(solution = 3, value = null, given = true))?.cell?.value shouldBe 3
+            }
+
+            should("keep the value of a given cell and leave a player cell without value empty") {
+                fieldFromDb(fieldDb(solution = 3, value = 2, given = true))?.cell?.value shouldBe 2
+                fieldFromDb(fieldDb(solution = 3, value = null))?.cell?.value.shouldBeNull()
+            }
+
+            should("drop a note that is no digit of the board") {
+                fieldFromDb(fieldDb(notes = "1x59A3"))?.cell?.notes shouldBe NoteMask.of(1, 3)
+                fieldFromDb(fieldDb(gameSize = 16, solution = 16, notes = "1A"))?.cell?.notes shouldBe NoteMask.of(1, 10)
+            }
+
+            should("read the same cell from an export field") {
+                val field = FieldExport(index = 2, solution = 3, value = null, given = true, notes = "4x9")
+
+                fieldFromExport(field, SudokuSize.FOUR) shouldBe
+                    IndexedCell(2, Cell(solution = 3, value = 3, origin = CellOrigin.GIVEN, notes = NoteMask.of(4)))
+            }
+        }
+
+        context("a cell becomes a stored field") {
+            val id = SudokuId("cell")
+
+            should("store the origin as flags") {
+                val given = fieldToDb(0, Cell(solution = 1, value = 1, origin = CellOrigin.GIVEN), id, SudokuSize.FOUR)
+                val hint = fieldToDb(1, Cell(solution = 2, value = 2, origin = CellOrigin.HINT), id, SudokuSize.FOUR)
+                val player = fieldToDb(2, Cell(solution = 3, value = 1), id, SudokuSize.FOUR)
+
+                listOf(given, hint, player).map { it.given to it.hint } shouldBe listOf(true to false, false to true, false to false)
+            }
+
+            should("store the notes as ascending sudoku chars") {
+                fieldToDb(0, Cell(solution = 1, notes = NoteMask.of(3, 1)), id, SudokuSize.FOUR).notes shouldBe "13"
+                fieldToDb(0, Cell(solution = 1, notes = NoteMask.of(16, 10, 2)), id, SudokuSize.SIXTEEN).notes shouldBe "2AG"
+                fieldToDb(0, Cell(solution = 1), id, SudokuSize.FOUR).notes shouldBe ""
+            }
+
+            should("store the index, the board size, the solution and the value") {
+                fieldToDb(7, Cell(solution = 4, value = 2), id, SudokuSize.NINE) shouldBe
+                    FieldDb(
+                        sudokuId = "cell",
+                        gameSize = 9,
+                        index = 7,
+                        solution = 4,
+                        value = 2,
+                        given = false,
+                        hint = false,
+                        notes = "",
+                    )
+            }
         }
     },
 )

@@ -19,39 +19,9 @@ package de.lemke.sudoku.domain.model
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
-import kotlinx.coroutines.Job
-
-private val solvedFourByFour = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
-
-private fun testFields(): MutableList<Field> =
-    solvedFourByFour.mapIndexedTo(mutableListOf()) { index, solution ->
-        val position = Position.create(index, SudokuSize.FOUR)
-        when (index) {
-            1 -> Field(position = position, solution = solution, value = solution, given = false, hint = true, notes = mutableListOf('3'))
-            2 -> Field(position = position, solution = solution, value = null, given = false)
-            3 -> Field(position = position, solution = solution, value = solution, given = false)
-            else -> Field(position = position, solution = solution, value = solution, given = true)
-        }
-    }
-
-private fun testSudoku(
-    sudokuId: SudokuId = SudokuId.generate(),
-    modeLevel: Int = Sudoku.MODE_NORMAL,
-    created: LocalDateTime = LocalDateTime.of(2024, 1, 1, 12, 0),
-): Sudoku =
-    Sudoku.create(
-        sudokuId = sudokuId,
-        size = SudokuSize.FOUR,
-        difficulty = Difficulty.EASY,
-        modeLevel = modeLevel,
-        created = created,
-        updated = created.plusDays(1),
-        fields = testFields(),
-    )
 
 class SudokuExtensionsTest : ShouldSpec(
     {
@@ -59,307 +29,28 @@ class SudokuExtensionsTest : ShouldSpec(
         beforeSpec { Locale.setDefault(Locale.US) }
         afterSpec { Locale.setDefault(originalLocale) }
 
-        // Field has no equals(), so contentEquals compares fields by reference.
-        should("consider sudokus with the same id, matching flags and shared field instances content-equal") {
-            val id = SudokuId.generate()
-            val created = LocalDateTime.of(2024, 1, 1, 12, 0)
-            val fields = testFields()
-            val sudoku =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    fields = fields,
-                )
-            val other =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.HARD,
-                    modeLevel = Sudoku.MODE_DAILY,
-                    created = created,
-                    updated = created,
-                    fields = fields.toMutableList(),
-                )
-
-            sudoku.contentEquals(other) shouldBe true
-        }
-
-        should("not consider sudokus with different ids content-equal") {
-            val created = LocalDateTime.of(2024, 1, 1, 12, 0)
-            val fields = testFields()
-            val sudoku =
-                Sudoku.create(
-                    sudokuId = SudokuId.generate(),
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    fields = fields,
-                )
-            val other =
-                Sudoku.create(
-                    sudokuId = SudokuId.generate(),
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    fields = fields.toMutableList(),
-                )
-
-            sudoku.contentEquals(other) shouldBe false
-        }
-
-        should("not consider sudokus with different field values content-equal") {
-            val id = SudokuId.generate()
-            val created = LocalDateTime.of(2024, 1, 1, 12, 0)
-            val fields = testFields()
-            val sudoku =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    fields = fields,
-                )
-            val other =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    fields = fields.toMutableList(),
-                )
-            other[0] = other[0].copy(value = 2)
-
-            other[0].value shouldBe 2
-            sudoku[0].value shouldNotBe other[0].value
-            sudoku.contentEquals(other) shouldBe false
-        }
-
-        should("not consider sudokus with a different flag content-equal") {
-            val id = SudokuId.generate()
-            val created = LocalDateTime.of(2024, 1, 1, 12, 0)
-            val fields = testFields()
-            val sudoku =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    regionalHighlightingUsed = false,
-                    fields = fields,
-                )
-            val other =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_NORMAL,
-                    created = created,
-                    updated = created,
-                    regionalHighlightingUsed = true,
-                    fields = fields.toMutableList(),
-                )
-
-            sudoku.contentEquals(other) shouldBe false
-        }
-
-        should("copy with defaults producing an equal-valued but instance-distinct sudoku") {
-            val sudoku = testSudoku()
-
-            val copy = sudoku.copy()
-
-            copy.id shouldBe sudoku.id
-            copy.fields.indices.forEach { i ->
-                copy.fields[i].value shouldBe sudoku.fields[i].value
-                copy.fields[i].given shouldBe sudoku.fields[i].given
-            }
-            (copy.fields === sudoku.fields) shouldBe false
-            (copy.fields[0] === sudoku.fields[0]) shouldBe false
-            sudoku.contentEquals(copy) shouldBe false
-        }
-
-        should("copy with overrides replacing the originals") {
-            val sudoku = testSudoku()
-            val newId = SudokuId.generate()
-
-            val copy =
-                sudoku.copy(
-                    sudokuId = newId,
-                    difficulty = Difficulty.HARD,
-                    modeLevel = Sudoku.MODE_DAILY,
-                    regionalHighlightingUsed = true,
-                    numberHighlightingUsed = true,
-                    eraserUsed = true,
-                    isChecklist = true,
-                    isReverseChecklist = true,
-                    checklistNumber = 2,
-                    hintsUsed = 1,
-                    notesMade = 2,
-                    errorsMade = 3,
-                    seconds = 42,
-                )
-
-            copy.id shouldBe newId
-            copy.difficulty shouldBe Difficulty.HARD
-            copy.modeLevel shouldBe Sudoku.MODE_DAILY
-            copy.regionalHighlightingUsed shouldBe true
-            copy.numberHighlightingUsed shouldBe true
-            copy.eraserUsed shouldBe true
-            copy.isChecklist shouldBe true
-            copy.isReverseChecklist shouldBe true
-            copy.checklistNumber shouldBe 2
-            copy.hintsUsed shouldBe 1
-            copy.notesMade shouldBe 2
-            copy.errorsMade shouldBe 3
-            copy.seconds shouldBe 42
-        }
-
-        should("never report the error limit reached when the limit is 0") {
-            val sudoku = testSudoku().apply { errorsMade = 1000 }
-
-            sudoku.errorLimitReached(0) shouldBe false
-        }
-
-        should("not report the error limit reached while under the limit") {
-            val sudoku = testSudoku().apply { errorsMade = 2 }
-
-            sudoku.errorLimitReached(3) shouldBe false
-        }
-
-        should("report the error limit reached exactly at the limit") {
-            val sudoku = testSudoku().apply { errorsMade = 3 }
-
-            sudoku.errorLimitReached(3) shouldBe true
-        }
-
-        should("report the error limit reached above the limit") {
-            val sudoku = testSudoku().apply { errorsMade = 4 }
-
-            sudoku.errorLimitReached(3) shouldBe true
-        }
-
-        should("build a fresh initial sudoku with a new id and normal mode") {
-            val created = LocalDateTime.of(2024, 5, 1, 8, 0)
-            val sudoku =
-                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = created).apply {
-                    regionalHighlightingUsed = true
-                    numberHighlightingUsed = true
-                    eraserUsed = true
-                    isChecklist = true
-                    isReverseChecklist = true
-                    checklistNumber = 2
-                    hintsUsed = 1
-                    notesMade = 2
-                    errorsMade = 3
-                    seconds = 99
-                    timer = Job()
-                    gameListener = RecordingGameListener()
-                }
-
-            val initial = sudoku.getInitialSudoku()
-
-            (initial.id == sudoku.id) shouldBe false
-            initial.modeLevel shouldBe Sudoku.MODE_NORMAL
-            initial.regionalHighlightingUsed shouldBe false
-            initial.numberHighlightingUsed shouldBe false
-            initial.eraserUsed shouldBe false
-            initial.isChecklist shouldBe false
-            initial.isReverseChecklist shouldBe false
-            initial.checklistNumber shouldBe 0
-            initial.hintsUsed shouldBe 0
-            initial.notesMade shouldBe 0
-            initial.errorsMade shouldBe 0
-            initial.seconds shouldBe 0
-            initial.timer shouldBe null
-            initial.gameListener shouldBe null
-            initial.created shouldBe created
-            initial.updated shouldBe created
-            initial[0].value shouldBe 1
-            initial[1].value shouldBe null
-            initial[1].hint shouldBe false
-            initial[1].notes shouldBe mutableListOf()
-
-            sudoku.stopTimer()
-        }
-
-        should("reset every mutable field, cancel a running timer and clear the game listener") {
-            val trackedTimer = Job()
-            val sudoku =
-                testSudoku().apply {
-                    regionalHighlightingUsed = true
-                    numberHighlightingUsed = true
-                    eraserUsed = true
-                    isChecklist = true
-                    isReverseChecklist = true
-                    checklistNumber = 3
-                    hintsUsed = 2
-                    notesMade = 5
-                    errorsMade = 1
-                    seconds = 77
-                    timer = trackedTimer
-                    gameListener = RecordingGameListener()
-                }
-
-            sudoku.reset()
-
-            sudoku.regionalHighlightingUsed shouldBe false
-            sudoku.numberHighlightingUsed shouldBe false
-            sudoku.eraserUsed shouldBe false
-            sudoku.isChecklist shouldBe false
-            sudoku.isReverseChecklist shouldBe false
-            sudoku.checklistNumber shouldBe 0
-            sudoku.hintsUsed shouldBe 0
-            sudoku.notesMade shouldBe 0
-            sudoku.errorsMade shouldBe 0
-            sudoku.seconds shouldBe 0
-            sudoku.timer shouldBe null
-            sudoku.gameListener shouldBe null
-            trackedTimer.isCancelled shouldBe true
-            sudoku[0].value shouldBe 1
-            sudoku[1].value shouldBe null
-            sudoku[1].hint shouldBe false
-            sudoku[1].notes shouldBe mutableListOf()
-        }
-
-        should("map null to a null sudoku string and char") {
+        should("map null to a null sudoku string") {
             (null as Int?).toSudokuString().shouldBeNull()
-            (null as Int?).toSudokuChar().shouldBeNull()
         }
 
         should("map standard digits 1..9 to their digit string and char") {
             1.toSudokuString() shouldBe "1"
             9.toSudokuString() shouldBe "9"
-            1.toSudokuChar() shouldBe '1'
-            9.toSudokuChar() shouldBe '9'
+            1.toSudokuDigitChar() shouldBe '1'
+            9.toSudokuDigitChar() shouldBe '9'
         }
 
         should("map large digits 10..16 to letters A..G") {
             10.toSudokuString() shouldBe "A"
             16.toSudokuString() shouldBe "G"
-            10.toSudokuChar() shouldBe 'A'
-            16.toSudokuChar() shouldBe 'G'
+            10.toSudokuDigitChar() shouldBe 'A'
+            16.toSudokuDigitChar() shouldBe 'G'
         }
 
         should("map out-of-range values to null") {
             0.toSudokuString().shouldBeNull()
             17.toSudokuString().shouldBeNull()
             (-1).toSudokuString().shouldBeNull()
-            0.toSudokuChar().shouldBeNull()
-            17.toSudokuChar().shouldBeNull()
-            (-1).toSudokuChar().shouldBeNull()
         }
 
         should("map digit chars back to their value") {
@@ -396,15 +87,3 @@ class SudokuExtensionsTest : ShouldSpec(
         }
     },
 )
-
-private class RecordingGameListener : GameListener {
-    override fun onFieldClicked(position: Position) = Unit
-
-    override fun onFieldChanged(position: Position) = Unit
-
-    override fun onCompleted(position: Position) = Unit
-
-    override fun onError() = Unit
-
-    override fun onTimeChanged() = Unit
-}

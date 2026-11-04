@@ -21,9 +21,11 @@ import androidx.recyclerview.widget.RecyclerView
 import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -34,30 +36,36 @@ private val LIST_SIZE = SudokuSize.FOUR
 /** A 4x4 sudoku without givens whose first [filled] fields hold their solution, so progress is `filled * 100 / 16`. */
 internal fun listSudoku(
     sudokuId: SudokuId,
-    modeLevel: Int,
+    mode: GameMode,
     filled: Int,
     errorsMade: Int,
     seconds: Int,
     created: LocalDateTime,
     updated: LocalDateTime = created,
 ): Sudoku =
-    Sudoku.create(
-        sudokuId = sudokuId,
-        size = LIST_SIZE,
-        difficulty = Difficulty.VERY_EASY,
-        modeLevel = modeLevel,
-        errorsMade = errorsMade,
-        seconds = seconds,
-        created = created,
-        updated = updated,
-        fields =
-            MutableList(LIST_SIZE.cellCount) { index ->
-                val blockSize = LIST_SIZE.blockSize
-                val row = index / LIST_SIZE.value
-                val col = index % LIST_SIZE.value
-                val solution = (blockSize * (row % blockSize) + row / blockSize + col) % LIST_SIZE.value + 1
-                Field(Position.create(index, LIST_SIZE), solution = solution, value = if (index < filled) solution else null)
-            },
+    Sudoku(
+        info =
+            GameInfo(
+                id = sudokuId,
+                size = LIST_SIZE,
+                difficulty = Difficulty.VERY_EASY,
+                mode = mode,
+                created = created,
+                updated = updated,
+                seconds = seconds,
+                errorsMade = errorsMade,
+            ),
+        board =
+            Board(
+                LIST_SIZE,
+                List(LIST_SIZE.cellCount) { index ->
+                    val blockSize = LIST_SIZE.blockSize
+                    val row = index / LIST_SIZE.value
+                    val col = index % LIST_SIZE.value
+                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % LIST_SIZE.value + 1
+                    Cell(solution, value = if (index < filled) solution else null)
+                },
+            ),
     )
 
 /** ListAdapter diffs every submitList after the first on a background thread, so this polls until [expected] shows. */

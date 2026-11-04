@@ -35,16 +35,21 @@ class SaveSudokuUseCaseTest : ShouldSpec(
             useCase = SaveSudokuUseCase(sudokusRepository, UnconfinedTestDispatcher())
         }
 
-        should("saves with onlyUpdate = false by default") {
+        should("saves the sudoku through the repository") {
             useCase(sudoku)
 
-            sudokusRepository.saves.map { it.rows.sudoku.id to it.onlyUpdate } shouldBe listOf(sudoku.id.value to false)
+            sudokusRepository.saves shouldBe listOf(sudoku)
         }
 
-        should("saves with onlyUpdate = true when explicitly requested") {
-            useCase(sudoku, onlyUpdate = true)
+        should("keeps one stored game when the same sudoku is saved again after a tick") {
+            val later = sudoku.tick(sudoku.info.updated.plusSeconds(1))
 
-            sudokusRepository.saves.map { it.rows.sudoku.id to it.onlyUpdate } shouldBe listOf(sudoku.id.value to true)
+            useCase(sudoku)
+            useCase(later)
+
+            sudokusRepository.saves shouldBe listOf(sudoku, later)
+            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(sudoku.info.id.value)
+            sudokusRepository.getSudokuById(sudoku.info.id) shouldBe later
         }
     },
 )

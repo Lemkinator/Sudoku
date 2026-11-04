@@ -42,7 +42,7 @@ class DeleteSudokusUseCaseTest : ShouldSpec(
             useCase(emptyList())
 
             sudokusRepository.deletedIds.shouldBeEmpty()
-            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(kept.id.value)
+            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(kept.info.id.value)
         }
 
         should("deletes every sudoku in the list") {
@@ -51,7 +51,7 @@ class DeleteSudokusUseCaseTest : ShouldSpec(
 
             useCase(sudokus)
 
-            sudokusRepository.deletedIds shouldBe sudokus.map { it.id }
+            sudokusRepository.deletedIds shouldBe sudokus.map { it.info.id }
             sudokusRepository.storedRows.shouldBeEmpty()
         }
     },

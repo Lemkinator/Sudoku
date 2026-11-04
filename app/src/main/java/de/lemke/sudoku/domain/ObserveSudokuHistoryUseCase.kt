@@ -35,13 +35,13 @@ class ObserveSudokuHistoryUseCase @Inject constructor(
         observeAllNormalSudokus()
             .map { sudokus ->
                 val sudokuHistory: MutableList<SudokuListItem> =
-                    sudokus.map { SudokuListItem.SudokuItem(it, it.updated.dateFormatShort) }.toMutableList()
+                    sudokus.map { SudokuListItem.SudokuItem(it, it.info.updated.dateFormatShort) }.toMutableList()
                 var offset = 0
                 var oldDate: LocalDate? = null
                 sudokus.forEachIndexed { index, sudoku ->
-                    if (oldDate == null || oldDate != sudoku.updated.toLocalDate()) {
-                        sudokuHistory.add(index + offset, SudokuListItem.SeparatorItem(sudoku.updated.dateFormatShort))
-                        oldDate = sudoku.updated.toLocalDate()
+                    if (oldDate == null || oldDate != sudoku.info.updated.toLocalDate()) {
+                        sudokuHistory.add(index + offset, SudokuListItem.SeparatorItem(sudoku.info.updated.dateFormatShort))
+                        oldDate = sudoku.info.updated.toLocalDate()
                         offset++
                     }
                 }

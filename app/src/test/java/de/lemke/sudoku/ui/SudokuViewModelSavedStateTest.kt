@@ -86,7 +86,7 @@ class SudokuViewModelSavedStateTest {
     @Test
     fun `a pending summary survives a saved state written to a parcel and read back`() {
         repository.store(completed)
-        val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+        val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
         val viewModel = viewModel(savedStateHandle)
         viewModel.onGameStarted(SudokuGame.Ready(completed))
         viewModel.onCompleted()

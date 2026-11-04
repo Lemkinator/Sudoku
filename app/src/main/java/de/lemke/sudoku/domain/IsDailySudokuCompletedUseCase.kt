@@ -35,6 +35,6 @@ class IsDailySudokuCompletedUseCase @Inject constructor(
         withContext(defaultDispatcher) {
             return@withContext getAllSudokus(
                 TYPE_DAILY or DIFFICULTY_ALL or SIZE_ALL,
-            ).find { it.created.toLocalDate() == date && it.completed } != null
+            ).find { it.info.created.toLocalDate() == date && it.completed } != null
         }
 }

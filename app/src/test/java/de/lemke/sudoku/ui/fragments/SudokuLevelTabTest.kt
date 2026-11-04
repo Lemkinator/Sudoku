@@ -45,12 +45,12 @@ import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -153,7 +153,11 @@ class SudokuLevelTabTest {
     ) {
         val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuLevelsRecycler, SudokuItem.VIEW_TYPE)
         fragment.singleLaunch {
-            fragment.sudokuListAdapter.onClickItem?.invoke(position, SudokuItem(sudoku, sudoku.modeLevel.toString()), holder)
+            fragment.sudokuListAdapter.onClickItem?.invoke(
+                position,
+                SudokuItem(sudoku, (sudoku.info.mode as GameMode.Level).number.toString()),
+                holder,
+            )
         }
         idleMainLooper()
     }
@@ -161,27 +165,7 @@ class SudokuLevelTabTest {
     private fun levelSudoku(
         level: Int,
         completed: Boolean,
-    ): Sudoku {
-        val size = SudokuSize.FOUR
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = level,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    Field(
-                        position = Position.create(index, size),
-                        solution = solution,
-                        value = if (completed) solution else null,
-                        given = completed,
-                    )
-                },
-        )
-    }
+    ): Sudoku = testSudoku(size = SudokuSize.FOUR, mode = GameMode.Level(level), difficulty = Difficulty.VERY_EASY, completed = completed)
 
     @Test
     fun `an offscreen tab shows its loaded level list instead of the progress bar`() =
@@ -224,7 +208,7 @@ class SudokuLevelTabTest {
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
                 ).sudoku
-            nextLevel.modeLevel shouldBe 2
+            nextLevel.info.mode shouldBe GameMode.Level(2)
             fragment.binding.sudokuLevelsRecycler.top shouldBe 0
             insertGate = CompletableDeferred()
 
@@ -428,7 +412,7 @@ class SudokuLevelTabTest {
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe MainActivity::class.java.name
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
-            fragment.viewModel.levelStart.value shouldBe LevelStart.Open(level.id)
+            fragment.viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
 
             scenario.returnFromLaunchedScreen()
             idleMainLooper()
@@ -436,7 +420,7 @@ class SudokuLevelTabTest {
             scenario.onActivity { activity ->
                 val started = shadowOf(activity).nextStartedActivity
                 started.component?.className shouldBe SudokuActivity::class.java.name
-                started.getStringExtra(KEY_SUDOKU_ID) shouldBe level.id.value
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe level.info.id.value
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
             fragment.viewModel.levelStart.value shouldBe LevelStart.Idle
