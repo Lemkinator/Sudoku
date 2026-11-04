@@ -80,7 +80,7 @@ class DefaultSudokusRepository @Inject constructor(
 
     override suspend fun saveSudoku(sudoku: Sudoku) {
         val rows = sudokuWithFieldsToDb(sudoku)
-        if (!sudokuDao.exists(sudoku.info.id.value)) replacedBy(sudoku.info)?.let { sudokuDao.delete(it) }
+        if (sudokuDao.identityOf(sudoku.info.id.value) != rows.sudoku.identity()) replacedBy(sudoku.info)?.let { sudokuDao.delete(it) }
         sudokuDao.insert(rows.sudoku, rows.fields)
     }
 
@@ -90,6 +90,8 @@ class DefaultSudokusRepository @Inject constructor(
         val invalidRows = sudokuDao.getAll().filter { sudokuFromDb(it) == null }
         if (invalidRows.isNotEmpty()) sudokuDao.delete(*invalidRows.map { it.sudoku }.toTypedArray())
     }
+
+    private fun SudokuDb.identity() = SudokuIdentity(modeLevel, size, created)
 
     private suspend fun replacedBy(info: GameInfo): SudokuDb? =
         when (val mode = info.mode) {

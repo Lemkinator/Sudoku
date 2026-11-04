@@ -22,7 +22,15 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
+
+/** What decides which other game a saved game replaces: its mode level, its size and when it was created. */
+data class SudokuIdentity(
+    val modeLevel: Int,
+    val size: Int,
+    val created: LocalDateTime,
+)
 
 @Dao
 interface SudokuDao {
@@ -75,8 +83,8 @@ interface SudokuDao {
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?
 
-    @Query("SELECT EXISTS(SELECT 1 FROM sudoku WHERE id = :id)")
-    suspend fun exists(id: String): Boolean
+    @Query("SELECT modeLevel, size, created FROM sudoku WHERE id = :id")
+    suspend fun identityOf(id: String): SudokuIdentity?
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id IN (:ids)")
