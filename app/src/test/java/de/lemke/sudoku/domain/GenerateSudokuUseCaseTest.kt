@@ -17,7 +17,7 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.domain.model.Difficulty.HARD
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -34,11 +34,13 @@ class GenerateSudokuUseCaseTest : ShouldSpec(
         should("pass size/difficulty through to GenerateFieldsUseCase and mark the sudoku as normal mode") {
             val sudoku = useCase(SudokuSize.NINE, HARD)
 
-            sudoku.size shouldBe SudokuSize.NINE
-            sudoku.difficulty shouldBe HARD
-            sudoku.modeLevel shouldBe Sudoku.MODE_NORMAL
-            sudoku.fields shouldHaveSize 81
-            sudoku.fields.take(9).map { it.solution } shouldBe (1..9).toList()
+            sudoku.info.size shouldBe SudokuSize.NINE
+            sudoku.info.difficulty shouldBe HARD
+            sudoku.info.mode shouldBe GameMode.Normal
+            sudoku.board.cells shouldHaveSize 81
+            sudoku.board.cells
+                .take(9)
+                .map { it.solution } shouldBe (1..9).toList()
         }
     },
 )

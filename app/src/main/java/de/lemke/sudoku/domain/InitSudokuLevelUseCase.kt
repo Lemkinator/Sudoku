@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,7 +35,7 @@ class InitSudokuLevelUseCase @Inject constructor(
             val sudokuLevel = sudokusRepository.getSudokuLevel(size)
             val maxLevel = getMaxSudokuLevel(size)
             if (sudokuLevel.size < maxLevel) {
-                val missingLevels = (1..maxLevel).filter { level -> sudokuLevel.none { it.modeLevel == level } }
+                val missingLevels = (1..maxLevel).filter { level -> sudokuLevel.none { it.info.mode == GameMode.Level(level) } }
                 missingLevels.forEach { sudokusRepository.saveSudoku(generateSudokuLevel(size, it)) }
             }
         }

@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.domain
 
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
@@ -37,15 +38,16 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
             Triple(SudokuSize.SIXTEEN, 256, (1..16).toSet()),
         ).forEach { (size, fieldCount, digits) ->
             should("generate a $size grid with its field count and digits") {
-                val fields = patternUseCase(size, Difficulty.MEDIUM)
-                fields shouldHaveSize fieldCount
-                fields.map { it.solution }.toSet() shouldBe digits
+                val board = patternUseCase(size, Difficulty.MEDIUM)
+                board.size shouldBe size
+                board.cells shouldHaveSize fieldCount
+                board.cells.map { it.solution }.toSet() shouldBe digits
             }
         }
 
         should("take a 16x16 grid's solutions from the solved board and clear numbersToRemove of them") {
-            val fields = patternUseCase(SudokuSize.SIXTEEN, Difficulty.MEDIUM)
-            val rows = fields.map { it.solution }.chunked(16)
+            val board = patternUseCase(SudokuSize.SIXTEEN, Difficulty.MEDIUM)
+            val rows = board.cells.map { it.solution }.chunked(16)
             rows[0] shouldBe (1..16).toList()
             rows[1] shouldBe (5..16).toList() + (1..4).toList()
             val digits = (1..16).toSet()
@@ -56,33 +58,33 @@ class GenerateFieldsUseCaseTest : ShouldSpec(
                 val blockCol = block % 4 * 4
                 (blockRow until blockRow + 4).flatMap { row -> rows[row].subList(blockCol, blockCol + 4) }.toSet() shouldBe digits
             }
-            fields.count { !it.given } shouldBe 100
+            board.cells.count { it.origin != CellOrigin.GIVEN } shouldBe 100
         }
 
-        should("give every field a position matching its list index") {
-            val fields = useCase(SudokuSize.NINE, Difficulty.MEDIUM)
-            fields.forEachIndexed { index, field -> field.position.index shouldBe index }
+        should("hand out only given and player cells") {
+            val board = useCase(SudokuSize.NINE, Difficulty.MEDIUM)
+            board.cells.map { it.origin }.toSet() shouldBe setOf(CellOrigin.GIVEN, CellOrigin.PLAYER)
         }
 
         should("mark given fields with a value equal to the solution") {
-            val fields = useCase(SudokuSize.NINE, Difficulty.EASY)
-            fields.filter { it.given }.forEach { it.value shouldBe it.solution }
+            val board = useCase(SudokuSize.NINE, Difficulty.EASY)
+            board.cells.filter { it.origin == CellOrigin.GIVEN }.forEach { it.value shouldBe it.solution }
         }
 
         should("leave non-given fields without a value") {
-            val fields = useCase(SudokuSize.NINE, Difficulty.EASY)
-            fields.filter { !it.given }.forEach { it.value shouldBe null }
+            val board = useCase(SudokuSize.NINE, Difficulty.EASY)
+            board.cells.filter { it.origin != CellOrigin.GIVEN }.forEach { it.value shouldBe null }
         }
 
         should("remove exactly 51 fields from a 9x9 HARD grid") {
-            val fields = useCase(SudokuSize.NINE, Difficulty.HARD)
-            val removedCount = fields.count { !it.given }
+            val board = useCase(SudokuSize.NINE, Difficulty.HARD)
+            val removedCount = board.cells.count { it.origin != CellOrigin.GIVEN }
             removedCount shouldBe 51
         }
 
         should("keep every solution value within the grid's valid digit range") {
-            val fields = useCase(SudokuSize.NINE, Difficulty.EXPERT)
-            fields.forEach { it.solution.shouldBeInRange(1..9) }
+            val board = useCase(SudokuSize.NINE, Difficulty.EXPERT)
+            board.cells.forEach { it.solution.shouldBeInRange(1..9) }
         }
     },
 )

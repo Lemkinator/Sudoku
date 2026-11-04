@@ -24,6 +24,7 @@ import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -46,7 +47,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             val increments = mutableListOf<Pair<Int, Int>>()
             if (sudoku != null) {
                 unlocks += winUnlocks(sudoku)
-                scores += R.string.leaderboard_best_time to sudoku.seconds * MILLIS_PER_SECOND
+                scores += R.string.leaderboard_best_time to sudoku.info.seconds * MILLIS_PER_SECOND
                 addSizeStats(sudoku, sudokus, scores, unlocks, increments)
                 addDifficultyStats(sudoku, sudokus, scores, increments)
             }
@@ -56,21 +57,21 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
     private fun baseScores(sudokus: List<Sudoku>): List<Pair<Int, Long>> =
         listOf(
             R.string.leaderboard_total_wins to sudokus.size.toLong(),
-            R.string.leaderboard_daily_sudokus to sudokus.count { it.isDailySudoku }.toLong(),
+            R.string.leaderboard_daily_sudokus to sudokus.count { it.info.mode == GameMode.Daily }.toLong(),
         ) +
             SudokuSize.entries.map { size ->
-                size.playGames.levelLeaderboard to sudokus.count { it.size == size && it.isSudokuLevel }.toLong()
+                size.playGames.levelLeaderboard to sudokus.count { it.info.size == size && it.info.mode is GameMode.Level }.toLong()
             }
 
     private fun winUnlocks(sudoku: Sudoku): List<Int> =
         buildList {
             add(R.string.achievement_first_win)
-            if (sudoku.eraserUsed) add(R.string.achievement_eraser)
-            if (sudoku.hintsUsed == 0) add(R.string.achievement_no_hints)
-            if (sudoku.notesMade > 0) add(R.string.achievement_use_notes)
-            if (sudoku.isChecklist) add(R.string.achievement_checklist)
-            if (sudoku.isReverseChecklist) add(R.string.achievement_reverse_checklist)
-            if (sudoku.seconds < SPEED_ACHIEVEMENT_SECONDS) add(R.string.achievement_i_am_speed)
+            if (sudoku.info.eraserUsed) add(R.string.achievement_eraser)
+            if (sudoku.info.hintsUsed == 0) add(R.string.achievement_no_hints)
+            if (sudoku.info.notesMade > 0) add(R.string.achievement_use_notes)
+            if (sudoku.info.isChecklist) add(R.string.achievement_checklist)
+            if (sudoku.info.isReverseChecklist) add(R.string.achievement_reverse_checklist)
+            if (sudoku.info.seconds < SPEED_ACHIEVEMENT_SECONDS) add(R.string.achievement_i_am_speed)
         }
 
     private fun addSizeStats(
@@ -80,11 +81,11 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         unlocks: MutableList<Int>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val stats = sudoku.size.playGames
+        val stats = sudoku.info.size.playGames
         increments += stats.achievement10 to 1
         increments += stats.achievement50 to 1
-        if (sudoku.seconds < stats.stopwatchSeconds) unlocks += stats.stopwatchAchievement
-        scores += stats.winsLeaderboard to sudokus.count { it.size == sudoku.size }.toLong()
+        if (sudoku.info.seconds < stats.stopwatchSeconds) unlocks += stats.stopwatchAchievement
+        scores += stats.winsLeaderboard to sudokus.count { it.info.size == sudoku.info.size }.toLong()
     }
 
     private fun addDifficultyStats(
@@ -93,12 +94,13 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
         scores: MutableList<Pair<Int, Long>>,
         increments: MutableList<Pair<Int, Int>>,
     ) {
-        val achievements = sudoku.difficulty.achievements
+        val achievements = sudoku.info.difficulty.achievements
         increments += achievements.achievement10 to 1
         increments += achievements.achievement50 to 1
-        val leaderboards = sudoku.size.leaderboards(sudoku.difficulty)
-        scores += leaderboards.time to sudoku.seconds * MILLIS_PER_SECOND
-        scores += leaderboards.wins to sudokus.count { it.size == sudoku.size && it.difficulty == sudoku.difficulty }.toLong()
+        val leaderboards = sudoku.info.size.leaderboards(sudoku.info.difficulty)
+        scores += leaderboards.time to sudoku.info.seconds * MILLIS_PER_SECOND
+        scores += leaderboards.wins to
+            sudokus.count { it.info.size == sudoku.info.size && it.info.difficulty == sudoku.info.difficulty }.toLong()
     }
 }
 

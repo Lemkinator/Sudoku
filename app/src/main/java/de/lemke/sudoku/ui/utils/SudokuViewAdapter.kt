@@ -20,13 +20,23 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.CellOrigin
+import de.lemke.sudoku.domain.model.Highlighting
 
-class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
+class SudokuViewAdapter(
+    private val context: Context,
+    board: Board,
+    internal val onFieldClicked: (index: Int) -> Unit,
+    internal val onFieldLongClicked: (index: Int) -> Boolean,
+    private val onHighlightingUsed: (Highlighting) -> Unit,
+) : RecyclerView.Adapter<SudokuViewAdapter.ViewHolder>() {
+    var board: Board = board
+        private set
     val fieldViews: MutableList<FieldView> = MutableList(itemCount) { FieldView(context) }
     private var selectedField: Int? = null
 
-    override fun getItemCount(): Int = sudoku.itemCount
+    override fun getItemCount(): Int = board.cells.size
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -38,10 +48,16 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         index: Int,
     ) {
         fieldViews[index] = holder.itemView as FieldView
-        (holder.itemView as FieldView).init(sudoku, index, this)
+        (holder.itemView as FieldView).init(board, index, this)
     }
 
-    fun updateFieldView(position: Int) = fieldViews[position].update()
+    fun render(board: Board) {
+        val previous = this.board
+        this.board = board
+        board.cells.indices
+            .filter { board[it] != previous[it] }
+            .forEach { fieldViews[it].update(board) }
+    }
 
     fun selectFieldView(
         position: Int?,
@@ -49,21 +65,21 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
         highlightNumber: Boolean,
     ) {
         if (position != selectedField && highlightNeighbors) {
-            sudoku.regionalHighlightingUsed = true
+            onHighlightingUsed(Highlighting.REGIONAL)
             selectedField = position
             fieldViews.forEach {
                 it.isHighlighted = false
                 it.isHighlightedNumber = false
             }
-            if (position != null && !fieldViews[position].field.hint && !fieldViews[position].field.given) {
-                sudoku.getNeighbors(position).map { it.position.index }.forEach { fieldViews[it].isHighlighted = true }
+            if (position != null && board[position].origin == CellOrigin.PLAYER) {
+                (board.peers(position) + position).forEach { fieldViews[it].isHighlighted = true }
             }
         }
 
         fieldViews.forEach { it.isSelected = false }
         if (position != null) {
             fieldViews[position].isSelected = true
-            if (highlightNumber) highlightNumber(fieldViews[position].field.value)
+            if (highlightNumber) highlightNumber(board[position].value)
         } else if (highlightNumber) {
             highlightNumber(null)
         }
@@ -77,10 +93,10 @@ class SudokuViewAdapter(private val context: Context, private val sudoku: Sudoku
                 it.setBackground()
             }
         } else {
-            sudoku.numberHighlightingUsed = true
-            fieldViews.forEach {
-                it.isHighlightedNumber = it.field.value == number
-                it.setBackground()
+            onHighlightingUsed(Highlighting.NUMBER)
+            fieldViews.forEachIndexed { index, fieldView ->
+                fieldView.isHighlightedNumber = board[index].value == number
+                fieldView.setBackground()
             }
         }
     }

@@ -23,10 +23,10 @@ import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.shouldBe
 import java.util.concurrent.Executor
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -66,17 +66,8 @@ class ObserveAllNormalSudokusUseCaseTest {
 
     private fun normalSudoku(
         size: SudokuSize = SudokuSize.FOUR,
-        modeLevel: Int = Sudoku.MODE_NORMAL,
-    ): Sudoku =
-        Sudoku.create(
-            size = size,
-            difficulty = Difficulty.EASY,
-            modeLevel = modeLevel,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    Field(position = Position.create(index, size), solution = index % size.value + 1)
-                },
-        )
+        mode: GameMode = GameMode.Normal,
+    ): Sudoku = testSudoku(size = size, mode = mode, difficulty = Difficulty.EASY)
 
     @Test
     fun `passes through the repository's observeAllNormalSudokus flow`() =
@@ -86,7 +77,7 @@ class ObserveAllNormalSudokusUseCaseTest {
 
             useCase().test {
                 val emitted = awaitItem()
-                emitted.map { it.id } shouldBe listOf(sudoku.id)
+                emitted.map { it.info.id } shouldBe listOf(sudoku.info.id)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -95,13 +86,13 @@ class ObserveAllNormalSudokusUseCaseTest {
     fun `only normal-mode sudokus reach the flow`() =
         runTest {
             val normal = normalSudoku()
-            val level = normalSudoku(modeLevel = 1)
+            val level = normalSudoku(mode = GameMode.Level(1))
             sudokusRepository.saveSudoku(normal)
             sudokusRepository.saveSudoku(level)
 
             useCase().test {
                 val emitted = awaitItem()
-                emitted.map { it.id } shouldBe listOf(normal.id)
+                emitted.map { it.info.id } shouldBe listOf(normal.info.id)
                 cancelAndIgnoreRemainingEvents()
             }
         }

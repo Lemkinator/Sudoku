@@ -28,15 +28,14 @@ import androidx.core.view.isVisible
 import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
+import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.Job
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -61,37 +60,42 @@ private fun solutionFor(index: Int): Int {
     return (blockSize * (row % blockSize) + row / blockSize + col) % SIZE.value + 1
 }
 
-private fun fourByFourSudoku(): Sudoku {
+private fun fourByFourBoard(): Board {
     val overrides =
         mapOf(
-            GIVEN_INDEX to Field(Position.create(GIVEN_INDEX, SIZE), solution = solutionFor(GIVEN_INDEX), value = 1, given = true),
-            PLAIN_INDEX to Field(Position.create(PLAIN_INDEX, SIZE), solution = solutionFor(PLAIN_INDEX), value = 2),
-            HINT_INDEX to Field(Position.create(HINT_INDEX, SIZE), solution = solutionFor(HINT_INDEX), value = 3, hint = true),
-            ERROR_INDEX to Field(Position.create(ERROR_INDEX, SIZE), solution = solutionFor(ERROR_INDEX), value = 1),
+            GIVEN_INDEX to Cell(solutionFor(GIVEN_INDEX), value = 1, origin = CellOrigin.GIVEN),
+            PLAIN_INDEX to Cell(solutionFor(PLAIN_INDEX), value = 2),
+            HINT_INDEX to Cell(solutionFor(HINT_INDEX), value = 3, origin = CellOrigin.HINT),
+            ERROR_INDEX to Cell(solutionFor(ERROR_INDEX), value = 1),
         )
-    return Sudoku.create(
-        size = SIZE,
-        difficulty = Difficulty.VERY_EASY,
-        modeLevel = Sudoku.MODE_NORMAL,
-        fields =
-            MutableList(SIZE.cellCount) { index ->
-                overrides[index] ?: Field(Position.create(index, SIZE), solution = solutionFor(index))
-            },
-    )
+    return Board(SIZE, List(SIZE.cellCount) { index -> overrides[index] ?: Cell(solutionFor(index)) })
 }
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class FieldViewTest {
     private lateinit var context: AppCompatActivity
-    private lateinit var sudoku: Sudoku
+    private lateinit var board: Board
     private lateinit var adapter: SudokuViewAdapter
+    private val clicked = mutableListOf<Int>()
+    private val longClicked = mutableListOf<Int>()
+    private var longClickConsumed = true
 
     @Before
     fun setUp() {
         context = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
-        sudoku = fourByFourSudoku()
-        adapter = SudokuViewAdapter(context, sudoku)
+        board = fourByFourBoard()
+        adapter =
+            SudokuViewAdapter(
+                context,
+                board,
+                onFieldClicked = { clicked += it },
+                onFieldLongClicked = {
+                    longClicked += it
+                    longClickConsumed
+                },
+                onHighlightingUsed = {},
+            )
     }
 
     private fun inflatedFieldView(index: Int): FieldView {
@@ -99,7 +103,7 @@ class FieldViewTest {
         // performLongClick() falls through to View.showContextMenu(), which NPEs without a parent.
         FrameLayout(context).addView(fieldView)
         awaitMainLooperUntil { fieldView.fieldViewValue != null }
-        fieldView.init(sudoku, index, adapter)
+        fieldView.init(board, index, adapter)
         return fieldView
     }
 
@@ -111,7 +115,7 @@ class FieldViewTest {
         val sentinel = ColorDrawable(Color.MAGENTA)
         fieldView.foreground = sentinel
 
-        fieldView.init(sudoku, GIVEN_INDEX, adapter)
+        fieldView.init(board, GIVEN_INDEX, adapter)
 
         fieldView.foreground shouldBe sentinel
     }
@@ -223,6 +227,17 @@ class FieldViewTest {
     }
 
     @Test
+    fun `a field bound before its layout inflates shows the value once the layout is ready`() {
+        val fieldView = FieldView(context)
+        FrameLayout(context).addView(fieldView)
+        fieldView.init(board, PLAIN_INDEX, adapter)
+
+        awaitMainLooperUntil { fieldView.fieldViewValue != null }
+
+        fieldView.fieldViewValue?.text.toString() shouldBe "2"
+    }
+
+    @Test
     fun `update shows the value and text for a filled field`() {
         val fieldView = inflatedFieldView(PLAIN_INDEX)
 
@@ -265,15 +280,12 @@ class FieldViewTest {
         val notesView = fieldView.findViewById<TextView>(R.id.itemNotes)
         notesView.isVisible shouldBe false
 
-        fieldView.field.notes.add('A')
-        fieldView.field.notes.add('B')
-        fieldView.update()
+        fieldView.update(board.with(COLORED_INDEX, Cell(solutionFor(COLORED_INDEX), notes = NoteMask.of(1, 2))))
 
         notesView.isVisible shouldBe true
-        notesView.text.toString() shouldBe "AB"
+        notesView.text.toString() shouldBe "12"
 
-        fieldView.field.notes.clear()
-        fieldView.update()
+        fieldView.update(board)
 
         notesView.isVisible shouldBe false
     }
@@ -283,7 +295,7 @@ class FieldViewTest {
         val fieldView = inflatedFieldView(CORNER_NOTES_INDEX)
         val notesView = fieldView.findViewById<TextView>(R.id.itemNotes)
 
-        fieldView.update()
+        fieldView.update(board)
 
         notesView.gravity shouldBe (Gravity.TOP or Gravity.CENTER_HORIZONTAL)
     }
@@ -293,42 +305,60 @@ class FieldViewTest {
         val fieldView = inflatedFieldView(PLAIN_INDEX)
         val notesView = fieldView.findViewById<TextView>(R.id.itemNotes)
 
-        fieldView.update()
+        fieldView.update(board)
 
         notesView.gravity shouldNotBe (Gravity.TOP or Gravity.CENTER_HORIZONTAL)
     }
 
     @Test
-    fun `a long click erases a field's value and clears its selection state`() {
+    fun `a click reports its index`() {
         val fieldView = inflatedFieldView(PLAIN_INDEX)
-        sudoku.timer = Job()
+
+        fieldView.performClick()
+
+        clicked shouldBe listOf(PLAIN_INDEX)
+    }
+
+    @Test
+    fun `a long click reports its index and clears the selection state when it is consumed`() {
+        val fieldView = inflatedFieldView(PLAIN_INDEX)
         fieldView.isSelected = true
         fieldView.isHighlightedNumber = true
 
         val consumed = fieldView.performLongClick()
 
         consumed shouldBe true
-        fieldView.field.value.shouldBeNull()
+        longClicked shouldBe listOf(PLAIN_INDEX)
         fieldView.isSelected shouldBe false
         fieldView.isHighlightedNumber shouldBe false
-        sudoku.eraserUsed shouldBe true
-        sudoku.timer?.cancel()
     }
 
     @Test
-    fun `a long click on a given field cannot erase and leaves its state untouched`() {
+    fun `a long click that is not consumed leaves the selection state untouched`() {
         val fieldView = inflatedFieldView(GIVEN_INDEX)
-        sudoku.timer = Job()
+        longClickConsumed = false
         fieldView.isSelected = true
         fieldView.isHighlightedNumber = true
 
         val consumed = fieldView.performLongClick()
 
         consumed shouldBe false
-        fieldView.field.value shouldBe 1
+        longClicked shouldBe listOf(GIVEN_INDEX)
         fieldView.isSelected shouldBe true
         fieldView.isHighlightedNumber shouldBe true
-        sudoku.timer?.cancel()
+    }
+
+    @Test
+    fun `a completed board sets no click listeners`() {
+        val completed = Board(SIZE, board.cells.map { it.copy(value = it.solution) })
+        val fieldView = FieldView(context)
+        FrameLayout(context).addView(fieldView)
+        awaitMainLooperUntil { fieldView.fieldViewValue != null }
+        fieldView.init(completed, PLAIN_INDEX, adapter)
+
+        fieldView.performClick()
+
+        clicked shouldBe emptyList()
     }
 
     @Test
@@ -336,10 +366,10 @@ class FieldViewTest {
         val fieldView = FieldView(context)
         FrameLayout(context).addView(fieldView)
 
-        fieldView.init(sudoku, PLAIN_INDEX, adapter)
+        fieldView.init(board, PLAIN_INDEX, adapter)
 
         fieldView.foreground.shouldBeNull()
-        fieldView.field.value shouldBe 2
+        fieldView.cell.value shouldBe 2
 
         awaitMainLooperUntil { fieldView.fieldViewValue != null }
         fieldView.fieldViewValue?.text.toString() shouldBe "2"
@@ -349,10 +379,10 @@ class FieldViewTest {
     fun `update called before the async inflate completes is a safe no-op on the text views`() {
         val fieldView = FieldView(context)
         FrameLayout(context).addView(fieldView)
-        fieldView.init(sudoku, PLAIN_INDEX, adapter)
+        fieldView.init(board, PLAIN_INDEX, adapter)
         fieldView.fieldViewValue.shouldBeNull()
 
-        fieldView.update()
+        fieldView.update(board)
 
         fieldView.fieldViewValue.shouldBeNull()
     }

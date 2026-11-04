@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain.model
 
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.equals.shouldNotBeEqual
@@ -27,28 +28,18 @@ import java.time.LocalDateTime
 class SudokuListItemTest : ShouldSpec(
     {
         val id = SudokuId("list-item")
-        val solvedFourByFour = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
-        val fields = MutableList(16) { index -> Field(Position.create(index, SudokuSize.FOUR), solution = solvedFourByFour[index]) }
+        val created = LocalDateTime.of(2026, 1, 15, 9, 0)
 
         fun sudoku(
             errorsMade: Int = 0,
             seconds: Int = 0,
             hintsUsed: Int = 0,
         ): Sudoku =
-            Sudoku.create(
-                sudokuId = id,
-                size = SudokuSize.FOUR,
-                difficulty = Difficulty.VERY_EASY,
-                modeLevel = Sudoku.MODE_NORMAL,
-                hintsUsed = hintsUsed,
-                errorsMade = errorsMade,
-                created = LocalDateTime.of(2026, 1, 15, 9, 0),
-                updated = LocalDateTime.of(2026, 1, 15, 9, 0),
-                seconds = seconds,
-                fields = fields,
-            )
+            testSudoku(sudokuId = id, difficulty = Difficulty.VERY_EASY, created = created).let {
+                it.copy(info = it.info.copy(errorsMade = errorsMade, seconds = seconds, hintsUsed = hintsUsed))
+            }
 
-        should("equal an item over another instance with the same fields, with the same hash code") {
+        should("equal an item over another instance with the same content, with the same hash code") {
             val item = SudokuItem(sudoku(errorsMade = 2, seconds = 75, hintsUsed = 1), "15.01.26")
             val same = SudokuItem(sudoku(errorsMade = 2, seconds = 75, hintsUsed = 1), "15.01.26")
 
@@ -64,37 +55,23 @@ class SudokuListItemTest : ShouldSpec(
             item shouldNotBeEqual SudokuItem(sudoku(hintsUsed = 1), "15.01.26")
         }
 
+        should("not equal an item whose sudoku has the same id but another cell value") {
+            val base = sudoku()
+            val moved = base.copy(board = base.board.with(1, base.board[1].copy(value = 1)))
+
+            SudokuItem(base, "15.01.26") shouldNotBeEqual SudokuItem(moved, "15.01.26")
+        }
+
         should("not equal an item over the same sudoku with another label") {
             SudokuItem(sudoku(), "15.01.26") shouldNotBeEqual SudokuItem(sudoku(), "16.01.26")
         }
 
-        should("print the sudoku's id, mode level, the fields equality compares, and its label") {
-            val sudoku =
-                Sudoku.create(
-                    sudokuId = id,
-                    size = SudokuSize.FOUR,
-                    difficulty = Difficulty.VERY_EASY,
-                    modeLevel = 3,
-                    eraserUsed = true,
-                    checklistNumber = 2,
-                    hintsUsed = 1,
-                    notesMade = 4,
-                    errorsMade = 2,
-                    created = LocalDateTime.of(2026, 1, 15, 9, 0),
-                    updated = LocalDateTime.of(2026, 1, 15, 9, 30),
-                    seconds = 75,
-                    fields =
-                        MutableList(16) { index ->
-                            val solution = solvedFourByFour[index]
-                            Field(Position.create(index, SudokuSize.FOUR), solution = solution, value = if (index < 2) solution else null)
-                        },
-                )
+        should("keep the stable id of a game while its content changes") {
+            val item = SudokuItem(sudoku(), "15.01.26")
+            val ticked = SudokuItem(sudoku(seconds = 75), "15.01.26")
 
-            SudokuItem(sudoku, "7").toString() shouldBe
-                "SudokuItem(id=list-item, modeLevel=3, regionalHighlightingUsed=false, numberHighlightingUsed=false, " +
-                "eraserUsed=true, isChecklist=false, isReverseChecklist=false, checklistNumber=2, hintsUsed=1, notesMade=4, " +
-                "errorsMade=2, created=2026-01-15T09:00, updated=2026-01-15T09:30, seconds=75, " +
-                "fieldValues=[1, 2, null, null, null, null, null, null, null, null, null, null, null, null, null, null], label=7)"
+            ticked.stableId shouldBe item.stableId
+            item.stableId shouldBe id.hashCode().toLong()
         }
 
         should("not equal a separator with the same label") {

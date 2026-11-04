@@ -16,9 +16,14 @@
 
 package de.lemke.sudoku.data.backup
 
+import de.lemke.sudoku.data.database.toLegacyModeLevel
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -50,77 +55,67 @@ private fun boardOf(
 
 private fun gameOf(
     size: SudokuSize,
-    notes: List<Char> = emptyList(),
+    notes: List<Int> = emptyList(),
     id: String = "nine",
 ): Sudoku {
-    val cellCount = size.cellCount
     val created = LocalDateTime.of(2026, 5, 2, 8, 0, 0, 123_000_000)
-    return Sudoku.create(
-        sudokuId = SudokuId(id),
-        size = size,
-        difficulty = Difficulty.HARD,
-        modeLevel = 7,
-        regionalHighlightingUsed = true,
-        numberHighlightingUsed = true,
-        eraserUsed = true,
-        isChecklist = true,
-        isReverseChecklist = true,
-        checklistNumber = 4,
-        hintsUsed = 2,
-        notesMade = 9,
-        errorsMade = 1,
-        created = created,
-        updated = created.plusMinutes(10),
-        seconds = 612,
-        fields =
-            MutableList(cellCount) { index ->
-                val solution = index % size.value + 1
-                Field(
-                    position = Position.create(index, size),
-                    solution = solution,
-                    value = if (index % 3 == 0 || index == 1) solution else null,
-                    given = index % 3 == 0,
-                    hint = index == 1,
-                    notes = if (index == 2) notes.toMutableList() else mutableListOf(),
-                )
-            },
+    return Sudoku(
+        info =
+            GameInfo(
+                id = SudokuId(id),
+                size = size,
+                difficulty = Difficulty.HARD,
+                mode = GameMode.Level(7),
+                created = created,
+                updated = created.plusMinutes(10),
+                seconds = 612,
+                hintsUsed = 2,
+                notesMade = 9,
+                errorsMade = 1,
+                regionalHighlightingUsed = true,
+                numberHighlightingUsed = true,
+                eraserUsed = true,
+                isChecklist = true,
+                isReverseChecklist = true,
+                checklistNumber = 4,
+            ),
+        board =
+            Board(
+                size,
+                List(size.cellCount) { index ->
+                    val solution = index % size.value + 1
+                    Cell(
+                        solution = solution,
+                        value = solution.takeIf { index % 3 == 0 || index == 1 },
+                        origin =
+                            when {
+                                index % 3 == 0 -> CellOrigin.GIVEN
+                                index == 1 -> CellOrigin.HINT
+                                else -> CellOrigin.PLAYER
+                            },
+                        notes = if (index == 2) NoteMask.of(*notes.toIntArray()) else NoteMask.EMPTY,
+                    )
+                },
+            ),
     )
 }
 
 class BackupMapperTest : ShouldSpec(
     {
         should("round trip a 9x9 game with notes through its entry") {
-            val sudoku = gameOf(SudokuSize.NINE, notes = listOf('1', '4', '9'))
+            val sudoku = gameOf(SudokuSize.NINE, notes = listOf(1, 4, 9))
 
             val entry = sudokuToBackup(sudoku, BERLIN).shouldNotBeNull()
             val restored = sudokuFromBackup(entry, BERLIN).shouldNotBeNull()
 
             entry.board.notes shouldBe mapOf(2 to "149")
-            restored.id shouldBe sudoku.id
-            restored.size shouldBe SudokuSize.NINE
-            restored.difficulty shouldBe Difficulty.HARD
-            restored.modeLevel shouldBe 7
-            restored.regionalHighlightingUsed shouldBe true
-            restored.numberHighlightingUsed shouldBe true
-            restored.eraserUsed shouldBe true
-            restored.isChecklist shouldBe true
-            restored.isReverseChecklist shouldBe true
-            restored.checklistNumber shouldBe 4
-            restored.hintsUsed shouldBe 2
-            restored.notesMade shouldBe 9
-            restored.errorsMade shouldBe 1
-            restored.seconds shouldBe 612
-            restored.created shouldBe LocalDateTime.of(2026, 5, 2, 8, 0)
-            restored.updated shouldBe LocalDateTime.of(2026, 5, 2, 8, 10)
-            restored.fields.map { it.solution } shouldBe sudoku.fields.map { it.solution }
-            restored.fields.map { it.value } shouldBe sudoku.fields.map { it.value }
-            restored.fields.map { it.given } shouldBe sudoku.fields.map { it.given }
-            restored.fields.map { it.hint } shouldBe sudoku.fields.map { it.hint }
-            restored.fields.map { it.notes } shouldBe sudoku.fields.map { it.notes }
+            restored.info shouldBe
+                sudoku.info.copy(created = LocalDateTime.of(2026, 5, 2, 8, 0), updated = LocalDateTime.of(2026, 5, 2, 8, 10))
+            restored.board shouldBe sudoku.board
         }
 
         should("round trip an entry with hints and notes through JSON that omits defaults") {
-            val entry = sudokuToBackup(gameOf(SudokuSize.NINE, notes = listOf('2', '7')), BERLIN).shouldNotBeNull()
+            val entry = sudokuToBackup(gameOf(SudokuSize.NINE, notes = listOf(2, 7)), BERLIN).shouldNotBeNull()
 
             val json = Json.encodeToString(SudokuBackupEntry.serializer(), entry)
 
@@ -156,7 +151,7 @@ class BackupMapperTest : ShouldSpec(
         }
 
         should("keep the games of a large library well below the size limit of a section") {
-            val allNotes = ('1'..'9').toList()
+            val allNotes = (1..9).toList()
             val entries =
                 List(4_400) { index ->
                     val size = if (index % 11 == 0) SudokuSize.SIXTEEN else SudokuSize.NINE
@@ -176,7 +171,7 @@ class BackupMapperTest : ShouldSpec(
             val entry = sudokuToBackup(sudoku, BERLIN).shouldNotBeNull()
 
             entry.board.solution shouldBe "123456789ABCDEFG".repeat(16)
-            sudokuFromBackup(entry, BERLIN).shouldNotBeNull().fields[15].solution shouldBe 16
+            sudokuFromBackup(entry, BERLIN).shouldNotBeNull().board[15].solution shouldBe 16
         }
 
         should("write created and updated with the offset of the zone") {
@@ -190,13 +185,13 @@ class BackupMapperTest : ShouldSpec(
         should("convert updated to the zone of the device at the same instant") {
             val entry = backupEntry(updated = "2026-05-02T08:00:00+02:00")
 
-            sudokuFromBackup(entry, NEW_YORK).shouldNotBeNull().updated shouldBe LocalDateTime.of(2026, 5, 2, 2, 0)
+            sudokuFromBackup(entry, NEW_YORK).shouldNotBeNull().info.updated shouldBe LocalDateTime.of(2026, 5, 2, 2, 0)
         }
 
         should("keep the written local time of created in any zone") {
             val entry = backupEntry(created = "2026-05-02T08:00:00+02:00")
 
-            sudokuFromBackup(entry, NEW_YORK).shouldNotBeNull().created shouldBe LocalDateTime.of(2026, 5, 2, 8, 0)
+            sudokuFromBackup(entry, NEW_YORK).shouldNotBeNull().info.created shouldBe LocalDateTime.of(2026, 5, 2, 8, 0)
         }
 
         should("map the progress of a game and give a broken one none") {
@@ -206,7 +201,7 @@ class BackupMapperTest : ShouldSpec(
 
         should("key a game by id, day, or size and level") {
             backupEntry(id = "a").key() shouldBe SudokuBackupKey.Normal("a")
-            backupEntry(modeLevel = Sudoku.MODE_DAILY, created = "2026-05-02T23:30:00-04:00").key() shouldBe
+            backupEntry(modeLevel = GameMode.Daily.toLegacyModeLevel(), created = "2026-05-02T23:30:00-04:00").key() shouldBe
                 SudokuBackupKey.Daily(LocalDate.of(2026, 5, 2))
             backupEntry(modeLevel = 3).key() shouldBe SudokuBackupKey.Level(SudokuSize.FOUR, 3)
         }
@@ -267,59 +262,36 @@ class BackupMapperTest : ShouldSpec(
 
             sudokuFromBackup(entry, BERLIN)
                 .shouldNotBeNull()
-                .fields
-                .map { it.notes }
+                .board.cells
+                .map { it.notes.digits }
                 .slice(1..2) shouldBe
-                listOf(mutableListOf('1', '2', '3', '4'), mutableListOf('1', '3'))
+                listOf(listOf(1, 2, 3, 4), listOf(1, 3))
         }
 
         should("read a hint cell that holds its solution") {
             val entry = backupEntry().run { copy(board = board.copy(values = board.values.replaceRange(10, 11, "4"), hints = listOf(10))) }
 
-            sudokuFromBackup(entry, BERLIN).shouldNotBeNull().fields[10].hint shouldBe true
+            sudokuFromBackup(entry, BERLIN).shouldNotBeNull().board[10].origin shouldBe CellOrigin.HINT
         }
 
         should("round trip a game whose given and hint cells hold another digit or none") {
+            val base = gameOf(SudokuSize.FOUR)
             val sudoku =
-                gameOf(SudokuSize.FOUR).apply {
-                    fields[0].value = 4
-                    fields[1].value = null
-                    fields[3].value = null
-                }
+                base.copy(
+                    board =
+                        base.board
+                            .with(0, base.board[0].copy(value = 4))
+                            .with(1, base.board[1].copy(value = null))
+                            .with(3, base.board[3].copy(value = null)),
+                )
 
             val restored = sudokuFromBackup(sudokuToBackup(sudoku, BERLIN).shouldNotBeNull(), BERLIN).shouldNotBeNull()
 
-            restored.fields.map { it.value } shouldBe sudoku.fields.map { it.value }
-            restored.fields.map { it.given } shouldBe sudoku.fields.map { it.given }
-            restored.fields.map { it.hint } shouldBe sudoku.fields.map { it.hint }
-        }
-
-        should("write no entry for a game with a solution that has no digit") {
-            val sudoku = gameOf(SudokuSize.FOUR).apply { fields[3].solution = 17 }
-
-            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
-        }
-
-        should("write no entry for a game with a value that has no digit") {
-            val sudoku = gameOf(SudokuSize.FOUR).apply { fields[3].value = 0 }
-
-            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
+            restored.board shouldBe sudoku.board
         }
 
         should("write no entry for a game with negative seconds") {
-            val sudoku = gameOf(SudokuSize.FOUR).apply { seconds = -5 }
-
-            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
-        }
-
-        should("write no entry for a game with a mode level below daily") {
-            val sudoku = gameOf(SudokuSize.FOUR).copy(modeLevel = -2)
-
-            sudokuToBackup(sudoku, BERLIN).shouldBeNull()
-        }
-
-        should("write no entry for a game with a note digit beyond its board size") {
-            val sudoku = gameOf(SudokuSize.FOUR, notes = listOf('1', '5'))
+            val sudoku = gameOf(SudokuSize.FOUR).let { it.copy(info = it.info.copy(seconds = -5)) }
 
             sudokuToBackup(sudoku, BERLIN).shouldBeNull()
         }

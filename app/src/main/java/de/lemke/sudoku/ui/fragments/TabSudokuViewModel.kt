@@ -76,7 +76,7 @@ class TabSudokuViewModel @Inject constructor(
         viewModelScope.launch {
             val sudoku = generateSudoku(size, difficulty)
             saveSudoku(sudoku)
-            newGame.value = NewGame.Created(sudoku.id)
+            newGame.value = NewGame.Created(sudoku.info.id)
         }
     }
 
@@ -86,7 +86,7 @@ class TabSudokuViewModel @Inject constructor(
 
     suspend fun getContinuableSudoku(): Sudoku? {
         val sudoku = getRecentSudoku() ?: return null
-        return if (!sudoku.completed && !sudoku.errorLimitReached(userSettings.errorLimit)) sudoku else null
+        return if (!sudoku.completed && !sudoku.info.errorLimitReached(userSettings.errorLimit)) sudoku else null
     }
 
     suspend fun checkDailySudokuCompleted(): Boolean = isDailySudokuCompleted()

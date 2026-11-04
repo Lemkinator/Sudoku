@@ -22,6 +22,7 @@ import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
+import de.lemke.sudoku.LooperTimeSource
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
@@ -69,6 +70,7 @@ class SudokuViewModelSavedStateTest {
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
             UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
             Clock.systemDefaultZone(),
+            LooperTimeSource,
         ).also { idleMainLooper() }
     }
 
@@ -86,7 +88,7 @@ class SudokuViewModelSavedStateTest {
     @Test
     fun `a pending summary survives a saved state written to a parcel and read back`() {
         repository.store(completed)
-        val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.id.value))
+        val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
         val viewModel = viewModel(savedStateHandle)
         viewModel.onGameStarted(SudokuGame.Ready(completed))
         viewModel.onCompleted()

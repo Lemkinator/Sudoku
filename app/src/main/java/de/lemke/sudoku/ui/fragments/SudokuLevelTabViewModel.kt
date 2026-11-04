@@ -26,6 +26,7 @@ import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.InitSudokuLevelUseCase
 import de.lemke.sudoku.domain.ObserveSudokuLevelUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
@@ -67,6 +68,8 @@ sealed interface LevelStart {
 
     data object Failed : Result
 }
+
+private val Sudoku.levelNumber: Int get() = (info.mode as GameMode.Level).number
 
 @HiltViewModel
 class SudokuLevelTabViewModel @Inject constructor(
@@ -130,15 +133,15 @@ class SudokuLevelTabViewModel @Inject constructor(
                     .onSuccess { nextLevel ->
                         emit(
                             SudokuLevelTabUiState(
-                                sudokuLevel = listOf(SudokuItem(nextLevel, nextLevel.modeLevel.toString())) + sudokuLevel,
+                                sudokuLevel = listOf(SudokuItem(nextLevel, nextLevel.levelNumber.toString())) + sudokuLevel,
                                 isLoading = false,
                                 isGeneratingNextLevel = false,
                                 hasNextLevelToStart = true,
                             ),
                         )
-                        if (nextLevel.id != revealedNextLevelId) {
-                            revealedNextLevelId = nextLevel.id
-                            reveal.value = nextLevel.id
+                        if (nextLevel.info.id != revealedNextLevelId) {
+                            revealedNextLevelId = nextLevel.info.id
+                            reveal.value = nextLevel.info.id
                         }
                     }.onFailure { e ->
                         if (e is CancellationException) throw e
@@ -159,7 +162,7 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private suspend fun FlowCollector<SudokuLevelTabUiState>.findOrGenerateNextLevelSudoku(): Sudoku {
         val level = getMaxSudokuLevel(size) + 1
-        nextLevelSudoku?.takeIf { it.modeLevel == level }?.let { return it }
+        nextLevelSudoku?.takeIf { it.info.mode == GameMode.Level(level) }?.let { return it }
         emit(state.value.copy(isGeneratingNextLevel = true))
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
@@ -170,7 +173,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     ) {
         if (levelStart.value == LevelStart.Running) return
         if (position != 0 || !state.value.hasNextLevelToStart) {
-            levelStart.value = LevelStart.Open(sudoku.id)
+            levelStart.value = LevelStart.Open(sudoku.info.id)
             return
         }
         levelStart.value = LevelStart.Running
@@ -183,10 +186,10 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     private suspend fun saveNextLevel(sudoku: Sudoku): LevelStart =
         runCatching {
-            val levelUnsaved = getMaxSudokuLevel(size) < sudoku.modeLevel
+            val levelUnsaved = getMaxSudokuLevel(size) < sudoku.levelNumber
             if (levelUnsaved) saveSudoku(sudoku)
             levelUnsaved
-        }.map { levelUnsaved -> if (levelUnsaved) LevelStart.Open(sudoku.id) else refuseSavedLevel() }
+        }.map { levelUnsaved -> if (levelUnsaved) LevelStart.Open(sudoku.info.id) else refuseSavedLevel() }
             .getOrElse { e -> if (e is CancellationException) throw e else LevelStart.Failed }
 
     private fun refuseSavedLevel(): LevelStart {

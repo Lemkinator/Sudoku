@@ -45,11 +45,10 @@ import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
@@ -336,18 +335,7 @@ class MainActivityMenuTest {
     }
 
     private fun withImportFile(block: (file: File, sudoku: Sudoku) -> Unit) {
-        val size = SudokuSize.FOUR
-        val sudoku =
-            Sudoku.create(
-                size = size,
-                difficulty = Difficulty.VERY_EASY,
-                modeLevel = Sudoku.MODE_NORMAL,
-                fields =
-                    MutableList(size.cellCount) { i ->
-                        val solution = (i % size.value) + 1
-                        Field(position = Position.create(i, size), solution = solution, value = solution, given = true)
-                    },
-            )
+        val sudoku = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY, completed = true)
         val file = File.createTempFile("main-activity-import", ".json")
         file.writeText(sudokuToExport(sudoku).stringifyJSON())
         try {
@@ -370,7 +358,7 @@ class MainActivityMenuTest {
                 val started = shadowOf(activity).nextStartedActivity
                 started.shouldNotBeNull()
                 started.component?.className shouldBe SudokuActivity::class.java.name
-                started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
             }
         }
 
@@ -382,7 +370,7 @@ class MainActivityMenuTest {
             ActivityScenario.launch<MainActivity>(intent).use { scenario ->
                 idleMainLooper()
                 scenario.onActivity { activity ->
-                    shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+                    shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
                 }
                 scenario.recreate()
                 idleMainLooper()
@@ -424,13 +412,13 @@ class MainActivityMenuTest {
                     val shadowActivity = shadowOf(activity)
                     shadowActivity.nextStartedActivity?.component?.className shouldBe SettingsActivity::class.java.name
                     shadowActivity.nextStartedActivity shouldBe null
-                    activity.importedSudoku shouldBe ImportedSudoku.Imported(sudoku.id)
+                    activity.importedSudoku shouldBe ImportedSudoku.Imported(sudoku.info.id)
                 }
                 scenario.returnFromLaunchedScreen()
                 idleMainLooper()
                 scenario.onActivity { activity ->
                     val shadowActivity = shadowOf(activity)
-                    shadowActivity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+                    shadowActivity.nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
                     shadowActivity.nextStartedActivity shouldBe null
                     activity.importedSudoku shouldBe ImportedSudoku.Idle
                 }
@@ -458,7 +446,7 @@ class MainActivityMenuTest {
                 progressDialogs.size shouldBe 1
                 progressDialogs.single().isShowing.shouldBeFalse()
                 scenario.onActivity { activity ->
-                    shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.id.value
+                    shadowOf(activity).nextStartedActivity?.getStringExtra(KEY_SUDOKU_ID) shouldBe sudoku.info.id.value
                 }
             }
         }

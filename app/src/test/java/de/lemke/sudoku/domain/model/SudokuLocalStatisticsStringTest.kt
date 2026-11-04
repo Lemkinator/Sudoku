@@ -20,6 +20,7 @@ import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.R
+import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import org.junit.Test
@@ -28,32 +29,22 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 private fun statisticsSudoku(
-    modeLevel: Int,
+    mode: GameMode,
     completed: Boolean = false,
     numberHighlightingUsed: Boolean = false,
 ): Sudoku {
     val created = LocalDateTime.of(2024, 1, 1, 12, 0)
-    return Sudoku.create(
-        size = SudokuSize.FOUR,
-        difficulty = Difficulty.EASY,
-        modeLevel = modeLevel,
-        numberHighlightingUsed = numberHighlightingUsed,
-        errorsMade = 2,
-        hintsUsed = 1,
-        notesMade = 3,
-        seconds = 90,
-        created = created,
-        updated = created.plusHours(1),
-        fields =
-            (0 until 16)
-                .map { index ->
-                    val solution = (index % 4) + 1
-                    Field(
-                        position = Position.create(index, SudokuSize.FOUR),
-                        solution = solution,
-                        value = if (completed) solution else null,
-                    )
-                }.toMutableList(),
+    val base = testSudoku(size = SudokuSize.FOUR, mode = mode, difficulty = Difficulty.EASY, created = created, completed = completed)
+    return base.copy(
+        info =
+            base.info.copy(
+                updated = created.plusHours(1),
+                seconds = 90,
+                errorsMade = 2,
+                hintsUsed = 1,
+                notesMade = 3,
+                numberHighlightingUsed = numberHighlightingUsed,
+            ),
     )
 }
 
@@ -64,19 +55,19 @@ class SudokuLocalStatisticsStringTest {
 
     @Test
     fun `getLocalStatisticsString names a normal sudoku by its type`() {
-        val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_NORMAL)
+        val sudoku = statisticsSudoku(mode = GameMode.Normal)
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
         text.contains(context.resources.getString(R.string.normal_sudoku)) shouldBe true
         text.contains("Size: 4×4") shouldBe true
-        text.contains(sudoku.difficulty.getLocalString(context.resources)) shouldBe true
-        text.contains(sudoku.timeString) shouldBe true
+        text.contains(sudoku.info.difficulty.getLocalString(context.resources)) shouldBe true
+        text.contains(sudoku.info.timeString) shouldBe true
     }
 
     @Test
     fun `getLocalStatisticsString names a daily sudoku by its type`() {
-        val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_DAILY)
+        val sudoku = statisticsSudoku(mode = GameMode.Daily)
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
@@ -85,7 +76,7 @@ class SudokuLocalStatisticsStringTest {
 
     @Test
     fun `getLocalStatisticsString names a level sudoku by its level number`() {
-        val sudoku = statisticsSudoku(modeLevel = 5)
+        val sudoku = statisticsSudoku(mode = GameMode.Level(5))
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
@@ -95,7 +86,7 @@ class SudokuLocalStatisticsStringTest {
     @Test
     @Config(qualifiers = "es")
     fun `getLocalStatisticsString names a level sudoku by its level number in Spanish`() {
-        val sudoku = statisticsSudoku(modeLevel = 5)
+        val sudoku = statisticsSudoku(mode = GameMode.Level(5))
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
@@ -105,7 +96,7 @@ class SudokuLocalStatisticsStringTest {
     @Test
     @Config(qualifiers = "de")
     fun `getLocalStatisticsString names a level sudoku by its level number in German`() {
-        val sudoku = statisticsSudoku(modeLevel = 5)
+        val sudoku = statisticsSudoku(mode = GameMode.Level(5))
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
@@ -114,7 +105,7 @@ class SudokuLocalStatisticsStringTest {
 
     @Test
     fun `getLocalStatisticsString reports number highlighting used`() {
-        val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_NORMAL, numberHighlightingUsed = true)
+        val sudoku = statisticsSudoku(mode = GameMode.Normal, numberHighlightingUsed = true)
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 
@@ -123,7 +114,7 @@ class SudokuLocalStatisticsStringTest {
 
     @Test
     fun `getLocalStatisticsStringShare reports completion for a completed sudoku`() {
-        val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_NORMAL, completed = true)
+        val sudoku = statisticsSudoku(mode = GameMode.Normal, completed = true)
 
         val text = sudoku.getLocalStatisticsStringShare(context.resources)
 
@@ -132,7 +123,7 @@ class SudokuLocalStatisticsStringTest {
 
     @Test
     fun `getLocalStatisticsStringShare reports progress for an in-progress sudoku`() {
-        val sudoku = statisticsSudoku(modeLevel = Sudoku.MODE_NORMAL, completed = false)
+        val sudoku = statisticsSudoku(mode = GameMode.Normal, completed = false)
 
         val text = sudoku.getLocalStatisticsStringShare(context.resources)
 

@@ -16,6 +16,8 @@
 
 package de.lemke.sudoku.domain.model
 
+import java.time.LocalDateTime
+
 private val TUTORIAL_SIZE = SudokuSize.NINE
 
 // Row-major, one digit per cell.
@@ -32,22 +34,13 @@ private const val TUTORIAL_GIVEN_MASK =
  */
 fun tutorialSudoku(
     sudokuId: SudokuId = SudokuId.generate(),
-    modeLevel: Int = Sudoku.MODE_NORMAL,
-): Sudoku =
-    Sudoku.create(
-        sudokuId = sudokuId,
-        size = TUTORIAL_SIZE,
-        difficulty = Difficulty.VERY_EASY,
-        modeLevel = modeLevel,
-        fields =
-            MutableList(TUTORIAL_SIZE.cellCount) { index ->
-                val solution = TUTORIAL_SOLUTION[index] - '0'
-                val given = TUTORIAL_GIVEN_MASK[index] == '1'
-                Field(
-                    position = Position.create(index, TUTORIAL_SIZE),
-                    value = if (given) solution else null,
-                    solution = solution,
-                    given = given,
-                )
-            },
+    mode: GameMode = GameMode.Normal,
+): Sudoku {
+    val now = LocalDateTime.now()
+    val digits = TUTORIAL_SOLUTION.map { it - '0' }
+    val givens = TUTORIAL_GIVEN_MASK.indices.filter { TUTORIAL_GIVEN_MASK[it] == '1' }.toSet()
+    return Sudoku(
+        info = GameInfo(id = sudokuId, size = TUTORIAL_SIZE, difficulty = Difficulty.VERY_EASY, mode = mode, created = now, updated = now),
+        board = Board.of(TUTORIAL_SIZE, digits, givens),
     )
+}

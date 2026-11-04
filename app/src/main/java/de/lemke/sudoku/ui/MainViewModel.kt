@@ -68,7 +68,7 @@ class MainViewModel @Inject constructor(
         importingFile = uriString
         importedSudoku.value = ImportedSudoku.Importing
         viewModelScope.launch {
-            val result = importSudoku(uri)?.let { ImportedSudoku.Imported(it.id) } ?: ImportedSudoku.Failed
+            val result = importSudoku(uri)?.let { ImportedSudoku.Imported(it.info.id) } ?: ImportedSudoku.Failed
             savedStateHandle[KEY_OPENED_FILE] = uriString
             importingFile = null
             importedSudoku.value = result

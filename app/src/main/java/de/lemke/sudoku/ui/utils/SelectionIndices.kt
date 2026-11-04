@@ -27,6 +27,9 @@ value class SelectionIndices(val size: SudokuSize) {
     val hintButton: Int get() = deleteButton + 1
     val buttons: IntRange get() = numberButtons.first..hintButton
 
+    /** The selection index of the number button at [index], counted from the first number button. */
+    fun numberButton(index: Int): Int = numberButtons.first + index
+
     /** The kind of control that [index] selects. */
     fun targetOf(index: Int): SelectionTarget {
         require(index in fields.first..hintButton) { "Selection index $index is outside 0..$hintButton" }

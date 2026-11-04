@@ -49,17 +49,17 @@ class ObserveDailySudokusUseCase @Inject constructor(
                                 true
                             } else {
                                 it.completed
-                            } || it.created.toLocalDate() == date
+                            } || it.info.created.toLocalDate() == date
                         }
                     }.map { sudokus ->
                         val dailySudokus: MutableList<SudokuListItem> =
-                            sudokus.map { SudokuListItem.SudokuItem(it, it.created.monthAndYear) }.toMutableList()
+                            sudokus.map { SudokuListItem.SudokuItem(it, it.info.created.monthAndYear) }.toMutableList()
                         var offset = 0
                         var oldDate: LocalDate? = null
                         sudokus.forEachIndexed { index, sudoku ->
-                            if (oldDate == null || oldDate.month != sudoku.created.month) {
-                                dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(sudoku.created.monthAndYear))
-                                oldDate = sudoku.created.toLocalDate()
+                            if (oldDate == null || oldDate.month != sudoku.info.created.month) {
+                                dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(sudoku.info.created.monthAndYear))
+                                oldDate = sudoku.info.created.toLocalDate()
                                 offset++
                             }
                         }

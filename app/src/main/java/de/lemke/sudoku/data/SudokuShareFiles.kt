@@ -38,8 +38,8 @@ class DefaultSudokuShareFiles @Inject constructor(
         sudoku: Sudoku,
         json: String,
     ): File {
-        val size = sudoku.size.getLocalString(context.resources)
-        val fileName = "Sudoku ($size ${sudoku.difficulty.getLocalString(context.resources)}).sudoku"
+        val size = sudoku.info.size.getLocalString(context.resources)
+        val fileName = "Sudoku ($size ${sudoku.info.difficulty.getLocalString(context.resources)}).sudoku"
         return File(context.cacheDir, fileName).apply { writeText(json) }
     }
 }

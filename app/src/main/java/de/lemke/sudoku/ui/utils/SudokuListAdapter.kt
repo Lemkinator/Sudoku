@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.sudoku.R
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
@@ -151,7 +152,7 @@ class SudokuListAdapter(
     }
 
     fun revealPositionOf(sudokuId: SudokuId): Int {
-        val position = currentList.indexOfFirst { it is SudokuItem && it.sudoku.id == sudokuId }
+        val position = currentList.indexOfFirst { it is SudokuItem && it.sudoku.info.id == sudokuId }
         return if (position > 0 && currentList[position - 1] is SeparatorItem) position - 1 else position
     }
 
@@ -169,7 +170,7 @@ class SudokuListAdapter(
                     newItem: SudokuListItem,
                 ): Boolean =
                     when (oldItem) {
-                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.id == newItem.sudoku.id
+                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.info.id == newItem.sudoku.info.id
                         is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
                         else -> false
                     }
@@ -179,7 +180,7 @@ class SudokuListAdapter(
                     newItem: SudokuListItem,
                 ): Boolean =
                     when (oldItem) {
-                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.contentEquals(newItem.sudoku)
+                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku == newItem.sudoku
                         is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
                         else -> false
                     }
@@ -207,24 +208,26 @@ class SudokuListAdapter(
             textView.text =
                 when (mode) {
                     Mode.DAILY -> {
-                        sudoku.created.toLocalDate().formatFull
+                        sudoku.info.created
+                            .toLocalDate()
+                            .formatFull
                     }
 
                     Mode.LEVEL -> {
-                        context.getString(R.string.level_number, sudoku.modeLevel)
+                        context.getString(R.string.level_number, (sudoku.info.mode as GameMode.Level).number)
                     }
 
                     else -> {
                         context.getString(
                             R.string.size_and_difficulty,
-                            sudoku.size.getLocalString(context.resources),
-                            sudoku.difficulty.getLocalString(context.resources),
+                            sudoku.info.size.getLocalString(context.resources),
+                            sudoku.info.difficulty.getLocalString(context.resources),
                         )
                     }
                 }
             val (icon, stateDescription) =
                 when {
-                    sudoku.errorLimitReached(errorLimit) -> {
+                    sudoku.info.errorLimitReached(errorLimit) -> {
                         dev.oneuiproject.oneui.R.drawable.ic_oui_error to R.string.sudoku_state_error_limit_reached
                     }
 
@@ -240,19 +243,19 @@ class SudokuListAdapter(
             imageView!!.contentDescription = context.getString(stateDescription)
             textViewSmall!!.text =
                 buildString {
-                    append(context.getString(R.string.current_time, sudoku.timeString))
+                    append(context.getString(R.string.current_time, sudoku.info.timeString))
                     if (!sudoku.completed) {
                         append(" | ").append(context.getString(R.string.current_progress, sudoku.progress))
                     }
                     append(" | ").append(
                         if (errorLimit == 0) {
-                            context.getString(R.string.current_errors, sudoku.errorsMade)
+                            context.getString(R.string.current_errors, sudoku.info.errorsMade)
                         } else {
-                            context.getString(R.string.current_errors_with_limit, sudoku.errorsMade, errorLimit)
+                            context.getString(R.string.current_errors_with_limit, sudoku.info.errorsMade, errorLimit)
                         },
                     )
                     if (mode == Mode.NORMAL) {
-                        append(" | ").append(context.getString(R.string.current_hints, sudoku.hintsUsed))
+                        append(" | ").append(context.getString(R.string.current_hints, sudoku.info.hintsUsed))
                     }
                 }
         }

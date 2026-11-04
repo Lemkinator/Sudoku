@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.view.KeyEvent
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -34,13 +35,11 @@ import de.lemke.commonutils.read
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.GameListener
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -60,6 +59,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.fakes.RoboMenu
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowDialog
 
@@ -95,28 +95,8 @@ class SudokuActivityGameStateTest {
         testDispatchers.reset()
     }
 
-    private fun formulaicSudoku(solved: Boolean): Sudoku {
-        val size = SudokuSize.FOUR
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = MODE_NORMAL,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    val given = index % 3 == 0
-                    Field(
-                        position = Position.create(index, size),
-                        solution = solution,
-                        value = if (given || solved) solution else null,
-                        given = given,
-                    )
-                },
-        )
-    }
+    private fun formulaicSudoku(solved: Boolean): Sudoku =
+        testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY, completed = solved)
 
     private fun launch(
         sudoku: Sudoku,
@@ -124,7 +104,7 @@ class SudokuActivityGameStateTest {
     ) {
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { it.userSettings.animationsEnabled = false }
             awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
@@ -139,7 +119,7 @@ class SudokuActivityGameStateTest {
         val sudoku = formulaicSudoku(solved = false)
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         pausableDefaultDispatcher.pause()
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             idleMainLooper()
@@ -153,7 +133,7 @@ class SudokuActivityGameStateTest {
             pausableDefaultDispatcher.resume()
             awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
-                activity.sudoku.id shouldBe sudoku.id
+                activity.sudoku.info.id shouldBe sudoku.info.id
                 activity.binding.gameRecycler.adapter
                     .shouldNotBeNull()
             }
@@ -176,14 +156,14 @@ class SudokuActivityGameStateTest {
     }
 
     @Test
-    fun `a restart keeps the reset board without a loading dialog until it is saved, then plays it`() {
+    fun `a restart shows no loading dialog until it is saved, then plays the restarted board`() {
         val sudoku = formulaicSudoku(solved = false)
         launch(sudoku) { scenario ->
             scenario.onActivity { activity ->
                 activity.userSettings.errorLimit = 1
                 activity.select(1)
-                activity.select(activity.sudoku.itemCount)
-                activity.sudoku.errorsMade shouldBe 1
+                activity.select(activity.sudoku.info.size.cellCount)
+                activity.sudoku.info.errorsMade shouldBe 1
                 pausableDefaultDispatcher.pause()
 
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
@@ -192,45 +172,83 @@ class SudokuActivityGameStateTest {
 
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
-                activity.sudoku.errorsMade shouldBe 0
                 (loadingDialog()?.isShowing == true).shouldBeFalse()
             }
 
             pausableDefaultDispatcher.resume()
             awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
-                activity.sudoku.id shouldBe sudoku.id
-                activity.sudoku[1].value.shouldBeNull()
+                activity.sudoku.info.id shouldBe sudoku.info.id
+                activity.sudoku.info.errorsMade shouldBe 0
+                activity.sudoku.board[1]
+                    .value
+                    .shouldBeNull()
             }
         }
     }
 
     @Test
-    fun `an error, a tap and a tick reported while the game restarts change nothing`() {
+    fun `a tap and a move reported while the game restarts change nothing`() {
         launch(formulaicSudoku(solved = false)) { scenario ->
-            lateinit var listener: GameListener
             scenario.onActivity { activity ->
                 activity.userSettings.errorLimit = 1
                 activity.select(1)
-                activity.select(activity.sudoku.itemCount)
-                listener = checkNotNull(activity.sudoku.gameListener)
+                activity.select(activity.sudoku.info.size.cellCount)
                 pausableDefaultDispatcher.pause()
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
             }
             idleMainLooper()
 
             scenario.onActivity { activity ->
-                listener.onError()
-                listener.onFieldClicked(Position.create(1, activity.sudoku.size))
-                listener.onTimeChanged()
+                val shownDialogs = ShadowDialog.getShownDialogs().size
+                activity.gameAdapter.onFieldClicked(1)
+                activity.viewModel.onMove(BoardMove.Enter(1, 4)).shouldBeNull()
+                activity.onKeyUp(KeyEvent.KEYCODE_1, KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_1)).shouldBeFalse()
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)).shouldBeTrue()
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share)).shouldBeTrue()
+                activity.sudokuButtons[0].performClick()
+                activity.binding.deleteButton.performClick()
+                activity.binding.hintButton.performClick()
                 idleMainLooper()
 
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
                 activity.selected.shouldBeNull()
+                ShadowDialog.getShownDialogs().size shouldBe shownDialogs
             }
             pausableDefaultDispatcher.resume()
             awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
         }
+    }
+
+    @Test
+    fun `the menu offers neither pause, restart nor share while the game restarts`() {
+        launch(formulaicSudoku(solved = false)) { scenario ->
+            scenario.onActivity { activity ->
+                activity.userSettings.errorLimit = 1
+                activity.select(1)
+                activity.select(activity.sudoku.info.size.cellCount)
+                activity.visibleMenuItems() shouldBe setOf(R.id.menu_reset, R.id.menu_share)
+                pausableDefaultDispatcher.pause()
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
+            }
+            idleMainLooper()
+
+            scenario.onActivity { activity ->
+                activity.viewModel.game.value shouldBe SudokuGame.Restarting
+                activity.visibleMenuItems() shouldBe emptySet()
+            }
+            pausableDefaultDispatcher.resume()
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
+            scenario.onActivity { activity -> activity.visibleMenuItems() shouldBe setOf(R.id.menu_pause_play, R.id.menu_share) }
+        }
+    }
+
+    private fun SudokuActivity.visibleMenuItems(): Set<Int> {
+        val menu = RoboMenu(this)
+        val ids = listOf(R.id.menu_pause_play, R.id.menu_reset, R.id.menu_share)
+        ids.forEach { menu.add(0, it, 0, "item") }
+        onPrepareOptionsMenu(menu)
+        return ids.filter { menu.findItem(it).isVisible }.toSet()
     }
 
     @Test
@@ -255,7 +273,7 @@ class SudokuActivityGameStateTest {
             scenario.onActivity { activity ->
                 activity.viewModel.game.value
                     .shouldBeInstanceOf<SudokuGame.Playing>()
-                activity.sudoku.id shouldNotBe completed.id
+                activity.sudoku.info.id shouldNotBe completed.info.id
                 loadingDialog()?.isShowing shouldBe false
             }
         }

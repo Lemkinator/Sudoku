@@ -18,8 +18,9 @@ package de.lemke.sudoku.ui
 
 import android.app.Application
 import de.lemke.commonutils.idleMainLooper
+import de.lemke.sudoku.domain.model.BoardMove
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.shouldBe
 import java.time.Instant
@@ -40,7 +41,9 @@ class SudokuViewModelPhaseTest {
 
     private fun playing(sudoku: Sudoku) = rig.playing(sudoku)
 
-    private fun daily(created: LocalDateTime) = testSudoku(modeLevel = MODE_DAILY, created = created)
+    private fun daily(created: LocalDateTime) = testSudoku(mode = GameMode.Daily, created = created)
+
+    private fun Sudoku.withErrors(errors: Int) = copy(info = info.copy(errorsMade = errors))
 
     @Test
     fun `a normal sudoku in progress is playing with the limit of the settings`() {
@@ -52,7 +55,7 @@ class SudokuViewModelPhaseTest {
     @Test
     fun `a normal sudoku at the limit of the settings is lost`() {
         userSettings.errorLimit = 2
-        val sudoku = testSudoku().apply { errorsMade = 2 }
+        val sudoku = testSudoku().withErrors(2)
 
         playing(sudoku).game.value.shouldBePlaying(SudokuKind.Normal, 2, Phase.Lost)
     }
@@ -60,7 +63,7 @@ class SudokuViewModelPhaseTest {
     @Test
     fun `a normal sudoku without an error limit is never lost`() {
         userSettings.errorLimit = 0
-        val sudoku = testSudoku().apply { errorsMade = 99 }
+        val sudoku = testSudoku().withErrors(99)
 
         playing(sudoku).game.value.shouldBePlaying(SudokuKind.Normal, 0, Phase.Playing)
     }
@@ -72,7 +75,7 @@ class SudokuViewModelPhaseTest {
 
     @Test
     fun `a level sudoku has its level and the level error limit`() {
-        val sudoku = testSudoku(modeLevel = 4).apply { errorsMade = 3 }
+        val sudoku = testSudoku(mode = GameMode.Level(4)).withErrors(3)
 
         playing(sudoku).game.value.shouldBePlaying(SudokuKind.Level, 3, Phase.Lost)
     }
@@ -84,54 +87,50 @@ class SudokuViewModelPhaseTest {
 
     @Test
     fun `a daily sudoku of an earlier date is expired even after it reached its error limit`() {
-        val sudoku = daily(today.minusDays(1)).apply { errorsMade = 3 }
+        val sudoku = daily(today.minusDays(1)).withErrors(3)
 
         playing(sudoku).game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 14)), 3, Phase.Expired)
     }
 
     @Test
     fun `a completed daily sudoku of an earlier date is won`() {
-        val sudoku = testSudoku(modeLevel = MODE_DAILY, created = today.minusDays(1), completed = true)
+        val sudoku = testSudoku(mode = GameMode.Daily, created = today.minusDays(1), completed = true)
 
         playing(sudoku).game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 14)), 3, Phase.Won)
     }
 
     @Test
-    fun `onErrorMade moves a sudoku that reached its limit to lost`() {
-        val sudoku = testSudoku()
-        val viewModel = playing(sudoku)
-        sudoku.errorsMade = 3
+    fun `a wrong digit that reaches the limit moves a sudoku to lost`() {
+        val viewModel = playing(testSudoku().withErrors(2))
+        viewModel.onResumed()
 
-        viewModel.onErrorMade()
+        viewModel.onMove(BoardMove.Enter(1, 4))
 
         viewModel.game.value.shouldBePlaying(SudokuKind.Normal, 3, Phase.Lost)
     }
 
     @Test
-    fun `onErrorMade saves the sudoku with the error that ended it`() {
-        val sudoku = testSudoku()
-        val viewModel = playing(sudoku)
-        sudoku.errorsMade = 3
+    fun `a wrong digit that reaches the limit saves the sudoku with the error that ended it`() {
+        val viewModel = playing(testSudoku().withErrors(2))
+        viewModel.onResumed()
 
-        viewModel.onErrorMade()
+        viewModel.onMove(BoardMove.Enter(1, 4))
         idleMainLooper()
 
-        rig.repository.saves.map { it.rows.sudoku.errorsMade to it.onlyUpdate } shouldBe listOf(3 to true)
+        rig.repository.saves.map { it.info.errorsMade } shouldBe listOf(3)
     }
 
     @Test
     fun `today's daily sudoku stays playing with a running timer after the clock passes midnight`() {
-        val sudoku = daily(today)
-        val viewModel = playing(sudoku)
+        val viewModel = playing(daily(today))
         clock.advanceTo(Instant.parse("2026-01-16T00:00:01Z"))
 
         viewModel.onResumed()
-        sudoku.errorsMade = 1
-        viewModel.onErrorMade()
+        viewModel.onMove(BoardMove.Enter(1, 4))
 
         viewModel.game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 15)), 3, Phase.Playing)
-        sudoku.resumed shouldBe true
-        sudoku.stopTimer()
+        (viewModel.game.value as SudokuGame.Playing).running shouldBe true
+        viewModel.onPaused()
     }
 
     @Test
@@ -142,14 +141,14 @@ class SudokuViewModelPhaseTest {
         viewModel.onResumed()
 
         viewModel.game.value shouldBe SudokuGame.Ready(sudoku)
-        sudoku.resumed shouldBe false
     }
 
     @Test
-    fun `onCompleted moves a sudoku completed after the start to won`() {
-        val sudoku = testSudoku()
-        val viewModel = playing(sudoku)
-        sudoku.fields.forEach { it.value = it.solution }
+    fun `onCompleted keeps a sudoku completed after the start won`() {
+        val solved = testSudoku(completed = true)
+        val viewModel = playing(solved.copy(board = solved.board.with(1, solved.board[1].copy(value = null))))
+        viewModel.onResumed()
+        viewModel.onMove(BoardMove.Enter(1, 2))
 
         viewModel.onCompleted()
 

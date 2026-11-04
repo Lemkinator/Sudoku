@@ -20,6 +20,7 @@ import androidx.lifecycle.SavedStateHandle
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.AdjustableClock
+import de.lemke.sudoku.LooperTimeSource
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
@@ -57,7 +58,7 @@ class SudokuViewModelRig {
         val dispatcher = Dispatchers.Main
         val generateFields = GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator())
         return SudokuViewModel(
-            SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.id.value)),
+            SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.info.id.value)),
             GetSudokuUseCase(repository, dispatcher),
             GenerateSudokuUseCase(generateFields, dispatcher),
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
@@ -67,6 +68,7 @@ class SudokuViewModelRig {
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
             userSettings,
             clock,
+            LooperTimeSource,
         ).also { idleMainLooper() }
     }
 }

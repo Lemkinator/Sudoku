@@ -93,7 +93,7 @@ class SettingsViewModelTest {
     fun closeDatabase() = database.close()
 
     private fun storeInvalidSudoku(): SudokuId =
-        testSudoku().also { sudokusRepository.insertRows(sudokuWithFieldsToDb(it).copy(fields = emptyList())) }.id
+        testSudoku().also { sudokusRepository.insertRows(sudokuWithFieldsToDb(it).copy(fields = emptyList())) }.info.id
 
     private fun idleFor(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
 

@@ -18,7 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
@@ -54,7 +54,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_DAILY,
+                    mode = GameMode.Daily,
                     created = date.atStartOfDay(),
                     completed = true,
                 )
@@ -68,7 +68,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_DAILY,
+                    mode = GameMode.Daily,
                     created = date.atStartOfDay(),
                     completed = true,
                 ),
@@ -82,7 +82,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_DAILY,
+                    mode = GameMode.Daily,
                     created = date.atStartOfDay(),
                 )
             sudokusRepository.saveSudoku(incompleteSudoku)
@@ -95,7 +95,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    modeLevel = Sudoku.MODE_DAILY,
+                    mode = GameMode.Daily,
                     created = date.plusDays(1).atStartOfDay(),
                     completed = true,
                 )

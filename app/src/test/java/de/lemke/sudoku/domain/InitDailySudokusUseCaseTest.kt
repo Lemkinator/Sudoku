@@ -19,7 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
@@ -41,7 +41,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         val date = LocalDate.of(2026, 1, 1)
 
         fun dailySudoku(on: LocalDate) =
-            testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, modeLevel = Sudoku.MODE_DAILY, created = on.atStartOfDay())
+            testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, mode = GameMode.Daily, created = on.atStartOfDay())
 
         beforeEach {
             val dispatcher = UnconfinedTestDispatcher()
@@ -60,8 +60,8 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         should("generates and saves a new daily sudoku when none exists for the date") {
             useCase(date)
 
-            sudokusRepository.saves.map { Triple(it.rows.sudoku.modeLevel, it.rows.sudoku.created, it.onlyUpdate) } shouldBe
-                listOf(Triple(Sudoku.MODE_DAILY, LocalDateTime.of(2026, 1, 1, 10, 0), false))
+            sudokusRepository.saves.map { it.info.mode to it.info.created } shouldBe
+                listOf(GameMode.Daily to LocalDateTime.of(2026, 1, 1, 10, 0))
         }
 
         should("uses the clock's date when called without a date") {
@@ -77,7 +77,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
 
             useCase()
 
-            sudokusRepository.saves.map { it.rows.sudoku.created } shouldBe listOf(LocalDateTime.of(2026, 1, 1, 10, 0))
+            sudokusRepository.saves.map { it.info.created } shouldBe listOf(LocalDateTime.of(2026, 1, 1, 10, 0))
         }
 
         should("does nothing when a daily sudoku already exists for the date") {

@@ -18,9 +18,12 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -42,12 +45,18 @@ class GenerateSudokuLevelUseCase @Inject constructor(
                     in 201..500 -> Difficulty.HARD
                     else -> Difficulty.EXPERT
                 }
-            return@withContext Sudoku.create(
-                sudokuId = SudokuId.generate(),
-                size = size,
-                difficulty = difficulty,
-                fields = generateFields(size, difficulty),
-                modeLevel = level,
+            val now = LocalDateTime.now()
+            return@withContext Sudoku(
+                info =
+                    GameInfo(
+                        id = SudokuId.generate(),
+                        size = size,
+                        difficulty = difficulty,
+                        mode = GameMode.Level(level),
+                        created = now,
+                        updated = now,
+                    ),
+                board = generateFields(size, difficulty),
             )
         }
 }

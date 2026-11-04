@@ -34,8 +34,8 @@ import de.lemke.sudoku.di.ClockModule
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.utils.awaitSmallText
@@ -107,7 +107,7 @@ class DailySudokuListRefreshTest {
     ): Sudoku =
         listSudoku(
             sudokuId = sudokuId,
-            modeLevel = MODE_DAILY,
+            mode = GameMode.Daily,
             filled = filled,
             errorsMade = errorsMade,
             seconds = seconds,
@@ -128,8 +128,8 @@ class DailySudokuListRefreshTest {
             idleMainLooper()
 
             val sudoku = shownSudoku(viewModel)
-            sudoku.errorsMade shouldBe 2
-            sudoku.seconds shouldBe 75
+            sudoku.info.errorsMade shouldBe 2
+            sudoku.info.seconds shouldBe 75
             sudoku.progress shouldBe 100
             sudoku.completed shouldBe true
         } finally {
@@ -149,7 +149,7 @@ class DailySudokuListRefreshTest {
             scenario.moveToState(Lifecycle.State.CREATED)
             save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
             idleMainLooper()
-            scenario.onActivity { activity -> shownSudoku(activity.viewModel).seconds shouldBe 75 }
+            scenario.onActivity { activity -> shownSudoku(activity.viewModel).info.seconds shouldBe 75 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idleMainLooper()
 
@@ -172,13 +172,13 @@ class DailySudokuListRefreshTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(6))
             save(todaysSudoku(filled = 16, errorsMade = 2, seconds = 75))
             idleMainLooper()
-            scenario.onActivity { activity -> shownSudoku(activity.viewModel).seconds shouldBe 0 }
+            scenario.onActivity { activity -> shownSudoku(activity.viewModel).info.seconds shouldBe 0 }
             scenario.moveToState(Lifecycle.State.RESUMED)
             idleMainLooper()
 
             scenario.onActivity { activity ->
                 activity.binding.dailySudokuRecycler.awaitSmallText(1, "01:15 | Errors: 2/3") shouldBe "01:15 | Errors: 2/3"
-                shownSudoku(activity.viewModel).seconds shouldBe 75
+                shownSudoku(activity.viewModel).info.seconds shouldBe 75
             }
         }
     }

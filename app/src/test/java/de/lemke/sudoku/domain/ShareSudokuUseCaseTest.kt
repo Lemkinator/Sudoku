@@ -22,9 +22,13 @@ import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.DefaultSudokuShareFiles
 import de.lemke.sudoku.data.database.FieldExport
 import de.lemke.sudoku.data.database.SudokuExport
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -40,37 +44,42 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-private fun testFields(size: SudokuSize): MutableList<Field> =
-    (0 until size.cellCount)
-        .map { index ->
-            val solution = (index % size.value) + 1
-            Field(
-                position = Position.create(index, size),
-                solution = solution,
-                value = if (index % 2 == 0) solution else null,
-                given = index % 3 == 0,
-                hint = index == 1,
-                notes = if (index == 2) mutableListOf('1', '2') else mutableListOf(),
-            )
-        }.toMutableList()
+private fun testCells(size: SudokuSize): List<Cell> =
+    (0 until size.cellCount).map { index ->
+        val solution = (index % size.value) + 1
+        Cell(
+            solution = solution,
+            value = solution.takeIf { index % 2 == 0 },
+            origin =
+                when {
+                    index % 3 == 0 -> CellOrigin.GIVEN
+                    index == 1 -> CellOrigin.HINT
+                    else -> CellOrigin.PLAYER
+                },
+            notes = if (index == 2) NoteMask.of(1, 2) else NoteMask.EMPTY,
+        )
+    }
 
 private fun testSudoku(
     size: SudokuSize = SudokuSize.FOUR,
     difficulty: Difficulty = Difficulty.HARD,
 ): Sudoku =
-    Sudoku.create(
-        sudokuId = SudokuId("share-test-id"),
-        size = size,
-        difficulty = difficulty,
-        modeLevel = Sudoku.MODE_NORMAL,
-        checklistNumber = 2,
-        hintsUsed = 3,
-        notesMade = 5,
-        errorsMade = 1,
-        seconds = 120,
-        created = LocalDateTime.of(2024, 1, 1, 12, 0),
-        updated = LocalDateTime.of(2024, 1, 2, 13, 30),
-        fields = testFields(size),
+    Sudoku(
+        info =
+            GameInfo(
+                id = SudokuId("share-test-id"),
+                size = size,
+                difficulty = difficulty,
+                mode = GameMode.Normal,
+                created = LocalDateTime.of(2024, 1, 1, 12, 0),
+                updated = LocalDateTime.of(2024, 1, 2, 13, 30),
+                seconds = 120,
+                hintsUsed = 3,
+                notesMade = 5,
+                errorsMade = 1,
+                checklistNumber = 2,
+            ),
+        board = Board(size, testCells(size)),
     )
 
 @OptIn(ExperimentalCoroutinesApi::class)

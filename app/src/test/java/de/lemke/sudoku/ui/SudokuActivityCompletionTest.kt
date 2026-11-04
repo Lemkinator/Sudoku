@@ -36,20 +36,21 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.FakeInAppReview
 import de.lemke.commonutils.ui.utils.FakeInAppReview.Call.ShowIfPossible
+import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.PlayGamesSync
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.utils.DefaultGamesSignIn
 import de.lemke.sudoku.ui.utils.DefaultPlayGamesIntentProvider
@@ -74,9 +75,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.fakes.RoboMenu
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
@@ -155,29 +158,11 @@ class SudokuActivityCompletionTest {
 
     private fun almostSolvedSudoku(
         sudokuId: SudokuId,
-        modeLevel: Int = MODE_NORMAL,
+        mode: GameMode = GameMode.Normal,
     ): Sudoku {
-        val size = SudokuSize.FOUR
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            sudokuId = sudokuId,
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = modeLevel,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    val given = index != 0
-                    Field(
-                        position = Position.create(index, size),
-                        solution = solution,
-                        value = if (given) solution else null,
-                        given = given,
-                    )
-                },
-        )
+        val solved =
+            testSudoku(size = SudokuSize.FOUR, mode = mode, difficulty = Difficulty.VERY_EASY, sudokuId = sudokuId, completed = true)
+        return solved.copy(board = solved.board.with(0, Cell(solved.board[0].solution)))
     }
 
     private fun completeBoard(
@@ -189,7 +174,7 @@ class SudokuActivityCompletionTest {
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount)
+                activity.select(activity.sudoku.info.size.cellCount)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             idleMainLooper()
@@ -222,7 +207,7 @@ class SudokuActivityCompletionTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             idleMainLooper()
-            activity.sudoku.id shouldNotBe sudokuId
+            activity.sudoku.info.id shouldNotBe sudokuId
             activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
         }
     }
@@ -237,7 +222,7 @@ class SudokuActivityCompletionTest {
             newGameButton.performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             idleMainLooper()
-            activity.sudoku.id shouldNotBe sudokuId
+            activity.sudoku.info.id shouldNotBe sudokuId
             runBlocking { getAllSudokus() }.size shouldBe 2
         }
     }
@@ -245,13 +230,13 @@ class SudokuActivityCompletionTest {
     @Test
     fun `completing the max level of a sudoku level's dialog offers the next level`() {
         val sudokuId = SudokuId.generate()
-        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1))
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, mode = GameMode.Level(1)))
         completeBoard(sudokuId) { activity ->
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             idleMainLooper()
-            activity.sudoku.modeLevel shouldBe 2
+            activity.sudoku.info.mode shouldBe GameMode.Level(2)
         }
     }
 
@@ -259,8 +244,8 @@ class SudokuActivityCompletionTest {
     fun `completing a level below the max level offers no follow-up`() {
         val sudokuId = SudokuId.generate()
         fakeSudokusRepository.store(
-            almostSolvedSudoku(sudokuId, modeLevel = 1),
-            almostSolvedSudoku(SudokuId.generate(), modeLevel = 2),
+            almostSolvedSudoku(sudokuId, mode = GameMode.Level(1)),
+            almostSolvedSudoku(SudokuId.generate(), mode = GameMode.Level(2)),
         )
         completeBoard(sudokuId) {
             val dialog = ShadowDialog.getLatestDialog() as AlertDialog
@@ -270,10 +255,13 @@ class SudokuActivityCompletionTest {
 
     @Test
     fun `a failed save of a completed sudoku shows an error toast instead of the completion dialog`() {
-        val sudoku = almostSolvedSudoku(SudokuId.generate()).apply { fields[0].value = fields[0].solution }
+        val sudoku =
+            almostSolvedSudoku(SudokuId.generate()).let {
+                it.copy(board = it.board.with(0, it.board[0].copy(value = it.board[0].solution)))
+            }
         fakeSudokusRepository.store(sudoku)
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             fakeSudokusRepository.saveFailure = IllegalStateException("disk full")
@@ -293,14 +281,14 @@ class SudokuActivityCompletionTest {
     @Test
     fun `recreating the activity while the completion runs shows one dialog after one wrap-up`() {
         val sudokuId = SudokuId.generate()
-        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1))
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, mode = GameMode.Level(1)))
         maxLevelRead = CompletableDeferred()
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount)
+                activity.select(activity.sudoku.info.size.cellCount)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Running }
@@ -323,16 +311,56 @@ class SudokuActivityCompletionTest {
         }
     }
 
+    private fun SudokuActivity.resetVisible(): Boolean {
+        val menu = RoboMenu(this)
+        val reset = menu.add(0, R.id.menu_reset, 0, "Restart")
+        onPrepareOptionsMenu(menu)
+        return reset.isVisible
+    }
+
+    @Test
+    fun `recreating the activity while the winning move animates wraps up once and keeps reset hidden until the dialog is dismissed`() {
+        val sudokuId = SudokuId.generate()
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        Robolectric.buildActivity(SudokuActivity::class.java, intent).use { controller ->
+            controller.setup()
+            idleMainLooper()
+            val animating = controller.get()
+            animating.select(0)
+            animating.select(animating.sudoku.info.size.cellCount)
+            animating.viewModel.completion.value shouldBe SudokuCompletion.Pending
+            animating.resetVisible() shouldBe false
+
+            controller.recreate()
+            repeat(3) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
+            idleMainLooper()
+
+            val activity = controller.get()
+            val dialogs = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().filter { it.isShowing }
+            dialogs.size shouldBe 1
+            activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEW_GAME)
+            activity.resetVisible() shouldBe false
+            dialogs.single().getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
+            idleMainLooper()
+            activity.resetVisible() shouldBe true
+            fakeSudokusRepository.saves.count { it.completed } shouldBe 2
+            fakePlayGamesSyncApplier.applied.size shouldBe 1
+            syncCalculations.get() shouldBe 1
+        }
+    }
+
     @Test
     fun `recreating the activity while the completion dialog shows reshows it once without a second wrap-up`() {
         val sudokuId = SudokuId.generate()
-        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1))
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, mode = GameMode.Level(1)))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount)
+                activity.select(activity.sudoku.info.size.cellCount)
             }
             awaitMainLooperUntil {
                 fakeInAppReview.calls.isNotEmpty() &&
@@ -350,7 +378,7 @@ class SudokuActivityCompletionTest {
                 val reshown = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().filter { it.isShowing }
                 reshown.size shouldBe 1
                 reshown.single().getButton(AlertDialog.BUTTON_POSITIVE).text shouldBe "Next level"
-                activity.sudoku.id shouldBe sudokuId
+                activity.sudoku.info.id shouldBe sudokuId
                 activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEXT_LEVEL)
             }
             fakePlayGamesSyncApplier.applied.size shouldBe 1
@@ -369,7 +397,7 @@ class SudokuActivityCompletionTest {
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount)
+                activity.select(activity.sudoku.info.size.cellCount)
             }
             awaitMainLooperUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
             val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
@@ -398,7 +426,7 @@ class SudokuActivityCompletionTest {
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount)
+                activity.select(activity.sudoku.info.size.cellCount)
             }
             awaitMainLooperUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
             val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
@@ -427,14 +455,18 @@ class SudokuActivityCompletionTest {
 
             dialog.isShowing shouldBe false
             activity.viewModel.completion.value shouldBe SudokuCompletion.Idle
-            activity.sudoku.id shouldBe sudokuId
+            activity.sudoku.info.id shouldBe sudokuId
         }
     }
 
     @Test
     fun `recreating the activity while the game-over dialog shows dismisses it and keeps the lost game without a new dialog`() {
         val sudokuId = SudokuId.generate()
-        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId, modeLevel = 1).copy(errorsMade = MODE_LEVEL_ERROR_LIMIT))
+        fakeSudokusRepository.store(
+            almostSolvedSudoku(sudokuId, mode = GameMode.Level(1)).let {
+                it.copy(info = it.info.copy(errorsMade = MODE_LEVEL_ERROR_LIMIT))
+            },
+        )
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
@@ -444,8 +476,8 @@ class SudokuActivityCompletionTest {
 
             ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().filter { it.isShowing } shouldBe emptyList()
             scenario.onActivity { activity ->
-                activity.sudoku.id shouldBe sudokuId
-                activity.sudoku.errorsMade shouldBe MODE_LEVEL_ERROR_LIMIT
+                activity.sudoku.info.id shouldBe sudokuId
+                activity.sudoku.info.errorsMade shouldBe MODE_LEVEL_ERROR_LIMIT
                 activity.viewModel.game.value
                     .shouldBeInstanceOf<SudokuGame.Playing>()
                     .phase shouldBe Phase.Lost
@@ -466,12 +498,13 @@ class SudokuActivityCompletionTest {
             idleMainLooper()
 
             activity.viewModel.game.value shouldBe SudokuGame.Restarting
-            activity.sudoku.completed shouldBe true
+            fakeSudokusRepository.saves.last().completed shouldBe true
             ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().shouldBeEmpty()
             syncCalculated.complete(Unit)
             awaitMainLooperUntil { activity.viewModel.game.value is SudokuGame.Playing }
             ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>().shouldBeEmpty()
             activity.sudoku.completed shouldBe false
+            fakeSudokusRepository.saves.last().completed shouldBe false
         }
     }
 
@@ -485,7 +518,7 @@ class SudokuActivityCompletionTest {
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.select(0)
-                activity.select(activity.sudoku.itemCount)
+                activity.select(activity.sudoku.info.size.cellCount)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             scenario.onActivity { activity ->

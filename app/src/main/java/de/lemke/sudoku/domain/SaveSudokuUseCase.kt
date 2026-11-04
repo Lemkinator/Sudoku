@@ -27,10 +27,8 @@ class SaveSudokuUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(
-        sudoku: Sudoku,
-        onlyUpdate: Boolean = false,
-    ) = withContext(defaultDispatcher) {
-        sudokusRepository.saveSudoku(sudoku, onlyUpdate)
-    }
+    suspend operator fun invoke(sudoku: Sudoku) =
+        withContext(defaultDispatcher) {
+            sudokusRepository.saveSudoku(sudoku)
+        }
 }

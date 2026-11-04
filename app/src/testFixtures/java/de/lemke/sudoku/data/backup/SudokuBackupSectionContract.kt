@@ -19,7 +19,8 @@ package de.lemke.sudoku.data.backup
 import de.lemke.commonutils.backup.BackupSectionContract
 import de.lemke.commonutils.backup.ClashCase
 import de.lemke.commonutils.backup.SectionFixture
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.data.database.toLegacyModeLevel
+import de.lemke.sudoku.domain.model.GameMode
 import java.time.OffsetDateTime
 
 private const val HINT_CELL = 10
@@ -34,7 +35,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
     override fun sampleEntries(): List<SudokuBackupEntry> =
         listOf(
             backupEntry(id = "normal-game", updated = "2026-05-02T08:10:00+02:00", solvedCells = 3, seconds = 95),
-            backupEntry(id = "daily-game", modeLevel = Sudoku.MODE_DAILY, created = "2026-05-03T07:30:00+02:00"),
+            backupEntry(id = "daily-game", modeLevel = GameMode.Daily.toLegacyModeLevel(), created = "2026-05-03T07:30:00+02:00"),
             backupEntry(id = "level-game", modeLevel = 2, created = "2026-01-10T19:00:00+01:00", solvedCells = 10),
         )
 
@@ -49,7 +50,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                                 id = "11111111-aaaa",
                                 size = 4,
                                 difficulty = "MEDIUM",
-                                modeLevel = Sudoku.MODE_NORMAL,
+                                modeLevel = GameMode.Normal.toLegacyModeLevel(),
                                 created = OffsetDateTime.parse("2026-05-02T08:00:00+02:00"),
                                 updated = OffsetDateTime.parse("2026-05-02T08:10:00+02:00"),
                                 seconds = 600,
@@ -67,7 +68,11 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                                         notes = mapOf(2 to "13", NOTE_CELL to "34"),
                                     ),
                             ),
-                            backupEntry(id = "22222222-bbbb", modeLevel = Sudoku.MODE_DAILY, created = "2026-05-03T07:30:00+02:00"),
+                            backupEntry(
+                                id = "22222222-bbbb",
+                                modeLevel = GameMode.Daily.toLegacyModeLevel(),
+                                created = "2026-05-03T07:30:00+02:00",
+                            ),
                         ),
                 ),
         )

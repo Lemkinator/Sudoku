@@ -19,20 +19,19 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.SudokuSize.FOUR
 import de.lemke.sudoku.domain.model.SudokuSize.NINE
 import de.lemke.sudoku.domain.model.SudokuSize.SIXTEEN
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
-private fun testSudoku(
+private fun statsSudoku(
     completed: Boolean,
     difficulty: Difficulty = MEDIUM,
     size: SudokuSize = NINE,
@@ -43,18 +42,18 @@ private fun testSudoku(
     eraserUsed: Boolean = false,
     updated: LocalDateTime = LocalDateTime.now(),
 ): Sudoku =
-    Sudoku.create(
-        size = size,
-        difficulty = difficulty,
-        modeLevel = Sudoku.MODE_NORMAL,
-        errorsMade = errorsMade,
-        hintsUsed = hintsUsed,
-        notesMade = notesMade,
-        eraserUsed = eraserUsed,
-        updated = updated,
-        seconds = seconds,
-        fields = mutableListOf(Field(position = Position.create(0, size), solution = 1, value = if (completed) 1 else null)),
-    )
+    testSudoku(size = size, difficulty = difficulty, updated = updated, completed = completed).let {
+        it.copy(
+            info =
+                it.info.copy(
+                    seconds = seconds,
+                    errorsMade = errorsMade,
+                    hintsUsed = hintsUsed,
+                    notesMade = notesMade,
+                    eraserUsed = eraserUsed,
+                ),
+        )
+    }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalculateStatisticsUseCaseTest : ShouldSpec(
@@ -80,13 +79,13 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         }
 
         should("round the win rate to the nearest percent") {
-            val sudokus = listOf(testSudoku(completed = true), testSudoku(completed = false), testSudoku(completed = false))
+            val sudokus = listOf(statsSudoku(completed = true), statsSudoku(completed = false), statsSudoku(completed = false))
 
             useCase(sudokus).winRate shouldBe 33
         }
 
         should("report averageTime as 0, not -1, once at least one game is completed") {
-            val sudokus = listOf(testSudoku(completed = true, seconds = 10), testSudoku(completed = true, seconds = 20))
+            val sudokus = listOf(statsSudoku(completed = true, seconds = 10), statsSudoku(completed = true, seconds = 20))
 
             useCase(sudokus).averageTime shouldBe 15
         }
@@ -94,9 +93,9 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("count the current streak back from the most recently updated game, stopping at the first loss") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = false, updated = LocalDateTime.now().minusMinutes(3)),
-                    testSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(2)),
-                    testSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(1)),
+                    statsSudoku(completed = false, updated = LocalDateTime.now().minusMinutes(3)),
+                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(2)),
+                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(1)),
                 )
 
             useCase(sudokus).currentGameStreak shouldBe 2
@@ -105,10 +104,10 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("track the best streak even when it isn't the current one") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(4)),
-                    testSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(3)),
-                    testSudoku(completed = false, updated = LocalDateTime.now().minusMinutes(2)),
-                    testSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(1)),
+                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(4)),
+                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(3)),
+                    statsSudoku(completed = false, updated = LocalDateTime.now().minusMinutes(2)),
+                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(1)),
                 )
 
             val stats = useCase(sudokus)
@@ -119,10 +118,10 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("break a tie between equally-played difficulties by first appearance") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = false, difficulty = EASY),
-                    testSudoku(completed = false, difficulty = MEDIUM),
-                    testSudoku(completed = false, difficulty = EASY),
-                    testSudoku(completed = false, difficulty = MEDIUM),
+                    statsSudoku(completed = false, difficulty = EASY),
+                    statsSudoku(completed = false, difficulty = MEDIUM),
+                    statsSudoku(completed = false, difficulty = EASY),
+                    statsSudoku(completed = false, difficulty = MEDIUM),
                 )
 
             useCase(sudokus).mostGamesStartedDifficulty shouldBe EASY
@@ -131,8 +130,8 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("report the max errors/hints/notes made across all games, not just completed ones") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 1, notesMade = 2),
-                    testSudoku(completed = true, errorsMade = 1, hintsUsed = 4, notesMade = 9),
+                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 1, notesMade = 2),
+                    statsSudoku(completed = true, errorsMade = 1, hintsUsed = 4, notesMade = 9),
                 )
 
             val stats = useCase(sudokus)
@@ -144,10 +143,10 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("break a tie between equally-started sizes by first appearance") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = false, size = NINE),
-                    testSudoku(completed = false, size = FOUR),
-                    testSudoku(completed = false, size = NINE),
-                    testSudoku(completed = false, size = FOUR),
+                    statsSudoku(completed = false, size = NINE),
+                    statsSudoku(completed = false, size = FOUR),
+                    statsSudoku(completed = false, size = NINE),
+                    statsSudoku(completed = false, size = FOUR),
                 )
 
             useCase(sudokus).mostGamesStartedSize shouldBe NINE
@@ -156,8 +155,8 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("report null won-difficulty/won-size while still reporting started ones when nothing is completed") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = false, difficulty = EASY, size = NINE),
-                    testSudoku(completed = false, difficulty = MEDIUM, size = SIXTEEN),
+                    statsSudoku(completed = false, difficulty = EASY, size = NINE),
+                    statsSudoku(completed = false, difficulty = MEDIUM, size = SIXTEEN),
                 )
 
             val stats = useCase(sudokus)
@@ -170,10 +169,10 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("break a tie between equally-won difficulties and sizes by first appearance") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = true, difficulty = EASY, size = NINE),
-                    testSudoku(completed = true, difficulty = MEDIUM, size = FOUR),
-                    testSudoku(completed = true, difficulty = EASY, size = NINE),
-                    testSudoku(completed = true, difficulty = MEDIUM, size = FOUR),
+                    statsSudoku(completed = true, difficulty = EASY, size = NINE),
+                    statsSudoku(completed = true, difficulty = MEDIUM, size = FOUR),
+                    statsSudoku(completed = true, difficulty = EASY, size = NINE),
+                    statsSudoku(completed = true, difficulty = MEDIUM, size = FOUR),
                 )
 
             val stats = useCase(sudokus)
@@ -184,11 +183,11 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("pick a later, larger group or value over an earlier, smaller one") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = false, errorsMade = 1, hintsUsed = 1, notesMade = 1, difficulty = EASY, size = FOUR),
-                    testSudoku(completed = false, errorsMade = 2, hintsUsed = 2, notesMade = 2, difficulty = EASY, size = FOUR),
-                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
-                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
-                    testSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = false, errorsMade = 1, hintsUsed = 1, notesMade = 1, difficulty = EASY, size = FOUR),
+                    statsSudoku(completed = false, errorsMade = 2, hintsUsed = 2, notesMade = 2, difficulty = EASY, size = FOUR),
+                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
                 )
 
             val stats = useCase(sudokus)
@@ -202,11 +201,11 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("pick a later, larger won group over an earlier, smaller one") {
             val sudokus =
                 listOf(
-                    testSudoku(completed = true, difficulty = EASY, size = FOUR),
-                    testSudoku(completed = true, difficulty = EASY, size = FOUR),
-                    testSudoku(completed = true, difficulty = MEDIUM, size = NINE),
-                    testSudoku(completed = true, difficulty = MEDIUM, size = NINE),
-                    testSudoku(completed = true, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = true, difficulty = EASY, size = FOUR),
+                    statsSudoku(completed = true, difficulty = EASY, size = FOUR),
+                    statsSudoku(completed = true, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = true, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = true, difficulty = MEDIUM, size = NINE),
                 )
 
             val stats = useCase(sudokus)

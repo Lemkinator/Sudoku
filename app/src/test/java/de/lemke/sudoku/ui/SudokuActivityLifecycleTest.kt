@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui
 
 import android.content.Intent
+import android.os.Looper
 import android.view.KeyEvent
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -31,20 +32,20 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -54,6 +55,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenu
 import org.robolectric.fakes.RoboMenuItem
@@ -87,7 +89,7 @@ class SudokuActivityLifecycleTest {
     ) {
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 activity.userSettings.animationsEnabled = false
@@ -98,53 +100,43 @@ class SudokuActivityLifecycleTest {
 
     private fun formulaicSudoku(
         size: SudokuSize = SudokuSize.FOUR,
-        modeLevel: Int = MODE_NORMAL,
+        mode: GameMode = GameMode.Normal,
         created: LocalDateTime = LocalDateTime.now(),
         allCorrect: Boolean = false,
         sudokuId: SudokuId = SudokuId.generate(),
-    ): Sudoku {
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            sudokuId = sudokuId,
+    ): Sudoku =
+        testSudoku(
             size = size,
+            mode = mode,
             difficulty = Difficulty.VERY_EASY,
-            modeLevel = modeLevel,
+            sudokuId = sudokuId,
             created = created,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    val given = index % 3 == 0
-                    Field(
-                        position = Position.create(index, size),
-                        solution = solution,
-                        value = if (given || allCorrect) solution else null,
-                        given = given,
-                    )
-                },
+            completed = allCorrect,
         )
-    }
 
     // region resumeGame
 
     @Test
     fun `resumeGame starts the timer for a normal in-progress sudoku`() =
         launch(formulaicSudoku()) { activity ->
-            activity.sudoku.resumed.shouldBeTrue()
+            activity.playing.running.shouldBeTrue()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+            activity.sudoku.info.seconds shouldBe 3
         }
 
     @Test
     fun `resumeGame does not start the timer for an already completed sudoku`() =
         launch(formulaicSudoku(allCorrect = true)) { activity ->
             activity.sudoku.completed.shouldBeTrue()
-            activity.sudoku.resumed.shouldBeFalse()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+            activity.sudoku.info.seconds shouldBe 0
         }
 
     @Test
     fun `resumeGame does not start the timer for a stale daily sudoku`() =
-        launch(formulaicSudoku(modeLevel = MODE_DAILY, created = LocalDateTime.now().minusDays(2))) { activity ->
-            activity.sudoku.resumed.shouldBeFalse()
+        launch(formulaicSudoku(mode = GameMode.Daily, created = LocalDateTime.now().minusDays(2))) { activity ->
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+            activity.sudoku.info.seconds shouldBe 0
         }
 
     @Test
@@ -167,11 +159,21 @@ class SudokuActivityLifecycleTest {
         val sudoku = formulaicSudoku()
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
-            scenario.onActivity { it.userSettings.animationsEnabled = false }
+            var secondsAtPause = 0
+            scenario.onActivity {
+                it.userSettings.animationsEnabled = false
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+                secondsAtPause = it.sudoku.info.seconds
+            }
+            secondsAtPause shouldBe 3
             scenario.moveToState(Lifecycle.State.CREATED)
-            scenario.onActivity { activity -> activity.sudoku.resumed.shouldBeFalse() }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeFalse()
+                activity.sudoku.info.seconds shouldBe secondsAtPause
+            }
         }
     }
 
@@ -180,11 +182,11 @@ class SudokuActivityLifecycleTest {
         val sudoku = formulaicSudoku(allCorrect = true)
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { it.userSettings.animationsEnabled = false }
             scenario.moveToState(Lifecycle.State.CREATED)
-            scenario.onActivity { activity -> activity.sudoku.resumed.shouldBeFalse() }
+            scenario.onActivity { activity -> activity.playing.running.shouldBeFalse() }
         }
     }
 
@@ -193,7 +195,7 @@ class SudokuActivityLifecycleTest {
         val sudoku = formulaicSudoku()
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity {
                 it.userSettings.animationsEnabled = false
@@ -218,9 +220,9 @@ class SudokuActivityLifecycleTest {
     fun `placing a value saves it`() =
         launch(formulaicSudoku()) { activity ->
             activity.select(1)
-            activity.select(activity.sudoku.itemCount)
+            activity.select(activity.sudoku.info.size.cellCount)
 
-            runBlocking { sudokusRepository.getSudokuById(activity.sudoku.id) }.shouldNotBeNull()[1].value shouldBe 1
+            runBlocking { sudokusRepository.getSudokuById(activity.sudoku.info.id) }.shouldNotBeNull().board[1].value shouldBe 1
         }
 
     @Test
@@ -228,17 +230,19 @@ class SudokuActivityLifecycleTest {
         val sudoku = formulaicSudoku()
         runBlocking { saveSudoku(sudoku) }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.id.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            var secondsAtPause = 0
             scenario.onActivity {
                 it.userSettings.animationsEnabled = false
-                it.sudoku.stopTimer()
-                it.sudoku.seconds = 42
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+                secondsAtPause = it.sudoku.info.seconds
             }
 
             scenario.moveToState(Lifecycle.State.CREATED)
 
-            runBlocking { sudokusRepository.getSudokuById(sudoku.id) }.shouldNotBeNull().seconds shouldBe 42
+            secondsAtPause shouldBeGreaterThan 0
+            runBlocking { sudokusRepository.getSudokuById(sudoku.info.id) }.shouldNotBeNull().info.seconds shouldBe secondsAtPause
         }
     }
 
@@ -255,7 +259,7 @@ class SudokuActivityLifecycleTest {
     fun `a digit key enabled for the board size selects the matching number button`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_1).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.itemCount
+            activity.selected shouldBe activity.sudoku.info.size.cellCount
         }
 
     @Test
@@ -290,17 +294,18 @@ class SudokuActivityLifecycleTest {
     fun `KEYCODE_DEL selects the delete button`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_DEL).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value
         }
 
     @Test
     fun `KEYCODE_H selects the hint button while a hint is available and is ignored once exhausted`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_H).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.itemCount + activity.sudoku.size.value + 1
+            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value + 1
 
             activity.select(4)
-            activity.sudoku.isHintAvailable.shouldBeFalse()
+            activity.sudoku.info.isHintAvailable
+                .shouldBeFalse()
 
             keyUp(activity, KeyEvent.KEYCODE_H).shouldBeFalse()
         }
@@ -340,14 +345,14 @@ class SudokuActivityLifecycleTest {
         }
 
     @Test
-    fun `onPrepareOptionsMenu skips the game items a menu does not hold`() =
+    fun `onPrepareOptionsMenu offers share while a sudoku is playing`() =
         launch(formulaicSudoku()) { activity ->
             val menu = RoboMenu(activity)
             val share = menu.add(0, R.id.menu_share, 0, "Share").apply { isVisible = false }
 
             activity.onPrepareOptionsMenu(menu).shouldBeTrue()
 
-            share.isVisible.shouldBeFalse()
+            share.isVisible.shouldBeTrue()
         }
 
     // endregion
@@ -357,11 +362,11 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `menu_pause_play toggles between pausing and resuming`() =
         launch(formulaicSudoku()) { activity ->
-            activity.sudoku.resumed.shouldBeTrue()
+            activity.playing.running.shouldBeTrue()
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)).shouldBeTrue()
-            activity.sudoku.resumed.shouldBeFalse()
+            activity.playing.running.shouldBeFalse()
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)).shouldBeTrue()
-            activity.sudoku.resumed.shouldBeTrue()
+            activity.playing.running.shouldBeTrue()
         }
 
     @Test
@@ -369,20 +374,23 @@ class SudokuActivityLifecycleTest {
         launch(formulaicSudoku()) { activity ->
             activity.userSettings.errorLimit = 1
             activity.select(1)
-            activity.select(activity.sudoku.itemCount)
-            activity.sudoku.errorsMade shouldBe 1
+            activity.select(activity.sudoku.info.size.cellCount)
+            activity.sudoku.info.errorsMade shouldBe 1
 
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
+            idleMainLooper()
 
-            activity.sudoku.errorsMade shouldBe 0
-            activity.sudoku[1].value.shouldBeNull()
+            activity.sudoku.info.errorsMade shouldBe 0
+            activity.sudoku.board[1]
+                .value
+                .shouldBeNull()
         }
 
     @Test
     fun `menu_share shows the share dialog and pauses the game`() =
         launch(formulaicSudoku()) { activity ->
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share)).shouldBeTrue()
-            activity.sudoku.resumed.shouldBeFalse()
+            activity.playing.running.shouldBeFalse()
             val dialog = ShadowDialog.getLatestDialog()
             dialog.shouldNotBeNull()
             dialog!!.isShowing.shouldBeTrue()
@@ -399,27 +407,27 @@ class SudokuActivityLifecycleTest {
     private fun placeThreeWrongMoves(activity: SudokuActivity) {
         listOf(1, 2, 4).forEach { fieldIndex ->
             activity.select(fieldIndex)
-            activity.select(activity.sudoku.itemCount)
+            activity.select(activity.sudoku.info.size.cellCount)
         }
     }
 
     @Test
     fun `checkErrorLimit uses the fixed level limit and guards further input once reached`() =
-        launch(formulaicSudoku(modeLevel = 1)) { activity ->
+        launch(formulaicSudoku(mode = GameMode.Level(1))) { activity ->
             placeThreeWrongMoves(activity)
-            activity.sudoku.errorsMade shouldBe 3
+            activity.sudoku.info.errorsMade shouldBe 3
 
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.selected.shouldBeNull()
         }
 
     @Test
     fun `checkErrorLimit uses the fixed daily limit and guards further input once reached`() =
-        launch(formulaicSudoku(modeLevel = MODE_DAILY)) { activity ->
+        launch(formulaicSudoku(mode = GameMode.Daily)) { activity ->
             placeThreeWrongMoves(activity)
-            activity.sudoku.errorsMade shouldBe 3
+            activity.sudoku.info.errorsMade shouldBe 3
 
-            activity.select(activity.sudoku.itemCount + 1)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
             activity.selected.shouldBeNull()
         }
 
@@ -444,10 +452,9 @@ class SudokuActivityLifecycleTest {
     }
 
     @Test
-    fun `onPrepareOptionsMenu and resumeGame are no-ops before the sudoku ever initializes`() {
+    fun `resumeGame is a no-op before the sudoku ever initializes`() {
         val activity = Robolectric.buildActivity(SudokuActivity::class.java).get()
 
-        activity.onPrepareOptionsMenu(null).shouldBeFalse()
         activity.resumeGame()
     }
 
@@ -458,29 +465,54 @@ class SudokuActivityLifecycleTest {
 
     // endregion
 
-    // region SudokuGameListener glue
+    // region board callbacks
 
     @Test
-    fun `onFieldClicked routes through select the same way a tap on the board would`() =
+    fun `a click on a field routes through select the same way a tap on the board would`() =
         launch(formulaicSudoku()) { activity ->
-            activity.sudoku.gameListener?.onFieldClicked(Position.create(1, activity.sudoku.size))
+            activity.gameAdapter.onFieldClicked(1)
             activity.selected shouldBe 1
         }
 
     @Test
-    fun `onTimeChanged refreshes the subtitle`() =
+    fun `a long click on a player field erases it`() =
         launch(formulaicSudoku()) { activity ->
-            activity.sudoku.seconds = 65
-            activity.sudoku.gameListener?.onTimeChanged()
+            activity.select(1)
+            activity.select(activity.sudoku.info.size.cellCount + 1)
+            activity.sudoku.board[1].value shouldBe 2
+
+            activity.gameAdapter.onFieldLongClicked(1).shouldBeTrue()
+
+            activity.sudoku.board[1]
+                .value
+                .shouldBeNull()
+            activity.sudoku.info.eraserUsed
+                .shouldBeTrue()
+        }
+
+    @Test
+    fun `a long click on a given field is not consumed`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.gameAdapter.onFieldLongClicked(0).shouldBeFalse()
+
+            activity.sudoku.info.eraserUsed
+                .shouldBeFalse()
+        }
+
+    @Test
+    fun `the subtitle shows the elapsed time`() =
+        launch(formulaicSudoku()) { activity ->
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(65))
             idleMainLooper()
-            activity.binding.sudokuToolbarLayout.expandedSubtitle
-                .toString() shouldBe
+            activity.sudoku.info.seconds shouldBe 65
+
+            val subtitle =
+                activity.binding.sudokuToolbarLayout.expandedSubtitle
+                    .toString()
+            subtitle shouldBe
                 activity.binding.sudokuToolbarLayout.collapsedSubtitle
                     .toString()
-            activity.binding.sudokuToolbarLayout.expandedSubtitle
-                .toString()
-                .contains("01:05")
-                .shouldBeTrue()
+            subtitle shouldBe "01:05 | 0% | Errors: 0/3 | Hints: 0"
         }
 
     // endregion

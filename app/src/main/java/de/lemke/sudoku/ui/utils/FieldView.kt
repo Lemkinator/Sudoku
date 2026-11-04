@@ -28,18 +28,20 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.asynclayoutinflater.view.AsyncLayoutInflater
 import androidx.core.view.isVisible
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.model.Field
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Position
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.toSudokuDigitChar
 import de.lemke.sudoku.domain.model.toSudokuString
 
 class FieldView(context: Context) : LinearLayout(context) {
     var fieldViewValue: TextView? = null
     private var fieldViewNotes: TextView? = null
     private var fieldViewContainer: View? = null
-    private lateinit var sudoku: Sudoku
+    private lateinit var board: Board
     private lateinit var adapter: SudokuViewAdapter
-    lateinit var field: Field
+    lateinit var cell: Cell
     lateinit var position: Position
     private var isColored = false
     var isHighlighted = false
@@ -54,7 +56,7 @@ class FieldView(context: Context) : LinearLayout(context) {
             fieldViewNotes = findViewById(R.id.itemNotes)
             fieldViewContainer = findViewById(R.id.itemContainer)
 
-            if (::sudoku.isInitialized) init(sudoku, position.index, adapter)
+            if (::board.isInitialized) init(board, position.index, adapter)
         }
     }
 
@@ -66,17 +68,17 @@ class FieldView(context: Context) : LinearLayout(context) {
     }
 
     fun init(
-        sudoku: Sudoku,
+        board: Board,
         index: Int,
         adapter: SudokuViewAdapter,
     ) {
         this.adapter = adapter
-        this.sudoku = sudoku
-        position = Position.create(index, sudoku.size)
-        field = sudoku[position.index]
+        this.board = board
+        position = board.position(index)
+        cell = board[index]
         if (fieldViewContainer == null) return
-        val blockSize = sudoku.size.blockSize
-        val lastLine = sudoku.size.value - 1
+        val blockSize = board.size.blockSize
+        val lastLine = board.size.value - 1
 
         when {
             position.row % blockSize == blockSize - 1 && position.row != lastLine -> {
@@ -98,29 +100,29 @@ class FieldView(context: Context) : LinearLayout(context) {
         val rm = position.row % (blockSize * 2)
         val cm = position.column % (blockSize * 2)
         isColored = rm >= blockSize != cm >= blockSize
-        update()
+        update(board)
     }
 
-    fun update() {
-        fieldViewValue?.text = field.value.toSudokuString()
-        fieldViewValue?.isVisible = field.value != null
+    fun update(board: Board) {
+        this.board = board
+        cell = board[position.index]
+        fieldViewValue?.text = cell.value.toSudokuString()
+        fieldViewValue?.isVisible = cell.value != null
         fieldViewValue?.setTextColor(
             context.getColor(
-                if (field.hint) {
-                    R.color.field_hint_text_color
-                } else if (field.given) {
-                    R.color.field_given_text_color
-                } else {
-                    R.color.field_userinput_text_color
+                when (cell.origin) {
+                    CellOrigin.HINT -> R.color.field_hint_text_color
+                    CellOrigin.GIVEN -> R.color.field_given_text_color
+                    CellOrigin.PLAYER -> R.color.field_userinput_text_color
                 },
             ),
         )
         updateNotes()
         setBackground()
-        if (!sudoku.completed) {
-            setOnClickListener { sudoku.gameListener?.onFieldClicked(position) }
+        if (!board.completed) {
+            setOnClickListener { adapter.onFieldClicked(position.index) }
             setOnLongClickListener {
-                if (sudoku.move(position, null) == true) {
+                if (adapter.onFieldLongClicked(position.index)) {
                     isSelected = false
                     isHighlightedNumber = false
                     setBackground()
@@ -133,9 +135,12 @@ class FieldView(context: Context) : LinearLayout(context) {
     }
 
     private fun updateNotes() {
-        fieldViewNotes?.isVisible = field.notes.isNotEmpty()
-        fieldViewNotes?.text = field.notes.joinToString("")
-        if (position.row == sudoku.size.value - 1 && (position.column == 0 || position.column == sudoku.size.value - 1)) {
+        fieldViewNotes?.isVisible = !cell.notes.isEmpty()
+        fieldViewNotes?.text =
+            cell.notes.digits
+                .map { it.toSudokuDigitChar() }
+                .joinToString("")
+        if (position.row == board.size.value - 1 && (position.column == 0 || position.column == board.size.value - 1)) {
             fieldViewNotes?.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
         }
     }
@@ -144,7 +149,7 @@ class FieldView(context: Context) : LinearLayout(context) {
 
     @SuppressLint("PrivateResource")
     private fun getCurrentBackgroundColor(): Int =
-        if (field.error) {
+        if (cell.error) {
             context.getColor(androidx.appcompat.R.color.sesl_error_color)
         } else if (isSelected) {
             context.getColor(R.color.control_color_selected)

@@ -28,10 +28,8 @@ import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.sudoku.domain.SaveSudokuUseCase
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.domain.model.SudokuSize
-import de.lemke.sudoku.testLevelSudoku
+import de.lemke.sudoku.domain.model.tutorialSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -44,7 +42,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Seeds a fixed, hand-formulaic board (not solver-generated, see [testLevelSudoku]) under a known [SudokuId] so the
+ * Seeds a fixed, hand-formulaic board (not solver-generated, see [tutorialSudoku]) under a known [SudokuId] so the
  * activity loads deterministic data instead of hitting the unseeded `de.sfuhrm:sudoku` generator.
  */
 @HiltAndroidTest
@@ -66,7 +64,7 @@ class SudokuActivityScreenshotTest {
     fun setup() {
         hiltRule.inject()
         settings.bypassOobe()
-        runBlocking { saveSudoku(testLevelSudoku(size = SudokuSize.NINE, level = MODE_NORMAL, sudokuId = SUDOKU_ID)) }
+        runBlocking { saveSudoku(tutorialSudoku(sudokuId = SUDOKU_ID)) }
     }
 
     private fun captureSudokuScreenshot(fileName: String) {

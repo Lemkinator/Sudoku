@@ -22,7 +22,14 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
+
+data class SudokuIdentity(
+    val modeLevel: Int,
+    val size: Int,
+    val created: LocalDateTime,
+)
 
 @Dao
 interface SudokuDao {
@@ -74,6 +81,9 @@ interface SudokuDao {
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?
+
+    @Query("SELECT modeLevel, size, created FROM sudoku WHERE id = :id")
+    suspend fun identityOf(id: String): SudokuIdentity?
 
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id IN (:ids)")

@@ -46,7 +46,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
-private fun List<SudokuListItem>.shape(): List<String> = map { item -> if (item is SudokuItem) item.sudoku.id.value else "separator" }
+private fun List<SudokuListItem>.shape(): List<String> = map { item -> if (item is SudokuItem) item.sudoku.info.id.value else "separator" }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabHistoryViewModelTest : ShouldSpec(
@@ -76,7 +76,11 @@ class TabHistoryViewModelTest : ShouldSpec(
             sudokuId: SudokuId,
             updated: LocalDateTime,
             seconds: Int = 0,
-        ) = testSudoku(sudokuId = sudokuId, created = NINE_O_CLOCK, updated = updated).also { it.seconds = seconds }
+        ) = testSudoku(
+            sudokuId = sudokuId,
+            created = NINE_O_CLOCK,
+            updated = updated,
+        ).let { it.copy(info = it.info.copy(seconds = seconds)) }
 
         should("errorLimit reflects the real UserSettings.errorLimitFlow") {
             val viewModel = newViewModel()

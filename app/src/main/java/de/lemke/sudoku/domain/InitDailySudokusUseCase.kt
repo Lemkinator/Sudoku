@@ -33,7 +33,7 @@ class InitDailySudokusUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(date: LocalDate = LocalDate.now(clock)) =
         withContext(defaultDispatcher) {
-            if (sudokusRepository.getDailySudokus().none { it.created.toLocalDate() == date }) {
+            if (sudokusRepository.getDailySudokus().none { it.info.created.toLocalDate() == date }) {
                 saveSudoku(generateDailySudoku())
             }
         }

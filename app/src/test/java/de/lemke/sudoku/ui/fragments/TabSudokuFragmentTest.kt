@@ -45,12 +45,10 @@ import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.DailySudokuActivity
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.SudokuActivity
@@ -120,29 +118,9 @@ class TabSudokuFragmentTest {
 
     private fun formulaicSudoku(
         size: SudokuSize = SudokuSize.FOUR,
-        modeLevel: Int = MODE_NORMAL,
+        mode: GameMode = GameMode.Normal,
         allCorrect: Boolean = false,
-    ): Sudoku {
-        val blockSize = size.blockSize
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = modeLevel,
-            fields =
-                MutableList(size.cellCount) { index ->
-                    val row = index / size.value
-                    val col = index % size.value
-                    val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                    val given = index % 3 == 0 || allCorrect
-                    Field(
-                        position = Position.create(index, size),
-                        solution = solution,
-                        value = if (given) solution else null,
-                        given = given,
-                    )
-                },
-        )
-    }
+    ): Sudoku = testSudoku(size = size, mode = mode, difficulty = Difficulty.VERY_EASY, completed = allCorrect)
 
     private fun launch(block: (TabSudoku) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -204,7 +182,7 @@ class TabSudokuFragmentTest {
                 activity.supportFragmentManager.fragments.size shouldBe 3
                 val started = shadowOf(activity).nextStartedActivity
                 started.component?.className shouldBe SudokuActivity::class.java.name
-                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.info.id.value
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
         }
@@ -230,7 +208,7 @@ class TabSudokuFragmentTest {
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe SudokuLevelActivity::class.java.name
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
-            viewModel.newGame.value shouldBe NewGame.Created(generated.id)
+            viewModel.newGame.value shouldBe NewGame.Created(generated.info.id)
 
             scenario.returnFromLaunchedScreen()
             idleMainLooper()
@@ -238,7 +216,7 @@ class TabSudokuFragmentTest {
             scenario.onActivity { activity ->
                 val started = shadowOf(activity).nextStartedActivity
                 started.component?.className shouldBe SudokuActivity::class.java.name
-                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.id.value
+                started.getStringExtra(KEY_SUDOKU_ID) shouldBe generated.info.id.value
                 shadowOf(activity).nextStartedActivity shouldBe null
             }
             viewModel.newGame.value shouldBe NewGame.Idle
@@ -399,7 +377,7 @@ class TabSudokuFragmentTest {
 
     @Test
     fun `onResume shows the daily button when today's daily sudoku is already completed`() {
-        runBlocking { saveSudoku(formulaicSudoku(modeLevel = MODE_DAILY, allCorrect = true)) }
+        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily, allCorrect = true)) }
         launch { fragment ->
             fragment
                 .requireView()
@@ -416,7 +394,7 @@ class TabSudokuFragmentTest {
 
     @Test
     fun `onResume shows the daily-available button when today's daily sudoku is unfinished`() {
-        runBlocking { saveSudoku(formulaicSudoku(modeLevel = MODE_DAILY, allCorrect = false)) }
+        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily, allCorrect = false)) }
         launch { fragment ->
             fragment
                 .requireView()
@@ -479,7 +457,7 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 0
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().size shouldBe SudokuSize.FOUR
+            runBlocking { getAllSudokus() }.single().info.size shouldBe SudokuSize.FOUR
         }
 
     @Test
@@ -487,6 +465,6 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 2
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().size shouldBe SudokuSize.SIXTEEN
+            runBlocking { getAllSudokus() }.single().info.size shouldBe SudokuSize.SIXTEEN
         }
 }

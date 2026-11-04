@@ -16,13 +16,19 @@
 
 package de.lemke.sudoku.data.backup
 
+import de.lemke.sudoku.data.database.legacyGameModeOrNull
+import de.lemke.sudoku.data.database.toLegacyModeLevel
+import de.lemke.sudoku.data.database.toSudokuChars
+import de.lemke.sudoku.domain.model.Board
+import de.lemke.sudoku.domain.model.Cell
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
-import de.lemke.sudoku.domain.model.toSudokuChar
+import de.lemke.sudoku.domain.model.toSudokuDigitChar
 import de.lemke.sudoku.domain.model.toSudokuInt
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit.SECONDS
@@ -30,37 +36,41 @@ import java.time.temporal.ChronoUnit.SECONDS
 private const val EMPTY_CELL = '.'
 
 /**
- * The game of [entry], or null if the entry is broken. A broken entry fails a shape check, has a mode level below
- * [Sudoku.MODE_DAILY], negative seconds, or a note digit beyond its board size. A given or hint cell needs no value that matches its
- * solution. [zone] places the updated stamp on the device clock.
+ * The game of [entry], or null if the entry is broken. A broken entry fails a shape check, has a mode level that names no game mode,
+ * negative seconds, or a note digit beyond its board size. A given or hint cell needs no value that matches its solution. [zone] places
+ * the updated stamp on the device clock.
  */
 fun sudokuFromBackup(
     entry: SudokuBackupEntry,
     zone: ZoneId,
 ): Sudoku? {
+    if (entry.seconds < 0) return null
     val size = SudokuSize.fromValueOrNull(entry.size)
     val difficulty = Difficulty.fromNameOrNull(entry.difficulty)
-    val fields = size?.let { entry.board.toFieldsOrNull(it) }
-    val countersValid = entry.modeLevel >= Sudoku.MODE_DAILY && entry.seconds >= 0
-    return if (size != null && difficulty != null && fields != null && countersValid) {
-        Sudoku.create(
-            sudokuId = SudokuId(entry.id),
-            size = size,
-            difficulty = difficulty,
-            modeLevel = entry.modeLevel,
-            regionalHighlightingUsed = entry.regionalHighlightingUsed,
-            numberHighlightingUsed = entry.numberHighlightingUsed,
-            eraserUsed = entry.eraserUsed,
-            isChecklist = entry.isChecklist,
-            isReverseChecklist = entry.isReverseChecklist,
-            checklistNumber = entry.checklistNumber,
-            hintsUsed = entry.hintsUsed,
-            notesMade = entry.notesMade,
-            errorsMade = entry.errorsMade,
-            created = entry.created.toLocalDateTime(),
-            updated = entry.updated.atZoneSameInstant(zone).toLocalDateTime(),
-            seconds = entry.seconds,
-            fields = fields,
+    val mode = legacyGameModeOrNull(entry.modeLevel)
+    val board = size?.let { entry.board.toBoardOrNull(it) }
+    return if (size != null && difficulty != null && mode != null && board != null) {
+        Sudoku(
+            info =
+                GameInfo(
+                    id = SudokuId(entry.id),
+                    size = size,
+                    difficulty = difficulty,
+                    mode = mode,
+                    created = entry.created.toLocalDateTime(),
+                    updated = entry.updated.atZoneSameInstant(zone).toLocalDateTime(),
+                    seconds = entry.seconds,
+                    hintsUsed = entry.hintsUsed,
+                    notesMade = entry.notesMade,
+                    errorsMade = entry.errorsMade,
+                    regionalHighlightingUsed = entry.regionalHighlightingUsed,
+                    numberHighlightingUsed = entry.numberHighlightingUsed,
+                    eraserUsed = entry.eraserUsed,
+                    isChecklist = entry.isChecklist,
+                    isReverseChecklist = entry.isReverseChecklist,
+                    checklistNumber = entry.checklistNumber,
+                ),
+            board = board,
         )
     } else {
         null
@@ -68,45 +78,37 @@ fun sudokuFromBackup(
 }
 
 /**
- * The entry of [sudoku], or null if a solution or value has no digit char or [sudokuFromBackup] cannot read the entry back, so every
- * written entry restores. [zone] gives the offset of both stamps.
+ * The entry of [sudoku], or null if [sudokuFromBackup] cannot read the entry back, so every written entry restores. [zone] gives the
+ * offset of both stamps.
  */
 fun sudokuToBackup(
     sudoku: Sudoku,
     zone: ZoneId,
-): SudokuBackupEntry? = entryOrNull(sudoku, zone)?.takeIf { sudokuFromBackup(it, zone) != null }
+): SudokuBackupEntry? = entryOf(sudoku, zone).takeIf { sudokuFromBackup(it, zone) != null }
 
-private fun entryOrNull(
+private fun entryOf(
     sudoku: Sudoku,
     zone: ZoneId,
-): SudokuBackupEntry? =
-    sudoku.fields.toBoardBackupOrNull()?.let { board ->
+): SudokuBackupEntry =
+    with(sudoku.info) {
         SudokuBackupEntry(
-            id = sudoku.id.value,
-            size = sudoku.size.value,
-            difficulty = sudoku.difficulty.name,
-            modeLevel = sudoku.modeLevel,
-            created =
-                sudoku.created
-                    .atZone(zone)
-                    .toOffsetDateTime()
-                    .truncatedTo(SECONDS),
-            updated =
-                sudoku.updated
-                    .atZone(zone)
-                    .toOffsetDateTime()
-                    .truncatedTo(SECONDS),
-            seconds = sudoku.seconds,
-            regionalHighlightingUsed = sudoku.regionalHighlightingUsed,
-            numberHighlightingUsed = sudoku.numberHighlightingUsed,
-            eraserUsed = sudoku.eraserUsed,
-            isChecklist = sudoku.isChecklist,
-            isReverseChecklist = sudoku.isReverseChecklist,
-            checklistNumber = sudoku.checklistNumber,
-            hintsUsed = sudoku.hintsUsed,
-            notesMade = sudoku.notesMade,
-            errorsMade = sudoku.errorsMade,
-            board = board,
+            id = id.value,
+            size = size.value,
+            difficulty = difficulty.name,
+            modeLevel = mode.toLegacyModeLevel(),
+            created = created.atZone(zone).toOffsetDateTime().truncatedTo(SECONDS),
+            updated = updated.atZone(zone).toOffsetDateTime().truncatedTo(SECONDS),
+            seconds = seconds,
+            regionalHighlightingUsed = regionalHighlightingUsed,
+            numberHighlightingUsed = numberHighlightingUsed,
+            eraserUsed = eraserUsed,
+            isChecklist = isChecklist,
+            isReverseChecklist = isReverseChecklist,
+            checklistNumber = checklistNumber,
+            hintsUsed = hintsUsed,
+            notesMade = notesMade,
+            errorsMade = errorsMade,
+            board = sudoku.board.toBackup(),
         )
     }
 
@@ -116,27 +118,18 @@ fun progressOf(
     zone: ZoneId,
 ): Int = sudokuFromBackup(entry, zone)?.progress ?: 0
 
-private fun List<Field>.toBoardBackupOrNull(): BoardBackup? {
-    val solution = map { it.solution.toSudokuChar() }.noNullsOrNull()
-    val values = map { it.value.toCellChar() }.noNullsOrNull()
-    return if (solution == null || values == null) {
-        null
-    } else {
-        BoardBackup(
-            solution = solution.joinToString(""),
-            values = values.joinToString(""),
-            givens = indices.filter { this[it].given },
-            hints = indices.filter { this[it].hint },
-            notes = indices.filter { this[it].notes.isNotEmpty() }.associateWith { this[it].notes.joinToString("") },
-        )
-    }
-}
+private fun Board.toBackup(): BoardBackup =
+    BoardBackup(
+        solution = cells.map { digitChar(it.solution) }.joinToString(""),
+        values = cells.map { cell -> cell.value?.let(::digitChar) ?: EMPTY_CELL }.joinToString(""),
+        givens = cells.indices.filter { cells[it].origin == CellOrigin.GIVEN },
+        hints = cells.indices.filter { cells[it].origin == CellOrigin.HINT },
+        notes = cells.indices.filterNot { cells[it].notes.isEmpty() }.associateWith { cells[it].notes.toSudokuChars() },
+    )
 
-private fun Int?.toCellChar(): Char? = if (this == null) EMPTY_CELL else toSudokuChar()
+private fun digitChar(digit: Int): Char = digit.toSudokuDigitChar()
 
-private fun <T : Any> List<T?>.noNullsOrNull(): List<T>? = if (null in this) null else requireNoNulls()
-
-private fun BoardBackup.toFieldsOrNull(size: SudokuSize): MutableList<Field>? {
+private fun BoardBackup.toBoardOrNull(size: SudokuSize): Board? {
     val cells = 0 until size.cellCount
     val marked = givens + hints
     val shapeValid =
@@ -146,31 +139,27 @@ private fun BoardBackup.toFieldsOrNull(size: SudokuSize): MutableList<Field>? {
             marked.all { it in cells } &&
             notes.keys.all { it in cells }
     if (!shapeValid) return null
-    val fields = cells.map { fieldOrNull(it, size) }
-    return if (null in fields) null else fields.requireNoNulls().toMutableList()
+    val decoded = cells.map { cellOrNull(it, size) }
+    return if (null in decoded) null else Board(size, decoded.requireNoNulls())
 }
 
-private fun BoardBackup.fieldOrNull(
+private fun BoardBackup.cellOrNull(
     index: Int,
     size: SudokuSize,
-): Field? {
+): Cell? {
     val answer = solution[index].toDigitOrNull(size)
     val cell = values[index]
     val value = cell.toDigitOrNull(size)
-    val noteDigits = notes[index].orEmpty()
-    val given = index in givens
-    val hint = index in hints
+    val noteDigits = notes[index].orEmpty().map { it.toDigitOrNull(size) }
     val validValue = cell == EMPTY_CELL || value != null
-    val validNotes = noteDigits.all { it.toDigitOrNull(size) != null }
-    return if (answer != null && validValue && validNotes) {
-        Field(
-            position = Position.create(index, size),
-            solution = answer,
-            value = value,
-            given = given,
-            hint = hint,
-            notes = noteDigits.toSortedSet().toMutableList(),
-        )
+    val origin =
+        when (index) {
+            in givens -> CellOrigin.GIVEN
+            in hints -> CellOrigin.HINT
+            else -> CellOrigin.PLAYER
+        }
+    return if (answer != null && validValue && null !in noteDigits) {
+        Cell(solution = answer, value = value, origin = origin, notes = NoteMask.of(*noteDigits.requireNoNulls().toIntArray()))
     } else {
         null
     }

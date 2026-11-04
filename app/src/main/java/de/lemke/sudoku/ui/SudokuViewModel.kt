@@ -28,6 +28,10 @@ import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.model.BoardMove
+import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.Highlighting
+import de.lemke.sudoku.domain.model.MoveResult
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
@@ -37,9 +41,15 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import java.io.Serializable
 import java.time.Clock
 import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
+import kotlin.time.ComparableTimeMark
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +73,8 @@ sealed interface SudokuGame {
         val kind: SudokuKind,
         val errorLimit: Int,
         val phase: Phase,
+        val running: Boolean,
+        val lastMove: MoveResult?,
     ) : SudokuGame {
         val ended: Boolean get() = phase != Phase.Playing
         val canRestart: Boolean get() = restartPolicy(kind, phase)
@@ -104,13 +116,16 @@ sealed interface SudokuShare {
 }
 
 /**
- * The wrap-up of the completed sudoku. The activity shows a [Summary] until the player dismisses it, and reports a
- * [Failed] wrap-up handled once it showed it.
+ * The wrap-up of the completed sudoku. It is [Pending] from the winning move until the activity reports the win shown,
+ * and no restart can overwrite the sudoku before then. The activity shows a [Summary] until the player dismisses it,
+ * and reports a [Failed] wrap-up handled once it showed it.
  */
 sealed interface SudokuCompletion {
     sealed interface Result : SudokuCompletion
 
     data object Idle : SudokuCompletion
+
+    data object Pending : SudokuCompletion
 
     data object Running : SudokuCompletion
 
@@ -121,6 +136,13 @@ sealed interface SudokuCompletion {
 
     data object Failed : Result
 }
+
+private val SudokuCompletion.wrapUpStarted: Boolean
+    get() =
+        when (this) {
+            SudokuCompletion.Idle, SudokuCompletion.Pending -> false
+            SudokuCompletion.Running, is SudokuCompletion.Result -> true
+        }
 
 /** Whether a sudoku of [kind] in [phase] can be restarted, which erases its record. */
 internal fun restartPolicy(
@@ -153,10 +175,10 @@ private data class PendingSummary(
 }
 
 private fun Sudoku.kind(): SudokuKind =
-    when {
-        isDailySudoku -> SudokuKind.Daily(created.toLocalDate())
-        isSudokuLevel -> SudokuKind.Level
-        else -> SudokuKind.Normal
+    when (info.mode) {
+        GameMode.Daily -> SudokuKind.Daily(info.created.toLocalDate())
+        is GameMode.Level -> SudokuKind.Level
+        GameMode.Normal -> SudokuKind.Normal
     }
 
 private const val KEY_PENDING_SUMMARY = "pending_summary"
@@ -173,6 +195,7 @@ class SudokuViewModel @Inject constructor(
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
     private val userSettings: UserSettings,
     private val clock: Clock,
+    private val timeSource: TimeSource.WithComparableMarks,
 ) : ViewModel() {
     val game: StateFlow<SudokuGame>
         field = MutableStateFlow<SudokuGame>(SudokuGame.Loading)
@@ -188,6 +211,9 @@ class SudokuViewModel @Inject constructor(
         field = MutableStateFlow<PlayGamesSync?>(null)
 
     private var wrapUp: Job? = null
+    private var ticker: Job? = null
+    private lateinit var nextTick: ComparableTimeMark
+    private var untilNextTick: Duration = 1.seconds
 
     init {
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
@@ -205,7 +231,7 @@ class SudokuViewModel @Inject constructor(
     fun onGameStarted(ready: SudokuGame.Ready) {
         val kind = ready.sudoku.kind()
         val expired = kind is SudokuKind.Daily && kind.date != LocalDate.now(clock)
-        game.compareAndSet(ready, playingOf(ready.sudoku, kind, expired))
+        if (game.compareAndSet(ready, playingOf(ready.sudoku, kind, expired))) untilNextTick = 1.seconds
     }
 
     fun onRestart() {
@@ -213,25 +239,27 @@ class SudokuViewModel @Inject constructor(
         if (playing == null || !playing.canRestart || completion.value != SudokuCompletion.Idle) return
         val sudoku = playing.sudoku
         game.value = SudokuGame.Restarting
+        updateTicker()
         viewModelScope.launch {
             wrapUp?.join()
-            sudoku.reset()
-            queueSudokuSave(sudoku).await()
-            game.value = SudokuGame.Ready(sudoku)
+            val restarted = sudoku.restarted()
+            queueSudokuSave(restarted).await()
+            game.value = SudokuGame.Ready(restarted)
         }
     }
 
     fun onFollowUp(followUp: FollowUp) {
         val completed = (game.value as? SudokuGame.Playing ?: return).sudoku.takeIf { it.completed } ?: return
         game.value = SudokuGame.Generating
+        updateTicker()
         viewModelScope.launch {
             val next =
                 when (followUp) {
-                    FollowUp.NEW_GAME -> generateSudoku(completed.size, completed.difficulty)
-                    FollowUp.NEXT_LEVEL -> generateSudokuLevel(completed.size, completed.modeLevel + 1)
+                    FollowUp.NEW_GAME -> generateSudoku(completed.info.size, completed.info.difficulty)
+                    FollowUp.NEXT_LEVEL -> generateSudokuLevel(completed.info.size, (completed.info.mode as GameMode.Level).number + 1)
                 }
             queueSudokuSave(next).await()
-            savedStateHandle[KEY_SUDOKU_ID] = next.id.value
+            savedStateHandle[KEY_SUDOKU_ID] = next.info.id.value
             game.value = SudokuGame.Ready(next)
         }
     }
@@ -249,7 +277,7 @@ class SudokuViewModel @Inject constructor(
     fun onCompleted() {
         refreshPhase()
         val playing = game.value as? SudokuGame.Playing
-        if (playing == null || !playing.sudoku.completed || completion.value != SudokuCompletion.Idle) return
+        if (playing == null || !playing.sudoku.completed || completion.value.wrapUpStarted) return
         val completed = playing.sudoku
         completion.value = SudokuCompletion.Running
         wrapUp =
@@ -280,24 +308,72 @@ class SudokuViewModel @Inject constructor(
         playGamesSync.compareAndSet(sync, null)
     }
 
-    /** Moves a playing sudoku to won or lost and starts the timer of one that is still playable. */
+    /** Moves a playing sudoku to won or lost, and starts the timer of one that is still playable. */
     fun onResumed() {
-        refreshPhase()
-        val playing = game.value as? SudokuGame.Playing ?: return
-        if (!playing.ended) playing.sudoku.startTimer(viewModelScope, clock)
+        updatePlaying { it.refreshed().copy(running = true) }
+        updateTicker()
     }
 
-    fun onErrorMade() {
-        refreshPhase()
-        savePlayingSudokuProgress()
+    fun onPaused() {
+        updatePlaying { it.copy(running = false) }
+        updateTicker()
+        (game.value as? SudokuGame.Playing)?.takeIf { it.phase == Phase.Playing }?.let { queueSudokuSave.launch(it.sudoku) }
     }
 
-    fun onPaused() = savePlayingSudokuProgress()
+    /** Applies [move] to a running sudoku and queues one save; returns the sudoku after the move, or null when it was refused. */
+    fun onMove(move: BoardMove): Sudoku? {
+        val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing }
+        val played = playing?.let { it.sudoku.play(move) }
+        if (playing != null && played != null) {
+            game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
+            if (played.sudoku.completed) completion.value = SudokuCompletion.Pending
+            updateTicker()
+            queueSudokuSave.launch(played.sudoku)
+        }
+        return played?.sudoku
+    }
 
-    fun onProgressChanged() = savePlayingSudokuProgress()
+    fun onMoveShown(result: MoveResult) {
+        updatePlaying { if (it.lastMove == result) it.copy(lastMove = null) else it }
+    }
+
+    fun onHighlightingUsed(highlighting: Highlighting) {
+        updatePlaying { it.copy(sudoku = it.sudoku.withHighlightingUsed(highlighting)) }
+    }
 
     private fun refreshPhase() {
-        game.update { if (it is SudokuGame.Playing) playingOf(it.sudoku, it.kind, expired = it.phase == Phase.Expired) else it }
+        updatePlaying { it.refreshed() }
+    }
+
+    private fun updatePlaying(transform: (SudokuGame.Playing) -> SudokuGame.Playing) {
+        game.update { if (it is SudokuGame.Playing) transform(it) else it }
+    }
+
+    private fun SudokuGame.Playing.refreshed(): SudokuGame.Playing =
+        playingOf(sudoku, kind, expired = phase == Phase.Expired).copy(running = running, lastMove = lastMove)
+
+    private fun updateTicker() {
+        val playing = game.value as? SudokuGame.Playing
+        if (playing?.running == true && playing.phase == Phase.Playing) {
+            if (ticker == null) {
+                nextTick = timeSource.markNow() + untilNextTick
+                ticker = viewModelScope.launch { tickEverySecond() }
+            }
+        } else {
+            ticker?.let {
+                it.cancel()
+                untilNextTick = -nextTick.elapsedNow()
+            }
+            ticker = null
+        }
+    }
+
+    private suspend fun tickEverySecond() {
+        while (true) {
+            delay(-nextTick.elapsedNow())
+            nextTick += 1.seconds
+            updatePlaying { it.copy(sudoku = it.sudoku.tick(LocalDateTime.now(clock))) }
+        }
     }
 
     private fun playingOf(
@@ -311,22 +387,23 @@ class SudokuViewModel @Inject constructor(
                 SudokuKind.Level -> MODE_LEVEL_ERROR_LIMIT
                 SudokuKind.Normal -> userSettings.errorLimit
             }
-        val phase =
-            when {
-                sudoku.completed -> Phase.Won
-                expired -> Phase.Expired
-                sudoku.errorLimitReached(errorLimit) -> Phase.Lost
-                else -> Phase.Playing
-            }
-        return SudokuGame.Playing(sudoku, kind, errorLimit, phase)
+        return SudokuGame.Playing(sudoku, kind, errorLimit, phaseOf(sudoku, errorLimit, expired), running = false, lastMove = null)
     }
 
-    private fun savePlayingSudokuProgress() {
-        (game.value as? SudokuGame.Playing)?.let { queueSudokuSave.launch(it.sudoku, onlyUpdate = true) }
-    }
+    private fun phaseOf(
+        sudoku: Sudoku,
+        errorLimit: Int,
+        expired: Boolean,
+    ): Phase =
+        when {
+            sudoku.completed -> Phase.Won
+            expired -> Phase.Expired
+            sudoku.info.errorLimitReached(errorLimit) -> Phase.Lost
+            else -> Phase.Playing
+        }
 
     private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
-        val saved = orOnFailure(false) { queueSudokuSave(completed, onlyUpdate = true).await().let { true } }
+        val saved = orOnFailure(false) { queueSudokuSave(completed).await().let { true } }
         return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
     }
 
@@ -352,9 +429,9 @@ class SudokuViewModel @Inject constructor(
         }
 
     private suspend fun followUpOf(completed: Sudoku): FollowUp? =
-        when {
-            completed.isSudokuLevel -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.size) == completed.modeLevel }
-            completed.isNormalSudoku -> FollowUp.NEW_GAME
-            else -> null
+        when (val mode = completed.info.mode) {
+            is GameMode.Level -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.info.size) == mode.number }
+            GameMode.Normal -> FollowUp.NEW_GAME
+            GameMode.Daily -> null
         }
 }

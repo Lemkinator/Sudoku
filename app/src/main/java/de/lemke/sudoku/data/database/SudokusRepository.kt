@@ -16,8 +16,9 @@
 
 package de.lemke.sudoku.data.database
 
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
@@ -45,15 +46,7 @@ interface SudokusRepository {
 
     suspend fun deleteSudoku(sudoku: Sudoku)
 
-    suspend fun saveSudoku(
-        sudoku: Sudoku,
-        onlyUpdate: Boolean = false,
-    ) = saveSudokuRows(sudokuWithFieldsToDb(sudoku), onlyUpdate)
-
-    suspend fun saveSudokuRows(
-        rows: SudokuWithFields,
-        onlyUpdate: Boolean,
-    )
+    suspend fun saveSudoku(sudoku: Sudoku)
 
     suspend fun getMaxSudokuLevel(size: SudokuSize): Int
 
@@ -85,11 +78,9 @@ class DefaultSudokusRepository @Inject constructor(
 
     override suspend fun deleteSudoku(sudoku: Sudoku) = sudokuDao.delete(sudokuToDb(sudoku))
 
-    override suspend fun saveSudokuRows(
-        rows: SudokuWithFields,
-        onlyUpdate: Boolean,
-    ) {
-        if (!onlyUpdate) replacedBy(rows.sudoku)?.let { sudokuDao.delete(it) }
+    override suspend fun saveSudoku(sudoku: Sudoku) {
+        val rows = sudokuWithFieldsToDb(sudoku)
+        if (sudokuDao.identityOf(sudoku.info.id.value) != rows.sudoku.identity()) replacedBy(sudoku.info)?.let { sudokuDao.delete(it) }
         sudokuDao.insert(rows.sudoku, rows.fields)
     }
 
@@ -100,18 +91,20 @@ class DefaultSudokusRepository @Inject constructor(
         if (invalidRows.isNotEmpty()) sudokuDao.delete(*invalidRows.map { it.sudoku }.toTypedArray())
     }
 
-    private suspend fun replacedBy(sudoku: SudokuDb): SudokuDb? =
-        when {
-            sudoku.modeLevel == MODE_DAILY -> {
-                sudokuDao.getDailySudokus().filter { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
+    private fun SudokuDb.identity() = SudokuIdentity(modeLevel, size, created)
+
+    private suspend fun replacedBy(info: GameInfo): SudokuDb? =
+        when (val mode = info.mode) {
+            GameMode.Daily -> {
+                sudokuDao.getDailySudokus().filter { it.sudoku.created.toLocalDate() == info.created.toLocalDate() }
             }
 
-            sudoku.modeLevel > 0 -> {
-                sudokuDao.getSudokuLevels(sudoku.size, sudoku.modeLevel)
+            is GameMode.Level -> {
+                sudokuDao.getSudokuLevels(info.size.value, mode.number)
             }
 
-            else -> {
+            GameMode.Normal -> {
                 emptyList()
             }
-        }.firstOrNull { sudokuFromDb(it) != null }?.takeIf { it.sudoku.id != sudoku.id }?.sudoku
+        }.firstOrNull { sudokuFromDb(it) != null }?.takeIf { it.sudoku.id != info.id.value }?.sudoku
 }

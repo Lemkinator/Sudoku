@@ -16,30 +16,17 @@
 
 package de.lemke.sudoku.domain.model
 
+import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-
-private fun testSudoku(
-    size: SudokuSize = SudokuSize.NINE,
-    difficulty: Difficulty = Difficulty.MEDIUM,
-    modeLevel: Int = Sudoku.MODE_NORMAL,
-): Sudoku =
-    Sudoku.create(
-        size = size,
-        difficulty = difficulty,
-        modeLevel = modeLevel,
-        fields = mutableListOf(Field(position = Position.create(0, size), solution = 1)),
-    )
-
-private const val TYPE_LEVEL_MODE = 1
 
 class SudokuFilterFlagsTest : ShouldSpec(
     {
         val typesByFlag =
             mapOf(
-                SudokuFilterFlags.TYPE_NORMAL to Sudoku.MODE_NORMAL,
-                SudokuFilterFlags.TYPE_DAILY to Sudoku.MODE_DAILY,
-                SudokuFilterFlags.TYPE_LEVEL to TYPE_LEVEL_MODE,
+                SudokuFilterFlags.TYPE_NORMAL to GameMode.Normal,
+                SudokuFilterFlags.TYPE_DAILY to GameMode.Daily,
+                SudokuFilterFlags.TYPE_LEVEL to GameMode.Level(1),
             )
         val difficultiesByFlag =
             mapOf(
@@ -53,18 +40,18 @@ class SudokuFilterFlagsTest : ShouldSpec(
         should("match TYPE_ALL for every type of sudoku") {
             val flags = SudokuFilterFlags.TYPE_ALL or SudokuFilterFlags.SIZE_ALL or SudokuFilterFlags.DIFFICULTY_ALL
 
-            typesByFlag.values.forEach { modeLevel ->
-                flags.matchesSudokuFilterFlags(testSudoku(modeLevel = modeLevel)) shouldBe true
+            typesByFlag.values.forEach { mode ->
+                flags.matchesSudokuFilterFlags(testSudoku(mode = mode)) shouldBe true
             }
         }
 
         should("match a single type flag only for its own type") {
-            typesByFlag.forEach { (flag, modeLevel) ->
+            typesByFlag.forEach { (flag, mode) ->
                 val flags = flag or SudokuFilterFlags.SIZE_ALL or SudokuFilterFlags.DIFFICULTY_ALL
 
-                flags.matchesSudokuFilterFlags(testSudoku(modeLevel = modeLevel)) shouldBe true
-                typesByFlag.values.filter { it != modeLevel }.forEach { otherModeLevel ->
-                    flags.matchesSudokuFilterFlags(testSudoku(modeLevel = otherModeLevel)) shouldBe false
+                flags.matchesSudokuFilterFlags(testSudoku(mode = mode)) shouldBe true
+                typesByFlag.values.filter { it != mode }.forEach { otherModeLevel ->
+                    flags.matchesSudokuFilterFlags(testSudoku(mode = otherModeLevel)) shouldBe false
                 }
             }
         }
@@ -75,9 +62,9 @@ class SudokuFilterFlagsTest : ShouldSpec(
                     SudokuFilterFlags.SIZE_ALL or
                     SudokuFilterFlags.DIFFICULTY_ALL
 
-            flags.matchesSudokuFilterFlags(testSudoku(modeLevel = Sudoku.MODE_NORMAL)) shouldBe true
-            flags.matchesSudokuFilterFlags(testSudoku(modeLevel = Sudoku.MODE_DAILY)) shouldBe true
-            flags.matchesSudokuFilterFlags(testSudoku(modeLevel = TYPE_LEVEL_MODE)) shouldBe false
+            flags.matchesSudokuFilterFlags(testSudoku(mode = GameMode.Normal)) shouldBe true
+            flags.matchesSudokuFilterFlags(testSudoku(mode = GameMode.Daily)) shouldBe true
+            flags.matchesSudokuFilterFlags(testSudoku(mode = GameMode.Level(1))) shouldBe false
         }
 
         should("match SIZE_ALL for every board size") {
@@ -141,12 +128,12 @@ class SudokuFilterFlagsTest : ShouldSpec(
 
         should("require type, size and difficulty to all match") {
             val flags = SudokuFilterFlags.TYPE_NORMAL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_HARD
-            val matching = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.HARD, modeLevel = Sudoku.MODE_NORMAL)
+            val matching = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.HARD, mode = GameMode.Normal)
 
             flags.matchesSudokuFilterFlags(matching) shouldBe true
             flags.matchesSudokuFilterFlags(testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.HARD)) shouldBe false
             flags.matchesSudokuFilterFlags(testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY)) shouldBe false
-            val daily = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.HARD, modeLevel = Sudoku.MODE_DAILY)
+            val daily = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.HARD, mode = GameMode.Daily)
             flags.matchesSudokuFilterFlags(daily) shouldBe false
         }
     },

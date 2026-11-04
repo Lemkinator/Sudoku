@@ -16,19 +16,20 @@
 
 package de.lemke.sudoku
 
+import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
+import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import java.time.LocalDateTime
 
-/** A readable sudoku over a valid solved pattern; every third field is given, the rest stays empty unless [completed]. */
+/** A readable sudoku over a valid solved pattern; every third cell is given, the rest stays empty unless [completed]. */
 fun testSudoku(
     size: SudokuSize = SudokuSize.FOUR,
-    modeLevel: Int = Sudoku.MODE_NORMAL,
+    mode: GameMode = GameMode.Normal,
     difficulty: Difficulty = Difficulty.EASY,
     sudokuId: SudokuId = SudokuId.generate(),
     created: LocalDateTime = LocalDateTime.now(),
@@ -36,26 +37,20 @@ fun testSudoku(
     completed: Boolean = false,
 ): Sudoku {
     val blockSize = size.blockSize
-    return Sudoku.create(
-        sudokuId = sudokuId,
-        size = size,
-        difficulty = difficulty,
-        modeLevel = modeLevel,
-        created = created,
-        updated = updated,
-        fields =
-            MutableList(size.cellCount) { index ->
-                val position = Position.create(index, size)
-                val row = position.row
-                val col = position.column
-                val solution = (blockSize * (row % blockSize) + row / blockSize + col) % size.value + 1
-                val given = index % 3 == 0
-                Field(
-                    position = position,
-                    solution = solution,
-                    value = if (given || completed) solution else null,
-                    given = given,
-                )
+    val solution =
+        List(size.cellCount) { index ->
+            val row = index / size.value
+            val column = index % size.value
+            (blockSize * (row % blockSize) + row / blockSize + column) % size.value + 1
+        }
+    val board = Board.of(size, solution, givens = solution.indices.filter { it % 3 == 0 }.toSet())
+    return Sudoku(
+        info = GameInfo(id = sudokuId, size = size, difficulty = difficulty, mode = mode, created = created, updated = updated),
+        board =
+            if (completed) {
+                Board(size, board.cells.map { it.copy(value = it.solution) })
+            } else {
+                board
             },
     )
 }
@@ -67,13 +62,13 @@ fun testLevelSudoku(
 ): Sudoku =
     when (size) {
         SudokuSize.NINE -> {
-            tutorialSudoku(sudokuId = sudokuId, modeLevel = level)
+            tutorialSudoku(sudokuId = sudokuId, mode = GameMode.Level(level))
         }
 
         SudokuSize.FOUR, SudokuSize.SIXTEEN -> {
             testSudoku(
                 size = size,
-                modeLevel = level,
+                mode = GameMode.Level(level),
                 difficulty = Difficulty.VERY_EASY,
                 sudokuId = sudokuId,
             )

@@ -30,10 +30,9 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Field
-import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
+import de.lemke.sudoku.testSudoku
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -113,15 +112,7 @@ class MainActivityTabReselectTest {
             activity.binding.bottomTab.selectedTabPosition shouldBe tab.position
         }
 
-    private fun historySudoku(): Sudoku {
-        val size = SudokuSize.FOUR
-        return Sudoku.create(
-            size = size,
-            difficulty = Difficulty.VERY_EASY,
-            modeLevel = Sudoku.MODE_NORMAL,
-            fields = MutableList(size.cellCount) { index -> Field(position = Position.create(index, size), solution = 1) },
-        )
-    }
+    private fun historySudoku(): Sudoku = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY)
 
     @Test
     fun `reselecting the history tab scrolls to top when the list is scrolled down`() {

@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
 import io.kotest.core.spec.style.ShouldSpec
@@ -59,8 +60,8 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
 
             useCase(SudokuSize.FOUR)
 
-            sudokusRepository.saves.map { Triple(it.rows.sudoku.size, it.rows.sudoku.modeLevel, it.onlyUpdate) } shouldBe
-                listOf(Triple(4, 2, false), Triple(4, 4, false))
+            sudokusRepository.saves.map { it.info.size to it.info.mode } shouldBe
+                listOf(SudokuSize.FOUR to GameMode.Level(2), SudokuSize.FOUR to GameMode.Level(4))
         }
     },
 )

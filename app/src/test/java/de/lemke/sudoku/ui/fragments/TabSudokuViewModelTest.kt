@@ -19,7 +19,6 @@ package de.lemke.sudoku.ui.fragments
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuFromDb
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
@@ -29,8 +28,7 @@ import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
-import de.lemke.sudoku.domain.model.Sudoku
-import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
@@ -81,7 +79,7 @@ class TabSudokuViewModelTest : ShouldSpec(
                 )
         }
 
-        fun savedIds() = repository.saves.map { SudokuId(it.rows.sudoku.id) }
+        fun savedIds() = repository.saves.map { it.info.id }
 
         fun generations() = events.count { it == GENERATE }
 
@@ -103,9 +101,7 @@ class TabSudokuViewModelTest : ShouldSpec(
             viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
             events shouldBe listOf(GENERATE, SAVE)
             val save = repository.saves.single()
-            save.onlyUpdate shouldBe false
-            sudokuFromDb(save.rows)?.let { Triple(it.size, it.difficulty, it.modeLevel) } shouldBe
-                Triple(SudokuSize.NINE, Difficulty.HARD, Sudoku.MODE_NORMAL)
+            Triple(save.info.size, save.info.difficulty, save.info.mode) shouldBe Triple(SudokuSize.NINE, Difficulty.HARD, GameMode.Normal)
         }
 
         should("onNewGame reports generating until the sudoku is saved") {
@@ -158,7 +154,7 @@ class TabSudokuViewModelTest : ShouldSpec(
         should("onNewGameHandled for another sudoku keeps the pending one") {
             viewModel.onNewGame(SudokuSize.NINE, Difficulty.HARD)
 
-            viewModel.onNewGameHandled(NewGame.Created(testSudoku().id))
+            viewModel.onNewGameHandled(NewGame.Created(testSudoku().info.id))
 
             viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
         }
@@ -174,10 +170,11 @@ class TabSudokuViewModelTest : ShouldSpec(
         }
 
         should("getContinuableSudoku returns null when the recent sudoku's error limit is reached") {
-            val sudoku = testSudoku().apply { errorsMade = userSettings.errorLimit }
+            val fresh = testSudoku()
+            val sudoku = fresh.copy(info = fresh.info.copy(errorsMade = userSettings.errorLimit))
             repository.store(sudoku)
 
-            sudoku.errorLimitReached(userSettings.errorLimit).shouldBeTrue()
+            sudoku.info.errorLimitReached(userSettings.errorLimit).shouldBeTrue()
             viewModel.getContinuableSudoku() shouldBe null
         }
 
@@ -185,20 +182,20 @@ class TabSudokuViewModelTest : ShouldSpec(
             val sudoku = testSudoku()
             repository.store(sudoku)
 
-            sudoku.errorLimitReached(userSettings.errorLimit).shouldBeFalse()
+            sudoku.info.errorLimitReached(userSettings.errorLimit).shouldBeFalse()
             viewModel.getContinuableSudoku() shouldBe sudoku
         }
 
         should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {
-            repository.store(testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now(clock), completed = true))
+            repository.store(testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock), completed = true))
 
             viewModel.checkDailySudokuCompleted().shouldBeTrue()
         }
 
         should("checkDailySudokuCompleted returns false when isDailySudokuCompleted returns false") {
             repository.store(
-                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now(clock)),
-                testSudoku(modeLevel = Sudoku.MODE_DAILY, created = LocalDateTime.now(clock).minusDays(1), completed = true),
+                testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock)),
+                testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock).minusDays(1), completed = true),
                 testSudoku(completed = true),
             )
 

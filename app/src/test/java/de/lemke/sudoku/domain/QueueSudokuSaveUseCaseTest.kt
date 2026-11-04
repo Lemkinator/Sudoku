@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import android.app.Application
 import android.util.Log
 import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.testSudoku
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -48,19 +49,18 @@ import org.robolectric.shadows.ShadowLog
 class QueueSudokuSaveUseCaseTest {
     private val sudokusRepository = FakeSudokusRepository()
 
-    private val saved: List<Pair<Int?, Boolean>>
-        get() = sudokusRepository.saves.map { it.rows.fields[1].value to it.onlyUpdate }
+    private val saved: List<Int?>
+        get() = sudokusRepository.saves.map { it.board[1].value }
+
+    private fun Sudoku.withValueInSecondCell(): Sudoku = copy(board = board.with(1, board[1].copy(value = 1)))
 
     private fun queue(): QueueSudokuSaveUseCase {
         val dispatcher = UnconfinedTestDispatcher()
         return QueueSudokuSaveUseCase(sudokusRepository, CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
     }
 
-    private fun gateSaves(
-        onlyUpdate: Boolean,
-        gate: CompletableDeferred<Unit>,
-    ) {
-        sudokusRepository.beforeSave = { if (it.onlyUpdate == onlyUpdate) gate.await() }
+    private fun gateSaves(gate: CompletableDeferred<Unit>) {
+        sudokusRepository.beforeSave = { gate.await() }
     }
 
     private fun failureLogs(): List<ShadowLog.LogItem> = ShadowLog.getLogsForTag("QueueSudokuSaveUseCase").filter { it.type == Log.ERROR }
@@ -71,19 +71,19 @@ class QueueSudokuSaveUseCaseTest {
     }
 
     @Test
-    fun `save the rows of the sudoku at the time it was queued`() =
+    fun `save the queued sudoku after the repository is free`() =
         runTest {
             val sudoku = testSudoku()
             val gate = CompletableDeferred<Unit>()
             val queueSudokuSave = queue()
-            gateSaves(onlyUpdate = true, gate)
+            gateSaves(gate)
 
-            val save = queueSudokuSave(sudoku, onlyUpdate = true)
-            sudoku.fields[1].value = 1
+            val save = queueSudokuSave(sudoku)
+            sudokusRepository.saves shouldBe emptyList()
             gate.complete(Unit)
 
             save.await()
-            saved shouldBe listOf(null to true)
+            sudokusRepository.saves shouldBe listOf(sudoku)
             failureLogs().shouldBeEmpty()
         }
 
@@ -93,16 +93,15 @@ class QueueSudokuSaveUseCaseTest {
             val sudoku = testSudoku()
             val gate = CompletableDeferred<Unit>()
             val queueSudokuSave = queue()
-            gateSaves(onlyUpdate = true, gate)
+            gateSaves(gate)
 
-            queueSudokuSave(sudoku, onlyUpdate = true)
-            sudoku.fields[1].value = 1
-            val last = queueSudokuSave(sudoku)
+            queueSudokuSave(sudoku)
+            val last = queueSudokuSave(sudoku.withValueInSecondCell())
 
             saved shouldBe emptyList()
             gate.complete(Unit)
             last.await()
-            saved shouldBe listOf(null to true, 1 to false)
+            saved shouldBe listOf(null, 1)
         }
 
     @Test
@@ -112,12 +111,12 @@ class QueueSudokuSaveUseCaseTest {
             val queueSudokuSave = queue()
             sudokusRepository.saveFailure = IllegalStateException("disk full")
 
-            val failed = queueSudokuSave(sudoku, onlyUpdate = true)
+            val failed = queueSudokuSave(sudoku)
             sudokusRepository.saveFailure = null
             queueSudokuSave(sudoku).await()
 
             failed.getCompletionExceptionOrNull().shouldBeInstanceOf<IllegalStateException>()
-            saved shouldBe listOf(null to false)
+            saved shouldBe listOf(null)
             failureLogs().shouldBeEmpty()
         }
 
@@ -126,7 +125,7 @@ class QueueSudokuSaveUseCaseTest {
         runTest {
             val gate = CompletableDeferred<Unit>()
             val queueSudokuSave = queue()
-            gateSaves(onlyUpdate = false, gate)
+            gateSaves(gate)
             queueSudokuSave(testSudoku())
 
             val savesSeenByBlock = async { queueSudokuSave.exclusive { sudokusRepository.saves.size } }
@@ -171,20 +170,21 @@ class QueueSudokuSaveUseCaseTest {
         runTest {
             val gate = CompletableDeferred<Unit>()
             val queueSudokuSave = queue()
-            gateSaves(onlyUpdate = false, gate)
-            queueSudokuSave(testSudoku())
+            gateSaves(gate)
+            val first = testSudoku()
+            queueSudokuSave(first)
 
             val waiting = async { queueSudokuSave.exclusive { } }
             runCurrent()
             waiting.cancel()
-            val later = queueSudokuSave(testSudoku(), onlyUpdate = true)
+            val later = queueSudokuSave(first.withValueInSecondCell())
             runCurrent()
 
             later.isCompleted shouldBe false
             sudokusRepository.saves.size shouldBe 0
             gate.complete(Unit)
             later.await()
-            saved shouldBe listOf(null to false, null to true)
+            saved shouldBe listOf(null, 1)
         }
 
     @Test
@@ -207,18 +207,17 @@ class QueueSudokuSaveUseCaseTest {
         }
 
     @Test
-    fun `launch saves the rows after every earlier save`() {
+    fun `launch saves the sudoku after every earlier save`() {
         val sudoku = testSudoku()
         val gate = CompletableDeferred<Unit>()
         val queueSudokuSave = queue()
-        gateSaves(onlyUpdate = false, gate)
+        gateSaves(gate)
 
         queueSudokuSave(sudoku)
-        sudoku.fields[1].value = 1
-        queueSudokuSave.launch(sudoku, onlyUpdate = true)
+        queueSudokuSave.launch(sudoku.withValueInSecondCell())
         gate.complete(Unit)
 
-        saved shouldBe listOf(null to false, 1 to true)
+        saved shouldBe listOf(null, 1)
         failureLogs().shouldBeEmpty()
     }
 
@@ -227,7 +226,7 @@ class QueueSudokuSaveUseCaseTest {
         val disk = IllegalStateException("disk full")
         sudokusRepository.saveFailure = disk
 
-        queue().launch(testSudoku(), onlyUpdate = true)
+        queue().launch(testSudoku())
 
         failureLogs().map { it.msg to it.throwable } shouldBe listOf("Saving sudoku failed" to disk)
     }
@@ -236,7 +235,7 @@ class QueueSudokuSaveUseCaseTest {
     fun `launch logs no failure for a cancelled save`() {
         sudokusRepository.saveFailure = CancellationException("closed")
 
-        queue().launch(testSudoku(), onlyUpdate = true)
+        queue().launch(testSudoku())
 
         failureLogs().shouldBeEmpty()
     }
