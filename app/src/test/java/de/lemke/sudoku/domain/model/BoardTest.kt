@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain.model
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 private val SOLUTION_4 = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 3, 4, 1, 4, 1, 2, 3)
 private val GIVENS_4 = setOf(0, 3, 6, 9, 12, 15)
@@ -47,6 +48,44 @@ class BoardTest : ShouldSpec(
         should("resolve the position of an index") {
             val position = fresh4().position(6)
             listOf(position.row, position.column, position.block) shouldBe listOf(1, 2, 1)
+        }
+
+        should("keep the preserved fields through a changed cell and through the initial board") {
+            val preserved = PreservedFields(byteArrayOf(0x30, 0x07))
+            val board = Board(SudokuSize.FOUR, fresh4().cells, preserved)
+
+            board.with(1, Cell(2, value = 2)).preserved shouldBe preserved
+            board.initial().preserved shouldBe preserved
+        }
+
+        should("keep no reference to the list it was built from") {
+            val source = fresh4().cells.toMutableList()
+            val board = Board(SudokuSize.FOUR, source)
+
+            source[1] = Cell(2, value = 2)
+
+            board[1] shouldBe Cell(2)
+            board.cells shouldBe fresh4().cells
+        }
+
+        should("expose cells that cannot be changed") {
+            val cells = fresh4().cells as MutableList<Cell>
+
+            shouldThrow<UnsupportedOperationException> { cells[1] = Cell(2, value = 2) }
+        }
+
+        should("equal a board with the same size and cells, with the same hash code") {
+            fresh4() shouldBe fresh4()
+            fresh4().hashCode() shouldBe fresh4().hashCode()
+            fresh4() shouldNotBe fresh4().with(1, Cell(2, value = 2))
+            fresh4().equals("board") shouldBe false
+            fresh4() shouldNotBe fresh9()
+            fresh4() shouldNotBe Board(SudokuSize.FOUR, fresh4().cells, PreservedFields(byteArrayOf(0x30, 0x07)))
+        }
+
+        should("describe itself by size and cells") {
+            fresh4().toString() shouldBe
+                "Board(size=FOUR, cells=${fresh4().cells}, preserved=PreservedFields(0 bytes))"
         }
 
         should("reject a board with 15 of 16 cells") {

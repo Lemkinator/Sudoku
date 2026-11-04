@@ -16,13 +16,17 @@
 
 package de.lemke.sudoku.domain.model
 
+import java.util.Collections
+
 private const val PERCENT_SCALE = 100
 
-data class Board(
+class Board(
     val size: SudokuSize,
-    val cells: List<Cell>,
+    cells: List<Cell>,
     val preserved: PreservedFields = PreservedFields.NONE,
 ) {
+    val cells: List<Cell> = Collections.unmodifiableList(cells.toList())
+
     init {
         require(cells.size == size.cellCount) { "Expected ${size.cellCount} cells but got ${cells.size}" }
         val digits = 1..size.value
@@ -51,6 +55,12 @@ data class Board(
                 .filterValues { it >= size.value }
                 .keys
 
+    override fun equals(other: Any?): Boolean = other is Board && size == other.size && cells == other.cells && preserved == other.preserved
+
+    override fun hashCode(): Int = (31 * size.hashCode() + cells.hashCode()) * 31 + preserved.hashCode()
+
+    override fun toString(): String = "Board(size=$size, cells=$cells, preserved=$preserved)"
+
     operator fun get(index: Int): Cell = cells[index]
 
     fun position(index: Int): Position = Position.create(index, size)
@@ -70,12 +80,12 @@ data class Board(
     fun isBlockCompleted(block: Int): Boolean = blockIndices(block).all { cells[it].correct }
 
     fun initial(): Board =
-        copy(cells = cells.map { if (it.origin == CellOrigin.GIVEN) it.copy(notes = NoteMask.EMPTY) else Cell(it.solution) })
+        Board(size, cells.map { if (it.origin == CellOrigin.GIVEN) it.copy(notes = NoteMask.EMPTY) else Cell(it.solution) }, preserved)
 
     fun with(
         index: Int,
         cell: Cell,
-    ): Board = copy(cells = cells.toMutableList().also { it[index] = cell })
+    ): Board = Board(size, cells.toMutableList().also { it[index] = cell }, preserved)
 
     private fun rowIndices(row: Int): List<Int> = List(size.value) { row * size.value + it }
 

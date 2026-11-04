@@ -49,7 +49,7 @@ fun testSudoku(
         info = GameInfo(id = sudokuId, size = size, difficulty = difficulty, mode = mode, created = created, updated = updated),
         board =
             if (completed) {
-                board.copy(cells = board.cells.map { it.copy(value = it.solution) })
+                Board(size, board.cells.map { it.copy(value = it.solution) })
             } else {
                 board
             },

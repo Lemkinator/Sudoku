@@ -44,7 +44,7 @@ fun backupEntry(
     val filled = FOUR_GIVENS + open.take(solvedCells)
     val board =
         Board.of(SudokuSize.FOUR, FOUR_SOLUTION.map { it - '0' }, FOUR_GIVENS.toSet()).let { fresh ->
-            fresh.copy(cells = fresh.cells.mapIndexed { index, cell -> if (index in filled) cell.copy(value = cell.solution) else cell })
+            Board(fresh.size, fresh.cells.mapIndexed { index, cell -> if (index in filled) cell.copy(value = cell.solution) else cell })
         }
     return SudokuBackupEntry(
         id = id,

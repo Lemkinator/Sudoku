@@ -348,6 +348,38 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
+    fun `saveSudoku replaces the daily sudoku of the new day when an existing id is saved with another day`() =
+        runTest {
+            val today = LocalDateTime.of(2026, 3, 15, 12, 0)
+            val first = sudoku(mode = GameMode.Daily, created = today.minusDays(1))
+            val other = sudoku(mode = GameMode.Daily, created = today)
+            repository.saveSudoku(first)
+            repository.saveSudoku(other)
+
+            val moved = first.copy(info = first.info.copy(created = today))
+            repository.saveSudoku(moved)
+
+            val all = allSummaries()
+            all shouldHaveSize 1
+            all.single().info.id shouldBe first.info.id
+        }
+
+    @Test
+    fun `saveSudoku replaces the level sudoku of the new level when an existing id is saved with another level`() =
+        runTest {
+            val first = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1))
+            val other = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(2))
+            repository.saveSudoku(first)
+            repository.saveSudoku(other)
+
+            repository.saveSudoku(first.copy(info = first.info.copy(mode = GameMode.Level(2))))
+
+            val all = allSummaries()
+            all shouldHaveSize 1
+            all.single().info.id shouldBe first.info.id
+        }
+
+    @Test
     fun `saveSudoku does not delete the daily sudoku being updated`() =
         runTest {
             val daily = sudoku(mode = GameMode.Daily)

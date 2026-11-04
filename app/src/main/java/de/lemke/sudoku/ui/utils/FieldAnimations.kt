@@ -32,6 +32,7 @@ private const val FIELD_ANIMATION_ROTATION_DEGREES = 100f
 private const val FIELD_ANIMATION_DURATION_MILLIS = 250L
 private const val FIELD_ANIMATION_DELAY_MILLIS = 120L
 private const val WAVE_DELAY_MILLIS = 60L
+private const val FIELD_ANIMATION_PHASES = 2
 
 /** A part of the board whose fields pulse together. */
 enum class FieldRegion {
@@ -61,36 +62,35 @@ fun CompletedRegions.fieldRegions(): Set<FieldRegion> =
         FieldRegion.BLOCK.takeIf { block },
     )
 
-/** Pulses the fields of [regions] around [position], outward in both directions. The job completes after both waves. */
+/** Pulses the fields of [regions] around [position], outward in both directions. The job completes when the last field is at rest. */
 fun CoroutineScope.animateFields(
     fieldViews: List<FieldView>,
     position: Position,
     regions: Set<FieldRegion>,
 ): Job {
     val blockSize = position.size.blockSize
-    val waveDelay = WAVE_DELAY_MILLIS / blockSize
 
     fun reached(compare: (Int, Int) -> Boolean) =
         fieldViews.filter { fieldView -> regions.any { it.reaches(fieldView, position, compare) } }
 
-    suspend fun pulse(fieldView: FieldView) {
-        if (FieldRegion.BOARD in regions) {
-            animateField(fieldView.fieldViewValue, SUDOKU_COMPLETED_ANIMATION_DURATION_MILLIS, waveDelay, blockSize)
-        } else {
-            animateField(fieldView.fieldViewValue, blockSize = blockSize)
-        }
-    }
+    val wholeBoard = FieldRegion.BOARD in regions
+    val duration = if (wholeBoard) SUDOKU_COMPLETED_ANIMATION_DURATION_MILLIS else FIELD_ANIMATION_DURATION_MILLIS
+    val stagger = (if (wholeBoard) WAVE_DELAY_MILLIS / blockSize else FIELD_ANIMATION_DELAY_MILLIS) / blockSize
+
+    suspend fun pulse(fieldView: FieldView) = animateField(fieldView.fieldViewValue, duration, stagger)
+
     return launch {
-        launch { reached { a, b -> a <= b }.reversed().forEach { pulse(it) } }
+        val backward = launch { reached { a, b -> a <= b }.reversed().forEach { pulse(it) } }
         reached { a, b -> a > b }.forEach { pulse(it) }
+        backward.join()
+        if (regions.isNotEmpty()) delay(((FIELD_ANIMATION_PHASES * duration) - stagger).coerceAtLeast(0).milliseconds)
     }
 }
 
 private suspend fun animateField(
     fieldTextView: TextView?,
-    duration: Long = FIELD_ANIMATION_DURATION_MILLIS,
-    delay: Long = FIELD_ANIMATION_DELAY_MILLIS,
-    blockSize: Int,
+    duration: Long,
+    stagger: Long,
 ) {
     fieldTextView?.let {
         it
@@ -111,5 +111,5 @@ private suspend fun animateField(
                     .start()
             }.start()
     }
-    delay((delay / blockSize).milliseconds)
+    delay(stagger.milliseconds)
 }

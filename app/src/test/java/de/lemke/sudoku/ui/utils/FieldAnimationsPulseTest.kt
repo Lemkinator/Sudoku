@@ -103,7 +103,10 @@ class FieldAnimationsPulseTest {
         scope.advanceTimeBy(100)
         scope.runCurrent()
         job.isCompleted shouldBe false
-        scope.advanceTimeBy(200)
+        scope.advanceTimeBy(500)
+        scope.runCurrent()
+        job.isCompleted shouldBe false
+        scope.advanceTimeBy(20)
         scope.runCurrent()
         job.isCompleted shouldBe true
         settleViewAnimations()
@@ -134,7 +137,10 @@ class FieldAnimationsPulseTest {
         scope.advanceTimeBy(100)
         scope.runCurrent()
         job.isCompleted shouldBe false
-        scope.advanceTimeBy(100)
+        scope.advanceTimeBy(400)
+        scope.runCurrent()
+        job.isCompleted shouldBe false
+        scope.advanceTimeBy(60)
         scope.runCurrent()
         job.isCompleted shouldBe true
         settleViewAnimations()
