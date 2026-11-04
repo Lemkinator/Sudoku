@@ -71,6 +71,7 @@ class BoardTest : ShouldSpec(
             fresh4().hashCode() shouldBe fresh4().hashCode()
             fresh4() shouldNotBe fresh4().with(1, Cell(2, value = 2))
             fresh4().equals("board") shouldBe false
+            fresh4() shouldNotBe fresh9()
         }
 
         should("describe itself by size and cells") { fresh4().toString() shouldBe "Board(size=FOUR, cells=${fresh4().cells})" }
