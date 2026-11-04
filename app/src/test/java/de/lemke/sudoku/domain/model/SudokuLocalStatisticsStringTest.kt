@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.R
 import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import java.time.LocalDateTime
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -67,7 +68,7 @@ class SudokuLocalStatisticsStringTest {
 
     @Test
     fun `getLocalStatisticsString names a daily sudoku by its type`() {
-        val sudoku = statisticsSudoku(mode = GameMode.Daily)
+        val sudoku = statisticsSudoku(mode = GameMode.Daily(LocalDate.of(2024, 1, 1)))
 
         val text = sudoku.getLocalStatisticsString(context.resources)
 

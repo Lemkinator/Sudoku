@@ -85,7 +85,7 @@ data class Sudoku(val info: GameInfo, val board: Board) {
             R.string.sudokuStatisticsString,
             when (val mode = info.mode) {
                 GameMode.Normal -> resources.getString(R.string.normal_sudoku)
-                GameMode.Daily -> resources.getString(R.string.daily_sudoku)
+                is GameMode.Daily -> resources.getString(R.string.daily_sudoku)
                 is GameMode.Level -> resources.getString(R.string.level_number, mode.number)
             },
             info.size.value,
@@ -147,7 +147,8 @@ fun Char.toSudokuInt(): Int? =
         else -> null
     }
 
-val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-val LocalDateTime.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
+val LocalDate.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+val LocalDate.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
+val LocalDateTime.dateFormatShort: String get() = toLocalDate().dateFormatShort
 val LocalDate.formatFull: String get() = format(ofLocalizedDate(FULL))
 val LocalDateTime.formatFull: String get() = format(ofLocalizedDateTime(FULL, MEDIUM).withZone(systemDefault()))

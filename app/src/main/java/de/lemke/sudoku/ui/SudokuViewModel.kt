@@ -166,8 +166,8 @@ private data class PendingSummary(
 }
 
 private fun Sudoku.kind(): SudokuKind =
-    when (info.mode) {
-        GameMode.Daily -> SudokuKind.Daily(info.created.toLocalDate())
+    when (val mode = info.mode) {
+        is GameMode.Daily -> SudokuKind.Daily(mode.date)
         is GameMode.Level -> SudokuKind.Level
         GameMode.Normal -> SudokuKind.Normal
     }
@@ -418,6 +418,6 @@ class SudokuViewModel @Inject constructor(
         when (val mode = completed.info.mode) {
             is GameMode.Level -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.info.size) == mode.number }
             GameMode.Normal -> FollowUp.NEW_GAME
-            GameMode.Daily -> null
+            is GameMode.Daily -> null
         }
 }

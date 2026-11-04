@@ -40,7 +40,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         val date = LocalDate.of(2026, 1, 1)
 
         fun dailySudoku(on: LocalDate) =
-            testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, mode = GameMode.Daily, created = on.atStartOfDay())
+            testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY, mode = GameMode.Daily(on), created = on.atStartOfDay())
 
         beforeEach {
             val dispatcher = UnconfinedTestDispatcher()
@@ -60,7 +60,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
             useCase(date)
 
             sudokusRepository.saves.map { it.info.mode to it.info.created } shouldBe
-                listOf(GameMode.Daily to LocalDateTime.of(2026, 1, 1, 10, 0))
+                listOf(GameMode.Daily(LocalDate.of(2026, 1, 1)) to LocalDateTime.of(2026, 1, 1, 10, 0))
         }
 
         should("uses the clock's date when called without a date") {

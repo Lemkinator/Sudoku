@@ -33,6 +33,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
@@ -231,7 +232,7 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
                     wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(2)),
                     wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(3)),
                     wonSudoku(size = SudokuSize.FOUR),
-                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Daily),
+                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Daily(LocalDate.of(2026, 1, 1))),
                 )
 
             useCase(null).leaderboardScores shouldBe

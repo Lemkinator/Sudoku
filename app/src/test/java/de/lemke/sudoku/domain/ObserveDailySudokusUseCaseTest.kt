@@ -24,11 +24,11 @@ import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuSize
-import de.lemke.sudoku.domain.model.monthAndYear
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineScope
@@ -55,16 +55,22 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
         val completedThisMonth =
             testSudoku(
                 size = SudokuSize.NINE,
-                mode = GameMode.Daily,
+                mode = GameMode.Daily(LocalDate.of(2026, 2, 5)),
                 difficulty = VERY_EASY,
                 created = LocalDateTime.of(2026, 2, 5, 9, 0),
                 completed = true,
             )
-        val uncompletedToday = testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily, difficulty = VERY_EASY, created = today)
+        val uncompletedToday =
+            testSudoku(
+                size = SudokuSize.NINE,
+                mode = GameMode.Daily(todayDate),
+                difficulty = VERY_EASY,
+                created = today,
+            )
         val uncompletedLastMonth =
             testSudoku(
                 size = SudokuSize.NINE,
-                mode = GameMode.Daily,
+                mode = GameMode.Daily(LocalDate.of(2026, 1, 20)),
                 difficulty = VERY_EASY,
                 created = LocalDateTime.of(2026, 1, 20, 9, 0),
             )
@@ -88,11 +94,11 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             useCase(todayDate).test {
                 awaitItem().shape() shouldBe
                     listOf(
-                        "separator" to completedThisMonth.info.created.monthAndYear,
-                        "item" to completedThisMonth.info.created.monthAndYear,
-                        "item" to uncompletedToday.info.created.monthAndYear,
-                        "separator" to uncompletedLastMonth.info.created.monthAndYear,
-                        "item" to uncompletedLastMonth.info.created.monthAndYear,
+                        "separator" to "February 2026",
+                        "item" to "February 2026",
+                        "item" to "February 2026",
+                        "separator" to "January 2026",
+                        "item" to "January 2026",
                     )
                 cancelAndIgnoreRemainingEvents()
             }
@@ -104,9 +110,9 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             useCase(todayDate).test {
                 awaitItem().shape() shouldBe
                     listOf(
-                        "separator" to completedThisMonth.info.created.monthAndYear,
-                        "item" to completedThisMonth.info.created.monthAndYear,
-                        "item" to uncompletedToday.info.created.monthAndYear,
+                        "separator" to "February 2026",
+                        "item" to "February 2026",
+                        "item" to "February 2026",
                     )
                 cancelAndIgnoreRemainingEvents()
             }
@@ -118,9 +124,9 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
             useCase().test {
                 awaitItem().shape() shouldBe
                     listOf(
-                        "separator" to completedThisMonth.info.created.monthAndYear,
-                        "item" to completedThisMonth.info.created.monthAndYear,
-                        "item" to uncompletedToday.info.created.monthAndYear,
+                        "separator" to "February 2026",
+                        "item" to "February 2026",
+                        "item" to "February 2026",
                     )
                 cancelAndIgnoreRemainingEvents()
             }
@@ -135,6 +141,38 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
                 userSettings.dailyShowUncompleted = true
 
                 awaitItem().shape().size shouldBe 5
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+        should("label and filter a daily sudoku by its day when its creation stamp reads as another day") {
+            userSettings.dailyShowUncompleted = false
+            val firstOfMonth =
+                testSudoku(
+                    size = SudokuSize.NINE,
+                    mode = GameMode.Daily(LocalDate.of(2026, 2, 15)),
+                    difficulty = VERY_EASY,
+                    created = LocalDateTime.of(2026, 2, 14, 23, 0),
+                )
+            val otherDay =
+                testSudoku(
+                    size = SudokuSize.NINE,
+                    mode = GameMode.Daily(LocalDate.of(2026, 1, 31)),
+                    difficulty = VERY_EASY,
+                    created = LocalDateTime.of(2026, 2, 15, 1, 0),
+                )
+            sudokusRepository = FakeSudokusRepository()
+            sudokusRepository.store(firstOfMonth, otherDay)
+            useCase =
+                ObserveDailySudokusUseCase(
+                    sudokusRepository,
+                    userSettings,
+                    Clock.fixed(today.toInstant(ZoneOffset.UTC), ZoneOffset.UTC),
+                    UnconfinedTestDispatcher(),
+                )
+
+            useCase(todayDate).test {
+                awaitItem().shape() shouldBe listOf("separator" to "February 2026", "item" to "February 2026")
                 cancelAndIgnoreRemainingEvents()
             }
         }

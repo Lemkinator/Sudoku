@@ -19,13 +19,15 @@ package de.lemke.sudoku.domain.model
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 
 class SudokuFilterFlagsTest : ShouldSpec(
     {
+        val daily = GameMode.Daily(LocalDate.of(2026, 1, 15))
         val typesByFlag =
             mapOf(
                 SudokuFilterFlags.TYPE_NORMAL to GameMode.Normal,
-                SudokuFilterFlags.TYPE_DAILY to GameMode.Daily,
+                SudokuFilterFlags.TYPE_DAILY to daily,
                 SudokuFilterFlags.TYPE_LEVEL to GameMode.Level(1),
             )
         val difficultiesByFlag =
@@ -63,7 +65,7 @@ class SudokuFilterFlagsTest : ShouldSpec(
                     SudokuFilterFlags.DIFFICULTY_ALL
 
             flags.matchesSudokuFilterFlags(testSudoku(mode = GameMode.Normal).info) shouldBe true
-            flags.matchesSudokuFilterFlags(testSudoku(mode = GameMode.Daily).info) shouldBe true
+            flags.matchesSudokuFilterFlags(testSudoku(mode = daily).info) shouldBe true
             flags.matchesSudokuFilterFlags(testSudoku(mode = GameMode.Level(1)).info) shouldBe false
         }
 
@@ -133,8 +135,8 @@ class SudokuFilterFlagsTest : ShouldSpec(
             flags.matchesSudokuFilterFlags(matching.info) shouldBe true
             flags.matchesSudokuFilterFlags(testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.HARD).info) shouldBe false
             flags.matchesSudokuFilterFlags(testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.EASY).info) shouldBe false
-            val daily = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.HARD, mode = GameMode.Daily)
-            flags.matchesSudokuFilterFlags(daily.info) shouldBe false
+            val dailySudoku = testSudoku(size = SudokuSize.NINE, difficulty = Difficulty.HARD, mode = daily)
+            flags.matchesSudokuFilterFlags(dailySudoku.info) shouldBe false
         }
     },
 )

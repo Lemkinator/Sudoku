@@ -35,6 +35,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -89,7 +90,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         fun dailySudoku(
             created: LocalDateTime,
             completed: Boolean = false,
-        ) = testSudoku(mode = GameMode.Daily, created = created, completed = completed)
+        ) = testSudoku(mode = GameMode.Daily(created.toLocalDate()), created = created, completed = completed)
 
         should("observe today's daily sudokus only while state is collected and map them to the UI state") {
             val today = dailySudoku(created = LocalDateTime.of(2026, 1, 15, 9, 0))
@@ -129,7 +130,7 @@ class DailySudokuViewModelTest : ShouldSpec(
                 }
 
                 repository.saves.map { it.info.mode to it.info.created } shouldBe
-                    listOf(GameMode.Daily to LocalDateTime.of(2026, 1, 15, 12, 0))
+                    listOf(GameMode.Daily(LocalDate.of(2026, 1, 15)) to LocalDateTime.of(2026, 1, 15, 12, 0))
             }
         }
 

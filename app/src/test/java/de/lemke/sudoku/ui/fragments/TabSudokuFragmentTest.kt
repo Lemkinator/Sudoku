@@ -59,6 +59,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -378,7 +379,7 @@ class TabSudokuFragmentTest {
 
     @Test
     fun `onResume shows the daily button when today's daily sudoku is already completed`() {
-        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily, allCorrect = true)) }
+        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily(LocalDate.now()), allCorrect = true)) }
         launch { fragment ->
             fragment
                 .requireView()
@@ -395,7 +396,7 @@ class TabSudokuFragmentTest {
 
     @Test
     fun `onResume shows the daily-available button when today's daily sudoku is unfinished`() {
-        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily, allCorrect = false)) }
+        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily(LocalDate.now()), allCorrect = false)) }
         launch { fragment ->
             fragment
                 .requireView()

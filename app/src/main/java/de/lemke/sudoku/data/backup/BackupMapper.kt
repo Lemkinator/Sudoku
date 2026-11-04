@@ -55,7 +55,7 @@ private fun infoOrNull(
 ): GameInfo? {
     val size = SudokuSize.fromValueOrNull(entry.size)
     val difficulty = Difficulty.fromNameOrNull(entry.difficulty)
-    val mode = legacyGameModeOrNull(entry.modeLevel)
+    val mode = legacyGameModeOrNull(entry.modeLevel, entry.created.toLocalDate())
     return if (size != null && difficulty != null && mode != null && entry.seconds >= 0) {
         GameInfo(
             id = SudokuId(entry.id),

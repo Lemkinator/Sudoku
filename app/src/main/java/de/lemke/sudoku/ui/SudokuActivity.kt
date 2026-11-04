@@ -689,7 +689,7 @@ class SudokuActivity : AppCompatActivity() {
         val detail =
             when (val mode = info.mode) {
                 GameMode.Normal -> info.difficulty.getLocalString(resources)
-                GameMode.Daily -> info.created.dateFormatShort
+                is GameMode.Daily -> mode.date.dateFormatShort
                 is GameMode.Level -> getString(R.string.level_number, mode.number)
             }
         binding.sudokuToolbarLayout.setTitle(getString(R.string.sudoku_title_detail, getString(R.string.sudoku), detail))

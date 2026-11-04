@@ -90,7 +90,8 @@ because sign-in needs the Activity. It signs in through `GamesSignIn` and fetche
 (VERY_EASY…EXPERT, stored by `code`). Moves are pure: `Board.apply(BoardMove)` returns a `MoveResult`, and `Sudoku.play(move)` adds the
 counters and returns a new `Sudoku`. The domain holds no timer and no listener; `SudokuViewModel` owns the ticker and every move.
 
-**Sudoku modes:** `GameMode`: `Normal`, `Daily`, `Level(number)`.
+**Sudoku modes:** `GameMode`: `Normal`, `Daily(date)`, `Level(number)`. A daily game keeps the day it was made for as `date`, stored in
+the `dailyDate` column, whatever zone the device is in later.
 
 ## Key Patterns
 

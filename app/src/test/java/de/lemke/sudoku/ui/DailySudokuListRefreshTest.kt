@@ -44,6 +44,7 @@ import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.shouldBe
 import java.time.Clock
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -108,7 +109,7 @@ class DailySudokuListRefreshTest {
     ): Sudoku =
         listSudoku(
             sudokuId = sudokuId,
-            mode = GameMode.Daily,
+            mode = GameMode.Daily(LocalDate.now(testClock)),
             filled = filled,
             errorsMade = errorsMade,
             seconds = seconds,

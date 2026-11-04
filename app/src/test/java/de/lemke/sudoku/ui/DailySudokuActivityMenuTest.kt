@@ -42,6 +42,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -85,7 +86,7 @@ class DailySudokuActivityMenuTest {
     private fun dailySudoku(sudokuId: SudokuId = SudokuId.generate()): Sudoku =
         testSudoku(
             size = SudokuSize.FOUR,
-            mode = GameMode.Daily,
+            mode = GameMode.Daily(LocalDate.now(testClock)),
             difficulty = Difficulty.VERY_EASY,
             sudokuId = sudokuId,
             created = LocalDateTime.now(testClock),

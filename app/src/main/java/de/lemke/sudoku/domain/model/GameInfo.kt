@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.domain.model
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
 
@@ -43,6 +44,8 @@ data class GameInfo(
     val isReverseChecklist: Boolean = false,
     val checklistNumber: Int = 0,
 ) {
+    val dailyDate: LocalDate? get() = (mode as? GameMode.Daily)?.date
+
     val availableHints: Int get() = size.hintLimit - hintsUsed
 
     val isHintAvailable: Boolean get() = mode == GameMode.Normal && hintsUsed < size.hintLimit

@@ -41,6 +41,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
@@ -131,7 +132,13 @@ class AlarmReceiverTest {
     @Test
     fun `onReceive does not send a notification when today's daily sudoku is already completed`() {
         graph.userSettings().dailySudokuNotificationEnabled = true
-        val today = testSudoku(size = SudokuSize.FOUR, mode = GameMode.Daily, difficulty = Difficulty.VERY_EASY, completed = true)
+        val today =
+            testSudoku(
+                size = SudokuSize.FOUR,
+                mode = GameMode.Daily(LocalDate.now()),
+                difficulty = Difficulty.VERY_EASY,
+                completed = true,
+            )
         runBlocking { graph.saveSudoku()(today) }
 
         broadcast("de.lemke.sudoku.TEST_ALARM")

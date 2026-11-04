@@ -145,8 +145,8 @@ private fun SupportSQLiteDatabase.readLegacyBoards(sizes: Map<String, SudokuSize
 
 private fun Cursor.legacyInfoOrNull(zone: ZoneId): GameInfo? {
     val size = SudokuSize.fromValueOrNull(int("size"))
-    val mode = legacyGameModeOrNull(int("modeLevel"))
     val created = stampOrNull("created", zone)
+    val mode = created?.let { legacyGameModeOrNull(int("modeLevel"), it.toLocalDate()) }
     val updated = stampOrNull("updated", zone)
     return if (size != null && mode != null && created != null && updated != null) {
         GameInfo(

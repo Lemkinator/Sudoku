@@ -138,7 +138,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     fun `local entries find a game by id, day and size with level`(): Unit =
         runBlocking {
             val normal = testSudoku()
-            val daily = testSudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 5, 3, 7, 30))
+            val daily = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 5, 3)), created = LocalDateTime.of(2026, 5, 3, 7, 30))
             val level = testSudoku(mode = GameMode.Level(3))
             store(normal, daily, level, testSudoku(), testSudoku(mode = GameMode.Level(4)))
             val keys =
@@ -165,7 +165,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     fun `local entries ignore daily and level games when no key asks for them`(): Unit =
         runBlocking {
             val normal = testSudoku()
-            store(normal, testSudoku(mode = GameMode.Daily), testSudoku(mode = GameMode.Level(1)))
+            store(normal, testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 5, 3))), testSudoku(mode = GameMode.Level(1)))
 
             val local = section.localEntries(setOf(SudokuBackupKey.Normal(normal.info.id.value)))
 
@@ -185,8 +185,8 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     @Test
     fun `replace swaps the local game for the merged one`(): Unit =
         runBlocking {
-            val local = backupEntry(id = "local", modeLevel = GameMode.Daily.toLegacyModeLevel(), solvedCells = 2)
-            val merged = backupEntry(id = "merged", modeLevel = GameMode.Daily.toLegacyModeLevel(), solvedCells = 6)
+            val local = backupEntry(id = "local", modeLevel = -1, solvedCells = 2)
+            val merged = backupEntry(id = "merged", modeLevel = -1, solvedCells = 6)
             section.insert(listOf(local))
 
             section.replace(local, merged)

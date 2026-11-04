@@ -33,7 +33,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
     override fun sampleEntries(): List<SudokuBackupEntry> =
         listOf(
             backupEntry(id = "normal-game", updated = "2026-05-02T08:10:00+02:00", solvedCells = 3, seconds = 95),
-            backupEntry(id = "daily-game", modeLevel = GameMode.Daily.toLegacyModeLevel(), created = "2026-05-03T07:30:00+02:00"),
+            backupEntry(id = "daily-game", modeLevel = -1, created = "2026-05-03T07:30:00+02:00"),
             backupEntry(id = "level-game", modeLevel = 2, created = "2026-01-10T19:00:00+01:00", solvedCells = 10),
         )
 
@@ -61,7 +61,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                             ),
                             backupEntry(
                                 id = "22222222-bbbb",
-                                modeLevel = GameMode.Daily.toLegacyModeLevel(),
+                                modeLevel = -1,
                                 created = "2026-05-03T07:30:00+02:00",
                             ),
                         ),

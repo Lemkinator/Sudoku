@@ -56,7 +56,7 @@ class GenerateDailySudokuUseCase @Inject constructor(
                         id = SudokuId.generate(),
                         size = size,
                         difficulty = randomDifficulty,
-                        mode = GameMode.Daily,
+                        mode = GameMode.Daily(now.toLocalDate()),
                         created = now,
                         updated = now,
                     ),

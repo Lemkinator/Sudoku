@@ -54,7 +54,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    mode = GameMode.Daily,
+                    mode = GameMode.Daily(date),
                     created = date.atStartOfDay(),
                     completed = true,
                 )
@@ -68,7 +68,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    mode = GameMode.Daily,
+                    mode = GameMode.Daily(date),
                     created = date.atStartOfDay(),
                     completed = true,
                 ),
@@ -82,7 +82,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    mode = GameMode.Daily,
+                    mode = GameMode.Daily(date),
                     created = date.atStartOfDay(),
                 )
             sudokusRepository.saveSudoku(incompleteSudoku)
@@ -95,7 +95,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
                 testSudoku(
                     size = SudokuSize.FOUR,
                     difficulty = Difficulty.EASY,
-                    mode = GameMode.Daily,
+                    mode = GameMode.Daily(date.plusDays(1)),
                     created = date.plusDays(1).atStartOfDay(),
                     completed = true,
                 )

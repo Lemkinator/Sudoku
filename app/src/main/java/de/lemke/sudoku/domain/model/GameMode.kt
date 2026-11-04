@@ -16,6 +16,8 @@
 
 package de.lemke.sudoku.domain.model
 
+import java.time.LocalDate
+
 sealed interface GameMode {
     val code: Int
 
@@ -24,13 +26,15 @@ sealed interface GameMode {
         const val CODE_DAILY = 1
         const val CODE_LEVEL = 2
 
+        /** The mode of [code]; a level needs its [level] number and a daily one the [dailyDate] it was made for. */
         fun fromCode(
             code: Int,
             level: Int?,
+            dailyDate: LocalDate?,
         ): GameMode? =
             when (code) {
                 CODE_NORMAL -> Normal
-                CODE_DAILY -> Daily
+                CODE_DAILY -> dailyDate?.let(::Daily)
                 CODE_LEVEL -> level?.takeIf { it >= 1 }?.let(::Level)
                 else -> null
             }
@@ -40,7 +44,7 @@ sealed interface GameMode {
         override val code = CODE_NORMAL
     }
 
-    data object Daily : GameMode {
+    data class Daily(val date: LocalDate) : GameMode {
         override val code = CODE_DAILY
     }
 

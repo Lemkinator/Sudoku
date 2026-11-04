@@ -28,6 +28,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -123,7 +124,7 @@ class SudokuFileCodecTest : ShouldSpec(
                             numberHighlightingUsed = true,
                             isChecklist = true,
                             isReverseChecklist = true,
-                            mode = GameMode.Daily,
+                            mode = GameMode.Daily(LocalDate.of(2026, 11, 3)),
                             difficulty = Difficulty.EXPERT,
                         ),
                 )

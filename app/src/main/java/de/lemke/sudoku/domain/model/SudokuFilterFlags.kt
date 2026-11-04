@@ -35,7 +35,7 @@ fun Int.matchesSudokuFilterFlags(info: GameInfo): Boolean = matchesType(info) &&
 private fun Int.matchesType(info: GameInfo): Boolean =
     this and SudokuFilterFlags.TYPE_ALL != 0 ||
         (this and SudokuFilterFlags.TYPE_NORMAL != 0 && info.mode == GameMode.Normal) ||
-        (this and SudokuFilterFlags.TYPE_DAILY != 0 && info.mode == GameMode.Daily) ||
+        (this and SudokuFilterFlags.TYPE_DAILY != 0 && info.mode is GameMode.Daily) ||
         (this and SudokuFilterFlags.TYPE_LEVEL != 0 && info.mode is GameMode.Level)
 
 private fun Int.matchesSize(info: GameInfo): Boolean = this and SudokuFilterFlags.SIZE_ALL != 0 || this and info.size.filterFlag != 0

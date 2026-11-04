@@ -58,6 +58,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TestTimeSource
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
+import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -890,7 +891,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onResumed starts the timer of a daily sudoku created on the clock's date") {
             val sudoku =
                 testSudoku(
-                    mode = GameMode.Daily,
+                    mode = GameMode.Daily(LocalDate.of(2026, 1, 14)),
                     created = LocalDateTime.of(2026, 1, 15, 0, 0),
                     updated = LocalDateTime.of(2026, 1, 15, 0, 0),
                 )
@@ -909,7 +910,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onResumed ends a daily sudoku created before the clock's date without a timer") {
             val sudoku =
                 testSudoku(
-                    mode = GameMode.Daily,
+                    mode = GameMode.Daily(LocalDate.of(2026, 1, 15)),
                     created = LocalDateTime.of(2026, 1, 14, 23, 59),
                     updated = LocalDateTime.of(2026, 1, 14, 23, 59),
                 )
@@ -946,7 +947,7 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("the winning move offers no follow-up for a daily sudoku") {
-            val completed = testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock), completed = true)
+            val completed = testSudoku(mode = GameMode.Daily(LocalDate.now(clock)), created = LocalDateTime.now(clock), completed = true)
             val viewModel = playingToWin(completed)
 
             val won = viewModel.win(completed)
@@ -1084,7 +1085,7 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("a summary without a follow-up pending at process death shows again without one") {
-            val completed = testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock), completed = true)
+            val completed = testSudoku(mode = GameMode.Daily(LocalDate.now(clock)), created = LocalDateTime.now(clock), completed = true)
             val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
             val won = playingToWin(completed, savedStateHandle).win(completed)
 

@@ -94,13 +94,12 @@ class FakeSudokusRepository : SudokusRepository {
     override suspend fun isDailyCompleted(date: LocalDate): Boolean =
         games.dailies().summaries().any {
             it.completed &&
-                it.info.created.toLocalDate() == date
+                it.info.dailyDate == date
         }
 
     override suspend fun hasDaily(date: LocalDate): Boolean =
         games.dailies().any {
-            it.sudoku.info.created
-                .toLocalDate() == date
+            it.sudoku.info.dailyDate == date
         }
 
     override suspend fun getLevelNumbers(size: SudokuSize): Set<Int> =
@@ -153,7 +152,7 @@ class FakeSudokusRepository : SudokusRepository {
         val theirs = other.sudoku.info
         return id == other.id ||
             (mine.mode is GameMode.Level && mine.mode == theirs.mode && mine.size == theirs.size) ||
-            (mine.mode == GameMode.Daily && theirs.mode == GameMode.Daily && mine.created.toLocalDate() == theirs.created.toLocalDate())
+            (mine.dailyDate != null && mine.dailyDate == theirs.dailyDate)
     }
 
     private fun observe(query: (List<Stored>) -> List<Stored>): Flow<List<GameSummary>> {
@@ -173,5 +172,5 @@ class FakeSudokusRepository : SudokusRepository {
         filter { it.sudoku.info.size == size && it.sudoku.info.mode is GameMode.Level }
             .sortedByDescending { (it.sudoku.info.mode as GameMode.Level).number }
 
-    private fun List<Stored>.dailies() = filter { it.sudoku.info.mode == GameMode.Daily }.sortedByDescending { it.sudoku.info.created }
+    private fun List<Stored>.dailies() = filter { it.sudoku.info.mode is GameMode.Daily }.sortedByDescending { it.sudoku.info.created }
 }

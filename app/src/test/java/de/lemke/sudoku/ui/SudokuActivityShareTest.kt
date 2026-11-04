@@ -53,6 +53,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import javax.inject.Inject
@@ -307,7 +308,7 @@ class SudokuActivityShareTest {
 
     @Test
     fun `the title reflects a daily sudoku's date`() =
-        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Daily)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Daily(LocalDate.now()))) { activity ->
             val expected = "Sudoku (${activity.sudoku.info.created.dateFormatShort})"
             activity.binding.sudokuToolbarLayout.expandedTitle
                 .toString() shouldBe expected
@@ -316,7 +317,7 @@ class SudokuActivityShareTest {
     @Test
     fun `the subtitle shows a daily sudoku's fixed error limit instead of the user's`() {
         userSettings.errorLimit = 5
-        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Daily)) { activity ->
+        launch(formulaicSudoku(SudokuSize.FOUR, mode = GameMode.Daily(LocalDate.now()))) { activity ->
             activity.subtitleErrorsSegment() shouldBe "Errors: 0/3"
         }
     }

@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -41,11 +42,7 @@ fun GameSummary.toHeader(zone: ZoneId): GameHeader =
         id = info.id.value,
         mode = info.mode.code,
         level = (info.mode as? GameMode.Level)?.number,
-        dailyDate =
-            info.created
-                .toLocalDate()
-                .toEpochDay()
-                .takeIf { info.mode == GameMode.Daily },
+        dailyDate = info.dailyDate?.toEpochDay(),
         size = info.size.value,
         difficulty = info.difficulty.code,
         createdAt = info.created.toEpochMilli(zone),
@@ -67,7 +64,7 @@ fun GameSummary.toHeader(zone: ZoneId): GameHeader =
 /** The summary of this header, or null if its size, mode or difficulty names nothing this version knows. */
 fun GameHeader.toSummary(zone: ZoneId): GameSummary? {
     val size = SudokuSize.fromValueOrNull(size)
-    val mode = GameMode.fromCode(mode, level)
+    val mode = GameMode.fromCode(mode, level, dailyDate?.let(::localDateOrNull))
     val difficulty = Difficulty.fromCodeOrNull(difficulty)
     return if (size != null && mode != null && difficulty != null) {
         GameSummary(
@@ -97,6 +94,10 @@ fun GameHeader.toSummary(zone: ZoneId): GameSummary? {
         null
     }
 }
+
+/** The date of [epochDay], or null if it lies outside the supported dates. */
+private fun localDateOrNull(epochDay: Long): LocalDate? =
+    epochDay.takeIf { it in LocalDate.MIN.toEpochDay()..LocalDate.MAX.toEpochDay() }?.let(LocalDate::ofEpochDay)
 
 private fun LocalDateTime.toEpochMilli(zone: ZoneId): Long = atZone(zone).toInstant().toEpochMilli()
 

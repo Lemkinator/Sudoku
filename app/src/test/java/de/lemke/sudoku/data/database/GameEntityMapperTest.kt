@@ -25,6 +25,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
@@ -70,7 +71,7 @@ class GameEntityMapperTest : ShouldSpec(
         }
 
         should("write a daily game's day as its epoch day and no level") {
-            val header = sudoku(GameMode.Daily).toEntity(utc).header
+            val header = sudoku(GameMode.Daily(LocalDate.of(2026, 10, 1))).toEntity(utc).header
 
             listOf(header.mode, header.level, header.dailyDate) shouldBe listOf(1, null, 20727L)
         }
@@ -89,7 +90,7 @@ class GameEntityMapperTest : ShouldSpec(
         }
 
         should("round trip a game of every mode through its row") {
-            listOf(GameMode.Normal, GameMode.Daily, GameMode.Level(7)).forEach { mode ->
+            listOf(GameMode.Normal, GameMode.Daily(LocalDate.of(2026, 10, 1)), GameMode.Level(7)).forEach { mode ->
                 val game = sudoku(mode)
 
                 game.toEntity(utc).toSudoku(utc) shouldBe game
@@ -100,6 +101,23 @@ class GameEntityMapperTest : ShouldSpec(
             val read = sudoku().toEntity(utc).toSudoku(ZoneOffset.ofHours(2)).shouldNotBeNull()
 
             read.info.created shouldBe LocalDateTime.of(2026, 10, 1, 10, 0, 0)
+        }
+
+        should("keep a daily game's day when it is read in a zone where its creation reads as another day") {
+            val daily = sudoku(GameMode.Daily(LocalDate.of(2026, 10, 1))).toEntity(utc)
+
+            val read = daily.toSudoku(ZoneOffset.ofHours(-10)).shouldNotBeNull()
+
+            read.info.created shouldBe LocalDateTime.of(2026, 9, 30, 22, 0, 0)
+            read.info.mode shouldBe GameMode.Daily(LocalDate.of(2026, 10, 1))
+            read.info.dailyDate shouldBe LocalDate.of(2026, 10, 1)
+        }
+
+        should("read no summary from a daily header without a day or with a day beyond the dates") {
+            val header = sudoku(GameMode.Daily(LocalDate.of(2026, 10, 1))).toEntity(utc).header
+
+            header.copy(dailyDate = null).toSummary(utc).shouldBeNull()
+            header.copy(dailyDate = Long.MAX_VALUE).toSummary(utc).shouldBeNull()
         }
 
         should("read no summary from a header with an unknown size, mode or difficulty") {

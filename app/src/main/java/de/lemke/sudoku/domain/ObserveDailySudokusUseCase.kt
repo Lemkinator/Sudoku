@@ -44,22 +44,25 @@ class ObserveDailySudokusUseCase @Inject constructor(
                 sudokusRepository
                     .observeDailySummaries()
                     .map { sudokus ->
-                        sudokus.filter {
+                        sudokus.mapNotNull { summary -> summary.info.dailyDate?.let { summary to it } }.filter { (summary, dailyDate) ->
                             if (includeUncompleted) {
                                 true
                             } else {
-                                it.completed
-                            } || it.info.created.toLocalDate() == date
+                                summary.completed
+                            } || dailyDate == date
                         }
                     }.map { sudokus ->
                         val dailySudokus: MutableList<SudokuListItem> =
-                            sudokus.map { SudokuListItem.SudokuItem(it, it.info.created.monthAndYear) }.toMutableList()
+                            sudokus
+                                .map { (summary, dailyDate) ->
+                                    SudokuListItem.SudokuItem(summary, dailyDate.monthAndYear)
+                                }.toMutableList()
                         var offset = 0
                         var oldDate: LocalDate? = null
-                        sudokus.forEachIndexed { index, sudoku ->
-                            if (oldDate == null || oldDate.month != sudoku.info.created.month) {
-                                dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(sudoku.info.created.monthAndYear))
-                                oldDate = sudoku.info.created.toLocalDate()
+                        sudokus.forEachIndexed { index, (_, dailyDate) ->
+                            if (oldDate == null || oldDate.month != dailyDate.month) {
+                                dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(dailyDate.monthAndYear))
+                                oldDate = dailyDate
                                 offset++
                             }
                         }

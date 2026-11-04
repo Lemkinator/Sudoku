@@ -38,6 +38,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
@@ -186,15 +187,19 @@ class TabSudokuViewModelTest : ShouldSpec(
         }
 
         should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {
-            repository.store(testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock), completed = true))
+            repository.store(testSudoku(mode = GameMode.Daily(LocalDate.now(clock)), created = LocalDateTime.now(clock), completed = true))
 
             viewModel.checkDailySudokuCompleted().shouldBeTrue()
         }
 
         should("checkDailySudokuCompleted returns false when isDailySudokuCompleted returns false") {
             repository.store(
-                testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock)),
-                testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock).minusDays(1), completed = true),
+                testSudoku(mode = GameMode.Daily(LocalDate.now(clock)), created = LocalDateTime.now(clock)),
+                testSudoku(
+                    mode = GameMode.Daily(LocalDate.now(clock).minusDays(1)),
+                    created = LocalDateTime.now(clock).minusDays(1),
+                    completed = true,
+                ),
                 testSudoku(completed = true),
             )
 

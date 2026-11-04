@@ -39,8 +39,8 @@ sealed interface SudokuBackupKey {
 
 /** The entry must be valid, so its size is known. */
 fun SudokuBackupEntry.key(): SudokuBackupKey =
-    when (val mode = legacyGameModeOrNull(modeLevel)!!) {
-        GameMode.Daily -> SudokuBackupKey.Daily(created.toLocalDate())
+    when (val mode = legacyGameModeOrNull(modeLevel, created.toLocalDate())!!) {
+        is GameMode.Daily -> SudokuBackupKey.Daily(mode.date)
         is GameMode.Level -> SudokuBackupKey.Level(SudokuSize.fromValue(size), mode.number)
         GameMode.Normal -> SudokuBackupKey.Normal(id)
     }

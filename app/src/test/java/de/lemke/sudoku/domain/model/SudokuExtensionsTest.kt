@@ -68,7 +68,7 @@ class SudokuExtensionsTest : ShouldSpec(
         }
 
         should("format monthAndYear as full month name and year") {
-            LocalDateTime.of(2024, 3, 15, 10, 30).monthAndYear shouldBe "March 2024"
+            LocalDate.of(2024, 3, 15).monthAndYear shouldBe "March 2024"
         }
 
         should("format dateFormatShort using the short localized date style") {

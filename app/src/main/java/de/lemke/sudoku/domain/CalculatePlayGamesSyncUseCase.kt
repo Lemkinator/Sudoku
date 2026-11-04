@@ -59,7 +59,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
     private fun baseScores(sudokus: List<GameSummary>): List<Pair<Int, Long>> =
         listOf(
             R.string.leaderboard_total_wins to sudokus.size.toLong(),
-            R.string.leaderboard_daily_sudokus to sudokus.count { it.info.mode == GameMode.Daily }.toLong(),
+            R.string.leaderboard_daily_sudokus to sudokus.count { it.info.mode is GameMode.Daily }.toLong(),
         ) +
             SudokuSize.entries.map { size ->
                 size.playGames.levelLeaderboard to sudokus.count { it.info.size == size && it.info.mode is GameMode.Level }.toLong()

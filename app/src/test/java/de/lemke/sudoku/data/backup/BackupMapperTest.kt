@@ -213,7 +213,7 @@ class BackupMapperTest : ShouldSpec(
 
         should("key a game by id, day, or size and level") {
             backupEntry(id = "a").key() shouldBe SudokuBackupKey.Normal("a")
-            backupEntry(modeLevel = GameMode.Daily.toLegacyModeLevel(), created = "2026-05-02T23:30:00-04:00").key() shouldBe
+            backupEntry(modeLevel = -1, created = "2026-05-02T23:30:00-04:00").key() shouldBe
                 SudokuBackupKey.Daily(LocalDate.of(2026, 5, 2))
             backupEntry(modeLevel = 3).key() shouldBe SudokuBackupKey.Level(SudokuSize.FOUR, 3)
         }

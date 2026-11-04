@@ -53,6 +53,7 @@ import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -141,7 +142,8 @@ class SudokuLevelTabListRefreshTest {
             created = LocalDateTime.of(2026, 1, 15, 9, 0),
         )
 
-    private fun dailySudoku(): Sudoku = testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily, difficulty = Difficulty.EASY)
+    private fun dailySudoku(): Sudoku =
+        testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily(LocalDate.now()), difficulty = Difficulty.EASY)
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 

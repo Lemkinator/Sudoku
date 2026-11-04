@@ -17,6 +17,7 @@
 package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.GameMode
+import java.time.LocalDate
 
 private const val LEGACY_MODE_NORMAL = 0
 private const val LEGACY_MODE_DAILY = -1
@@ -25,14 +26,18 @@ private const val LEGACY_MODE_DAILY = -1
 fun GameMode.toLegacyModeLevel(): Int =
     when (this) {
         GameMode.Normal -> LEGACY_MODE_NORMAL
-        GameMode.Daily -> LEGACY_MODE_DAILY
+        is GameMode.Daily -> LEGACY_MODE_DAILY
         is GameMode.Level -> number
     }
 
-fun legacyGameModeOrNull(modeLevel: Int): GameMode? =
+/** The mode of [modeLevel]; a daily game was made for [created]. */
+fun legacyGameModeOrNull(
+    modeLevel: Int,
+    created: LocalDate,
+): GameMode? =
     when {
         modeLevel == LEGACY_MODE_NORMAL -> GameMode.Normal
-        modeLevel == LEGACY_MODE_DAILY -> GameMode.Daily
+        modeLevel == LEGACY_MODE_DAILY -> GameMode.Daily(created)
         modeLevel > LEGACY_MODE_NORMAL -> GameMode.Level(modeLevel)
         else -> null
     }

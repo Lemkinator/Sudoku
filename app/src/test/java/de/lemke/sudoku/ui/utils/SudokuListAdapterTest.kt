@@ -312,14 +312,14 @@ class SudokuListAdapterTest {
     @Test
     fun `onBindViewHolder in DAILY mode for a completed sudoku shows the date and crown icon`() {
         val created = LocalDateTime.of(2024, 3, 15, 10, 30)
-        val sudoku = sudokuFixture(completed = true, created = created)
+        val sudoku = sudokuFixture(mode = GameMode.Daily(created.toLocalDate()), completed = true, created = created)
         val adapter = buildAdapter(mode = Mode.DAILY, errorLimit = 3)
         adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
         adapter.onBindViewHolder(holder, 0)
 
-        holder.textView.text shouldBe created.toLocalDate().formatFull
+        holder.textView.text shouldBe "Friday, March 15, 2024"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.DAILY)
         assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline, "Completed")
     }

@@ -46,6 +46,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -134,7 +135,9 @@ class SudokuActivityLifecycleTest {
 
     @Test
     fun `resumeGame does not start the timer for a stale daily sudoku`() =
-        launch(formulaicSudoku(mode = GameMode.Daily, created = LocalDateTime.now().minusDays(2))) { activity ->
+        launch(
+            formulaicSudoku(mode = GameMode.Daily(LocalDate.now().minusDays(2)), created = LocalDateTime.now().minusDays(2)),
+        ) { activity ->
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
             activity.sudoku.info.seconds shouldBe 0
         }
@@ -423,7 +426,7 @@ class SudokuActivityLifecycleTest {
 
     @Test
     fun `checkErrorLimit uses the fixed daily limit and guards further input once reached`() =
-        launch(formulaicSudoku(mode = GameMode.Daily)) { activity ->
+        launch(formulaicSudoku(mode = GameMode.Daily(LocalDate.now()))) { activity ->
             placeThreeWrongMoves(activity)
             activity.sudoku.info.errorsMade shouldBe 3
 

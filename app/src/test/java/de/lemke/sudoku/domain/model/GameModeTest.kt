@@ -19,25 +19,29 @@ package de.lemke.sudoku.domain.model
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 
 class GameModeTest : ShouldSpec(
     {
         should("keep stable mode codes") {
-            listOf(GameMode.Normal.code, GameMode.Daily.code, GameMode.Level(3).code) shouldBe listOf(0, 1, 2)
+            listOf(GameMode.Normal.code, GameMode.Daily(LocalDate.of(2026, 3, 14)).code, GameMode.Level(3).code) shouldBe listOf(0, 1, 2)
         }
 
-        should("read normal and daily without a level") {
-            GameMode.fromCode(0, null) shouldBe GameMode.Normal
-            GameMode.fromCode(1, null) shouldBe GameMode.Daily
+        should("read normal without a level or date") { GameMode.fromCode(0, null, null) shouldBe GameMode.Normal }
+
+        should("read daily with its date") {
+            GameMode.fromCode(1, null, LocalDate.of(2026, 3, 14)) shouldBe GameMode.Daily(LocalDate.of(2026, 3, 14))
         }
 
-        should("read a level with its number") { GameMode.fromCode(2, 3) shouldBe GameMode.Level(3) }
+        should("read no mode for the daily code without a date") { GameMode.fromCode(1, null, null) shouldBe null }
 
-        should("read no mode for the level code without a level") { GameMode.fromCode(2, null) shouldBe null }
+        should("read a level with its number") { GameMode.fromCode(2, 3, null) shouldBe GameMode.Level(3) }
 
-        should("read no mode for level 0") { GameMode.fromCode(2, 0) shouldBe null }
+        should("read no mode for the level code without a level") { GameMode.fromCode(2, null, null) shouldBe null }
 
-        should("read no mode for an unknown code") { GameMode.fromCode(3, null) shouldBe null }
+        should("read no mode for level 0") { GameMode.fromCode(2, 0, null) shouldBe null }
+
+        should("read no mode for an unknown code") { GameMode.fromCode(3, null, null) shouldBe null }
 
         should("reject a level number below 1") { shouldThrow<IllegalArgumentException> { GameMode.Level(0) } }
     },

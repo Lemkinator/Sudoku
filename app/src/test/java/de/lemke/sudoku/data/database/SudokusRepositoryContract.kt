@@ -51,6 +51,12 @@ abstract class SudokusRepositoryContract {
         updated: LocalDateTime = created,
     ): Sudoku = testSudoku(size = size, mode = mode, created = created, updated = updated)
 
+    private fun daily(
+        size: SudokuSize = SudokuSize.FOUR,
+        created: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
+        updated: LocalDateTime = created,
+    ): Sudoku = sudoku(size = size, mode = GameMode.Daily(created.toLocalDate()), created = created, updated = updated)
+
     @Test
     fun `observeAllSummaries returns an empty list when nothing was saved`() =
         runTest {
@@ -118,7 +124,7 @@ abstract class SudokusRepositoryContract {
         runTest {
             val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
             val oldest = sudoku(mode = GameMode.Level(1), updated = LocalDateTime.of(2026, 3, 13, 12, 0))
-            val newest = sudoku(mode = GameMode.Daily, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val newest = daily(updated = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
@@ -131,7 +137,7 @@ abstract class SudokusRepositoryContract {
         runTest {
             val middle = sudoku(updated = LocalDateTime.of(2026, 3, 14, 12, 0))
             val oldest = sudoku(mode = GameMode.Level(1), updated = LocalDateTime.of(2026, 3, 13, 12, 0))
-            val newest = sudoku(mode = GameMode.Daily, updated = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val newest = daily(updated = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
@@ -159,14 +165,13 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `observeDailySummaries orders by created descending`() =
         runTest {
-            val middle = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val middle = daily(created = LocalDateTime.of(2026, 3, 14, 12, 0))
             val oldest =
-                sudoku(
-                    mode = GameMode.Daily,
+                daily(
                     created = LocalDateTime.of(2026, 3, 13, 12, 0),
                     updated = LocalDateTime.of(2026, 3, 20, 12, 0),
                 )
-            val newest = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val newest = daily(created = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
@@ -177,14 +182,13 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `observeDailySudokus orders by created descending`() =
         runTest {
-            val middle = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 14, 12, 0))
+            val middle = daily(created = LocalDateTime.of(2026, 3, 14, 12, 0))
             val oldest =
-                sudoku(
-                    mode = GameMode.Daily,
+                daily(
                     created = LocalDateTime.of(2026, 3, 13, 12, 0),
                     updated = LocalDateTime.of(2026, 3, 20, 12, 0),
                 )
-            val newest = sudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 3, 15, 12, 0))
+            val newest = daily(created = LocalDateTime.of(2026, 3, 15, 12, 0))
             repository.saveSudoku(middle)
             repository.saveSudoku(oldest)
             repository.saveSudoku(newest)
@@ -197,12 +201,12 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `observeDailySummaries returns only daily sudokus`() =
         runTest {
-            repository.saveSudoku(sudoku(mode = GameMode.Daily))
+            repository.saveSudoku(daily(created = LocalDateTime.of(2026, 3, 14, 12, 0)))
             repository.saveSudoku(sudoku(mode = GameMode.Normal))
 
             val dailies = repository.observeDailySummaries().first()
             dailies shouldHaveSize 1
-            dailies.single().info.mode shouldBe GameMode.Daily
+            dailies.single().info.mode shouldBe GameMode.Daily(LocalDate.of(2026, 3, 14))
         }
 
     @Test
@@ -231,10 +235,10 @@ abstract class SudokusRepositoryContract {
     fun `saveSudoku replaces the existing daily sudoku for the same day`() =
         runTest {
             val day = LocalDateTime.now()
-            val first = sudoku(mode = GameMode.Daily, created = day)
+            val first = daily(created = day)
             repository.saveSudoku(first)
 
-            val second = sudoku(mode = GameMode.Daily, created = day)
+            val second = daily(created = day)
             repository.saveSudoku(second)
 
             val all = allSummaries()
@@ -245,10 +249,10 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `saveSudoku keeps daily sudokus from different days`() =
         runTest {
-            val first = sudoku(mode = GameMode.Daily, created = LocalDateTime.now().minusDays(1))
+            val first = daily(created = LocalDateTime.now().minusDays(1))
             repository.saveSudoku(first)
 
-            val second = sudoku(mode = GameMode.Daily, created = LocalDateTime.now())
+            val second = daily(created = LocalDateTime.now())
             repository.saveSudoku(second)
 
             allSummaries() shouldHaveSize 2
@@ -284,9 +288,9 @@ abstract class SudokusRepositoryContract {
     fun `saveSudoku replaces an unreadable daily sudoku of the same day`() =
         runTest {
             val day = LocalDateTime.of(2026, 3, 14, 12, 0)
-            storeUnreadable(sudoku(mode = GameMode.Daily, created = day))
+            storeUnreadable(daily(created = day))
 
-            val second = sudoku(mode = GameMode.Daily, created = day.plusHours(1))
+            val second = daily(created = day.plusHours(1))
             repository.saveSudoku(second)
 
             storedIds() shouldBe setOf(second.info.id.value)
@@ -351,12 +355,12 @@ abstract class SudokusRepositoryContract {
     fun `saveSudoku replaces the daily sudoku of the new day when an existing id is saved with another day`() =
         runTest {
             val today = LocalDateTime.of(2026, 3, 15, 12, 0)
-            val first = sudoku(mode = GameMode.Daily, created = today.minusDays(1))
-            val other = sudoku(mode = GameMode.Daily, created = today)
+            val first = daily(created = today.minusDays(1))
+            val other = daily(created = today)
             repository.saveSudoku(first)
             repository.saveSudoku(other)
 
-            val moved = first.copy(info = first.info.copy(created = today))
+            val moved = first.copy(info = first.info.copy(mode = GameMode.Daily(today.toLocalDate()), created = today))
             repository.saveSudoku(moved)
 
             val all = allSummaries()
@@ -382,14 +386,14 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `saveSudoku does not delete the daily sudoku being updated`() =
         runTest {
-            val daily = sudoku(mode = GameMode.Daily)
-            repository.saveSudoku(daily)
+            val saved = daily()
+            repository.saveSudoku(saved)
 
-            repository.saveSudoku(daily)
+            repository.saveSudoku(saved)
 
             val all = allSummaries()
             all shouldHaveSize 1
-            all.single().info.id shouldBe daily.info.id
+            all.single().info.id shouldBe saved.info.id
         }
 
     @Test
@@ -423,7 +427,7 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `getMaxSudokuLevel ignores daily sudokus`() =
         runTest {
-            repository.saveSudoku(sudoku(size = SudokuSize.NINE, mode = GameMode.Daily))
+            repository.saveSudoku(daily(size = SudokuSize.NINE))
 
             repository.getMaxSudokuLevel(SudokuSize.NINE) shouldBe 0
         }
@@ -463,7 +467,7 @@ abstract class SudokusRepositoryContract {
                 awaitItem().shouldBeEmpty()
 
                 // Every write re-emits, even one that leaves the filtered list unchanged.
-                repository.saveSudoku(sudoku(mode = GameMode.Daily))
+                repository.saveSudoku(daily())
                 awaitItem().shouldBeEmpty()
 
                 repository.saveSudoku(sudoku(mode = GameMode.Normal))
@@ -494,8 +498,8 @@ abstract class SudokusRepositoryContract {
                 repository.saveSudoku(sudoku(mode = GameMode.Normal))
                 awaitItem().shouldBeEmpty()
 
-                repository.saveSudoku(sudoku(mode = GameMode.Daily))
-                awaitItem().single().info.mode shouldBe GameMode.Daily
+                repository.saveSudoku(daily(created = LocalDateTime.of(2026, 3, 14, 12, 0)))
+                awaitItem().single().info.mode shouldBe GameMode.Daily(LocalDate.of(2026, 3, 14))
             }
         }
 
@@ -525,7 +529,7 @@ abstract class SudokusRepositoryContract {
     fun `isDailyCompleted sees the completed daily of the day`() =
         runTest {
             val day = LocalDateTime.of(2026, 11, 3, 8, 0)
-            repository.saveSudoku(testSudoku(mode = GameMode.Daily, created = day, completed = true))
+            repository.saveSudoku(testSudoku(mode = GameMode.Daily(day.toLocalDate()), created = day, completed = true))
 
             repository.isDailyCompleted(LocalDate.of(2026, 11, 3)) shouldBe true
             repository.isDailyCompleted(LocalDate.of(2026, 11, 2)) shouldBe false
@@ -534,7 +538,7 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `isDailyCompleted is false for an uncompleted daily of the day`() =
         runTest {
-            repository.saveSudoku(testSudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 11, 3, 8, 0)))
+            repository.saveSudoku(daily(created = LocalDateTime.of(2026, 11, 3, 8, 0)))
 
             repository.isDailyCompleted(LocalDate.of(2026, 11, 3)) shouldBe false
         }
@@ -550,7 +554,7 @@ abstract class SudokusRepositoryContract {
     @Test
     fun `hasDaily is true only for a day with a daily`() =
         runTest {
-            repository.saveSudoku(testSudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 11, 3, 8, 0)))
+            repository.saveSudoku(daily(created = LocalDateTime.of(2026, 11, 3, 8, 0)))
 
             repository.hasDaily(LocalDate.of(2026, 11, 3)) shouldBe true
             repository.hasDaily(LocalDate.of(2026, 11, 4)) shouldBe false
