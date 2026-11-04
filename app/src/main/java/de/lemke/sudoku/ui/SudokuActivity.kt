@@ -64,7 +64,7 @@ import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.MoveResult
-import de.lemke.sudoku.domain.model.PlayGamesSync
+import de.lemke.sudoku.domain.model.PendingPlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldRegion
@@ -394,10 +394,10 @@ class SudokuActivity : AppCompatActivity() {
         dialog.showOnce(COMPLETED_DIALOG_TAG)?.let { completionDialog = it }
     }
 
-    private fun onPlayGamesSync(sync: PlayGamesSync) {
-        playGamesSyncApplier.apply(this, sync)
+    private fun onPlayGamesSync(pending: PendingPlayGamesSync) {
+        playGamesSyncApplier.apply(this, pending.sync)
         inAppReview.showIfPossible(this)
-        viewModel.onPlayGamesSyncHandled(sync)
+        viewModel.onPlayGamesSyncHandled(pending)
     }
 
     private fun onErrorLimitReached(playing: SudokuGame.Playing) {

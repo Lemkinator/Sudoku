@@ -174,7 +174,9 @@ class MainActivity : AppCompatActivity() {
         collectState(viewModel.importedSudoku, minActiveState = RESUMED) { if (it is ImportedSudoku.Result) onImportedSudokuResult(it) }
         lifecycleScope.launch {
             isUIReady = true
-            playGamesSyncApplier.apply(this@MainActivity, viewModel.onScreenReady())
+            val pending = viewModel.onScreenReady()
+            playGamesSyncApplier.apply(this@MainActivity, pending.sync)
+            viewModel.onPlayGamesSyncApplied(pending)
         }
     }
 

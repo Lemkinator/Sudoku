@@ -26,4 +26,11 @@ data class PlayGamesSync(
     val leaderboardScores: List<Pair<Int, Long>> = emptyList(),
     val achievementUnlocks: List<Int> = emptyList(),
     val achievementIncrements: List<Pair<Int, Int>> = emptyList(),
-)
+) {
+    operator fun plus(other: PlayGamesSync): PlayGamesSync =
+        PlayGamesSync(
+            leaderboardScores + other.leaderboardScores,
+            achievementUnlocks + other.achievementUnlocks,
+            achievementIncrements + other.achievementIncrements,
+        )
+}

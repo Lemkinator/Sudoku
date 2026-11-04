@@ -131,9 +131,12 @@ A refused next-level start (its level is already saved) also restarts the level 
 `SavedStateHandle`, so a restart or a follow-up game survives recreation. Every write of the played sudoku goes through
 `QueueSudokuSaveUseCase`: it queues the immutable value and runs the writes one after another in `@ApplicationScope`, so a closing screen
 cannot cancel a save. A queued save that has not started takes the newer snapshot of its game, so a burst of moves writes once. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
-The winning move starts the wrap-up in the ViewModel (save, follow-up lookup, Play Games sync), so leaving or rotating during the win
-animation loses nothing; the activity only holds the finish dialog back until the animation ends. The dialog's summary stays in the
-`SavedStateHandle` until the player dismisses it.
+The winning move queues the win in `PendingPlayGamesWins` (ids of won games in `UserSettings`), then starts the wrap-up in the
+ViewModel (save, follow-up lookup), so leaving or rotating during the win animation loses nothing; the activity only holds the finish
+dialog back until the animation ends. The dialog's summary stays in the `SavedStateHandle` until the player dismisses it. The Play
+Games sync of the queued wins (`GetPendingPlayGamesSyncUseCase`) reaches the next activity that applies it, also after a restart of
+the process: `SudokuViewModel` offers it at start and after a win, `MainViewModel.onScreenReady` at start. The activity's report
+(`ClearPlayGamesWinsUseCase`) dequeues the wins, so a win syncs once.
 
 **Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game, a protobuf-wire message written by `SudokuFileCodec`) into common-utils' backup. The section is version 2 and reads no older one: an entry holds the Base64 of the stored board blob, which
 export copies and import validates by decoding. A

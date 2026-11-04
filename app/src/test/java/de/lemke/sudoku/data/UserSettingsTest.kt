@@ -71,6 +71,7 @@ class UserSettingsTest {
         settings.dailySudokuNotificationHour shouldBe 9
         settings.dailySudokuNotificationMinute shouldBe 0
         settings.currentLevelTab shouldBe 1
+        settings.pendingPlayGamesWins shouldBe emptySet()
     }
 
     @Test
@@ -193,6 +194,7 @@ class UserSettingsTest {
                 "dailySudokuNotificationHour",
                 "dailySudokuNotificationMinute",
                 "currentLevelTab",
+                "pendingPlayGamesWins",
             ),
         )
     }

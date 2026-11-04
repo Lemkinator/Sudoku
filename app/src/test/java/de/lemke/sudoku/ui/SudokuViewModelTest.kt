@@ -22,16 +22,20 @@ import de.lemke.commonutils.clearForTest
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeSudokuShareFiles
+import de.lemke.sudoku.data.PendingPlayGamesWins
 import de.lemke.sudoku.data.SudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
+import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
+import de.lemke.sudoku.domain.QueuePlayGamesWinUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.BoardMove
@@ -40,8 +44,10 @@ import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Highlighting
 import de.lemke.sudoku.domain.model.NoteMask
+import de.lemke.sudoku.domain.model.PendingPlayGamesSync
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
@@ -52,13 +58,13 @@ import io.kotest.matchers.shouldNotBe
 import java.io.File
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TestTimeSource
 import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
-import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -102,6 +108,7 @@ class SudokuViewModelTest : ShouldSpec(
     {
         val clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
         lateinit var repository: FakeSudokusRepository
+        lateinit var userSettings: UserSettings
         var maxLevelReads = 0
         var syncCalculations = 0
 
@@ -109,6 +116,7 @@ class SudokuViewModelTest : ShouldSpec(
 
         beforeEach {
             repository = FakeSudokusRepository()
+            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
             maxLevelReads = 0
             syncCalculations = 0
             repository.beforeGetMaxSudokuLevel = { maxLevelReads++ }
@@ -124,6 +132,7 @@ class SudokuViewModelTest : ShouldSpec(
         ): SudokuViewModel {
             val dispatcher = Dispatchers.Main
             val generateFields = GenerateFieldsUseCase(generateDispatcher, PatternSolvedBoardGenerator())
+            val pendingWins = PendingPlayGamesWins(userSettings)
             return SudokuViewModel(
                 savedStateHandle,
                 GetSudokuUseCase(repository, dispatcher),
@@ -132,8 +141,15 @@ class SudokuViewModelTest : ShouldSpec(
                 GetMaxSudokuLevelUseCase(repository, dispatcher),
                 QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
                 ShareSudokuUseCase(shareFiles, clock, shareDispatcher),
-                CalculatePlayGamesSyncUseCase(repository, dispatcher),
-                UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
+                QueuePlayGamesWinUseCase(pendingWins),
+                GetPendingPlayGamesSyncUseCase(
+                    pendingWins,
+                    repository,
+                    CalculatePlayGamesSyncUseCase(repository, dispatcher),
+                    dispatcher,
+                ),
+                ClearPlayGamesWinsUseCase(pendingWins),
+                userSettings,
                 clock,
                 timeSource,
             )
@@ -694,7 +710,9 @@ class SudokuViewModelTest : ShouldSpec(
             val won = viewModel.win(completed)
 
             viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEXT_LEVEL)
-            viewModel.playGamesSync.value?.achievementUnlocks shouldBe winUnlocks(R.string.achievement_stopwatch_99)
+            viewModel.playGamesSync.value
+                ?.sync
+                ?.achievementUnlocks shouldBe winUnlocks(R.string.achievement_stopwatch_99)
             calls shouldBe listOf("save", "max level", "sync")
         }
 
@@ -891,7 +909,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onResumed starts the timer of a daily sudoku created on the clock's date") {
             val sudoku =
                 testSudoku(
-                    mode = GameMode.Daily(LocalDate.of(2026, 1, 14)),
+                    mode = GameMode.Daily(LocalDate.of(2026, 1, 15)),
                     created = LocalDateTime.of(2026, 1, 15, 0, 0),
                     updated = LocalDateTime.of(2026, 1, 15, 0, 0),
                 )
@@ -910,7 +928,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onResumed ends a daily sudoku created before the clock's date without a timer") {
             val sudoku =
                 testSudoku(
-                    mode = GameMode.Daily(LocalDate.of(2026, 1, 15)),
+                    mode = GameMode.Daily(LocalDate.of(2026, 1, 14)),
                     created = LocalDateTime.of(2026, 1, 14, 23, 59),
                     updated = LocalDateTime.of(2026, 1, 14, 23, 59),
                 )
@@ -982,7 +1000,9 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
             viewModel.playGamesSync.value shouldBe null
             sync.complete(Unit)
-            viewModel.playGamesSync.value?.achievementUnlocks shouldBe winUnlocks(R.string.achievement_stopwatch_44)
+            viewModel.playGamesSync.value
+                ?.sync
+                ?.achievementUnlocks shouldBe winUnlocks(R.string.achievement_stopwatch_44)
         }
 
         should("the winning move reports a failed save without a Play Games sync") {
@@ -1005,7 +1025,9 @@ class SudokuViewModelTest : ShouldSpec(
             val won = viewModel.win(completed)
 
             viewModel.completion.value shouldBe SudokuCompletion.Summary(won, null)
-            viewModel.playGamesSync.value?.achievementUnlocks shouldBe winUnlocks(R.string.achievement_stopwatch_99)
+            viewModel.playGamesSync.value
+                ?.sync
+                ?.achievementUnlocks shouldBe winUnlocks(R.string.achievement_stopwatch_99)
             repository.saves shouldBe listOf(won)
         }
 
@@ -1017,7 +1039,7 @@ class SudokuViewModelTest : ShouldSpec(
             val won = viewModel.win(completed)
 
             viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
-            viewModel.playGamesSync.value shouldBe PlayGamesSync()
+            viewModel.playGamesSync.value shouldBe PendingPlayGamesSync(emptySet(), PlayGamesSync())
         }
 
         should("the winning move maps a cancellation of the save in an active wrap-up to failed, so a restart works again") {
@@ -1043,7 +1065,7 @@ class SudokuViewModelTest : ShouldSpec(
             val won = viewModel.win(completed)
 
             viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
-            viewModel.playGamesSync.value shouldBe PlayGamesSync()
+            viewModel.playGamesSync.value shouldBe PendingPlayGamesSync(emptySet(), PlayGamesSync())
         }
 
         should("the summary stays until it is dismissed, and a stale dismissal keeps it") {
@@ -1079,8 +1101,8 @@ class SudokuViewModelTest : ShouldSpec(
 
             restored.game.value shouldBe SudokuGame.Ready(won)
             restored.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEXT_LEVEL)
-            restored.playGamesSync.value shouldBe null
-            syncCalculations shouldBe 1
+            restored.playGamesSync.value?.wins shouldBe setOf(won.info.id)
+            syncCalculations shouldBe 2
             maxLevelReads shouldBe 1
         }
 
@@ -1163,10 +1185,67 @@ class SudokuViewModelTest : ShouldSpec(
             val won = viewModel.win(completed)
             val sync = checkNotNull(viewModel.playGamesSync.value)
 
-            viewModel.onPlayGamesSyncHandled(PlayGamesSync())
+            viewModel.onPlayGamesSyncHandled(PendingPlayGamesSync(emptySet(), PlayGamesSync()))
             viewModel.playGamesSync.value shouldBe sync
             viewModel.onPlayGamesSyncHandled(sync)
             viewModel.playGamesSync.value shouldBe null
+        }
+
+        should("the winning move queues the win until the Play Games sync is handled") {
+            val completed = testSudoku(completed = true)
+            val viewModel = playingToWin(completed)
+            val won = viewModel.win(completed)
+
+            userSettings.pendingPlayGamesWins shouldBe setOf(won.info.id.value)
+            viewModel.onPlayGamesSyncHandled(checkNotNull(viewModel.playGamesSync.value))
+            userSettings.pendingPlayGamesWins shouldBe emptySet()
+        }
+
+        should("the winning move queues the win before the save is written") {
+            val completed = testSudoku(completed = true)
+            val viewModel = playingToWin(completed)
+            val saved = CompletableDeferred<Unit>()
+            repository.beforeSave = { saved.await() }
+
+            val won = viewModel.win(completed)
+
+            userSettings.pendingPlayGamesWins shouldBe setOf(won.info.id.value)
+            saved.complete(Unit)
+        }
+
+        should("the winning move drops the queued win when the save fails") {
+            val completed = testSudoku(completed = true)
+            val viewModel = playingToWin(completed)
+            repository.saveFailure = IllegalStateException("disk full")
+
+            viewModel.win(completed)
+
+            userSettings.pendingPlayGamesWins shouldBe emptySet()
+        }
+
+        should("a new view model offers the win of an earlier one that no activity applied") {
+            val won = testSudoku(sudokuId = SudokuId("earlier"), completed = true)
+            repository.store(won)
+            userSettings.pendingPlayGamesWins = setOf("earlier")
+
+            val viewModel = viewModel()
+
+            viewModel.playGamesSync.value?.wins shouldBe setOf(SudokuId("earlier"))
+            viewModel.playGamesSync.value
+                ?.sync
+                ?.achievementUnlocks
+                ?.first() shouldBe R.string.achievement_first_win
+        }
+
+        should("a new view model offers nothing and keeps the queued win when the read of the wins fails") {
+            repository.store(testSudoku(sudokuId = SudokuId("earlier"), completed = true))
+            userSettings.pendingPlayGamesWins = setOf("earlier")
+            repository.beforeGetCompletedSummaries = { throw IllegalStateException("query failed") }
+
+            val viewModel = viewModel()
+
+            viewModel.playGamesSync.value shouldBe null
+            userSettings.pendingPlayGamesWins shouldBe setOf("earlier")
         }
     },
 )

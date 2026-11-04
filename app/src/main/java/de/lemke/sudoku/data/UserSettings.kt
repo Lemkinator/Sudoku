@@ -51,6 +51,7 @@ class UserSettings(
     var dailySudokuNotificationHour: Int by preferences.delegates.int(DEFAULT_DAILY_NOTIFICATION_HOUR)
     var dailySudokuNotificationMinute: Int by preferences.delegates.int(0)
     var currentLevelTab: Int by preferences.delegates.int(1)
+    var pendingPlayGamesWins: Set<String> by preferences.delegates.stringSet()
 
     /**
      * Reactive view of [dailyShowUncompleted] — [ObserveDailySudokusUseCase][de.lemke.sudoku.domain.ObserveDailySudokusUseCase]

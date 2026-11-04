@@ -21,17 +21,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
+import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
+import de.lemke.sudoku.domain.QueuePlayGamesWinUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Highlighting
 import de.lemke.sudoku.domain.model.MoveResult
+import de.lemke.sudoku.domain.model.PendingPlayGamesSync
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
@@ -116,9 +119,10 @@ sealed interface SudokuShare {
 }
 
 /**
- * The wrap-up of the completed sudoku. The winning move starts it and it is [Running] until the sudoku and its Play Games sync are
- * committed, and no restart can overwrite the sudoku before then. The activity shows a [Summary] until the player dismisses it,
- * and reports a [Failed] wrap-up handled once it showed it.
+ * The wrap-up of the completed sudoku. The winning move starts it and it is [Running] until the sudoku is saved and its follow-up
+ * is known, and no restart can overwrite the sudoku before then. The winning move also queues the win durably for the Play Games
+ * sync, which stays queued until an activity applied it. The activity shows a [Summary] until the player dismisses it, and reports
+ * a [Failed] wrap-up handled once it showed it.
  */
 sealed interface SudokuCompletion {
     sealed interface Result : SudokuCompletion
@@ -183,7 +187,9 @@ class SudokuViewModel @Inject constructor(
     private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
     private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
-    private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
+    private val queuePlayGamesWin: QueuePlayGamesWinUseCase,
+    private val getPendingPlayGamesSync: GetPendingPlayGamesSyncUseCase,
+    private val clearPlayGamesWins: ClearPlayGamesWinsUseCase,
     private val userSettings: UserSettings,
     private val clock: Clock,
     private val timeSource: TimeSource.WithComparableMarks,
@@ -197,9 +203,9 @@ class SudokuViewModel @Inject constructor(
     val completion: StateFlow<SudokuCompletion>
         field = MutableStateFlow<SudokuCompletion>(SudokuCompletion.Idle)
 
-    /** The Play Games sync of the completed sudoku. The activity applies it and then reports it handled. */
-    val playGamesSync: StateFlow<PlayGamesSync?>
-        field = MutableStateFlow<PlayGamesSync?>(null)
+    /** The Play Games sync of the queued wins. The activity applies it and then reports it handled, which dequeues the wins. */
+    val playGamesSync: StateFlow<PendingPlayGamesSync?>
+        field = MutableStateFlow<PendingPlayGamesSync?>(null)
 
     private var wrapUp: Job? = null
     private var ticker: Job? = null
@@ -207,6 +213,7 @@ class SudokuViewModel @Inject constructor(
     private var untilNextTick: Duration = 1.seconds
 
     init {
+        viewModelScope.launch { playGamesSync.compareAndSet(null, orOnFailure(null) { getPendingPlayGamesSync() }) }
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
         if (id == null) {
             game.value = SudokuGame.NotFound
@@ -273,7 +280,8 @@ class SudokuViewModel @Inject constructor(
         completion.compareAndSet(failure, SudokuCompletion.Idle)
     }
 
-    fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
+    fun onPlayGamesSyncHandled(sync: PendingPlayGamesSync) {
+        clearPlayGamesWins(sync.wins)
         playGamesSync.compareAndSet(sync, null)
     }
 
@@ -296,7 +304,12 @@ class SudokuViewModel @Inject constructor(
         if (playing != null && played != null) {
             game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
             updateTicker()
-            if (played.sudoku.completed) wrapUp(played.sudoku) else queueSudokuSave.launch(played.sudoku)
+            if (played.sudoku.completed) {
+                queuePlayGamesWin(played.sudoku.info.id)
+                wrapUp(played.sudoku)
+            } else {
+                queueSudokuSave.launch(played.sudoku)
+            }
         }
         return played?.sudoku
     }
@@ -378,10 +391,11 @@ class SudokuViewModel @Inject constructor(
                     is SudokuCompletion.Summary -> {
                         savedStateHandle[KEY_PENDING_SUMMARY] = PendingSummary(result.followUp)
                         completion.value = result
-                        playGamesSync.value = playGamesSyncOf(completed)
+                        playGamesSync.value = pendingPlayGamesSync()
                     }
 
                     SudokuCompletion.Failed -> {
+                        clearPlayGamesWins(setOf(completed.info.id))
                         completion.value = result
                     }
                 }
@@ -402,8 +416,8 @@ class SudokuViewModel @Inject constructor(
         }
     }
 
-    private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =
-        orOnFailure(PlayGamesSync()) { calculatePlayGamesSync(completed) }
+    private suspend fun pendingPlayGamesSync(): PendingPlayGamesSync =
+        orOnFailure(null) { getPendingPlayGamesSync() } ?: PendingPlayGamesSync(emptySet(), PlayGamesSync())
 
     private suspend inline fun <T> orOnFailure(
         fallback: T,

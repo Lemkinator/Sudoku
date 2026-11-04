@@ -37,6 +37,7 @@ import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.FakeInAppReview
 import de.lemke.commonutils.ui.utils.FakeInAppReview.Call.ShowIfPossible
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.PendingPlayGamesWins
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
@@ -94,6 +95,9 @@ class SudokuActivityCompletionTest {
 
     @Inject
     lateinit var settings: SettingsRepository
+
+    @Inject
+    lateinit var pendingWins: PendingPlayGamesWins
 
     private val fakeSudokusRepository = FakeSudokusRepository()
 
@@ -309,11 +313,13 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `leaving the activity while the winning move animates still saves the win and syncs Play Games once`() {
+    fun `leaving the activity while the winning move animates saves the win and the next activity applies the sync once`() {
         val sudokuId = SudokuId.generate()
         fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        val saved = CompletableDeferred<Unit>()
+        fakeSudokusRepository.beforeSave = { saved.await() }
         Robolectric.buildActivity(SudokuActivity::class.java, intent).use { controller ->
             controller.setup()
             idleMainLooper()
@@ -322,12 +328,34 @@ class SudokuActivityCompletionTest {
             animating.select(animating.sudoku.info.size.cellCount)
 
             animating.onBackPressedDispatcher.onBackPressed()
-            repeat(3) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
+            controller.pause()
+            controller.destroy()
+            idleMainLooper()
+            pendingWins.all() shouldBe setOf(sudokuId)
+            fakePlayGamesSyncApplier.applied.size shouldBe 0
+
+            saved.complete(Unit)
+            idleMainLooper()
+            fakeSudokusRepository.saves.count { it.completed } shouldBe 1
+            fakePlayGamesSyncApplier.applied.size shouldBe 0
+            pendingWins.all() shouldBe setOf(sudokuId)
+        }
+
+        ActivityScenario.launch<SudokuActivity>(Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)).use {
+            idleMainLooper()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
             idleMainLooper()
 
-            animating.isFinishing shouldBe true
-            fakeSudokusRepository.saves.count { it.completed } shouldBe 1
-            syncCalculations.get() shouldBe 1
+            fakePlayGamesSyncApplier.applied.size shouldBe 1
+            fakePlayGamesSyncApplier.applied
+                .single()
+                .achievementUnlocks
+                .first() shouldBe R.string.achievement_first_win
+            pendingWins.all() shouldBe emptySet()
+        }
+        ActivityScenario.launch<SudokuActivity>(Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)).use {
+            idleMainLooper()
+            fakePlayGamesSyncApplier.applied.size shouldBe 1
         }
     }
 

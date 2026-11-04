@@ -23,9 +23,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
+import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.model.PlayGamesSync
+import de.lemke.sudoku.domain.model.PendingPlayGamesSync
 import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +53,8 @@ class MainViewModel @Inject constructor(
     private val importSudoku: ImportSudokuUseCase,
     private val sendDailyNotification: SendDailyNotificationUseCase,
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
+    private val getPendingPlayGamesSync: GetPendingPlayGamesSyncUseCase,
+    private val clearPlayGamesWins: ClearPlayGamesWinsUseCase,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val importedSudoku: StateFlow<ImportedSudoku>
@@ -79,9 +83,14 @@ class MainViewModel @Inject constructor(
         importedSudoku.compareAndSet(result, ImportedSudoku.Idle)
     }
 
-    suspend fun onScreenReady(): PlayGamesSync {
+    /** The Play Games sync to apply: the one of the wins no activity applied yet, else the standings of all completed sudokus. */
+    suspend fun onScreenReady(): PendingPlayGamesSync {
         sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
-        return calculatePlayGamesSync()
+        return getPendingPlayGamesSync() ?: PendingPlayGamesSync(emptySet(), calculatePlayGamesSync())
+    }
+
+    fun onPlayGamesSyncApplied(sync: PendingPlayGamesSync) {
+        clearPlayGamesWins(sync.wins)
     }
 
     private companion object {
