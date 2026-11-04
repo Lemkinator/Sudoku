@@ -20,9 +20,9 @@ sealed interface GameMode {
     val code: Int
 
     companion object {
-        private const val CODE_NORMAL = 0
-        private const val CODE_DAILY = 1
-        private const val CODE_LEVEL = 2
+        const val CODE_NORMAL = 0
+        const val CODE_DAILY = 1
+        const val CODE_LEVEL = 2
 
         fun fromCode(
             code: Int,

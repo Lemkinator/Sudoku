@@ -34,9 +34,8 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.FieldDb
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.GameDao
+import de.lemke.sudoku.data.database.GameEntity
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
@@ -59,6 +58,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -90,23 +90,21 @@ class SudokuLevelTabTest {
     private var insertCalls = 0
     private var insertFailure: Exception? = null
     private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
-    private val sudokuDao = database.sudokuDao()
+    private val gameDao = database.gameDao()
 
     @BindValue
     @JvmField
     val sudokusRepository: SudokusRepository =
         DefaultSudokusRepository(
-            object : SudokuDao by sudokuDao {
-                override suspend fun insert(
-                    sudoku: SudokuDb,
-                    fields: List<FieldDb>,
-                ) {
+            object : GameDao by gameDao {
+                override suspend fun save(game: GameEntity) {
                     insertCalls++
                     insertFailure?.let { throw it }
                     insertGate.await()
-                    sudokuDao.insert(sudoku, fields)
+                    gameDao.save(game)
                 }
             },
+            Clock.systemDefaultZone(),
         )
 
     @Inject
@@ -295,9 +293,9 @@ class SudokuLevelTabTest {
     }
 
     @Test
-    fun `an unreadable level shows the load error once and marks it handled`() {
+    fun `a failing query shows the level load error once and marks it handled`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
-        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        database.openHelper.writableDatabase.execSQL("DROP TABLE game")
         settings.currentLevelTab = 0
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             idleMainLooper()

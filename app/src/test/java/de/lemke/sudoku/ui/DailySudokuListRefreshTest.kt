@@ -184,9 +184,9 @@ class DailySudokuListRefreshTest {
     }
 
     @Test
-    fun `an unreadable daily sudoku shows the load error once and marks it handled`() {
+    fun `a failing query shows the daily load error once and marks it handled`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
-        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        database.openHelper.writableDatabase.execSQL("DROP TABLE game")
         ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
             idleMainLooper()
 

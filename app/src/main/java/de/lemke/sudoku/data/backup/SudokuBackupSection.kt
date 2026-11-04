@@ -21,10 +21,10 @@ import de.lemke.commonutils.backup.core.MergeableSection
 import de.lemke.commonutils.backup.core.encodedOrder
 import de.lemke.commonutils.backup.core.higherRankWins
 import de.lemke.commonutils.backup.core.newerWins
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuWithFields
-import de.lemke.sudoku.data.database.sudokuFromDb
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.data.database.GameDao
+import de.lemke.sudoku.data.database.GameEntity
+import de.lemke.sudoku.data.database.toEntity
+import de.lemke.sudoku.data.database.toSudoku
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
@@ -33,7 +33,7 @@ import kotlinx.serialization.json.JsonObject
 
 /** All saved games. A normal sudoku clashes by id, a daily one by day and a level one by size and level. */
 class SudokuBackupSection @Inject constructor(
-    private val dao: SudokuDao,
+    private val dao: GameDao,
 ) : MergeableSection<SudokuBackupEntry, SudokuBackupKey> {
     override val id: String = ID
     override val version: Int = 1
@@ -62,10 +62,7 @@ class SudokuBackupSection @Inject constructor(
     override suspend fun clear() = dao.deleteAll()
 
     override suspend fun insert(entries: List<SudokuBackupEntry>) {
-        entries.mapNotNull { sudokuFromBackup(it, zone) }.forEach {
-            val rows = sudokuWithFieldsToDb(it)
-            dao.insert(rows.sudoku, rows.fields)
-        }
+        entries.mapNotNull { sudokuFromBackup(it, zone) }.forEach { dao.save(it.toEntity(zone)) }
     }
 
     override fun key(entry: SudokuBackupEntry): SudokuBackupKey = entry.key()
@@ -86,13 +83,13 @@ class SudokuBackupSection @Inject constructor(
                 .map { it.id }
                 .chunked(MAX_IDS_PER_QUERY)
                 .flatMap { dao.getByIds(it) }
-        val dailies = if (keys.any { it is SudokuBackupKey.Daily }) dao.getDailySudokus() else emptyList()
+        val dailies = if (keys.any { it is SudokuBackupKey.Daily }) dao.getDaily() else emptyList()
         val levels =
             keys
                 .filterIsInstance<SudokuBackupKey.Level>()
                 .map { it.size }
                 .distinct()
-                .flatMap { dao.getAllSudokuLevel(it.value) }
+                .flatMap { dao.getLevels(it.value) }
         return (normals + dailies + levels)
             .mapNotNull(::entryOf)
             .groupBy { it.key() }
@@ -104,11 +101,11 @@ class SudokuBackupSection @Inject constructor(
         local: SudokuBackupEntry,
         merged: SudokuBackupEntry,
     ) {
-        dao.deleteById(local.id)
+        dao.deleteByIds(listOf(local.id))
         insert(listOf(merged))
     }
 
-    private fun entryOf(rows: SudokuWithFields): SudokuBackupEntry? = sudokuFromDb(rows)?.let { sudokuToBackup(it, zone) }
+    private fun entryOf(game: GameEntity): SudokuBackupEntry? = game.toSudoku(zone)?.let { sudokuToBackup(it, zone) }
 
     companion object {
         const val ID = "sudokus"

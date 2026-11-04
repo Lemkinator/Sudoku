@@ -24,8 +24,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.GameDao
 import de.lemke.sudoku.data.database.MIGRATION_1_2
-import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.MIGRATION_2_3
 import javax.inject.Singleton
 
 @Module
@@ -38,9 +39,9 @@ object PersistenceModule {
     ): AppDatabase =
         Room
             .databaseBuilder(context, AppDatabase::class.java, "app")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides
-    fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()
+    fun provideGameDao(database: AppDatabase): GameDao = database.gameDao()
 }

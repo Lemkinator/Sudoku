@@ -18,7 +18,6 @@ package de.lemke.sudoku.data.backup
 
 import de.lemke.sudoku.data.database.legacyGameModeOrNull
 import de.lemke.sudoku.data.database.toLegacyModeLevel
-import de.lemke.sudoku.data.database.toSudokuChars
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.CellOrigin
@@ -128,6 +127,8 @@ private fun Board.toBackup(): BoardBackup =
     )
 
 private fun digitChar(digit: Int): Char = digit.toSudokuDigitChar()
+
+private fun NoteMask.toSudokuChars(): String = digits.map(::digitChar).joinToString("")
 
 private fun BoardBackup.toBoardOrNull(size: SudokuSize): Board? {
     val cells = 0 until size.cellCount

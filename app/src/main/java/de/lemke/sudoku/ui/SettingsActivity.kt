@@ -89,8 +89,6 @@ class SettingsActivity : AppCompatActivity() {
         @Inject
         lateinit var userSettings: UserSettings
 
-        private var deleteInvalidSudokusDialog: AlertDialog? = null
-
         private val requestPermissionLauncher =
             registerForSingleLaunchResult(RequestPermission()) { isGranted: Boolean ->
                 viewModel.onNotificationPermissionResult(isGranted)
@@ -127,16 +125,12 @@ class SettingsActivity : AppCompatActivity() {
                 },
                 RelativeLink(getString(R.string.commonutils_rate_app)) { openApp(requireContext().packageName, false) },
             )
-            collectState(viewModel.invalidSudokuDeletion, minActiveState = RESUMED) {
-                if (it is InvalidSudokuDeletion.Result) onInvalidSudokuDeletionResult(it)
-            }
         }
 
         private fun initPreferences() {
             initErrorLimitPreference()
             initDailyNotificationPreference()
             initIntroPreference()
-            initDeleteInvalidSudokusPreference()
         }
 
         internal fun initErrorLimitPreference() {
@@ -181,32 +175,6 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
 
-        internal fun initDeleteInvalidSudokusPreference() {
-            findPreference<PreferenceScreen>("deleteInvalidSudokus")?.onSingleLaunchClick {
-                val dialog =
-                    AlertDialog
-                        .Builder(requireContext())
-                        .setTitle(R.string.delete_invalid_sudokus)
-                        .setMessage(R.string.delete_invalid_sudokus_summary)
-                        .setNegativeButton(designR.string.oui_des_common_cancel, null)
-                        .setPositiveButton(R.string.commonutils_delete, null)
-                        .showOnce(DELETE_INVALID_SUDOKUS_DIALOG_TAG) ?: return@onSingleLaunchClick
-                deleteInvalidSudokusDialog = dialog
-                dialog.getButton(BUTTON_POSITIVE).apply {
-                    setTextColor(requireContext().getColor(designR.color.oui_des_functional_red_color))
-                    setOnClickListenerWithProgress { _, _ -> viewModel.onDeleteInvalidSudokusConfirmed() }
-                }
-            }
-        }
-
-        private fun onInvalidSudokuDeletionResult(result: InvalidSudokuDeletion.Result) {
-            when (result) {
-                InvalidSudokuDeletion.Finished -> deleteInvalidSudokusDialog?.dismiss()
-            }
-            deleteInvalidSudokusDialog = null
-            viewModel.onInvalidSudokuDeletionHandled(result)
-        }
-
         private fun SeslSwitchPreferenceScreen.applyDailyNotificationToggle(enabled: Boolean): DailyNotificationToggleResult =
             viewModel.onDailyNotificationToggleRequested(enabled).also { result ->
                 when (result) {
@@ -249,7 +217,6 @@ class SettingsActivity : AppCompatActivity() {
 
         private companion object {
             const val NOTIFICATION_TIME_PICKER_TAG = "notificationTimePicker"
-            const val DELETE_INVALID_SUDOKUS_DIALOG_TAG = "deleteInvalidSudokus"
         }
     }
 }

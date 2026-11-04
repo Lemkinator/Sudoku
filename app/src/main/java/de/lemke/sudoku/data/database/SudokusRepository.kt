@@ -16,11 +16,10 @@
 
 package de.lemke.sudoku.data.database
 
-import de.lemke.sudoku.domain.model.GameInfo
-import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -46,63 +45,39 @@ interface SudokusRepository {
 
     suspend fun deleteSudoku(sudoku: Sudoku)
 
+    /** Stores [sudoku], replacing the game with its id, the game of its level and size, or the daily game of its day. */
     suspend fun saveSudoku(sudoku: Sudoku)
 
     suspend fun getMaxSudokuLevel(size: SudokuSize): Int
-
-    suspend fun deleteInvalidSudokus()
 }
 
 class DefaultSudokusRepository @Inject constructor(
-    private val sudokuDao: SudokuDao,
+    private val gameDao: GameDao,
+    private val clock: Clock,
 ) : SudokusRepository {
-    override fun observeAllSudokus() = sudokuDao.observeAll().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+    override fun observeAllSudokus() = gameDao.observeAll().map { it.readable() }
 
-    override fun observeAllNormalSudokus() = sudokuDao.observeAllNormal().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+    override fun observeAllNormalSudokus() = gameDao.observeNormal().map { it.readable() }
 
-    override fun observeSudokuLevel(size: SudokuSize) =
-        sudokuDao.observeSudokuLevel(size.value).map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+    override fun observeSudokuLevel(size: SudokuSize) = gameDao.observeLevels(size.value).map { it.readable() }
 
-    override fun observeDailySudokus() = sudokuDao.observeDailySudokus().map { sudokus -> sudokus.mapNotNull { sudokuFromDb(it) } }
+    override fun observeDailySudokus() = gameDao.observeDaily().map { it.readable() }
 
-    override suspend fun getAllSudokus(): List<Sudoku> = sudokuDao.getAll().mapNotNull { sudokuFromDb(it) }
+    override suspend fun getAllSudokus(): List<Sudoku> = gameDao.getAll().readable()
 
-    override suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(sudokuDao.getRecentlyUpdatedNormalSudoku())
+    override suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = gameDao.getRecentlyUpdatedNormal()?.toSudoku(clock.zone)
 
-    override suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> =
-        sudokuDao.getAllSudokuLevel(size.value).mapNotNull { sudokuFromDb(it) }
+    override suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> = gameDao.getLevels(size.value).readable()
 
-    override suspend fun getDailySudokus(): List<Sudoku> = sudokuDao.getDailySudokus().mapNotNull { sudokuFromDb(it) }
+    override suspend fun getDailySudokus(): List<Sudoku> = gameDao.getDaily().readable()
 
-    override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = sudokuFromDb(sudokuDao.getById(sudokuId.value))
+    override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = gameDao.getById(sudokuId.value)?.toSudoku(clock.zone)
 
-    override suspend fun deleteSudoku(sudoku: Sudoku) = sudokuDao.delete(sudokuToDb(sudoku))
+    override suspend fun deleteSudoku(sudoku: Sudoku) = gameDao.deleteByIds(listOf(sudoku.info.id.value))
 
-    override suspend fun saveSudoku(sudoku: Sudoku) {
-        val rows = sudokuWithFieldsToDb(sudoku)
-        if (!sudokuDao.exists(sudoku.info.id.value)) replacedBy(sudoku.info)?.let { sudokuDao.delete(it) }
-        sudokuDao.insert(rows.sudoku, rows.fields)
-    }
+    override suspend fun saveSudoku(sudoku: Sudoku) = gameDao.save(sudoku.toEntity(clock.zone))
 
-    override suspend fun getMaxSudokuLevel(size: SudokuSize): Int = sudokuDao.getMaxSudokuLevel(size.value) ?: 0
+    override suspend fun getMaxSudokuLevel(size: SudokuSize): Int = gameDao.maxLevel(size.value) ?: 0
 
-    override suspend fun deleteInvalidSudokus() {
-        val invalidRows = sudokuDao.getAll().filter { sudokuFromDb(it) == null }
-        if (invalidRows.isNotEmpty()) sudokuDao.delete(*invalidRows.map { it.sudoku }.toTypedArray())
-    }
-
-    private suspend fun replacedBy(info: GameInfo): SudokuDb? =
-        when (val mode = info.mode) {
-            GameMode.Daily -> {
-                sudokuDao.getDailySudokus().filter { it.sudoku.created.toLocalDate() == info.created.toLocalDate() }
-            }
-
-            is GameMode.Level -> {
-                sudokuDao.getSudokuLevels(info.size.value, mode.number)
-            }
-
-            GameMode.Normal -> {
-                emptyList()
-            }
-        }.firstOrNull { sudokuFromDb(it) != null }?.takeIf { it.sudoku.id != info.id.value }?.sudoku
+    private fun List<GameEntity>.readable(): List<Sudoku> = mapNotNull { it.toSudoku(clock.zone) }
 }

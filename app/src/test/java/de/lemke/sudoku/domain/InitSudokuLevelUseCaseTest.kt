@@ -17,7 +17,6 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testLevelSudoku
@@ -46,7 +45,7 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
         }
 
         should("generates nothing when every level up to max already exists") {
-            (1..3).forEach { level -> sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level))) }
+            (1..3).forEach { level -> sudokusRepository.store(testLevelSudoku(SudokuSize.FOUR, level)) }
 
             useCase(SudokuSize.FOUR)
 
@@ -54,9 +53,9 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
         }
 
         should("generates and saves exactly the missing levels") {
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level = 1)))
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level = 3)))
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(testLevelSudoku(SudokuSize.FOUR, level = 4)).copy(fields = emptyList()))
+            sudokusRepository.store(testLevelSudoku(SudokuSize.FOUR, level = 1))
+            sudokusRepository.store(testLevelSudoku(SudokuSize.FOUR, level = 3))
+            sudokusRepository.storeUnreadable(testLevelSudoku(SudokuSize.FOUR, level = 4))
 
             useCase(SudokuSize.FOUR)
 

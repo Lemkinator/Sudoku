@@ -18,7 +18,6 @@ package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
@@ -153,7 +152,7 @@ private fun wonSudoku(
 private fun calculatePlayGamesSyncOver(vararg sudokus: Sudoku): CalculatePlayGamesSyncUseCase {
     val dispatcher = UnconfinedTestDispatcher()
     val sudokusRepository = FakeSudokusRepository()
-    sudokus.forEach { sudokusRepository.insertRows(sudokuWithFieldsToDb(it)) }
+    sudokus.forEach { sudokusRepository.store(it) }
     return CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
 }
 

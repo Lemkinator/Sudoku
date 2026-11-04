@@ -103,8 +103,6 @@
     <string name="regional_highlight_summary">When a field is selected, the row, line and block will be highlighted.</string>
     <string name="number_highlight">Highlight selected number</string>
     <string name="number_highlight_summary">When a number is selected, all other fields with the same number will be highlighted.</string>
-    <string name="delete_invalid_sudokus">Delete invalid Sudokus</string>
-    <string name="delete_invalid_sudokus_summary">Delete incorrectly generated Sudokus or Sudokus that were corrupted during saving to the database.</string>
     <string name="error_limit">Error limit</string>
     <string name="no_limit">No limit</string>
     <string name="error_limit_reached">Error limit reached (%1$d).</string>

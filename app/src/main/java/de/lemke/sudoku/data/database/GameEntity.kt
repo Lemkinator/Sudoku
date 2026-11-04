@@ -18,37 +18,43 @@ package de.lemke.sudoku.data.database
 
 import androidx.room.Embedded
 import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.Relation
-import java.time.LocalDateTime
+import androidx.room.Index
 
-@Entity(tableName = "sudoku")
-data class SudokuDb(
-    @PrimaryKey
+/** The columns of a `game` row that describe a game. A list reads only these and never the board blob. */
+class GameHeader(
     val id: String,
+    val mode: Int,
+    val level: Int?,
+    val dailyDate: Long?,
     val size: Int,
     val difficulty: Int,
-    val modeLevel: Int,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val seconds: Int,
+    val hintsUsed: Int,
+    val notesMade: Int,
+    val errorsMade: Int,
     val regionalHighlightingUsed: Boolean,
     val numberHighlightingUsed: Boolean,
     val eraserUsed: Boolean,
     val isChecklist: Boolean,
     val isReverseChecklist: Boolean,
     val checklistNumber: Int,
-    val hintsUsed: Int,
-    val notesMade: Int,
-    val errorsMade: Int,
-    val created: LocalDateTime,
-    val updated: LocalDateTime,
-    val seconds: Int,
+    val completed: Boolean,
+    val progress: Int,
 )
 
-data class SudokuWithFields(
-    @Embedded
-    val sudoku: SudokuDb,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "sudokuId",
-    )
-    val fields: List<FieldDb>,
+/** One game: its [header] columns and the board in the [de.lemke.sudoku.data.codec.BoardCodec] format. */
+@Entity(
+    tableName = "game",
+    primaryKeys = ["id"],
+    indices = [
+        Index(value = ["size", "level"], unique = true),
+        Index(value = ["dailyDate"], unique = true),
+        Index(value = ["mode", "updatedAt"]),
+    ],
+)
+class GameEntity(
+    @Embedded val header: GameHeader,
+    val board: ByteArray,
 )

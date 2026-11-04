@@ -35,8 +35,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.GameDao
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.GetAllSudokusUseCase
@@ -58,6 +57,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -87,19 +87,20 @@ class TabHistoryActionModeTest {
     private var deleteGate = CompletableDeferred(Unit)
     private var deleteCalls = 0
     private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
-    private val sudokuDao = database.sudokuDao()
+    private val gameDao = database.gameDao()
 
     @BindValue
     @JvmField
     val sudokusRepository: SudokusRepository =
         DefaultSudokusRepository(
-            object : SudokuDao by sudokuDao {
-                override suspend fun delete(vararg sudokus: SudokuDb) {
+            object : GameDao by gameDao {
+                override suspend fun deleteByIds(ids: List<String>) {
                     deleteCalls++
                     deleteGate.await()
-                    sudokuDao.delete(*sudokus)
+                    gameDao.deleteByIds(ids)
                 }
             },
+            Clock.systemDefaultZone(),
         )
 
     @Inject

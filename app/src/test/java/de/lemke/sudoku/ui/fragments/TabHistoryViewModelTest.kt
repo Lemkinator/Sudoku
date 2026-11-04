@@ -21,7 +21,6 @@ import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveAllNormalSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
@@ -294,7 +293,7 @@ class TabHistoryViewModelTest : ShouldSpec(
 
             viewModel.deletion.value shouldBe HistoryDeletion.Finished
             repository.deletedIds shouldBe listOf(sudokuA, sudokuB)
-            repository.storedRows.map { it.sudoku.id } shouldBe listOf("sudoku-c")
+            repository.storedIds shouldBe listOf(SudokuId("sudoku-c"))
         }
 
         should("a second delete while the first runs is refused and deletes once") {

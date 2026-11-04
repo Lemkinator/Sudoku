@@ -26,6 +26,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -33,20 +34,18 @@ import org.junit.Test
 abstract class SudokusRepositoryContract {
     protected abstract val repository: SudokusRepository
 
-    /** Stores [rows] unchecked, as a raw DAO insert does, so a test can add an unreadable row. */
-    protected abstract suspend fun insertRows(rows: SudokuWithFields)
+    /** Stores [sudoku] with a board that cannot be read, so a test can add an unreadable game. */
+    protected abstract suspend fun storeUnreadable(sudoku: Sudoku)
 
-    /** The ids of every stored row, readable or not. */
+    /** The ids of every stored game, readable or not. */
     protected abstract suspend fun storedIds(): Set<String>
 
     private fun sudoku(
         size: SudokuSize = SudokuSize.FOUR,
         mode: GameMode = GameMode.Normal,
-        created: LocalDateTime = LocalDateTime.now(),
+        created: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
         updated: LocalDateTime = created,
     ): Sudoku = testSudoku(size = size, mode = mode, created = created, updated = updated)
-
-    private fun SudokuWithFields.withoutFirstField() = copy(fields = fields.drop(1))
 
     @Test
     fun `getAllSudokus returns an empty list when nothing was saved`() =
@@ -266,55 +265,82 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
-    fun `saveSudoku keeps an unreadable level sudoku for the same size and level`() =
+    fun `saveSudoku replaces an unreadable level sudoku of the same size and level`() =
         runTest {
             val unreadable = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
-            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
+            storeUnreadable(unreadable)
 
             val second = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
             repository.saveSudoku(second)
 
-            storedIds() shouldBe setOf(unreadable.info.id.value, second.info.id.value)
+            storedIds() shouldBe setOf(second.info.id.value)
         }
 
     @Test
-    fun `saveSudoku keeps an unreadable daily sudoku for the same day`() =
-        runTest {
-            val day = LocalDateTime.now()
-            val unreadable = sudoku(mode = GameMode.Daily, created = day)
-            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
-
-            val second = sudoku(mode = GameMode.Daily, created = day)
-            repository.saveSudoku(second)
-
-            storedIds() shouldBe setOf(unreadable.info.id.value, second.info.id.value)
-        }
-
-    @Test
-    fun `saveSudoku replaces the readable level sudoku behind an unreadable one for the same size and level`() =
-        runTest {
-            val unreadable = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
-            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
-            repository.saveSudoku(sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3)))
-
-            val third = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(3))
-            repository.saveSudoku(third)
-
-            storedIds() shouldBe setOf(unreadable.info.id.value, third.info.id.value)
-        }
-
-    @Test
-    fun `saveSudoku replaces the readable daily sudoku behind an unreadable one for the same day`() =
+    fun `saveSudoku replaces an unreadable daily sudoku of the same day`() =
         runTest {
             val day = LocalDateTime.of(2026, 3, 14, 12, 0)
-            val unreadable = sudoku(mode = GameMode.Daily, created = day)
-            insertRows(sudokuWithFieldsToDb(unreadable).withoutFirstField())
-            repository.saveSudoku(sudoku(mode = GameMode.Daily, created = day.minusSeconds(1)))
+            storeUnreadable(sudoku(mode = GameMode.Daily, created = day))
 
-            val third = sudoku(mode = GameMode.Daily, created = day)
-            repository.saveSudoku(third)
+            val second = sudoku(mode = GameMode.Daily, created = day.plusHours(1))
+            repository.saveSudoku(second)
 
-            storedIds() shouldBe setOf(unreadable.info.id.value, third.info.id.value)
+            storedIds() shouldBe setOf(second.info.id.value)
+        }
+
+    @Test
+    fun `saveSudoku keeps a level sudoku of another size with the same level`() =
+        runTest {
+            val four = sudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1))
+            repository.saveSudoku(four)
+
+            val nine = sudoku(size = SudokuSize.NINE, mode = GameMode.Level(1))
+            repository.saveSudoku(nine)
+
+            storedIds() shouldBe setOf(four.info.id.value, nine.info.id.value)
+        }
+
+    @Test
+    fun `saveSudoku replaces the first of two level 1 sudokus of one size`() =
+        runTest {
+            val first = sudoku(size = SudokuSize.NINE, mode = GameMode.Level(1))
+            val second = sudoku(size = SudokuSize.NINE, mode = GameMode.Level(1))
+            repository.saveSudoku(first)
+            repository.saveSudoku(second)
+
+            repository.getSudokuLevel(SudokuSize.NINE).map { it.info.id } shouldBe listOf(second.info.id)
+        }
+
+    @Test
+    fun `an unreadable board reads as null`() =
+        runTest {
+            val unreadable = sudoku()
+            storeUnreadable(unreadable)
+
+            repository.getSudokuById(unreadable.info.id).shouldBeNull()
+            repository.getAllSudokus().shouldBeEmpty()
+        }
+
+    @Test
+    fun `saveSudoku then getSudokuById restores every field of the game`() =
+        runTest {
+            val played =
+                sudoku(mode = GameMode.Level(4)).let {
+                    it.copy(
+                        info =
+                            it.info.copy(
+                                seconds = 95,
+                                hintsUsed = 1,
+                                notesMade = 2,
+                                errorsMade = 3,
+                                eraserUsed = true,
+                                checklistNumber = 5,
+                            ),
+                    )
+                }
+            repository.saveSudoku(played)
+
+            repository.getSudokuById(played.info.id) shouldBe played
         }
 
     @Test
@@ -364,96 +390,6 @@ abstract class SudokusRepositoryContract {
             repository.saveSudoku(sudoku(size = SudokuSize.NINE, mode = GameMode.Daily))
 
             repository.getMaxSudokuLevel(SudokuSize.NINE) shouldBe 0
-        }
-
-    @Test
-    fun `deleteInvalidSudokus leaves sudokus whose stored field count matches size squared untouched`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-
-            repository.deleteInvalidSudokus()
-
-            storedIds() shouldHaveSize 1
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a row whose stored field count does not match size squared and keeps valid rows`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-            val invalid = sudoku(size = SudokuSize.FOUR)
-            insertRows(sudokuWithFieldsToDb(invalid).let { it.copy(fields = it.fields.dropLast(1)) })
-            storedIds() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            storedIds() shouldBe setOf(valid.info.id.value)
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a row with a correct field count but a null solution and keeps valid rows`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-            val invalid = sudoku(size = SudokuSize.FOUR)
-            val rows = sudokuWithFieldsToDb(invalid)
-            val fields = rows.fields.mapIndexed { index, field -> if (index == 0) field.copy(solution = null) else field }
-            insertRows(rows.copy(fields = fields))
-            storedIds() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            storedIds() shouldBe setOf(valid.info.id.value)
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a zero-sized corrupted row instead of throwing`() =
-        runTest {
-            val valid = sudoku(size = SudokuSize.FOUR)
-            repository.saveSudoku(valid)
-            val invalid = sudoku(size = SudokuSize.FOUR)
-            insertRows(
-                SudokuWithFields(
-                    sudokuToDb(invalid).copy(size = 0),
-                    listOf(sudokuWithFieldsToDb(invalid).fields.first().copy(gameSize = 0)),
-                ),
-            )
-            storedIds() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            storedIds() shouldBe setOf(valid.info.id.value)
-        }
-
-    @Test
-    fun `deleteInvalidSudokus deletes a row with an unsupported size and keeps valid rows`() =
-        runTest {
-            val valid = sudoku()
-            repository.saveSudoku(valid)
-            val invalid = sudokuToDb(sudoku()).copy(size = 6)
-            insertRows(
-                SudokuWithFields(
-                    invalid,
-                    List(36) { index ->
-                        FieldDb(
-                            sudokuId = invalid.id,
-                            gameSize = 6,
-                            index = index,
-                            solution = index % 6 + 1,
-                            value = null,
-                            given = false,
-                            hint = false,
-                            notes = "",
-                        )
-                    },
-                ),
-            )
-            storedIds() shouldHaveSize 2
-
-            repository.deleteInvalidSudokus()
-
-            storedIds() shouldBe setOf(valid.info.id.value)
         }
 
     @Test

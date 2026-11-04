@@ -49,6 +49,8 @@ data class Sudoku(val info: GameInfo, val board: Board) {
 
     val progress: Int get() = board.progress
 
+    fun summary(): GameSummary = GameSummary(info, completed, progress)
+
     /** Applies [move] and the counters it changes; null when the board rejects it or no hint is left. */
     fun play(move: BoardMove): GameMove? {
         val result = board.takeIf { move !is BoardMove.RevealHint || info.isHintAvailable }?.apply(move) ?: return null

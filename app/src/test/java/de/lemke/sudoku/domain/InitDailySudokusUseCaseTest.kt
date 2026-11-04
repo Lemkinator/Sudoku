@@ -17,7 +17,6 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -65,7 +64,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         }
 
         should("uses the clock's date when called without a date") {
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(dailySudoku(LocalDate.of(2026, 1, 1))))
+            sudokusRepository.store(dailySudoku(LocalDate.of(2026, 1, 1)))
 
             useCase()
 
@@ -73,7 +72,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         }
 
         should("generates for the clock's date when the existing daily sudoku is of another date") {
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(dailySudoku(LocalDate.of(2025, 12, 31))))
+            sudokusRepository.store(dailySudoku(LocalDate.of(2025, 12, 31)))
 
             useCase()
 
@@ -81,7 +80,7 @@ class InitDailySudokusUseCaseTest : ShouldSpec(
         }
 
         should("does nothing when a daily sudoku already exists for the date") {
-            sudokusRepository.insertRows(sudokuWithFieldsToDb(dailySudoku(date)))
+            sudokusRepository.store(dailySudoku(date))
 
             useCase(date)
 

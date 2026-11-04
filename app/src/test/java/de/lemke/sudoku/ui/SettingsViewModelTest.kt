@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui
 
 import android.app.Application
-import android.os.Looper
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.commonutils.backup.BackupSectionLabel
@@ -33,19 +32,13 @@ import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.backup.SudokuBackupSection
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
-import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
-import de.lemke.sudoku.domain.model.SudokuId
-import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import java.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,7 +47,6 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,7 +55,6 @@ import org.robolectric.annotation.Config
 class SettingsViewModelTest {
     private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
     private val dailyNotifications = FakeDailyNotifications()
-    private val sudokusRepository = FakeSudokusRepository()
     private val database =
         Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java).allowMainThreadQueries().build()
     private val sectionLabels = setOf(BackupSectionLabel("sudokus", R.string.backup_section_sudokus))
@@ -76,10 +67,9 @@ class SettingsViewModelTest {
             dailyNotifications,
             SetDailyNotificationEnabledUseCase(userSettings, sendDailyNotification),
             IsNotificationPermissionGrantedUseCase(dailyNotifications),
-            DeleteInvalidSudokusUseCase(sudokusRepository, dispatcher),
             sectionLabels,
             BackupEngine(
-                setOf(SudokuBackupSection(database.sudokuDao())),
+                setOf(SudokuBackupSection(database.gameDao())),
                 DirectBackupTransaction(),
                 BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup")),
                 { "2026-10-30T12:00:00Z" },
@@ -91,11 +81,6 @@ class SettingsViewModelTest {
 
     @After
     fun closeDatabase() = database.close()
-
-    private fun storeInvalidSudoku(): SudokuId =
-        testSudoku().also { sudokusRepository.insertRows(sudokuWithFieldsToDb(it).copy(fields = emptyList())) }.info.id
-
-    private fun idleFor(millis: Long) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(millis))
 
     @Test
     fun `dailySudokuNotificationHour reads through to userSettings`() {
@@ -191,66 +176,5 @@ class SettingsViewModelTest {
         userSettings.dailySudokuNotificationMinute shouldBe 30
         userSettings.dailySudokuNotificationEnabled.shouldBeTrue()
         dailyNotifications.scheduled shouldBe AlarmTime(hour = 14, minute = 30)
-    }
-
-    @Test
-    fun `invalidSudokuDeletion starts Idle`() {
-        newViewModel().invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Idle
-    }
-
-    @Test
-    fun `invalidSudokuDeletion runs the deletion and stays Running until 500 ms have passed, then is Finished`() {
-        val invalid = storeInvalidSudoku()
-        val settingsViewModel = newViewModel()
-
-        settingsViewModel.onDeleteInvalidSudokusConfirmed()
-
-        sudokusRepository.deletedIds shouldBe listOf(invalid)
-        settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Running
-        idleFor(499)
-        settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Running
-        idleFor(1)
-        settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Finished
-    }
-
-    @Test
-    fun `invalidSudokuDeletion deletes once when confirmed a second time while Running`() {
-        val invalid = storeInvalidSudoku()
-        val settingsViewModel = newViewModel()
-
-        settingsViewModel.onDeleteInvalidSudokusConfirmed()
-        storeInvalidSudoku()
-        settingsViewModel.onDeleteInvalidSudokusConfirmed()
-        idleFor(500)
-
-        sudokusRepository.deletedIds shouldBe listOf(invalid)
-        settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Finished
-    }
-
-    @Test
-    fun `invalidSudokuDeletion resets to Idle once the Finished deletion is handled`() {
-        val settingsViewModel = newViewModel()
-        settingsViewModel.onDeleteInvalidSudokusConfirmed()
-        idleFor(500)
-
-        settingsViewModel.onInvalidSudokuDeletionHandled(InvalidSudokuDeletion.Finished)
-
-        settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Idle
-    }
-
-    @Test
-    fun `invalidSudokuDeletion keeps a new deletion Running when a stale handled call arrives`() {
-        val first = storeInvalidSudoku()
-        val settingsViewModel = newViewModel()
-        settingsViewModel.onDeleteInvalidSudokusConfirmed()
-        idleFor(500)
-        settingsViewModel.onInvalidSudokuDeletionHandled(InvalidSudokuDeletion.Finished)
-        val second = storeInvalidSudoku()
-        settingsViewModel.onDeleteInvalidSudokusConfirmed()
-
-        settingsViewModel.onInvalidSudokuDeletionHandled(InvalidSudokuDeletion.Finished)
-
-        settingsViewModel.invalidSudokuDeletion.value shouldBe InvalidSudokuDeletion.Running
-        sudokusRepository.deletedIds shouldBe listOf(first, second)
     }
 }

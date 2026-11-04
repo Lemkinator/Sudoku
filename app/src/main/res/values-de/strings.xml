@@ -90,8 +90,6 @@
     <string name="regional_highlight_summary">Wenn ein Feld ausgewählt wird, werden die Reihe, Zeile und der Block hervorgehoben.</string>
     <string name="number_highlight">Ausgewählte Zahl hervorheben</string>
     <string name="number_highlight_summary">Wenn eine Zahl ausgewählt wird, werden alle anderen Felder mit derselben Zahl markiert.</string>
-    <string name="delete_invalid_sudokus">Ungültige Sudokus löschen</string>
-    <string name="delete_invalid_sudokus_summary">Fehlerhaft generierte Sudokus oder Sudokus, die beim Speichern in der Datenbank beschädigt wurden, löschen.</string>
     <string name="error_limit">Fehlerlimit</string>
     <string name="no_limit">Kein Limit</string>
     <string name="error_limit_reached">Fehlerlimit erreicht (%1$d).</string>

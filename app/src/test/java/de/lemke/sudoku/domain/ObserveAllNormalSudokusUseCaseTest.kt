@@ -28,6 +28,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import java.util.concurrent.Executor
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -55,7 +56,7 @@ class ObserveAllNormalSudokusUseCaseTest {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        sudokusRepository = DefaultSudokusRepository(database.sudokuDao())
+        sudokusRepository = DefaultSudokusRepository(database.gameDao(), Clock.systemDefaultZone())
         useCase = ObserveAllNormalSudokusUseCase(sudokusRepository, UnconfinedTestDispatcher())
     }
 

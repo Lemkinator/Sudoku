@@ -179,7 +179,7 @@ class TabStatisticsFragmentTest {
     }
 
     @Test
-    fun `an unreadable sudoku shows the statistics load error once and marks it handled`() {
+    fun `a failing query shows the statistics load error once and marks it handled`() {
         runBlocking { saveSudoku(startedSudoku()) }
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(2) }
@@ -187,7 +187,10 @@ class TabStatisticsFragmentTest {
             ShadowToast.showedToast("Failed to load statistics") shouldBe false
 
             // Room notifies its observers when a transaction ends, never after a raw write alone.
-            database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
+            database.runInTransaction {
+                database.openHelper.writableDatabase.execSQL("UPDATE game SET seconds = seconds")
+                database.openHelper.writableDatabase.execSQL("DROP TABLE game")
+            }
             idleMainLooper()
 
             ShadowToast.showedToast("Failed to load statistics") shouldBe true

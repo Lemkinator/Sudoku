@@ -26,15 +26,10 @@ import de.lemke.commonutils.backup.core.BackupEngine
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.DeleteInvalidSudokusUseCase
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 sealed interface DailyNotificationToggleResult {
@@ -45,33 +40,18 @@ sealed interface DailyNotificationToggleResult {
     data object SystemNotificationsDisabled : DailyNotificationToggleResult
 }
 
-/** The deletion of invalid sudokus. The screen closes its dialog on a [Result] and then reports it handled. */
-sealed interface InvalidSudokuDeletion {
-    sealed interface Result : InvalidSudokuDeletion
-
-    data object Idle : InvalidSudokuDeletion
-
-    data object Running : InvalidSudokuDeletion
-
-    data object Finished : Result
-}
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userSettings: UserSettings,
     private val dailyNotifications: DailyNotifications,
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
     private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
-    private val deleteInvalidSudokus: DeleteInvalidSudokusUseCase,
     val sectionLabels: Set<BackupSectionLabel>,
     backupEngine: BackupEngine,
     backupDocuments: BackupDocuments,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
     val backup = BackupStateHolder(viewModelScope, backupEngine, backupDocuments, defaultDispatcher)
-
-    val invalidSudokuDeletion: StateFlow<InvalidSudokuDeletion>
-        field = MutableStateFlow<InvalidSudokuDeletion>(InvalidSudokuDeletion.Idle)
 
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute
@@ -111,25 +91,7 @@ class SettingsViewModel @Inject constructor(
         setDailySudokuNotification(true)
     }
 
-    fun onDeleteInvalidSudokusConfirmed() {
-        if (invalidSudokuDeletion.value == InvalidSudokuDeletion.Running) return
-        invalidSudokuDeletion.value = InvalidSudokuDeletion.Running
-        viewModelScope.launch {
-            deleteInvalidSudokus()
-            delay(MIN_INVALID_SUDOKU_DELETION_DURATION)
-            invalidSudokuDeletion.value = InvalidSudokuDeletion.Finished
-        }
-    }
-
-    fun onInvalidSudokuDeletionHandled(result: InvalidSudokuDeletion.Result) {
-        invalidSudokuDeletion.compareAndSet(result, InvalidSudokuDeletion.Idle)
-    }
-
     private fun setDailySudokuNotification(enabled: Boolean) {
         viewModelScope.launch { setDailyNotificationEnabled(enabled) }
-    }
-
-    private companion object {
-        val MIN_INVALID_SUDOKU_DELETION_DURATION = 500.milliseconds
     }
 }

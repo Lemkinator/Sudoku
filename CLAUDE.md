@@ -104,8 +104,11 @@ the `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified `CoroutineD
 **Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent
 CLAUDE.md convention).
 
-**Room:** Two entities (`SudokuDb`, `FieldDb`). Schema exported to `app/schemas/`. Bidirectional mappers in `data/database/`.
-Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the DAO code (`di/SudokusRepositoryModule.kt`).
+**Room:** One entity, `GameEntity` (table `game`): a `GameHeader` of summary columns plus the `board` blob that `BoardCodec` writes
+(protobuf wire format, unknown fields kept in `Board.preserved`). Unique indices on (size, level) and on the day make a save replace the
+game it collides with. `MIGRATION_2_3` converts the per-cell tables and drops games it cannot read. Schema exported to `app/schemas/`.
+Mappers in `data/database/GameEntityMapper.kt`. Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the
+DAO code (`di/SudokusRepositoryModule.kt`).
 
 **Boundaries:** framework and Play Games calls sit behind interfaces with a `Default*` implementation bound in `di/`:
 `SudokuDocuments` (picked documents), `SudokuShareFiles` (shared sudoku files), `DailyNotifications`

@@ -14,20 +14,7 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.domain
+package de.lemke.sudoku.domain.model
 
-import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.sudoku.data.database.SudokusRepository
-import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.withContext
-
-class DeleteInvalidSudokusUseCase @Inject constructor(
-    private val sudokusRepository: SudokusRepository,
-    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
-) {
-    suspend operator fun invoke() =
-        withContext(defaultDispatcher) {
-            sudokusRepository.deleteInvalidSudokus()
-        }
-}
+/** What a game list, the statistics and the daily alarm need of a game: its info and its outcome, without the board. */
+data class GameSummary(val info: GameInfo, val completed: Boolean, val progress: Int)

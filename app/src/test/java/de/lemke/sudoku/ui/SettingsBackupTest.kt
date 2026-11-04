@@ -32,9 +32,9 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.receivePickerResult
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuWithFields
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.data.database.GameDao
+import de.lemke.sudoku.data.database.toEntity
+import de.lemke.sudoku.data.database.toSudoku
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -46,6 +46,7 @@ import io.kotest.matchers.string.shouldMatch
 import io.kotest.matchers.string.shouldStartWith
 import java.io.File
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
@@ -74,7 +75,7 @@ class SettingsBackupTest {
     lateinit var settings: SettingsRepository
 
     @Inject
-    lateinit var sudokuDao: SudokuDao
+    lateinit var gameDao: GameDao
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -132,15 +133,12 @@ class SettingsBackupTest {
         idleMainLooper()
     }
 
-    private fun storedGames(): List<SudokuWithFields> =
-        runBlocking { sudokuDao.getAll() }.map { it.copy(fields = it.fields.sortedBy { field -> field.index }) }.sortedBy { it.sudoku.id }
+    private fun storedGames(): List<Sudoku> =
+        runBlocking { gameDao.getAll() }.mapNotNull { it.toSudoku(ZoneId.systemDefault()) }.sortedBy { it.info.id.value }
 
     private fun store(vararg sudokus: Sudoku) =
         runBlocking {
-            sudokus.forEach {
-                val rows = sudokuWithFieldsToDb(it)
-                sudokuDao.insert(rows.sudoku, rows.fields)
-            }
+            sudokus.forEach { gameDao.save(it.toEntity(ZoneId.systemDefault())) }
         }
 
     private fun twoGames(): Array<Sudoku> {
@@ -183,7 +181,7 @@ class SettingsBackupTest {
             store(*twoGames())
             val before = storedGames()
             activity.exportTo(backupFile)
-            runBlocking { sudokuDao.deleteAll() }
+            runBlocking { gameDao.deleteAll() }
             storedGames().shouldBeEmpty()
 
             activity.pickImportFile(backupFile)
@@ -270,7 +268,7 @@ class SettingsBackupTest {
                 }
             }
             rewritten shouldNotBe original
-            runBlocking { sudokuDao.deleteAll() }
+            runBlocking { gameDao.deleteAll() }
 
             activity.pickImportFile(backupFile)
 
@@ -284,7 +282,7 @@ class SettingsBackupTest {
             store(*twoGames())
             activity.exportTo(backupFile)
             rewriteBackup { name, bytes -> if (name == "signature.json") null else bytes }
-            runBlocking { sudokuDao.deleteAll() }
+            runBlocking { gameDao.deleteAll() }
 
             activity.pickImportFile(backupFile)
 

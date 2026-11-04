@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.tutorialSudoku
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 /** A readable sudoku over a valid solved pattern; every third cell is given, the rest stays empty unless [completed]. */
 fun testSudoku(
@@ -32,7 +33,7 @@ fun testSudoku(
     mode: GameMode = GameMode.Normal,
     difficulty: Difficulty = Difficulty.EASY,
     sudokuId: SudokuId = SudokuId.generate(),
-    created: LocalDateTime = LocalDateTime.now(),
+    created: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS),
     updated: LocalDateTime = created,
     completed: Boolean = false,
 ): Sudoku {

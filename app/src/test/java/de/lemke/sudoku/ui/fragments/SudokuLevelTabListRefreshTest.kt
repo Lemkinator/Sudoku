@@ -277,10 +277,10 @@ class SudokuLevelTabListRefreshTest {
     }
 
     @Test
-    fun `a level with an unreadable timestamp shows the level load error`() {
+    fun `a failing query shows the level load error`() {
         userSettings.currentLevelTab = 0
         save(completedLevelOne())
-        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        database.openHelper.writableDatabase.execSQL("DROP TABLE game")
         ActivityScenario.launch(SudokuLevelActivity::class.java).use {
             idleMainLooper()
 

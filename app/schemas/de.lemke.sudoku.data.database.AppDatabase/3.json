@@ -1,0 +1,180 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "94ae441605d961ac0fdc3df20e0627fd",
+    "entities": [
+      {
+        "tableName": "game",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`board` BLOB NOT NULL, `id` TEXT NOT NULL, `mode` INTEGER NOT NULL, `level` INTEGER, `dailyDate` INTEGER, `size` INTEGER NOT NULL, `difficulty` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `regionalHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `eraserUsed` INTEGER NOT NULL, `isChecklist` INTEGER NOT NULL, `isReverseChecklist` INTEGER NOT NULL, `checklistNumber` INTEGER NOT NULL, `completed` INTEGER NOT NULL, `progress` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "board",
+            "columnName": "board",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.mode",
+            "columnName": "mode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.level",
+            "columnName": "level",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "header.dailyDate",
+            "columnName": "dailyDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "header.size",
+            "columnName": "size",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.difficulty",
+            "columnName": "difficulty",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.seconds",
+            "columnName": "seconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.hintsUsed",
+            "columnName": "hintsUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.notesMade",
+            "columnName": "notesMade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.errorsMade",
+            "columnName": "errorsMade",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.regionalHighlightingUsed",
+            "columnName": "regionalHighlightingUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.numberHighlightingUsed",
+            "columnName": "numberHighlightingUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.eraserUsed",
+            "columnName": "eraserUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.isChecklist",
+            "columnName": "isChecklist",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.isReverseChecklist",
+            "columnName": "isReverseChecklist",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.checklistNumber",
+            "columnName": "checklistNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.completed",
+            "columnName": "completed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "header.progress",
+            "columnName": "progress",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_game_size_level",
+            "unique": true,
+            "columnNames": [
+              "size",
+              "level"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_game_size_level` ON `${TABLE_NAME}` (`size`, `level`)"
+          },
+          {
+            "name": "index_game_dailyDate",
+            "unique": true,
+            "columnNames": [
+              "dailyDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_game_dailyDate` ON `${TABLE_NAME}` (`dailyDate`)"
+          },
+          {
+            "name": "index_game_mode_updatedAt",
+            "unique": false,
+            "columnNames": [
+              "mode",
+              "updatedAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_game_mode_updatedAt` ON `${TABLE_NAME}` (`mode`, `updatedAt`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '94ae441605d961ac0fdc3df20e0627fd')"
+    ]
+  }
+}

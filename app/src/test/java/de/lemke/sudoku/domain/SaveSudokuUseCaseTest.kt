@@ -48,7 +48,7 @@ class SaveSudokuUseCaseTest : ShouldSpec(
             useCase(later)
 
             sudokusRepository.saves shouldBe listOf(sudoku, later)
-            sudokusRepository.storedRows.map { it.sudoku.id } shouldBe listOf(sudoku.info.id.value)
+            sudokusRepository.storedIds shouldBe listOf(sudoku.info.id)
             sudokusRepository.getSudokuById(sudoku.info.id) shouldBe later
         }
     },

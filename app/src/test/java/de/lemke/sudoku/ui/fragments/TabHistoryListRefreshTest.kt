@@ -199,7 +199,7 @@ class TabHistoryListRefreshTest {
     }
 
     @Test
-    fun `a sudoku whose timestamp becomes unreadable shows the history load error once and marks it handled`() {
+    fun `a failing query shows the history load error once and marks it handled`() {
         save(olderSudoku())
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
@@ -211,7 +211,10 @@ class TabHistoryListRefreshTest {
             ShadowToast.showedToast("Failed to load sudoku history") shouldBe false
 
             // Room notifies its observers when a transaction ends, never after a raw write alone.
-            database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
+            database.runInTransaction {
+                database.openHelper.writableDatabase.execSQL("UPDATE game SET seconds = seconds")
+                database.openHelper.writableDatabase.execSQL("DROP TABLE game")
+            }
             idleMainLooper()
 
             ShadowToast.showedToast("Failed to load sudoku history") shouldBe true

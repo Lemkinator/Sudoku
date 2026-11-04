@@ -24,10 +24,9 @@ import de.lemke.commonutils.backup.core.BackupTransaction
 import de.lemke.commonutils.backup.core.EntryCheck
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.FieldDb
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuDb
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.data.database.GameDao
+import de.lemke.sudoku.data.database.GameEntity
+import de.lemke.sudoku.data.database.toEntity
 import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.di.BackupModule
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
@@ -39,6 +38,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -83,7 +83,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
                 .build()
         defaultZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone(BERLIN))
-        section = SudokuBackupSection(database.sudokuDao())
+        section = SudokuBackupSection(database.gameDao())
     }
 
     @After
@@ -96,46 +96,29 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
 
     override fun transaction(): BackupTransaction = transaction
 
-    private fun storedFieldCount(): Int =
-        database.query("SELECT COUNT(*) FROM field", null).use {
+    private fun storedGameCount(): Int =
+        database.query("SELECT COUNT(*) FROM game", null).use {
             it.moveToFirst()
             it.getInt(0)
         }
 
-    private suspend fun store(vararg sudokus: Sudoku) =
-        sudokus.forEach {
-            val rows = sudokuWithFieldsToDb(it)
-            database.sudokuDao().insert(rows.sudoku, rows.fields)
-        }
+    private suspend fun store(vararg sudokus: Sudoku) = sudokus.forEach { database.gameDao().save(it.toEntity(ZoneId.systemDefault())) }
 
     @Test
-    fun `clear removes every game and its fields`(): Unit =
+    fun `clear removes every game`(): Unit =
         runBlocking {
             store(testSudoku(), testSudoku())
 
             section.clear()
 
             section.exportEntries().shouldBeEmpty()
-            storedFieldCount() shouldBe 0
+            storedGameCount() shouldBe 0
         }
 
     @Test
     fun `an export leaves out a game that cannot be read`(): Unit =
         runBlocking {
-            val unreadable = sudokuWithFieldsToDb(testSudoku())
-            database.sudokuDao().insert(unreadable.sudoku, unreadable.fields.drop(1))
-            val readable = testSudoku()
-            store(readable)
-
-            section.exportEntries().map { it.id } shouldBe listOf(readable.info.id.value)
-        }
-
-    @Test
-    fun `an export leaves out a game with a solution that has no digit`(): Unit =
-        runBlocking {
-            val sudoku = testSudoku()
-            val rows = sudokuWithFieldsToDb(sudoku)
-            database.sudokuDao().insert(rows.sudoku, listOf(rows.fields.first().copy(solution = 0)) + rows.fields.drop(1))
+            database.gameDao().save(GameEntity(testSudoku().toEntity(ZoneId.systemDefault()).header, byteArrayOf(1)))
             val readable = testSudoku()
             store(readable)
 
@@ -203,30 +186,6 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
         }
 
     @Test
-    fun `a game with a given cell off its solution survives an export and an import`(): Unit =
-        runBlocking {
-            val base = testSudoku()
-            val given = base.board[0]
-            val offSolution = if (given.solution == 1) 2 else 1
-            val sudoku = base.copy(board = base.board.with(0, given.copy(value = offSolution)))
-            store(sudoku)
-            val exported = section.exportEntries()
-
-            section.clear()
-            section.insert(exported)
-
-            exported.map { it.id } shouldBe listOf(sudoku.info.id.value)
-            section.exportEntries() shouldBe exported
-            database
-                .sudokuDao()
-                .getById(sudoku.info.id.value)
-                .shouldNotBeNull()
-                .fields
-                .first { it.index == 0 }
-                .value shouldBe offSolution
-        }
-
-    @Test
     fun `an export stamps a game with the zone of the device at the time of the call`(): Unit =
         runBlocking {
             store(testSudoku(created = LocalDateTime.of(2026, 5, 2, 8, 0)))
@@ -249,18 +208,20 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
             val kept = listOf(testSudoku(), testSudoku())
             store(*kept.toTypedArray())
             val before = section.exportEntries()
-            val dao = database.sudokuDao()
+            val dao = database.gameDao()
             val dispatcher = UnconfinedTestDispatcher()
-            val queue = QueueSudokuSaveUseCase(DefaultSudokusRepository(dao), CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
+            val queue =
+                QueueSudokuSaveUseCase(
+                    DefaultSudokusRepository(dao, Clock.systemDefaultZone()),
+                    CoroutineScope(SupervisorJob() + dispatcher),
+                    dispatcher,
+                )
             var inserts = 0
             val failingDao =
-                object : SudokuDao by dao {
-                    override suspend fun insert(
-                        sudoku: SudokuDb,
-                        fields: List<FieldDb>,
-                    ) {
+                object : GameDao by dao {
+                    override suspend fun save(game: GameEntity) {
                         check(++inserts < 2) { "disk full" }
-                        dao.insert(sudoku, fields)
+                        dao.save(game)
                     }
                 }
             val failing = SudokuBackupSection(failingDao)
