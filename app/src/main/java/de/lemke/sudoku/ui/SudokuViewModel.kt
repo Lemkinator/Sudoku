@@ -43,6 +43,10 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
+import kotlin.time.ComparableTimeMark
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -178,7 +182,6 @@ private fun Sudoku.kind(): SudokuKind =
     }
 
 private const val KEY_PENDING_SUMMARY = "pending_summary"
-private const val TICK_MILLIS = 1_000L
 
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
@@ -192,6 +195,7 @@ class SudokuViewModel @Inject constructor(
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
     private val userSettings: UserSettings,
     private val clock: Clock,
+    private val timeSource: TimeSource.WithComparableMarks,
 ) : ViewModel() {
     val game: StateFlow<SudokuGame>
         field = MutableStateFlow<SudokuGame>(SudokuGame.Loading)
@@ -208,6 +212,8 @@ class SudokuViewModel @Inject constructor(
 
     private var wrapUp: Job? = null
     private var ticker: Job? = null
+    private var nextTick: ComparableTimeMark = timeSource.markNow()
+    private var untilNextTick: Duration = 1.seconds
 
     init {
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
@@ -225,7 +231,7 @@ class SudokuViewModel @Inject constructor(
     fun onGameStarted(ready: SudokuGame.Ready) {
         val kind = ready.sudoku.kind()
         val expired = kind is SudokuKind.Daily && kind.date != LocalDate.now(clock)
-        game.compareAndSet(ready, playingOf(ready.sudoku, kind, expired))
+        if (game.compareAndSet(ready, playingOf(ready.sudoku, kind, expired))) untilNextTick = 1.seconds
     }
 
     fun onRestart() {
@@ -349,16 +355,23 @@ class SudokuViewModel @Inject constructor(
     private fun updateTicker() {
         val playing = game.value as? SudokuGame.Playing
         if (playing?.running == true && playing.phase == Phase.Playing) {
-            if (ticker == null) ticker = viewModelScope.launch { tickEverySecond() }
+            if (ticker == null) {
+                nextTick = timeSource.markNow() + untilNextTick
+                ticker = viewModelScope.launch { tickEverySecond() }
+            }
         } else {
-            ticker?.cancel()
+            ticker?.let {
+                it.cancel()
+                untilNextTick = -nextTick.elapsedNow()
+            }
             ticker = null
         }
     }
 
     private suspend fun tickEverySecond() {
         while (true) {
-            delay(TICK_MILLIS)
+            delay(-nextTick.elapsedNow())
+            nextTick += 1.seconds
             updatePlaying { it.copy(sudoku = it.sudoku.tick(LocalDateTime.now(clock))) }
         }
     }

@@ -20,6 +20,7 @@ import androidx.lifecycle.SavedStateHandle
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.AdjustableClock
+import de.lemke.sudoku.LooperTimeSource
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
@@ -67,6 +68,7 @@ class SudokuViewModelRig {
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
             userSettings,
             clock,
+            LooperTimeSource,
         ).also { idleMainLooper() }
     }
 }

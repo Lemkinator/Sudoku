@@ -114,16 +114,13 @@ class SudokuActivityLifecycleTest {
             completed = allCorrect,
         )
 
-    // One multi-second idleFor lets every tick slip 15 ms of Robolectric time, so ticks fall behind; whole seconds stay exact.
-    private fun idleFor(seconds: Long) = repeat(seconds.toInt()) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
-
     // region resumeGame
 
     @Test
     fun `resumeGame starts the timer for a normal in-progress sudoku`() =
         launch(formulaicSudoku()) { activity ->
             activity.playing.running.shouldBeTrue()
-            idleFor(3)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
             activity.sudoku.info.seconds shouldBe 3
         }
 
@@ -131,14 +128,14 @@ class SudokuActivityLifecycleTest {
     fun `resumeGame does not start the timer for an already completed sudoku`() =
         launch(formulaicSudoku(allCorrect = true)) { activity ->
             activity.sudoku.completed.shouldBeTrue()
-            idleFor(3)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
             activity.sudoku.info.seconds shouldBe 0
         }
 
     @Test
     fun `resumeGame does not start the timer for a stale daily sudoku`() =
         launch(formulaicSudoku(mode = GameMode.Daily, created = LocalDateTime.now().minusDays(2))) { activity ->
-            idleFor(3)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
             activity.sudoku.info.seconds shouldBe 0
         }
 
@@ -167,12 +164,12 @@ class SudokuActivityLifecycleTest {
             var secondsAtPause = 0
             scenario.onActivity {
                 it.userSettings.animationsEnabled = false
-                idleFor(3)
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
                 secondsAtPause = it.sudoku.info.seconds
             }
             secondsAtPause shouldBe 3
             scenario.moveToState(Lifecycle.State.CREATED)
-            idleFor(3)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
             scenario.onActivity { activity ->
                 activity.playing.running.shouldBeFalse()
                 activity.sudoku.info.seconds shouldBe secondsAtPause
@@ -238,7 +235,7 @@ class SudokuActivityLifecycleTest {
             var secondsAtPause = 0
             scenario.onActivity {
                 it.userSettings.animationsEnabled = false
-                idleFor(3)
+                shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
                 secondsAtPause = it.sudoku.info.seconds
             }
 
@@ -505,7 +502,7 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `the subtitle shows the elapsed time`() =
         launch(formulaicSudoku()) { activity ->
-            idleFor(65)
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(65))
             idleMainLooper()
             activity.sudoku.info.seconds shouldBe 65
 

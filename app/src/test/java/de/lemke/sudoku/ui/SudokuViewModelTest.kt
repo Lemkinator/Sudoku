@@ -130,6 +130,7 @@ class SudokuViewModelTest : ShouldSpec(
                 CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
                 UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
                 clock,
+                StandardTestDispatcher().scheduler.timeSource,
             )
         }
 
@@ -734,6 +735,58 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel
                 .playingGame()
                 .sudoku.info.seconds shouldBe 1
+        }
+
+        should("a pause keeps the part of the second already played") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+            mainScheduler().advanceTimeBy(2_600)
+            mainScheduler().runCurrent()
+            viewModel.onPaused()
+            mainScheduler().advanceTimeBy(5_000)
+            mainScheduler().runCurrent()
+
+            viewModel.onResumed()
+            mainScheduler().advanceTimeBy(399)
+            mainScheduler().runCurrent()
+            viewModel.playingGame().sudoku.info.seconds shouldBe 2
+            mainScheduler().advanceTimeBy(1)
+            mainScheduler().runCurrent()
+
+            viewModel.playingGame().sudoku.info.seconds shouldBe 3
+        }
+
+        should("repeated pauses and resumes lose no time") {
+            val viewModel = playing(testSudoku())
+
+            repeat(10) {
+                viewModel.onResumed()
+                mainScheduler().advanceTimeBy(700)
+                mainScheduler().runCurrent()
+                viewModel.onPaused()
+            }
+
+            viewModel.playingGame().sudoku.info.seconds shouldBe 7
+        }
+
+        should("a restarted sudoku starts its first second from zero") {
+            val viewModel = playing(testSudoku().withErrors(2))
+            viewModel.onResumed()
+            mainScheduler().advanceTimeBy(600)
+            mainScheduler().runCurrent()
+            viewModel.onMove(BoardMove.Enter(1, 4))
+            viewModel.onRestart()
+            mainScheduler().advanceUntilIdle()
+
+            viewModel.onGameStarted(viewModel.game.value as SudokuGame.Ready)
+            viewModel.onResumed()
+            mainScheduler().advanceTimeBy(999)
+            mainScheduler().runCurrent()
+            viewModel.playingGame().sudoku.info.seconds shouldBe 0
+            mainScheduler().advanceTimeBy(1)
+            mainScheduler().runCurrent()
+
+            viewModel.playingGame().sudoku.info.seconds shouldBe 1
         }
 
         should("the timer stops when the sudoku is lost") {
