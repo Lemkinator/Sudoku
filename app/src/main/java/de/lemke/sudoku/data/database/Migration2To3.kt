@@ -147,9 +147,9 @@ private fun SupportSQLiteDatabase.readLegacyBoards(sizes: Map<String, SudokuSize
 private fun Cursor.legacyInfoOrNull(zone: ZoneId): GameInfo? {
     val size = SudokuSize.fromValueOrNull(int("size"))
     val created = stampOrNull("created", zone)
-    val mode = created?.let { legacyGameModeOrNull(int("modeLevel"), it.toLocalDate()) }
     val updated = stampOrNull("updated", zone)
-    return if (size != null && mode != null && created != null && updated != null) {
+    if (size == null || created == null || updated == null) return null
+    return legacyGameModeOrNull(int("modeLevel"), created.toLocalDate())?.let { mode ->
         GameInfo(
             id = SudokuId(string("id")),
             size = size,
@@ -168,8 +168,6 @@ private fun Cursor.legacyInfoOrNull(zone: ZoneId): GameInfo? {
             isReverseChecklist = int("isReverseChecklist") != 0,
             checklistNumber = int("checklistNumber"),
         )
-    } else {
-        null
     }
 }
 
