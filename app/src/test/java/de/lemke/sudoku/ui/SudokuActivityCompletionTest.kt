@@ -36,6 +36,7 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.FakeInAppReview
 import de.lemke.commonutils.ui.utils.FakeInAppReview.Call.ShowIfPossible
+import de.lemke.sudoku.R
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
@@ -74,9 +75,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.fakes.RoboMenu
 import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
@@ -305,6 +308,46 @@ class SudokuActivityCompletionTest {
             }
             fakeSudokusRepository.saves shouldBe savesBeforeRecreate
             maxLevelReads.get() shouldBe 1
+        }
+    }
+
+    private fun SudokuActivity.resetVisible(): Boolean {
+        val menu = RoboMenu(this)
+        val reset = menu.add(0, R.id.menu_reset, 0, "Restart")
+        onPrepareOptionsMenu(menu)
+        return reset.isVisible
+    }
+
+    @Test
+    fun `recreating the activity while the winning move animates wraps up once and keeps reset hidden until the dialog is dismissed`() {
+        val sudokuId = SudokuId.generate()
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        Robolectric.buildActivity(SudokuActivity::class.java, intent).use { controller ->
+            controller.setup()
+            idleMainLooper()
+            val animating = controller.get()
+            animating.select(0)
+            animating.select(animating.sudoku.info.size.cellCount)
+            animating.viewModel.completion.value shouldBe SudokuCompletion.Pending
+            animating.resetVisible() shouldBe false
+
+            controller.recreate()
+            repeat(3) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
+            idleMainLooper()
+
+            val activity = controller.get()
+            val dialogs = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().filter { it.isShowing }
+            dialogs.size shouldBe 1
+            activity.viewModel.completion.value shouldBe SudokuCompletion.Summary(activity.sudoku, FollowUp.NEW_GAME)
+            activity.resetVisible() shouldBe false
+            dialogs.single().getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
+            idleMainLooper()
+            activity.resetVisible() shouldBe true
+            fakeSudokusRepository.saves.count { it.completed } shouldBe 2
+            fakePlayGamesSyncApplier.applied.size shouldBe 1
+            syncCalculations.get() shouldBe 1
         }
     }
 

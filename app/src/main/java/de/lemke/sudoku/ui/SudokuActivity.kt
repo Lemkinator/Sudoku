@@ -155,6 +155,7 @@ class SudokuActivity : AppCompatActivity() {
         collectState(viewModel.completion) { invalidateOptionsMenu() }
         collectState(viewModel.completion, minActiveState = RESUMED) { if (it is SudokuCompletion.Result) onCompletionResult(it) }
         collectState(viewModel.playGamesSync, minActiveState = RESUMED) { it?.let(::onPlayGamesSync) }
+        if (viewModel.completion.value == SudokuCompletion.Pending) onSudokuCompleted()
     }
 
     override fun onDestroy() {
@@ -593,7 +594,7 @@ class SudokuActivity : AppCompatActivity() {
             if (userSettings.animationsEnabled) {
                 lifecycleScope
                     .animateFields(gameAdapter.fieldViews, position, setOf(FieldRegion.BOARD))
-                    .invokeOnCompletion { onSudokuCompleted() }
+                    .invokeOnCompletion { cause -> if (cause == null) onSudokuCompleted() }
             } else {
                 onSudokuCompleted()
             }
