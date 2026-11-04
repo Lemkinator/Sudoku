@@ -23,6 +23,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -40,6 +41,7 @@ private const val FIELD_ERRORS_MADE = 11
 private const val FIELD_USAGE = 12
 private const val FIELD_CHECKLIST_NUMBER = 13
 private const val FIELD_BOARD = 14
+private const val FIELD_DAILY_DATE = 15
 private val COUNT_FIELDS =
     listOf(FIELD_SECONDS, FIELD_HINTS_USED, FIELD_NOTES_MADE, FIELD_ERRORS_MADE, FIELD_USAGE, FIELD_CHECKLIST_NUMBER)
 
@@ -98,6 +100,7 @@ object SudokuFileCodec {
                         .toLong(),
                 )
                 optionalVarint(FIELD_CHECKLIST_NUMBER, info.checklistNumber.toLong())
+                (info.mode as? GameMode.Daily)?.let { varint(FIELD_DAILY_DATE, it.date.toEpochDay()) }
                 bytes(FIELD_BOARD, BoardCodec.encode(sudoku.board))
             }.toByteArray()
     }
@@ -119,7 +122,7 @@ object SudokuFileCodec {
     ): GameInfo? {
         val id = (this[FIELD_ID] as? BytesField)?.let { it.value.toString(Charsets.UTF_8) }?.takeIf { it.isNotEmpty() }
         val created = stamp(FIELD_CREATED, zone)
-        val mode = int(FIELD_MODE)?.let { GameMode.fromCode(it, int(FIELD_LEVEL), created.toLocalDate()) }
+        val mode = int(FIELD_MODE)?.let { GameMode.fromCode(it, int(FIELD_LEVEL), dailyDate(created)) }
         val difficulty = int(FIELD_DIFFICULTY)?.let(Difficulty::fromCodeOrNull)
         val countsValid = COUNT_FIELDS.all { int(it) != null }
         return if (id != null && mode != null && difficulty != null && countsValid) {
@@ -146,6 +149,24 @@ object SudokuFileCodec {
             null
         }
     }
+
+    /** The day a daily game was made for: field 15, or the day of [created] for a file without it; null for an unreadable day. */
+    private fun Map<Int, ProtoField>.dailyDate(created: LocalDateTime): LocalDate? =
+        when (val field = this[FIELD_DAILY_DATE]) {
+            null -> {
+                created.toLocalDate()
+            }
+
+            is VarintField -> {
+                field.value.takeIf { it in LocalDate.MIN.toEpochDay()..LocalDate.MAX.toEpochDay() }?.let(
+                    LocalDate::ofEpochDay,
+                )
+            }
+
+            else -> {
+                null
+            }
+        }
 
     private fun ProtoWriter.optionalVarint(
         number: Int,

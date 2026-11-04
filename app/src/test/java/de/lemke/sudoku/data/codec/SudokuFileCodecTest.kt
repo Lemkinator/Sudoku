@@ -145,8 +145,50 @@ class SudokuFileCodecTest : ShouldSpec(
             berlin shouldBe GOLDEN_FILE.replace("30809c9f8a9a34", "3080bfc3889a34").replace("3888ea8f8b9a34", "38888db4899a34")
         }
 
+        should("write the day of a daily game as its own field") {
+            val daily = golden.copy(info = golden.info.copy(mode = GameMode.Daily(LocalDate.of(2026, 11, 3))))
+
+            SudokuFileCodec.encode(daily, utc).toHexString() shouldBe
+                GOLDEN_FILE.replace("18022003", "1801").replace("6802", "68027898a201")
+        }
+
+        should("keep the day of a daily game in any zone it is read in") {
+            val daily =
+                golden.copy(
+                    info =
+                        golden.info.copy(
+                            mode = GameMode.Daily(LocalDate.of(2026, 11, 3)),
+                            created = LocalDateTime.of(2026, 11, 3, 23, 30),
+                            updated = LocalDateTime.of(2026, 11, 3, 23, 45),
+                        ),
+                )
+            val file = SudokuFileCodec.encode(daily, utc)
+
+            listOf("Pacific/Auckland", "America/Los_Angeles", "UTC").forEach { zone ->
+                SudokuFileCodec.decode(file, ZoneId.of(zone))?.info?.mode shouldBe GameMode.Daily(LocalDate.of(2026, 11, 3))
+            }
+            SudokuFileCodec.decode(file, ZoneId.of("Pacific/Auckland"))?.info?.created shouldBe LocalDateTime.of(2026, 11, 4, 12, 30)
+        }
+
+        should("take the day of a daily game from its creation when the file has no day") {
+            val auckland = ZoneId.of("Pacific/Auckland")
+            val file = valid(3 to 1L, 6 to 1793748600000L)
+
+            SudokuFileCodec.decode(file, auckland)?.info?.mode shouldBe GameMode.Daily(LocalDate.of(2026, 11, 4))
+            SudokuFileCodec.decode(file, utc)?.info?.mode shouldBe GameMode.Daily(LocalDate.of(2026, 11, 3))
+        }
+
+        should("read a daily game with an unreadable day as unreadable") {
+            SudokuFileCodec.decode(valid(3 to 1L, 15 to Long.MAX_VALUE), utc).shouldBeNull()
+            SudokuFileCodec.decode(valid(3 to 1L, 15 to byteArrayOf(1)), utc).shouldBeNull()
+        }
+
+        should("ignore the day field of a game that is not daily") {
+            SudokuFileCodec.decode(valid(15 to Long.MAX_VALUE), utc)?.info?.mode shouldBe GameMode.Normal
+        }
+
         should("skip a field it does not know") {
-            SudokuFileCodec.decode(GOLDEN_FILE.hexToByteArray() + "7801".hexToByteArray(), utc) shouldBe golden
+            SudokuFileCodec.decode(GOLDEN_FILE.hexToByteArray() + "a00101".hexToByteArray(), utc) shouldBe golden
         }
 
         should("read a file with only the required fields") {
