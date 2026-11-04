@@ -417,6 +417,35 @@ class SudokuViewModelTest : ShouldSpec(
             neighbors.map { saved.board[it].notes } shouldBe List(3) { NoteMask.EMPTY }
         }
 
+        should("a pause after three queued moves persists the third snapshot") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+            val firstSaved = CompletableDeferred<Unit>()
+            repository.beforeSave = { firstSaved.await() }
+
+            viewModel.onMove(BoardMove.Enter(1, 2))
+            viewModel.onMove(BoardMove.Enter(2, 3))
+            viewModel.onMove(BoardMove.Enter(7, 2))
+            viewModel.onPaused()
+            firstSaved.complete(Unit)
+
+            repository.saves.size shouldBe 2
+            repository.saves
+                .first()
+                .board[1]
+                .value shouldBe 2
+            repository
+                .getSudokuById(
+                    repository.saves
+                        .last()
+                        .info.id,
+                )!!
+                .board.cells
+                .map { it.value }
+                .slice(listOf(1, 2, 7)) shouldBe
+                listOf(2, 3, 2)
+        }
+
         should("a rejected move saves nothing and keeps the game") {
             val sudoku = testSudoku()
             val viewModel = playing(sudoku)

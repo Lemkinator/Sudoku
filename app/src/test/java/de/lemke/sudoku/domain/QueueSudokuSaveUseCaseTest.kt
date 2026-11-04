@@ -239,4 +239,117 @@ class QueueSudokuSaveUseCaseTest {
 
         failureLogs().shouldBeEmpty()
     }
+
+    private fun Sudoku.atSecond(seconds: Int): Sudoku = copy(info = info.copy(seconds = seconds))
+
+    @Test
+    fun `write three snapshots of one game queued behind a running save once more, with the third`() =
+        runTest {
+            val sudoku = testSudoku()
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(gate)
+
+            queueSudokuSave(sudoku.atSecond(0))
+            queueSudokuSave(sudoku.atSecond(1))
+            queueSudokuSave(sudoku.atSecond(2))
+            val last = queueSudokuSave(sudoku.atSecond(3))
+            gate.complete(Unit)
+            last.await()
+
+            sudokusRepository.saves.map { it.info.seconds } shouldBe listOf(0, 3)
+        }
+
+    @Test
+    fun `complete every deferred of a coalesced save`() =
+        runTest {
+            val sudoku = testSudoku()
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(gate)
+
+            val running = queueSudokuSave(sudoku.atSecond(0))
+            val second = queueSudokuSave(sudoku.atSecond(1))
+            val third = queueSudokuSave(sudoku.atSecond(2))
+            gate.complete(Unit)
+
+            listOf(running, second, third).forEach { it.await() }
+            listOf(running, second, third).map { it.isCompleted } shouldBe listOf(true, true, true)
+            second shouldBe third
+        }
+
+    @Test
+    fun `fail every deferred of a coalesced save together`() =
+        runTest {
+            val sudoku = testSudoku()
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(gate)
+            queueSudokuSave(sudoku.atSecond(0))
+            val second = queueSudokuSave(sudoku.atSecond(1))
+            val third = queueSudokuSave(sudoku.atSecond(2))
+            sudokusRepository.saveFailure = IllegalStateException("disk full")
+
+            gate.complete(Unit)
+            second.join()
+
+            third.getCompletionExceptionOrNull().shouldBeInstanceOf<IllegalStateException>()
+        }
+
+    @Test
+    fun `do not merge the saves of two games`() =
+        runTest {
+            val first = testSudoku()
+            val second = testSudoku()
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(gate)
+
+            queueSudokuSave(first.atSecond(0))
+            queueSudokuSave(second.atSecond(1))
+            val last = queueSudokuSave(first.atSecond(2))
+            gate.complete(Unit)
+            last.await()
+
+            sudokusRepository.saves.map { it.info.id to it.info.seconds } shouldBe
+                listOf(first.info.id to 0, second.info.id to 1, first.info.id to 2)
+        }
+
+    @Test
+    fun `run an exclusive block after a coalesced save`() =
+        runTest {
+            val sudoku = testSudoku()
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(gate)
+            queueSudokuSave(sudoku.atSecond(0))
+            queueSudokuSave(sudoku.atSecond(1))
+            queueSudokuSave(sudoku.atSecond(2))
+
+            val savesSeenByBlock = async { queueSudokuSave.exclusive { sudokusRepository.saves.map { it.info.seconds } } }
+            runCurrent()
+            gate.complete(Unit)
+
+            savesSeenByBlock.await() shouldBe listOf(0, 2)
+        }
+
+    @Test
+    fun `keep a save queued after an exclusive block behind it instead of merging it into an earlier save`() =
+        runTest {
+            val sudoku = testSudoku()
+            val gate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(gate)
+            queueSudokuSave(sudoku.atSecond(0))
+            queueSudokuSave(sudoku.atSecond(1))
+            val block = async { queueSudokuSave.exclusive { sudokusRepository.saves.map { it.info.seconds } } }
+            runCurrent()
+
+            val after = queueSudokuSave(sudoku.atSecond(2))
+            gate.complete(Unit)
+            after.await()
+
+            block.await() shouldBe listOf(0, 1)
+            sudokusRepository.saves.map { it.info.seconds } shouldBe listOf(0, 1, 2)
+        }
 }

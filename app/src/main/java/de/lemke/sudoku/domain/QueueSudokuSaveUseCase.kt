@@ -21,6 +21,7 @@ import de.lemke.commonutils.di.ApplicationScope
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -31,7 +32,15 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 
-/** Saves sudokus one after another in the application scope, so no save overtakes an earlier one or ends with a screen. */
+/** A queued save that has not started yet and writes the newest snapshot of its game when it does. */
+private class PendingSave(var snapshot: Sudoku) {
+    lateinit var job: Deferred<Unit>
+}
+
+/**
+ * Saves sudokus one after another in the application scope, so no save overtakes an earlier one or ends with a screen. A save
+ * that has not started yet takes the newer snapshot of its game, so a burst of moves writes once.
+ */
 @Singleton
 class QueueSudokuSaveUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
@@ -40,16 +49,31 @@ class QueueSudokuSaveUseCase @Inject constructor(
 ) {
     private val lock = Any()
     private var lastSave: Job? = null
+    private val pending = mutableMapOf<SudokuId, PendingSave>()
 
-    /** Saves [sudoku] after every earlier save. */
+    /**
+     * Saves [sudoku] after every earlier save. The returned [Deferred] completes when a save of [sudoku] or of a newer snapshot of
+     * its game has ended.
+     */
     operator fun invoke(sudoku: Sudoku): Deferred<Unit> =
         synchronized(lock) {
+            val id = sudoku.info.id
+            pending[id]?.let { waiting ->
+                waiting.snapshot = sudoku
+                return@synchronized waiting.job
+            }
+            val slot = PendingSave(sudoku)
+            pending[id] = slot
             val previous = lastSave
             applicationScope
                 .async(defaultDispatcher) {
                     previous?.join()
-                    sudokusRepository.saveSudoku(sudoku)
-                }.also { lastSave = it }
+                    val snapshot = synchronized(lock) { slot.snapshot.also { pending.remove(id, slot) } }
+                    sudokusRepository.saveSudoku(snapshot)
+                }.also {
+                    slot.job = it
+                    lastSave = it
+                }
         }
 
     /**
@@ -58,7 +82,11 @@ class QueueSudokuSaveUseCase @Inject constructor(
      */
     suspend fun <R> exclusive(block: suspend () -> R): R {
         val finished = CompletableDeferred<Unit>()
-        val previous = synchronized(lock) { lastSave.also { lastSave = finished } }
+        val previous =
+            synchronized(lock) {
+                pending.clear()
+                lastSave.also { lastSave = finished }
+            }
         try {
             previous?.join()
             return block()
