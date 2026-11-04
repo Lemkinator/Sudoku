@@ -749,11 +749,15 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.onResumed()
             mainScheduler().advanceTimeBy(399)
             mainScheduler().runCurrent()
-            viewModel.playingGame().sudoku.info.seconds shouldBe 2
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 2
             mainScheduler().advanceTimeBy(1)
             mainScheduler().runCurrent()
 
-            viewModel.playingGame().sudoku.info.seconds shouldBe 3
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 3
         }
 
         should("repeated pauses and resumes lose no time") {
@@ -766,7 +770,9 @@ class SudokuViewModelTest : ShouldSpec(
                 viewModel.onPaused()
             }
 
-            viewModel.playingGame().sudoku.info.seconds shouldBe 7
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 7
         }
 
         should("a restarted sudoku starts its first second from zero") {
@@ -782,11 +788,15 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.onResumed()
             mainScheduler().advanceTimeBy(999)
             mainScheduler().runCurrent()
-            viewModel.playingGame().sudoku.info.seconds shouldBe 0
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 0
             mainScheduler().advanceTimeBy(1)
             mainScheduler().runCurrent()
 
-            viewModel.playingGame().sudoku.info.seconds shouldBe 1
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 1
         }
 
         should("the timer stops when the sudoku is lost") {
