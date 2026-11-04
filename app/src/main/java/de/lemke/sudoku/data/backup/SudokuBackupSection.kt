@@ -22,9 +22,6 @@ import de.lemke.commonutils.backup.core.encodedOrder
 import de.lemke.commonutils.backup.core.higherRankWins
 import de.lemke.commonutils.backup.core.newerWins
 import de.lemke.sudoku.data.database.GameDao
-import de.lemke.sudoku.data.database.GameEntity
-import de.lemke.sudoku.data.database.toEntity
-import de.lemke.sudoku.data.database.toSudoku
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
@@ -36,8 +33,8 @@ class SudokuBackupSection @Inject constructor(
     private val dao: GameDao,
 ) : MergeableSection<SudokuBackupEntry, SudokuBackupKey> {
     override val id: String = ID
-    override val version: Int = 1
-    override val minReadableVersion: Int = 1
+    override val version: Int = 2
+    override val minReadableVersion: Int = 2
     override val serializer: KSerializer<SudokuBackupEntry> = SudokuBackupEntry.serializer()
 
     private val zone: ZoneId get() = ZoneId.systemDefault()
@@ -55,14 +52,14 @@ class SudokuBackupSection @Inject constructor(
     ): JsonObject = error("The sudokus section has no format before version $version")
 
     override fun validate(entry: SudokuBackupEntry): EntryCheck =
-        if (sudokuFromBackup(entry, zone) == null) EntryCheck.Invalid("The game is broken") else EntryCheck.Valid
+        if (gameFromBackup(entry, zone) == null) EntryCheck.Invalid("The game is broken") else EntryCheck.Valid
 
-    override suspend fun exportEntries(): List<SudokuBackupEntry> = dao.getAll().mapNotNull(::entryOf)
+    override suspend fun exportEntries(): List<SudokuBackupEntry> = dao.getAll().mapNotNull { entryOf(it, zone) }
 
     override suspend fun clear() = dao.deleteAll()
 
     override suspend fun insert(entries: List<SudokuBackupEntry>) {
-        entries.mapNotNull { sudokuFromBackup(it, zone) }.forEach { dao.save(it.toEntity(zone)) }
+        entries.mapNotNull { gameFromBackup(it, zone) }.forEach { dao.save(it) }
     }
 
     override fun key(entry: SudokuBackupEntry): SudokuBackupKey = entry.key()
@@ -91,7 +88,7 @@ class SudokuBackupSection @Inject constructor(
                 .distinct()
                 .flatMap { dao.getLevels(it.value) }
         return (normals + dailies + levels)
-            .mapNotNull(::entryOf)
+            .mapNotNull { entryOf(it, zone) }
             .groupBy { it.key() }
             .filterKeys { it in keys }
             .mapValues { (_, clashing) -> clashing.first() }
@@ -104,8 +101,6 @@ class SudokuBackupSection @Inject constructor(
         dao.deleteByIds(listOf(local.id))
         insert(listOf(merged))
     }
-
-    private fun entryOf(game: GameEntity): SudokuBackupEntry? = game.toSudoku(zone)?.let { sudokuToBackup(it, zone) }
 
     companion object {
         const val ID = "sudokus"

@@ -132,7 +132,8 @@ A refused next-level start (its level is already saved) also restarts the level 
 cannot cancel a save. A queued save that has not started takes the newer snapshot of its game, so a burst of moves writes once. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
 The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
 
-**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game, a protobuf-wire message written by `SudokuFileCodec`) into common-utils' backup. A
+**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game, a protobuf-wire message written by `SudokuFileCodec`) into common-utils' backup. The section is version 2 and reads no older one: an entry holds the Base64 of the stored board blob, which
+export copies and import validates by decoding. A
 restore runs inside `QueueSudokuSaveUseCase.exclusive`, so no queued game save interleaves with it. Backups are signed
 (`di/BackupSigningModule`): the build reads Gradle property or env var `backupSigningKey` / `BACKUP_SIGNING_KEY` (GitHub secret
 of the release workflow, and the owner's `~/.gradle/gradle.properties`) into `BuildConfig`. Without it a build signs with the

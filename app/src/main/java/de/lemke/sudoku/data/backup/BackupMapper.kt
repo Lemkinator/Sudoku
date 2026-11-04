@@ -16,60 +16,64 @@
 
 package de.lemke.sudoku.data.backup
 
+import de.lemke.sudoku.data.codec.BoardCodec
+import de.lemke.sudoku.data.database.GameEntity
 import de.lemke.sudoku.data.database.legacyGameModeOrNull
+import de.lemke.sudoku.data.database.toHeader
 import de.lemke.sudoku.data.database.toLegacyModeLevel
-import de.lemke.sudoku.domain.model.Board
-import de.lemke.sudoku.domain.model.Cell
-import de.lemke.sudoku.domain.model.CellOrigin
+import de.lemke.sudoku.data.database.toSummary
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameInfo
-import de.lemke.sudoku.domain.model.NoteMask
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
-import de.lemke.sudoku.domain.model.toSudokuDigitChar
-import de.lemke.sudoku.domain.model.toSudokuInt
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit.SECONDS
-
-private const val EMPTY_CELL = '.'
+import java.util.Base64
 
 /**
- * The game of [entry], or null if the entry is broken. A broken entry fails a shape check, has a mode level that names no game mode,
- * negative seconds, or a note digit beyond its board size. A given or hint cell needs no value that matches its solution. [zone] places
- * the updated stamp on the device clock.
+ * The row of [entry], or null if the entry is broken. A broken entry has a size, difficulty or mode level that names nothing,
+ * negative seconds, or a board that is no Base64 or no board of its size. The row keeps the bytes of the entry's board. [zone]
+ * places the updated stamp on the device clock.
  */
-fun sudokuFromBackup(
+fun gameFromBackup(
     entry: SudokuBackupEntry,
     zone: ZoneId,
-): Sudoku? {
-    if (entry.seconds < 0) return null
+): GameEntity? {
+    val info = infoOrNull(entry, zone)
+    val stored = boardBytesOrNull(entry.board)?.let { bytes -> BoardCodec.decode(bytes)?.let { board -> bytes to board } }
+    return if (info != null && stored != null && stored.second.size == info.size) {
+        GameEntity(GameSummary(info, stored.second.completed, stored.second.progress).toHeader(zone), stored.first)
+    } else {
+        null
+    }
+}
+
+private fun infoOrNull(
+    entry: SudokuBackupEntry,
+    zone: ZoneId,
+): GameInfo? {
     val size = SudokuSize.fromValueOrNull(entry.size)
     val difficulty = Difficulty.fromNameOrNull(entry.difficulty)
     val mode = legacyGameModeOrNull(entry.modeLevel)
-    val board = size?.let { entry.board.toBoardOrNull(it) }
-    return if (size != null && difficulty != null && mode != null && board != null) {
-        Sudoku(
-            info =
-                GameInfo(
-                    id = SudokuId(entry.id),
-                    size = size,
-                    difficulty = difficulty,
-                    mode = mode,
-                    created = entry.created.toLocalDateTime(),
-                    updated = entry.updated.atZoneSameInstant(zone).toLocalDateTime(),
-                    seconds = entry.seconds,
-                    hintsUsed = entry.hintsUsed,
-                    notesMade = entry.notesMade,
-                    errorsMade = entry.errorsMade,
-                    regionalHighlightingUsed = entry.regionalHighlightingUsed,
-                    numberHighlightingUsed = entry.numberHighlightingUsed,
-                    eraserUsed = entry.eraserUsed,
-                    isChecklist = entry.isChecklist,
-                    isReverseChecklist = entry.isReverseChecklist,
-                    checklistNumber = entry.checklistNumber,
-                ),
-            board = board,
+    return if (size != null && difficulty != null && mode != null && entry.seconds >= 0) {
+        GameInfo(
+            id = SudokuId(entry.id),
+            size = size,
+            difficulty = difficulty,
+            mode = mode,
+            created = entry.created.toLocalDateTime(),
+            updated = entry.updated.atZoneSameInstant(zone).toLocalDateTime(),
+            seconds = entry.seconds,
+            hintsUsed = entry.hintsUsed,
+            notesMade = entry.notesMade,
+            errorsMade = entry.errorsMade,
+            regionalHighlightingUsed = entry.regionalHighlightingUsed,
+            numberHighlightingUsed = entry.numberHighlightingUsed,
+            eraserUsed = entry.eraserUsed,
+            isChecklist = entry.isChecklist,
+            isReverseChecklist = entry.isReverseChecklist,
+            checklistNumber = entry.checklistNumber,
         )
     } else {
         null
@@ -77,37 +81,40 @@ fun sudokuFromBackup(
 }
 
 /**
- * The entry of [sudoku], or null if [sudokuFromBackup] cannot read the entry back, so every written entry restores. [zone] gives the
+ * The entry of [game], or null if its header is unreadable. The board bytes go into the entry as they are stored. [zone] gives the
  * offset of both stamps.
  */
-fun sudokuToBackup(
-    sudoku: Sudoku,
+fun entryOf(
+    game: GameEntity,
     zone: ZoneId,
-): SudokuBackupEntry? = entryOf(sudoku, zone).takeIf { sudokuFromBackup(it, zone) != null }
-
-private fun entryOf(
-    sudoku: Sudoku,
-    zone: ZoneId,
-): SudokuBackupEntry =
-    with(sudoku.info) {
+): SudokuBackupEntry? =
+    game.header.toSummary(zone)?.info?.let { info ->
         SudokuBackupEntry(
-            id = id.value,
-            size = size.value,
-            difficulty = difficulty.name,
-            modeLevel = mode.toLegacyModeLevel(),
-            created = created.atZone(zone).toOffsetDateTime().truncatedTo(SECONDS),
-            updated = updated.atZone(zone).toOffsetDateTime().truncatedTo(SECONDS),
-            seconds = seconds,
-            regionalHighlightingUsed = regionalHighlightingUsed,
-            numberHighlightingUsed = numberHighlightingUsed,
-            eraserUsed = eraserUsed,
-            isChecklist = isChecklist,
-            isReverseChecklist = isReverseChecklist,
-            checklistNumber = checklistNumber,
-            hintsUsed = hintsUsed,
-            notesMade = notesMade,
-            errorsMade = errorsMade,
-            board = sudoku.board.toBackup(),
+            id = info.id.value,
+            size = info.size.value,
+            difficulty = info.difficulty.name,
+            modeLevel = info.mode.toLegacyModeLevel(),
+            created =
+                info.created
+                    .atZone(zone)
+                    .toOffsetDateTime()
+                    .truncatedTo(SECONDS),
+            updated =
+                info.updated
+                    .atZone(zone)
+                    .toOffsetDateTime()
+                    .truncatedTo(SECONDS),
+            seconds = info.seconds,
+            regionalHighlightingUsed = info.regionalHighlightingUsed,
+            numberHighlightingUsed = info.numberHighlightingUsed,
+            eraserUsed = info.eraserUsed,
+            isChecklist = info.isChecklist,
+            isReverseChecklist = info.isReverseChecklist,
+            checklistNumber = info.checklistNumber,
+            hintsUsed = info.hintsUsed,
+            notesMade = info.notesMade,
+            errorsMade = info.errorsMade,
+            board = Base64.getEncoder().encodeToString(game.board),
         )
     }
 
@@ -115,55 +122,11 @@ private fun entryOf(
 fun progressOf(
     entry: SudokuBackupEntry,
     zone: ZoneId,
-): Int = sudokuFromBackup(entry, zone)?.progress ?: 0
+): Int = gameFromBackup(entry, zone)?.header?.progress ?: 0
 
-private fun Board.toBackup(): BoardBackup =
-    BoardBackup(
-        solution = cells.map { digitChar(it.solution) }.joinToString(""),
-        values = cells.map { cell -> cell.value?.let(::digitChar) ?: EMPTY_CELL }.joinToString(""),
-        givens = cells.indices.filter { cells[it].origin == CellOrigin.GIVEN },
-        hints = cells.indices.filter { cells[it].origin == CellOrigin.HINT },
-        notes = cells.indices.filterNot { cells[it].notes.isEmpty() }.associateWith { cells[it].notes.toSudokuChars() },
-    )
-
-private fun digitChar(digit: Int): Char = digit.toSudokuDigitChar()
-
-private fun NoteMask.toSudokuChars(): String = digits.map(::digitChar).joinToString("")
-
-private fun BoardBackup.toBoardOrNull(size: SudokuSize): Board? {
-    val cells = 0 until size.cellCount
-    val marked = givens + hints
-    val shapeValid =
-        solution.length == size.cellCount &&
-            values.length == size.cellCount &&
-            marked.toSet().size == marked.size &&
-            marked.all { it in cells } &&
-            notes.keys.all { it in cells }
-    if (!shapeValid) return null
-    val decoded = cells.map { cellOrNull(it, size) }
-    return if (null in decoded) null else Board(size, decoded.requireNoNulls())
-}
-
-private fun BoardBackup.cellOrNull(
-    index: Int,
-    size: SudokuSize,
-): Cell? {
-    val answer = solution[index].toDigitOrNull(size)
-    val cell = values[index]
-    val value = cell.toDigitOrNull(size)
-    val noteDigits = notes[index].orEmpty().map { it.toDigitOrNull(size) }
-    val validValue = cell == EMPTY_CELL || value != null
-    val origin =
-        when (index) {
-            in givens -> CellOrigin.GIVEN
-            in hints -> CellOrigin.HINT
-            else -> CellOrigin.PLAYER
-        }
-    return if (answer != null && validValue && null !in noteDigits) {
-        Cell(solution = answer, value = value, origin = origin, notes = NoteMask.of(*noteDigits.requireNoNulls().toIntArray()))
-    } else {
+private fun boardBytesOrNull(text: String): ByteArray? =
+    try {
+        Base64.getDecoder().decode(text)
+    } catch (_: IllegalArgumentException) {
         null
     }
-}
-
-private fun Char.toDigitOrNull(size: SudokuSize): Int? = toSudokuInt()?.takeIf { it <= size.value }

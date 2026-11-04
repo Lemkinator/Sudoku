@@ -19,7 +19,10 @@ package de.lemke.sudoku.data.backup
 import java.time.OffsetDateTime
 import kotlinx.serialization.Serializable
 
-/** One game of a backup. [difficulty] is the name of a `Difficulty`. */
+/**
+ * One game of a backup. [difficulty] is the name of a `Difficulty`, [modeLevel] is 0 for a normal game, -1 for a daily one and the
+ * level for a level one, and [board] is the Base64 of the stored board blob.
+ */
 @Serializable
 data class SudokuBackupEntry(
     val id: String,
@@ -38,19 +41,5 @@ data class SudokuBackupEntry(
     val hintsUsed: Int = 0,
     val notesMade: Int = 0,
     val errorsMade: Int = 0,
-    val board: BoardBackup,
-)
-
-/**
- * The cells of a game in cell order. [solution] and [values] hold one digit char of a sudoku (`1`..`9`, `A`..`G`) per cell,
- * and [values] marks an empty cell with `.`. [givens] and [hints] list the indices of those cells, and [notes] maps a
- * cell index to the digit chars of its notes.
- */
-@Serializable
-data class BoardBackup(
-    val solution: String,
-    val values: String,
-    val givens: List<Int>,
-    val hints: List<Int> = emptyList(),
-    val notes: Map<Int, String> = emptyMap(),
+    val board: String,
 )

@@ -19,9 +19,16 @@ package de.lemke.sudoku.data.backup
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.commonutils.backup.DirectBackupTransaction
+import de.lemke.commonutils.backup.core.BackupApp
+import de.lemke.commonutils.backup.core.BackupEngine
+import de.lemke.commonutils.backup.core.BackupExport
+import de.lemke.commonutils.backup.core.BackupFileExtension
+import de.lemke.commonutils.backup.core.BackupReadResult
+import de.lemke.commonutils.backup.core.BackupRefusal
 import de.lemke.commonutils.backup.core.BackupSection
 import de.lemke.commonutils.backup.core.BackupTransaction
 import de.lemke.commonutils.backup.core.EntryCheck
+import de.lemke.commonutils.backup.core.MergeableSection
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.GameDao
@@ -44,6 +51,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Base64
 import java.util.TimeZone
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineScope
@@ -116,9 +124,10 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
         }
 
     @Test
-    fun `an export leaves out a game that cannot be read`(): Unit =
+    fun `an export leaves out a game whose header cannot be read`(): Unit =
         runBlocking {
-            database.gameDao().save(GameEntity(testSudoku().toEntity(ZoneId.systemDefault()).header, byteArrayOf(1)))
+            val unreadable = testSudoku().toEntity(ZoneId.systemDefault())
+            database.gameDao().save(GameEntity(unreadable.header.copy(size = 6), unreadable.board))
             val readable = testSudoku()
             store(readable)
 
@@ -253,8 +262,52 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     }
 
     @Test
-    fun `the section reads no format before its first version`() {
+    fun `the section reads no format before its first readable version`() {
         shouldThrow<IllegalStateException> { section.upgrade(0, JsonObject(emptyMap())) }.message shouldBe
-            "The sudokus section has no format before version 1"
+            "The sudokus section has no format before version 2"
     }
+
+    @Test
+    fun `an exported entry carries the stored board bytes`(): Unit =
+        runBlocking {
+            val sudoku = testSudoku()
+            store(sudoku)
+
+            val stored = database.gameDao().getById(sudoku.info.id.value).shouldNotBeNull()
+
+            section.exportEntries().single().board shouldBe Base64.getEncoder().encodeToString(stored.board)
+        }
+
+    @Test
+    fun `a restored entry stores the bytes of its board`(): Unit =
+        runBlocking {
+            val entry = backupEntry(id = "restored", solvedCells = 4)
+
+            section.insert(listOf(entry))
+
+            val stored = database.gameDao().getById("restored").shouldNotBeNull()
+            Base64.getEncoder().encodeToString(stored.board) shouldBe entry.board
+            section.exportEntries() shouldBe listOf(entry)
+        }
+
+    @Test
+    fun `an entry with a broken board is invalid`() {
+        section.validate(backupEntry().copy(board = "AAA=")) shouldBe EntryCheck.Invalid("The game is broken")
+    }
+
+    @Test
+    fun `a version 1 section is refused`(): Unit =
+        runBlocking {
+            val former =
+                object : MergeableSection<SudokuBackupEntry, SudokuBackupKey> by section {
+                    override val version: Int = 1
+                    override val minReadableVersion: Int = 1
+                }
+            val app = BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup"))
+            val written = BackupEngine(setOf(former), transaction, app, { "2026-10-30T12:00:00Z" }).export()
+            val files = (written as BackupExport.Files).files.toMutableMap()
+
+            BackupEngine(setOf(section), transaction, app, { "2026-10-30T12:00:00Z" }).read(files) shouldBe
+                BackupReadResult.Refused(BackupRefusal.TooOldSection("sudokus", 1))
+        }
 }

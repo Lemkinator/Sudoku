@@ -106,37 +106,10 @@ class GameEntityMapperTest : ShouldSpec(
             val row = sudoku().toEntity(utc)
             val header = row.header
 
-            fun with(
-                size: Int = header.size,
-                mode: Int = header.mode,
-                difficulty: Int = header.difficulty,
-            ) = GameHeader(
-                header.id,
-                mode,
-                header.level,
-                header.dailyDate,
-                size,
-                difficulty,
-                header.createdAt,
-                header.updatedAt,
-                header.seconds,
-                header.hintsUsed,
-                header.notesMade,
-                header.errorsMade,
-                header.regionalHighlightingUsed,
-                header.numberHighlightingUsed,
-                header.eraserUsed,
-                header.isChecklist,
-                header.isReverseChecklist,
-                header.checklistNumber,
-                header.completed,
-                header.progress,
-            )
-
-            with(size = 6).toSummary(utc).shouldBeNull()
-            with(mode = 9).toSummary(utc).shouldBeNull()
-            with(difficulty = 7).toSummary(utc).shouldBeNull()
-            with().toSummary(utc).shouldNotBeNull()
+            header.copy(size = 6).toSummary(utc).shouldBeNull()
+            header.copy(mode = 9).toSummary(utc).shouldBeNull()
+            header.copy(difficulty = 7).toSummary(utc).shouldBeNull()
+            header.toSummary(utc).shouldNotBeNull()
         }
 
         should("read no game from a board of another size than the header names") {

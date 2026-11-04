@@ -21,7 +21,7 @@ import androidx.room.Entity
 import androidx.room.Index
 
 /** The columns of a `game` row that describe a game. A list reads only these and never the board blob. */
-class GameHeader(
+data class GameHeader(
     val id: String,
     val mode: Int,
     val level: Int?,

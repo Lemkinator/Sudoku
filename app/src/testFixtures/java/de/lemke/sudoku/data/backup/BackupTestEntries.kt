@@ -16,9 +16,13 @@
 
 package de.lemke.sudoku.data.backup
 
+import de.lemke.sudoku.data.codec.BoardCodec
 import de.lemke.sudoku.data.database.toLegacyModeLevel
+import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.SudokuSize
 import java.time.OffsetDateTime
+import java.util.Base64
 
 const val FOUR_SOLUTION = "1234341223414123"
 private const val GIVEN_STEP = 3
@@ -38,6 +42,10 @@ fun backupEntry(
 ): SudokuBackupEntry {
     val open = FOUR_SOLUTION.indices.filterNot { it in FOUR_GIVENS }
     val filled = FOUR_GIVENS + open.take(solvedCells)
+    val board =
+        Board.of(SudokuSize.FOUR, FOUR_SOLUTION.map { it - '0' }, FOUR_GIVENS.toSet()).let { fresh ->
+            fresh.copy(cells = fresh.cells.mapIndexed { index, cell -> if (index in filled) cell.copy(value = cell.solution) else cell })
+        }
     return SudokuBackupEntry(
         id = id,
         size = 4,
@@ -46,11 +54,6 @@ fun backupEntry(
         created = OffsetDateTime.parse(created),
         updated = OffsetDateTime.parse(updated),
         seconds = seconds,
-        board =
-            BoardBackup(
-                solution = FOUR_SOLUTION,
-                values = FOUR_SOLUTION.indices.map { if (it in filled) FOUR_SOLUTION[it] else '.' }.joinToString(""),
-                givens = FOUR_GIVENS,
-            ),
+        board = Base64.getEncoder().encodeToString(BoardCodec.encode(board)),
     )
 }

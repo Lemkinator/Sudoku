@@ -23,12 +23,10 @@ import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.domain.model.GameMode
 import java.time.OffsetDateTime
 
-private const val HINT_CELL = 10
-private const val NOTE_CELL = 4
-private const val SUDOKUS_V1 =
+private const val SUDOKUS_V2 =
     """{"entries":[
-{"id":"11111111-aaaa","size":4,"difficulty":"MEDIUM","modeLevel":0,"created":"2026-05-02T08:00:00+02:00","updated":"2026-05-02T08:10:00+02:00","seconds":600,"regionalHighlightingUsed":true,"numberHighlightingUsed":false,"eraserUsed":true,"isChecklist":false,"isReverseChecklist":false,"checklistNumber":0,"hintsUsed":1,"notesMade":3,"errorsMade":2,"board":{"solution":"1234341223414123","values":"12.4..1..34.4..3","givens":[0,3,6,9,12,15],"hints":[10],"notes":{"2":"13","4":"34"}}},
-{"id":"22222222-bbbb","size":4,"difficulty":"EASY","modeLevel":-1,"created":"2026-05-03T07:30:00+02:00","updated":"2026-05-03T07:30:00+02:00","seconds":0,"board":{"solution":"1234341223414123","values":"1..4..1..3..4..3","givens":[0,3,6,9,12,15]}}
+{"id":"11111111-aaaa","size":4,"difficulty":"MEDIUM","modeLevel":0,"created":"2026-05-02T08:00:00+02:00","updated":"2026-05-02T08:10:00+02:00","seconds":600,"regionalHighlightingUsed":true,"numberHighlightingUsed":false,"eraserUsed":true,"isChecklist":false,"isReverseChecklist":false,"checklistNumber":0,"hintsUsed":1,"notesMade":3,"errorsMade":2,"board":"CAEQBBoIASMjARIwMBIiECECACQAACEAACNEACQAACMqBAIFBAw="},
+{"id":"22222222-bbbb","size":4,"difficulty":"EASY","modeLevel":-1,"created":"2026-05-03T07:30:00+02:00","updated":"2026-05-03T07:30:00+02:00","seconds":0,"board":"CAEQBBoIASMjARIwMBIiECEAACQAACEAACMAACQAACM="}
 ]}"""
 
 abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupEntry>() {
@@ -41,9 +39,9 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
 
     override fun fixtures(): Map<Int, SectionFixture<SudokuBackupEntry>> =
         mapOf(
-            1 to
+            2 to
                 SectionFixture(
-                    text = SUDOKUS_V1,
+                    text = SUDOKUS_V2,
                     entries =
                         listOf(
                             SudokuBackupEntry(
@@ -59,14 +57,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                                 hintsUsed = 1,
                                 notesMade = 3,
                                 errorsMade = 2,
-                                board =
-                                    BoardBackup(
-                                        solution = FOUR_SOLUTION,
-                                        values = "12.4..1..34.4..3",
-                                        givens = FOUR_GIVENS,
-                                        hints = listOf(HINT_CELL),
-                                        notes = mapOf(2 to "13", NOTE_CELL to "34"),
-                                    ),
+                                board = "CAEQBBoIASMjARIwMBIiECECACQAACEAACNEACQAACMqBAIFBAw=",
                             ),
                             backupEntry(
                                 id = "22222222-bbbb",
