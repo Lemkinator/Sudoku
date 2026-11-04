@@ -135,7 +135,7 @@ The winning move starts the wrap-up in the
 ViewModel (save, follow-up lookup), so leaving or rotating during the win animation loses nothing; the activity only holds the finish
 dialog back until the animation ends. The dialog's summary stays in the `SavedStateHandle` until the player dismisses it. The Play
 Games sync derives from the completed sudokus stored (`CalculatePlayGamesSyncUseCase`): every score, unlock and achievement step is
-absolute, so applying it twice changes nothing. `SudokuViewModel` sets it once the win save committed, and the activity requests the
+absolute, so applying it twice changes nothing. A game that a `.sudoku` file brought in already solved carries `GameSource.IMPORTED` (the `imported` column and backup field); it counts in the win totals only, never in times, unlocks or 10/50 steps. `SudokuViewModel` sets it once the win save committed, and the activity requests the
 in-app review with it; `MainViewModel.onScreenReady` offers it once per ViewModel. `PlayGamesSyncer` applies it only after the silent
 sign-in check succeeds.
 

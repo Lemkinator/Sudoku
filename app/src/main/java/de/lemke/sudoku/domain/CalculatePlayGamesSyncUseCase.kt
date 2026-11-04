@@ -27,6 +27,7 @@ import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -41,16 +42,21 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    /** What Play Games must hold for every completed sudoku now stored, whatever was reported before. */
+    /**
+     * What Play Games must hold for every completed sudoku now stored, whatever was reported before. A game imported from a file
+     * counts in the win totals only; unlocks, steps and times come from the player's own wins.
+     */
     suspend operator fun invoke(): PlayGamesSync =
         withContext(defaultDispatcher) {
             val wins = sudokusRepository.getCompletedSummaries().map(GameSummary::info)
             val bySize = wins.groupedBy(SudokuSize.entries) { it.size }
-            val byDifficulty = wins.groupedBy(Difficulty.entries) { it.difficulty }
+            val played = wins.played()
+            val playedBySize = played.groupedBy(SudokuSize.entries) { it.size }
+            val playedByDifficulty = played.groupedBy(Difficulty.entries) { it.difficulty }
             PlayGamesSync(
                 leaderboardScores = leaderboardScores(wins, bySize),
-                achievementUnlocks = achievementUnlocks(wins, bySize),
-                achievementSteps = achievementSteps(bySize, byDifficulty),
+                achievementUnlocks = achievementUnlocks(played, playedBySize),
+                achievementSteps = achievementSteps(playedBySize, playedByDifficulty),
             )
         }
 
@@ -64,12 +70,14 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             SudokuSize.entries.forEach { size ->
                 add(size.playGames.levelLeaderboard to wins.count { it.size == size && it.mode is GameMode.Level }.toLong())
             }
-            if (wins.isNotEmpty()) add(R.string.leaderboard_best_time to wins.fastest())
+            val played = wins.played()
+            if (played.isNotEmpty()) add(R.string.leaderboard_best_time to played.fastest())
             bySize.forEach { (size, ofSize) ->
                 add(size.playGames.winsLeaderboard to ofSize.size.toLong())
                 ofSize.groupedBy(Difficulty.entries) { it.difficulty }.forEach { (difficulty, ofDifficulty) ->
                     val leaderboards = size.leaderboards(difficulty)
-                    add(leaderboards.time to ofDifficulty.fastest())
+                    val playedOfDifficulty = ofDifficulty.played()
+                    if (playedOfDifficulty.isNotEmpty()) add(leaderboards.time to playedOfDifficulty.fastest())
                     add(leaderboards.wins to ofDifficulty.size.toLong())
                 }
             }
@@ -107,6 +115,8 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
                 add(difficulty.achievements.achievement50 to ofDifficulty.size)
             }
         }
+
+    private fun List<GameInfo>.played(): List<GameInfo> = filter { it.source == GameSource.OWN }
 
     private fun List<GameInfo>.fastest(): Long = fold(Long.MAX_VALUE) { fastest, win -> minOf(fastest, win.seconds * MILLIS_PER_SECOND) }
 

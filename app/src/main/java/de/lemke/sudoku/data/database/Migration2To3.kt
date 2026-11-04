@@ -42,12 +42,12 @@ private const val CREATE_GAME =
         "`seconds` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, " +
         "`regionalHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `eraserUsed` INTEGER NOT NULL, " +
         "`isChecklist` INTEGER NOT NULL, `isReverseChecklist` INTEGER NOT NULL, `checklistNumber` INTEGER NOT NULL, " +
-        "`completed` INTEGER NOT NULL, `progress` INTEGER NOT NULL, `board` BLOB NOT NULL, PRIMARY KEY(`id`))"
+        "`completed` INTEGER NOT NULL, `progress` INTEGER NOT NULL, `imported` INTEGER NOT NULL, `board` BLOB NOT NULL, PRIMARY KEY(`id`))"
 
 private const val INSERT_GAME =
     "INSERT OR REPLACE INTO `game` (id, mode, level, dailyDate, size, difficulty, createdAt, updatedAt, seconds, hintsUsed, notesMade, " +
         "errorsMade, regionalHighlightingUsed, numberHighlightingUsed, eraserUsed, isChecklist, isReverseChecklist, checklistNumber, " +
-        "completed, progress, board) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "completed, progress, imported, board) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
 private const val SELECT_SUDOKUS =
     "SELECT id, size, difficulty, modeLevel, regionalHighlightingUsed, numberHighlightingUsed, eraserUsed, isChecklist, " +
@@ -59,7 +59,7 @@ private const val SELECT_FIELDS =
 /**
  * Replaces the `sudoku` and `field` tables with the `game` table. A game that cannot be read is dropped, and so is a game whose
  * given cell differs from its solution. Of two games that claim the same level or day, the completed one stays, and of two
- * completed or two unfinished ones the most recently updated one.
+ * completed or two unfinished ones the most recently updated one. Schema 2 marks no imported game, so every game stays the player's own.
  */
 val MIGRATION_2_3 =
     object : Migration(SCHEMA_VERSION_BEFORE, SCHEMA_VERSION_AFTER) {
@@ -112,6 +112,7 @@ private fun GameEntity.bindArgs(): Array<Any?> =
             checklistNumber,
             completed,
             progress,
+            imported,
             board,
         )
     }

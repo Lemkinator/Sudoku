@@ -20,6 +20,7 @@ import de.lemke.sudoku.data.codec.BoardCodec
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
@@ -60,6 +61,7 @@ fun GameSummary.toHeader(zone: ZoneId): GameHeader =
         checklistNumber = info.checklistNumber,
         completed = completed,
         progress = progress,
+        imported = info.source == GameSource.IMPORTED,
     )
 
 /** The summary of this header, or null if its size, mode or difficulty names nothing this version knows. */
@@ -87,6 +89,7 @@ fun GameHeader.toSummary(zone: ZoneId): GameSummary? {
                     isChecklist = isChecklist,
                     isReverseChecklist = isReverseChecklist,
                     checklistNumber = checklistNumber,
+                    source = if (imported) GameSource.IMPORTED else GameSource.OWN,
                 ),
             completed = completed,
             progress = progress,

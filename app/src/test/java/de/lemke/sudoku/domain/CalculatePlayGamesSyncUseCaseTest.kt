@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -227,6 +228,64 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
                             R.string.achievement_10_sudokus_expert to 1,
                             R.string.achievement_50_sudokus_expert to 1,
                         ),
+                )
+        }
+
+        should("count an imported one-second win in the win totals but not in times, unlocks or steps") {
+            val imported =
+                wonSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 1, hintsUsed = 3).let {
+                    it.copy(info = it.info.copy(source = GameSource.IMPORTED))
+                }
+            val useCase = calculatePlayGamesSyncOver(wonSudoku(seconds = 100, hintsUsed = 1), imported)
+
+            useCase() shouldBe
+                PlayGamesSync(
+                    leaderboardScores =
+                        listOf(
+                            R.string.leaderboard_total_wins to 2L,
+                            R.string.leaderboard_daily_sudokus to 0L,
+                            R.string.leaderboard_level_44 to 0L,
+                            R.string.leaderboard_level_99 to 0L,
+                            R.string.leaderboard_level_1616 to 0L,
+                            R.string.leaderboard_best_time to 100_000L,
+                            R.string.leaderboard_wins_44 to 1L,
+                            R.string.leaderboard_time_44_very_easy to 100_000L,
+                            R.string.leaderboard_wins_44_very_easy to 1L,
+                            R.string.leaderboard_wins_99 to 1L,
+                            R.string.leaderboard_wins_99_hard to 1L,
+                        ),
+                    achievementUnlocks = listOf(R.string.achievement_first_win),
+                    achievementSteps =
+                        listOf(
+                            R.string.achievement_10_sudokus_44 to 1,
+                            R.string.achievement_50_sudokus_44 to 1,
+                            R.string.achievement_10_sudokus_very_easy to 1,
+                            R.string.achievement_50_sudokus_very_easy to 1,
+                        ),
+                )
+        }
+
+        should("submit only the win totals when every stored win is imported") {
+            val imported =
+                wonSudoku(
+                    mode = GameMode.Level(2),
+                    seconds = 1,
+                ).let { it.copy(info = it.info.copy(source = GameSource.IMPORTED)) }
+
+            calculatePlayGamesSyncOver(imported)() shouldBe
+                PlayGamesSync(
+                    leaderboardScores =
+                        listOf(
+                            R.string.leaderboard_total_wins to 1L,
+                            R.string.leaderboard_daily_sudokus to 0L,
+                            R.string.leaderboard_level_44 to 1L,
+                            R.string.leaderboard_level_99 to 0L,
+                            R.string.leaderboard_level_1616 to 0L,
+                            R.string.leaderboard_wins_44 to 1L,
+                            R.string.leaderboard_wins_44_very_easy to 1L,
+                        ),
+                    achievementUnlocks = emptyList(),
+                    achievementSteps = emptyList(),
                 )
         }
 

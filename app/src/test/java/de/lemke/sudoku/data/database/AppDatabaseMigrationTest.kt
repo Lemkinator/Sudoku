@@ -246,6 +246,11 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
+    fun `every migrated game is the player's own`() {
+        migrated(seedMix()).use { connection -> connection.long("SELECT COUNT(*) FROM game WHERE imported = 1") shouldBe 0L }
+    }
+
+    @Test
     fun `header columns carry the stamps, the mode keys and the counters of the old rows`() {
         migrated(seedMix()).use { connection ->
             connection

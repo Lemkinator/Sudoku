@@ -24,6 +24,7 @@ import androidx.test.core.app.ApplicationProvider
 import de.lemke.sudoku.data.DefaultSudokuDocuments
 import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.testSudoku
 import io.kotest.assertions.throwables.shouldThrow
@@ -84,6 +85,27 @@ class ImportSudokuUseCaseTest {
             useCase(uri) shouldBe sudoku
 
             sudokusRepository.saves shouldBe listOf(sudoku)
+        }
+
+    @Test
+    fun `saves a solved file as an imported game`() =
+        runTest {
+            val solved = testSudoku(created = LocalDateTime.of(2026, 11, 3, 12, 0, 5), completed = true)
+            val uri = uriFor(fileOf(solved))
+
+            useCase(uri) shouldBe solved.copy(info = solved.info.copy(source = GameSource.IMPORTED))
+
+            sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.IMPORTED)
+        }
+
+    @Test
+    fun `saves an unfinished file as the player's own game`() =
+        runTest {
+            val uri = uriFor(fileOf(testSudoku()))
+
+            useCase(uri).shouldNotBeNull().info.source shouldBe GameSource.OWN
+
+            sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.OWN)
         }
 
     @Test

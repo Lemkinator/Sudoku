@@ -24,6 +24,7 @@ import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.data.database.toSummary
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -74,6 +75,7 @@ private fun infoOrNull(
             isChecklist = entry.isChecklist,
             isReverseChecklist = entry.isReverseChecklist,
             checklistNumber = entry.checklistNumber,
+            source = if (entry.imported) GameSource.IMPORTED else GameSource.OWN,
         )
     } else {
         null
@@ -115,6 +117,7 @@ fun entryOf(
             hintsUsed = info.hintsUsed,
             notesMade = info.notesMade,
             errorsMade = info.errorsMade,
+            imported = info.source == GameSource.IMPORTED,
             board = Base64.getEncoder().encodeToString(game.board),
         )
     }

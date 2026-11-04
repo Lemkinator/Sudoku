@@ -127,6 +127,7 @@ private fun GameInfo.zeroed(): GameInfo =
         isChecklist = false,
         isReverseChecklist = false,
         checklistNumber = 0,
+        source = GameSource.OWN,
     )
 
 fun Int?.toSudokuString(): CharSequence? =

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "94ae441605d961ac0fdc3df20e0627fd",
+    "identityHash": "894ad65d28b996094bad26e3ad91500e",
     "entities": [
       {
         "tableName": "game",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`board` BLOB NOT NULL, `id` TEXT NOT NULL, `mode` INTEGER NOT NULL, `level` INTEGER, `dailyDate` INTEGER, `size` INTEGER NOT NULL, `difficulty` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `regionalHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `eraserUsed` INTEGER NOT NULL, `isChecklist` INTEGER NOT NULL, `isReverseChecklist` INTEGER NOT NULL, `checklistNumber` INTEGER NOT NULL, `completed` INTEGER NOT NULL, `progress` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`board` BLOB NOT NULL, `id` TEXT NOT NULL, `mode` INTEGER NOT NULL, `level` INTEGER, `dailyDate` INTEGER, `size` INTEGER NOT NULL, `difficulty` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `seconds` INTEGER NOT NULL, `hintsUsed` INTEGER NOT NULL, `notesMade` INTEGER NOT NULL, `errorsMade` INTEGER NOT NULL, `regionalHighlightingUsed` INTEGER NOT NULL, `numberHighlightingUsed` INTEGER NOT NULL, `eraserUsed` INTEGER NOT NULL, `isChecklist` INTEGER NOT NULL, `isReverseChecklist` INTEGER NOT NULL, `checklistNumber` INTEGER NOT NULL, `completed` INTEGER NOT NULL, `progress` INTEGER NOT NULL, `imported` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "board",
@@ -131,6 +131,12 @@
             "columnName": "progress",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "header.imported",
+            "columnName": "imported",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -174,7 +180,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '94ae441605d961ac0fdc3df20e0627fd')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '894ad65d28b996094bad26e3ad91500e')"
     ]
   }
 }

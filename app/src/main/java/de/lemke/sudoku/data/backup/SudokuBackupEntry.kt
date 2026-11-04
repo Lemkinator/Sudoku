@@ -41,5 +41,6 @@ data class SudokuBackupEntry(
     val hintsUsed: Int = 0,
     val notesMade: Int = 0,
     val errorsMade: Int = 0,
+    val imported: Boolean = false,
     val board: String,
 )

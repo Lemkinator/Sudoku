@@ -19,6 +19,7 @@ package de.lemke.sudoku.data.database
 import de.lemke.sudoku.data.codec.BoardCodec
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
@@ -81,6 +82,17 @@ class GameEntityMapperTest : ShouldSpec(
 
             listOf(completed.completed, completed.progress, completed.eraserUsed, completed.isChecklist) shouldBe
                 listOf(true, 100, false, false)
+        }
+
+        should("write the imported column from the source and read it back") {
+            val imported = sudoku().let { it.copy(info = it.info.copy(source = GameSource.IMPORTED)) }
+
+            listOf(sudoku().toEntity(utc).header.imported, imported.toEntity(utc).header.imported) shouldBe listOf(false, true)
+            imported
+                .toEntity(utc)
+                .toSudoku(utc)
+                .shouldNotBeNull()
+                .info.source shouldBe GameSource.IMPORTED
         }
 
         should("put the board in the board codec format") {

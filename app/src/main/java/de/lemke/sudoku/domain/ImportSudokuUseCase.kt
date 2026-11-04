@@ -21,6 +21,7 @@ import android.util.Log
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.SudokuDocuments
 import de.lemke.sudoku.data.codec.SudokuFileCodec
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.Sudoku
 import java.time.Clock
 import javax.inject.Inject
@@ -41,7 +42,7 @@ class ImportSudokuUseCase @Inject constructor(
         withContext(ioDispatcher) {
             if (uri == null) return@withContext null
             try {
-                val sudoku = SudokuFileCodec.decode(sudokuDocuments.readBytes(uri), clock.zone)
+                val sudoku = SudokuFileCodec.decode(sudokuDocuments.readBytes(uri), clock.zone)?.markedImported()
                 if (sudoku == null) Log.e(TAG, "Invalid sudoku file") else saveSudoku(sudoku)
                 sudoku
             } catch (e: Exception) {
@@ -51,3 +52,6 @@ class ImportSudokuUseCase @Inject constructor(
             }
         }
 }
+
+/** A game that arrives solved is nobody's played win here; an unfinished one stays the player's own to play. */
+private fun Sudoku.markedImported(): Sudoku = if (completed) copy(info = info.copy(source = GameSource.IMPORTED)) else this

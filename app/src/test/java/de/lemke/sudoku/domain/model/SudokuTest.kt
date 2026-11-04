@@ -218,6 +218,13 @@ class SudokuTest : ShouldSpec(
                 played.restarted() shouldBe fresh.copy(info = fresh.info.copy(updated = CREATED.plusSeconds(1)))
             }
 
+            should("turn an imported game into the player's own") {
+                val imported = fourByFour(info = gameInfo().copy(source = GameSource.IMPORTED))
+
+                imported.restarted().info.source shouldBe GameSource.OWN
+                imported.initialCopy().info.source shouldBe GameSource.OWN
+            }
+
             should("keep the id, the mode and the stamps") {
                 val daily = fourByFour(info = gameInfo(mode = DAILY)).tick(CREATED.plusSeconds(5))
 

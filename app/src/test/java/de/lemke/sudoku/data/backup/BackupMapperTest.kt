@@ -27,6 +27,7 @@ import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
@@ -110,6 +111,31 @@ class BackupMapperTest : ShouldSpec(
             restored.info shouldBe
                 sudoku.info.copy(created = LocalDateTime.of(2026, 5, 2, 8, 0), updated = LocalDateTime.of(2026, 5, 2, 8, 10))
             restored.board shouldBe sudoku.board
+        }
+
+        should("keep an imported game imported and an own game own through its entry") {
+            val own = gameOf(SudokuSize.FOUR, id = "own")
+            val imported = gameOf(SudokuSize.FOUR, id = "imported").let { it.copy(info = it.info.copy(source = GameSource.IMPORTED)) }
+
+            listOf(entryOfGame(own).imported, entryOfGame(imported).imported) shouldBe listOf(false, true)
+            listOf(own, imported).map {
+                gameFromBackup(entryOfGame(it), BERLIN)
+                    .shouldNotBeNull()
+                    .toSudoku(BERLIN)
+                    .shouldNotBeNull()
+                    .info.source
+            } shouldBe listOf(GameSource.OWN, GameSource.IMPORTED)
+        }
+
+        should("read an entry without an imported field as an own game") {
+            val json =
+                """{"id":"g","size":4,"difficulty":"EASY","modeLevel":0,"created":"2026-05-02T08:00:00+02:00",""" +
+                    """"updated":"2026-05-02T08:00:00+02:00","seconds":0,"board":"CAEQBBoIASMjARIwMBIiECEAACQAACEAACMAACQAACM="}"""
+
+            val entry = Json.decodeFromString(SudokuBackupEntry.serializer(), json)
+
+            entry.imported shouldBe false
+            gameFromBackup(entry, BERLIN).shouldNotBeNull().header.imported shouldBe false
         }
 
         should("carry the stored board bytes into the entry without re-encoding them") {

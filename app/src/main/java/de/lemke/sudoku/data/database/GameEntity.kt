@@ -41,6 +41,7 @@ data class GameHeader(
     val checklistNumber: Int,
     val completed: Boolean,
     val progress: Int,
+    val imported: Boolean,
 )
 
 @Entity(

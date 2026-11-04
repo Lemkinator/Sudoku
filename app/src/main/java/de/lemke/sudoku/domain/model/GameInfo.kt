@@ -43,6 +43,7 @@ data class GameInfo(
     val isChecklist: Boolean = false,
     val isReverseChecklist: Boolean = false,
     val checklistNumber: Int = 0,
+    val source: GameSource = GameSource.OWN,
 ) {
     val dailyDate: LocalDate? get() = (mode as? GameMode.Daily)?.date
 
