@@ -24,6 +24,7 @@ import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import java.time.DateTimeException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -97,7 +98,11 @@ fun GameHeader.toSummary(zone: ZoneId): GameSummary? {
 
 /** The date of [epochDay], or null if it lies outside the supported dates. */
 private fun localDateOrNull(epochDay: Long): LocalDate? =
-    epochDay.takeIf { it in LocalDate.MIN.toEpochDay()..LocalDate.MAX.toEpochDay() }?.let(LocalDate::ofEpochDay)
+    try {
+        LocalDate.ofEpochDay(epochDay)
+    } catch (_: DateTimeException) {
+        null
+    }
 
 private fun LocalDateTime.toEpochMilli(zone: ZoneId): Long = atZone(zone).toInstant().toEpochMilli()
 

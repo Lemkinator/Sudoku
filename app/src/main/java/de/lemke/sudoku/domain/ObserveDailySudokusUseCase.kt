@@ -44,22 +44,20 @@ class ObserveDailySudokusUseCase @Inject constructor(
                 sudokusRepository
                     .observeDailySummaries()
                     .map { sudokus ->
-                        sudokus.mapNotNull { summary -> summary.info.dailyDate?.let { summary to it } }.filter { (summary, dailyDate) ->
+                        sudokus.filter {
                             if (includeUncompleted) {
                                 true
                             } else {
-                                summary.completed
-                            } || dailyDate == date
+                                it.completed
+                            } || it.info.requireDailyDate() == date
                         }
                     }.map { sudokus ->
                         val dailySudokus: MutableList<SudokuListItem> =
-                            sudokus
-                                .map { (summary, dailyDate) ->
-                                    SudokuListItem.SudokuItem(summary, dailyDate.monthAndYear)
-                                }.toMutableList()
+                            sudokus.map { SudokuListItem.SudokuItem(it, it.info.requireDailyDate().monthAndYear) }.toMutableList()
                         var offset = 0
                         var oldDate: LocalDate? = null
-                        sudokus.forEachIndexed { index, (_, dailyDate) ->
+                        sudokus.forEachIndexed { index, sudoku ->
+                            val dailyDate = sudoku.info.requireDailyDate()
                             if (oldDate == null || oldDate.month != dailyDate.month) {
                                 dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(dailyDate.monthAndYear))
                                 oldDate = dailyDate

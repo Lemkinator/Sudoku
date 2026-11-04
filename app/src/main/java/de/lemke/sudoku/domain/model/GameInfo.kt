@@ -46,6 +46,9 @@ data class GameInfo(
 ) {
     val dailyDate: LocalDate? get() = (mode as? GameMode.Daily)?.date
 
+    /** The day of a daily game; throws for a game of another mode. */
+    fun requireDailyDate(): LocalDate = (mode as GameMode.Daily).date
+
     val availableHints: Int get() = size.hintLimit - hintsUsed
 
     val isHintAvailable: Boolean get() = mode == GameMode.Normal && hintsUsed < size.hintLimit

@@ -208,9 +208,7 @@ class SudokuListAdapter(
             textView.text =
                 when (mode) {
                     Mode.DAILY -> {
-                        summary.info.dailyDate
-                            ?.formatFull
-                            .orEmpty()
+                        summary.info.requireDailyDate().formatFull
                     }
 
                     Mode.LEVEL -> {
