@@ -75,6 +75,9 @@ interface SudokuDao {
     @Query("SELECT * FROM sudoku WHERE id = :id")
     suspend fun getById(id: String): SudokuWithFields?
 
+    @Query("SELECT EXISTS(SELECT 1 FROM sudoku WHERE id = :id)")
+    suspend fun exists(id: String): Boolean
+
     @Transaction
     @Query("SELECT * FROM sudoku WHERE id IN (:ids)")
     suspend fun getByIds(ids: List<String>): List<SudokuWithFields>

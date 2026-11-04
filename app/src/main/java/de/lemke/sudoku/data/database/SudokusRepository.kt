@@ -80,7 +80,7 @@ class DefaultSudokusRepository @Inject constructor(
 
     override suspend fun saveSudoku(sudoku: Sudoku) {
         val rows = sudokuWithFieldsToDb(sudoku)
-        replacedBy(sudoku.info)?.let { sudokuDao.delete(it) }
+        if (!sudokuDao.exists(sudoku.info.id.value)) replacedBy(sudoku.info)?.let { sudokuDao.delete(it) }
         sudokuDao.insert(rows.sudoku, rows.fields)
     }
 
