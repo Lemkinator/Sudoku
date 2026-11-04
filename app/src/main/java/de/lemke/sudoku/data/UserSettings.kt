@@ -17,6 +17,7 @@
 package de.lemke.sudoku.data
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.data.delegates
 import de.lemke.commonutils.data.mapped
@@ -37,7 +38,7 @@ class UserSettings(
     scope: CoroutineScope,
 ) : SettingsRepository(preferences) {
     init {
-        preferences.edit().remove(REMOVED_PENDING_PLAY_GAMES_WINS).apply()
+        preferences.edit { remove(REMOVED_PENDING_PLAY_GAMES_WINS) }
     }
 
     var difficultySliderValue: Int by preferences.delegates.int(2).sanitized { it.coerceIn(0, Difficulty.max) }
