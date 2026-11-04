@@ -18,7 +18,11 @@ package de.lemke.sudoku.domain.model
 
 private const val PERCENT_SCALE = 100
 
-data class Board(val size: SudokuSize, val cells: List<Cell>) {
+data class Board(
+    val size: SudokuSize,
+    val cells: List<Cell>,
+    val preserved: PreservedFields = PreservedFields.NONE,
+) {
     init {
         require(cells.size == size.cellCount) { "Expected ${size.cellCount} cells but got ${cells.size}" }
         val digits = 1..size.value

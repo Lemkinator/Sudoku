@@ -16,7 +16,16 @@
 
 package de.lemke.sudoku.domain.model
 
-enum class CellOrigin { PLAYER, GIVEN, HINT }
+enum class CellOrigin(val code: Int) {
+    PLAYER(code = 0),
+    GIVEN(code = 1),
+    HINT(code = 2),
+    ;
+
+    companion object {
+        fun fromCodeOrNull(code: Int): CellOrigin? = entries.firstOrNull { it.code == code }
+    }
+}
 
 data class Cell(
     val solution: Int,
