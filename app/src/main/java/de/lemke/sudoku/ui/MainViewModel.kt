@@ -81,7 +81,7 @@ class MainViewModel @Inject constructor(
         importedSudoku.compareAndSet(result, ImportedSudoku.Idle)
     }
 
-    /** The Play Games sync of all completed sudokus, offered once per app start; later calls return null. */
+    /** The Play Games sync of all completed sudokus, offered once per ViewModel; later calls return null. */
     suspend fun onScreenReady(): PlayGamesSync? {
         sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
         if (playGamesSyncOffered) return null
