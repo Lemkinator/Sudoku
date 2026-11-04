@@ -180,6 +180,7 @@ class SudokuFileCodecTest : ShouldSpec(
 
         should("read a daily game with an unreadable day as unreadable") {
             SudokuFileCodec.decode(valid(3 to 1L, 15 to Long.MAX_VALUE), utc).shouldBeNull()
+            SudokuFileCodec.decode(valid(3 to 1L, 15 to Long.MIN_VALUE), utc).shouldBeNull()
             SudokuFileCodec.decode(valid(3 to 1L, 15 to byteArrayOf(1)), utc).shouldBeNull()
         }
 

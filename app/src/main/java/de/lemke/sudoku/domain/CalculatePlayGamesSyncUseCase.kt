@@ -108,7 +108,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             }
         }
 
-    private fun List<GameInfo>.fastest(): Long = minOf { it.seconds } * MILLIS_PER_SECOND
+    private fun List<GameInfo>.fastest(): Long = fold(Long.MAX_VALUE) { fastest, win -> minOf(fastest, win.seconds * MILLIS_PER_SECOND) }
 
     private fun <K> List<GameInfo>.groupedBy(
         keys: Iterable<K>,
