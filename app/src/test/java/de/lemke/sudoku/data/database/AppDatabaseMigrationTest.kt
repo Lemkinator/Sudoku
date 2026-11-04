@@ -95,6 +95,16 @@ class AppDatabaseMigrationTest {
                 game("daily-1000", FOUR, -1, "${DAY}T06:30:00", "${DAY}T10:00:00", patternFields(SudokuSize.FOUR))
                 game("level-1", NINE, 1, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.NINE))
                 game("level-2", NINE, 2, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.NINE))
+                game(
+                    "level-3-won",
+                    NINE,
+                    3,
+                    "${DAY}T07:00:00",
+                    "${DAY}T08:00:00",
+                    patternFields(SudokuSize.NINE, filled = { true }),
+                )
+                game("four-level-1-won", FOUR, 1, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.FOUR, filled = { true }))
+                game("four-level-1-open", FOUR, 1, "${DAY}T07:00:00", "${DAY}T10:00:00", patternFields(SudokuSize.FOUR))
                 game("size-5", 5, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", List(25) { SeedField(it, it % 5 + 1) })
                 game("short-9", NINE, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.NINE).dropLast(1))
                 commit()
@@ -157,9 +167,9 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
-    fun `migrating 2 to 3 keeps 6 readable games and drops the old tables`() {
+    fun `migrating 2 to 3 keeps 8 readable games and drops the old tables`() {
         migrated(seedMix()).use { connection ->
-            connection.long("SELECT COUNT(*) FROM game") shouldBe 6
+            connection.long("SELECT COUNT(*) FROM game") shouldBe 8
             connection.long("SELECT COUNT(*) FROM sqlite_master WHERE name IN ('sudoku', 'field')") shouldBe 0
         }
     }
@@ -169,6 +179,38 @@ class AppDatabaseMigrationTest {
         migrated(seedMix()).use { connection ->
             connection.ids("SELECT id FROM game WHERE mode = ${GameMode.CODE_DAILY}") shouldBe listOf("daily-1000")
         }
+    }
+
+    @Test
+    fun `the completed game of a level wins over a later unfinished one`() {
+        migrated(seedMix()).use { connection ->
+            connection.ids("SELECT id FROM game WHERE size = 4 AND level = 1") shouldBe listOf("four-level-1-won")
+            connection.ids("SELECT id FROM game WHERE completed = 1 ORDER BY id") shouldBe listOf("four-level-1-won", "level-3-won")
+        }
+    }
+
+    @Test
+    fun `the completed daily of a day wins over a later unfinished one`() {
+        val connection = helper.createDatabase(2)
+        LegacyDatabaseSeed(connection).apply {
+            game("daily-open", FOUR, -1, "${DAY}T06:00:00", "${DAY}T11:00:00", patternFields(SudokuSize.FOUR))
+            game("daily-won", FOUR, -1, "${DAY}T06:30:00", "${DAY}T09:00:00", patternFields(SudokuSize.FOUR, filled = { true }))
+        }
+
+        migrated(connection).use { migrated ->
+            migrated.ids("SELECT id FROM game") shouldBe listOf("daily-won")
+        }
+    }
+
+    @Test
+    fun `of two unfinished games of a level the later one wins`() {
+        val connection = helper.createDatabase(2)
+        LegacyDatabaseSeed(connection).apply {
+            game("level-late", FOUR, 1, "${DAY}T06:00:00", "${DAY}T11:00:00", patternFields(SudokuSize.FOUR))
+            game("level-early", FOUR, 1, "${DAY}T06:30:00", "${DAY}T09:00:00", patternFields(SudokuSize.FOUR))
+        }
+
+        migrated(connection).use { migrated -> migrated.ids("SELECT id FROM game") shouldBe listOf("level-late") }
     }
 
     @Test
@@ -233,17 +275,15 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
-    fun `repair rules keep the game and fix the cells they can`() {
+    fun `hint rules keep the game and fix the cells they can`() {
         val fields =
             patternFields(SudokuSize.FOUR, given = { false })
                 .map {
                     when (it.index) {
-                        0 -> it.copy(given = true)
-                        1 -> it.copy(given = true, value = 3)
-                        2 -> it.copy(hint = true, value = it.solution)
-                        3 -> it.copy(hint = true)
-                        4 -> it.copy(hint = true, value = 2)
-                        5 -> it.copy(given = true, hint = true, value = it.solution)
+                        0 -> it.copy(hint = true, value = it.solution)
+                        1 -> it.copy(hint = true)
+                        2 -> it.copy(hint = true, value = 2)
+                        3 -> it.copy(given = true, hint = true, value = it.solution)
                         else -> it
                     }
                 }
@@ -251,13 +291,10 @@ class AppDatabaseMigrationTest {
         LegacyDatabaseSeed(connection).game("repair", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", fields)
 
         migrated(connection).use { migrated ->
-            val board = migrated.board("repair")
-            board.cells.take(6) shouldBe
+            migrated.board("repair").cells.take(4) shouldBe
                 listOf(
-                    Cell(1, 1, CellOrigin.GIVEN),
-                    Cell(2, 2, CellOrigin.GIVEN),
-                    Cell(3, 3, CellOrigin.HINT),
-                    Cell(4, null, CellOrigin.PLAYER),
+                    Cell(1, 1, CellOrigin.HINT),
+                    Cell(2, null, CellOrigin.PLAYER),
                     Cell(3, 2, CellOrigin.PLAYER),
                     Cell(4, 4, CellOrigin.GIVEN),
                 )
@@ -285,6 +322,10 @@ class AppDatabaseMigrationTest {
         broken("bad-created", created = "yesterday")
         broken("bad-updated", updated = "yesterday")
         broken("bad-mode", modeLevel = -2)
+        broken("given-other-value", fields = valid.at2 { it.copy(given = true, value = 4) })
+        broken("given-no-value", fields = valid.at2 { it.copy(given = true, value = null) })
+        broken("extreme-created", created = "+999999999-12-31T23:59")
+        broken("extreme-updated", updated = "+999999999-12-31T23:59")
     }
 
     @Test

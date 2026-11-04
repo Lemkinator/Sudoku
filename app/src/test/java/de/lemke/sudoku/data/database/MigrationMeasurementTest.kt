@@ -83,11 +83,13 @@ class MigrationMeasurementTest {
 
         migratedConnection.use {
             val kept = it.long("SELECT COUNT(*) FROM game")
+            val completed = it.long("SELECT COUNT(*) FROM game WHERE completed = 1")
             it.execSQL("VACUUM")
             it.close()
             val bytesAfter = dbFile.length()
             println("MIGRATION_MEASUREMENT kept=$kept bytesBefore=$bytesBefore bytesAfterVacuum=$bytesAfter millis=$millis")
             kept shouldBe 4_400L
+            completed shouldBe 4_400L
             bytesAfter shouldBeLessThan MAX_BYTES_AFTER_VACUUM
         }
     }

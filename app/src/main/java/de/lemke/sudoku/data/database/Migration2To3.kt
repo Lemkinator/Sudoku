@@ -29,9 +29,9 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.toSudokuInt
+import java.time.DateTimeException
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeParseException
 
 private const val SCHEMA_VERSION_BEFORE = 2
 private const val SCHEMA_VERSION_AFTER = 3
@@ -57,8 +57,9 @@ private const val SELECT_FIELDS =
     "SELECT sudokuId, gameSize, `index`, solution, value, given, hint, notes FROM field ORDER BY sudokuId, `index`"
 
 /**
- * Replaces the `sudoku` and `field` tables with the `game` table. A game that cannot be read is dropped. Of two games that
- * claim the same level or day, the most recently updated one stays.
+ * Replaces the `sudoku` and `field` tables with the `game` table. A game that cannot be read is dropped, and so is a game whose
+ * given cell differs from its solution. Of two games that claim the same level or day, the completed one stays, and of two
+ * completed or two unfinished ones the most recently updated one.
  */
 val MIGRATION_2_3 =
     object : Migration(SCHEMA_VERSION_BEFORE, SCHEMA_VERSION_AFTER) {
@@ -69,8 +70,8 @@ val MIGRATION_2_3 =
             db.execSQL("CREATE INDEX IF NOT EXISTS `index_game_mode_updatedAt` ON `game` (`mode`, `updatedAt`)")
             val zone = ZoneId.systemDefault()
             db
-                .readLegacyGames()
-                .sortedBy { it.info.updated }
+                .readLegacyGames(zone)
+                .sortedWith(compareBy<Sudoku>({ it.completed }, { it.info.updated }))
                 .forEach { db.execSQL(INSERT_GAME, it.toEntity(zone).bindArgs()) }
             db.execSQL("DROP TABLE `field`")
             db.execSQL("DROP TABLE `sudoku`")
@@ -115,13 +116,14 @@ private fun GameEntity.bindArgs(): Array<Any?> =
         )
     }
 
-private fun SupportSQLiteDatabase.readLegacyGames(): List<Sudoku> {
-    val infos = query(SELECT_SUDOKUS).use { cursor -> buildList { while (cursor.moveToNext()) cursor.legacyInfoOrNull()?.let(::add) } }
+private fun SupportSQLiteDatabase.readLegacyGames(zone: ZoneId): List<Sudoku> {
+    val infos =
+        query(SELECT_SUDOKUS).use { cursor -> buildList { while (cursor.moveToNext()) cursor.legacyInfoOrNull(zone)?.let(::add) } }
     val boards = readLegacyBoards(infos.associate { it.id.value to it.size })
     return infos.mapNotNull { info -> boards[info.id.value]?.let { Sudoku(info, it) } }
 }
 
-/** The readable boards by sudoku id. The fields stream by sudoku id, so only one game's rows are in memory at a time. */
+/** The readable boards by sudoku id. The fields stream by sudoku id, so the rows of one game at a time are held as fields. */
 private fun SupportSQLiteDatabase.readLegacyBoards(sizes: Map<String, SudokuSize>): Map<String, Board> =
     buildMap {
         val group = mutableListOf<LegacyField>()
@@ -141,11 +143,11 @@ private fun SupportSQLiteDatabase.readLegacyBoards(sizes: Map<String, SudokuSize
         flush()
     }
 
-private fun Cursor.legacyInfoOrNull(): GameInfo? {
+private fun Cursor.legacyInfoOrNull(zone: ZoneId): GameInfo? {
     val size = SudokuSize.fromValueOrNull(int("size"))
     val mode = legacyGameModeOrNull(int("modeLevel"))
-    val created = stampOrNull("created")
-    val updated = stampOrNull("updated")
+    val created = stampOrNull("created", zone)
+    val updated = stampOrNull("updated", zone)
     return if (size != null && mode != null && created != null && updated != null) {
         GameInfo(
             id = SudokuId(string("id")),
@@ -192,12 +194,13 @@ private fun legacyBoardOrNull(
 }
 
 /**
- * The cell of a stored field, or null if its solution or value is no digit of [size]. A given cell is the solution. A hint cell
- * that does not hold its solution becomes a player cell. A note that is no digit of [size] is dropped.
+ * The cell of a stored field, or null if its solution or value is no digit of [size] or a given cell does not hold its solution.
+ * A hint cell that does not hold its solution becomes a player cell. A note that is no digit of [size] is dropped.
  */
 private fun LegacyField.cellOrNull(size: SudokuSize): Cell? {
     val digits = 1..size.value
-    return if (solution == null || solution !in digits || (value != null && value !in digits)) {
+    val readable = solution in digits && (value == null || value in digits) && (!given || value == solution)
+    return if (solution == null || !readable) {
         null
     } else {
         val origin =
@@ -207,7 +210,7 @@ private fun LegacyField.cellOrNull(size: SudokuSize): Cell? {
                 else -> CellOrigin.PLAYER
             }
         val noteDigits = notes.mapNotNull { it.toSudokuInt() }.filter { it <= size.value }
-        Cell(solution, if (origin == CellOrigin.GIVEN) solution else value, origin, NoteMask.of(*noteDigits.toIntArray()))
+        Cell(solution, value, origin, NoteMask.of(*noteDigits.toIntArray()))
     }
 }
 
@@ -217,9 +220,15 @@ private fun Cursor.intOrNull(column: String): Int? = getColumnIndexOrThrow(colum
 
 private fun Cursor.string(column: String): String = getString(getColumnIndexOrThrow(column))
 
-private fun Cursor.stampOrNull(column: String): LocalDateTime? =
+/** The stamp, or null if it is no date time or [zone] places it outside the range of epoch milliseconds. */
+private fun Cursor.stampOrNull(
+    column: String,
+    zone: ZoneId,
+): LocalDateTime? =
     try {
-        LocalDateTime.parse(string(column))
-    } catch (_: DateTimeParseException) {
+        LocalDateTime.parse(string(column)).also { it.atZone(zone).toInstant().toEpochMilli() }
+    } catch (_: DateTimeException) {
+        null
+    } catch (_: ArithmeticException) {
         null
     }
