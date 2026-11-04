@@ -39,6 +39,7 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -104,6 +105,9 @@ class TabSudokuFragmentTest {
 
     @Inject
     lateinit var userSettings: UserSettings
+
+    @Inject
+    lateinit var database: AppDatabase
 
     @Before
     fun setup() {
@@ -303,6 +307,24 @@ class TabSudokuFragmentTest {
                 .shouldBeTrue()
         }
     }
+
+    @Test
+    fun `a failing query on refresh leaves the tab as it was and throws nothing`() =
+        failOnUncaughtException {
+            runBlocking { saveSudoku(formulaicSudoku()) }
+            launch { fragment ->
+                database.openHelper.writableDatabase.execSQL("DROP TABLE game")
+
+                fragment.onHiddenChanged(false)
+                idleMainLooper()
+
+                fragment
+                    .requireView()
+                    .findViewById<View>(R.id.continueGameButton)
+                    .isVisible
+                    .shouldBeTrue()
+            }
+        }
 
     @Test
     fun `continue button starts the continuable sudoku`() {

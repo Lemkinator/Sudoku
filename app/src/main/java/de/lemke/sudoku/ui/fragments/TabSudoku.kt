@@ -18,7 +18,9 @@ package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.database.sqlite.SQLiteException
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,6 +47,8 @@ import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.layout.DrawerLayout
 import kotlinx.coroutines.launch
+
+private const val TAG = "TabSudoku"
 
 @AndroidEntryPoint
 class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -152,27 +156,35 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private fun refresh() {
         if (view == null) return
         viewLifecycleOwner.lifecycleScope.launch {
-            val sudoku = viewModel.getContinuableSudoku()
-            if (sudoku != null) {
-                binding.continueGameButton.isVisible = true
-                binding.continueGameButton.text =
-                    getString(
-                        R.string.continue_game,
-                        sudoku.info.size.getLocalString(resources),
-                        sudoku.info.difficulty.getLocalString(resources),
-                    )
-                binding.continueGameButton.onSingleLaunchClick {
-                    binding.continueGameButton.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value),
-                    )
+            try {
+                showContinueGame()
+                viewModel.checkDailySudokuCompleted().let {
+                    binding.dailyAvailableButton.isVisible = !it
+                    binding.dailyButton.isVisible = it
                 }
-            } else {
-                binding.continueGameButton.isVisible = false
+            } catch (e: SQLiteException) {
+                Log.e(TAG, "Failed to refresh the sudoku tab", e)
             }
-            viewModel.checkDailySudokuCompleted().let {
-                binding.dailyAvailableButton.isVisible = !it
-                binding.dailyButton.isVisible = it
+        }
+    }
+
+    private suspend fun showContinueGame() {
+        val sudoku = viewModel.getContinuableSudoku()
+        if (sudoku != null) {
+            binding.continueGameButton.isVisible = true
+            binding.continueGameButton.text =
+                getString(
+                    R.string.continue_game,
+                    sudoku.info.size.getLocalString(resources),
+                    sudoku.info.difficulty.getLocalString(resources),
+                )
+            binding.continueGameButton.onSingleLaunchClick {
+                binding.continueGameButton.transformToActivity(
+                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value),
+                )
             }
+        } else {
+            binding.continueGameButton.isVisible = false
         }
     }
 }
