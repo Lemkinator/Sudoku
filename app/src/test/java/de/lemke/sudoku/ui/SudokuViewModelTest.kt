@@ -54,6 +54,9 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TestTimeSource
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -116,6 +119,7 @@ class SudokuViewModelTest : ShouldSpec(
             generateDispatcher: CoroutineDispatcher = Dispatchers.Main,
             shareFiles: SudokuShareFiles = FakeSudokuShareFiles(File("game.sudoku")),
             shareDispatcher: CoroutineDispatcher = Dispatchers.Main,
+            timeSource: TimeSource.WithComparableMarks = mainScheduler().timeSource,
         ): SudokuViewModel {
             val dispatcher = Dispatchers.Main
             val generateFields = GenerateFieldsUseCase(generateDispatcher, PatternSolvedBoardGenerator())
@@ -130,7 +134,7 @@ class SudokuViewModelTest : ShouldSpec(
                 CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
                 UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
                 clock,
-                StandardTestDispatcher().scheduler.timeSource,
+                timeSource,
             )
         }
 
@@ -138,9 +142,14 @@ class SudokuViewModelTest : ShouldSpec(
             sudoku: Sudoku,
             savedStateHandle: SavedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.info.id.value)),
             generateDispatcher: CoroutineDispatcher = Dispatchers.Main,
+            timeSource: TimeSource.WithComparableMarks = mainScheduler().timeSource,
         ): SudokuViewModel {
             repository.store(sudoku)
-            return viewModel(savedStateHandle, generateDispatcher).also { it.onGameStarted(SudokuGame.Ready(sudoku)) }
+            return viewModel(
+                savedStateHandle,
+                generateDispatcher,
+                timeSource = timeSource,
+            ).also { it.onGameStarted(SudokuGame.Ready(sudoku)) }
         }
 
         should("the sudoku of the passed id is ready to start") {
@@ -748,6 +757,32 @@ class SudokuViewModelTest : ShouldSpec(
 
             viewModel.onResumed()
             mainScheduler().advanceTimeBy(399)
+            mainScheduler().runCurrent()
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 2
+            mainScheduler().advanceTimeBy(1)
+            mainScheduler().runCurrent()
+
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 3
+        }
+
+        should("a resume after a stall longer than a second fires the owed ticks at once") {
+            val stalledClock = TestTimeSource()
+            val viewModel = playing(testSudoku(), timeSource = stalledClock)
+            viewModel.onResumed()
+            mainScheduler().runCurrent()
+            stalledClock += 2_500.milliseconds
+            viewModel.onPaused()
+
+            viewModel.onResumed()
+            mainScheduler().runCurrent()
+            viewModel
+                .playingGame()
+                .sudoku.info.seconds shouldBe 2
+            mainScheduler().advanceTimeBy(499)
             mainScheduler().runCurrent()
             viewModel
                 .playingGame()

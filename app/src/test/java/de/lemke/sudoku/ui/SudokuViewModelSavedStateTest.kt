@@ -22,6 +22,7 @@ import android.os.Parcel
 import androidx.lifecycle.SavedStateHandle
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
+import de.lemke.sudoku.LooperTimeSource
 import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
@@ -40,7 +41,6 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
 import java.io.File
 import java.time.Clock
-import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -70,7 +70,7 @@ class SudokuViewModelSavedStateTest {
             CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
             UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
             Clock.systemDefaultZone(),
-            TimeSource.Monotonic,
+            LooperTimeSource,
         ).also { idleMainLooper() }
     }
 
