@@ -20,12 +20,20 @@ import java.util.Collections
 
 private const val PERCENT_SCALE = 100
 
-class Board(
+class Board private constructor(
     val size: SudokuSize,
-    cells: List<Cell>,
-    val preserved: PreservedFields = PreservedFields.NONE,
+    owned: Owned,
+    val preserved: PreservedFields,
 ) {
-    val cells: List<Cell> = Collections.unmodifiableList(cells.toList())
+    private class Owned(val cells: List<Cell>)
+
+    val cells: List<Cell> = Collections.unmodifiableList(owned.cells)
+
+    constructor(
+        size: SudokuSize,
+        cells: List<Cell>,
+        preserved: PreservedFields = PreservedFields.NONE,
+    ) : this(size, Owned(cells.toList()), preserved)
 
     init {
         require(cells.size == size.cellCount) { "Expected ${size.cellCount} cells but got ${cells.size}" }
@@ -80,12 +88,16 @@ class Board(
     fun isBlockCompleted(block: Int): Boolean = blockIndices(block).all { cells[it].correct }
 
     fun initial(): Board =
-        Board(size, cells.map { if (it.origin == CellOrigin.GIVEN) it.copy(notes = NoteMask.EMPTY) else Cell(it.solution) }, preserved)
+        Board(
+            size,
+            Owned(cells.map { if (it.origin == CellOrigin.GIVEN) it.copy(notes = NoteMask.EMPTY) else Cell(it.solution) }),
+            preserved,
+        )
 
     fun with(
         index: Int,
         cell: Cell,
-    ): Board = Board(size, cells.toMutableList().also { it[index] = cell }, preserved)
+    ): Board = Board(size, Owned(cells.toMutableList().also { it[index] = cell }), preserved)
 
     private fun rowIndices(row: Int): List<Int> = List(size.value) { row * size.value + it }
 

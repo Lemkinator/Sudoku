@@ -75,7 +75,9 @@ fun CoroutineScope.animateFields(
 
     val wholeBoard = FieldRegion.BOARD in regions
     val duration = if (wholeBoard) SUDOKU_COMPLETED_ANIMATION_DURATION_MILLIS else FIELD_ANIMATION_DURATION_MILLIS
-    val stagger = (if (wholeBoard) WAVE_DELAY_MILLIS / blockSize else FIELD_ANIMATION_DELAY_MILLIS) / blockSize
+    val boardStagger = WAVE_DELAY_MILLIS / blockSize / blockSize
+    val regionStagger = FIELD_ANIMATION_DELAY_MILLIS / blockSize
+    val stagger = if (wholeBoard) boardStagger else regionStagger
 
     suspend fun pulse(fieldView: FieldView) = animateField(fieldView.fieldViewValue, duration, stagger)
 
@@ -83,7 +85,7 @@ fun CoroutineScope.animateFields(
         val backward = launch { reached { a, b -> a <= b }.reversed().forEach { pulse(it) } }
         reached { a, b -> a > b }.forEach { pulse(it) }
         backward.join()
-        if (regions.isNotEmpty()) delay(((FIELD_ANIMATION_PHASES * duration) - stagger).coerceAtLeast(0).milliseconds)
+        if (regions.isNotEmpty()) delay((FIELD_ANIMATION_PHASES * duration - stagger).coerceAtLeast(0).milliseconds)
     }
 }
 
