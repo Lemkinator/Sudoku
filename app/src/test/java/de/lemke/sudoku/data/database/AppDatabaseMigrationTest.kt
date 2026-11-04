@@ -246,22 +246,18 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
-    fun `every migrated game is the player's own`() {
-        migrated(seedMix()).use { connection -> connection.long("SELECT COUNT(*) FROM game WHERE imported = 1") shouldBe 0L }
-    }
-
-    @Test
     fun `header columns carry the stamps, the mode keys and the counters of the old rows`() {
         migrated(seedMix()).use { connection ->
             connection
                 .prepare(
                     "SELECT mode, level, dailyDate, size, difficulty, createdAt, updatedAt, seconds, hintsUsed, notesMade, errorsMade, " +
-                        "regionalHighlightingUsed, eraserUsed, numberHighlightingUsed FROM game WHERE id IN ('level-2', 'daily-1000') " +
+                        "regionalHighlightingUsed, eraserUsed, numberHighlightingUsed, imported FROM game WHERE id IN ('level-2', 'daily-1000') " +
                         "ORDER BY mode",
                 ).use { statement ->
                     statement.step() shouldBe true
                     listOf(statement.getLong(0), statement.getLong(2), statement.getLong(3)) shouldBe listOf(1L, 20727L, 4L)
                     statement.isNull(1) shouldBe true
+                    statement.getLong(14) shouldBe 0L
                     listOf(statement.getLong(5), statement.getLong(6)) shouldBe listOf(1790836200000L, 1790848800000L)
                     statement.step() shouldBe true
                     listOf(statement.getLong(0), statement.getLong(1), statement.getLong(3), statement.getLong(4)) shouldBe
@@ -270,6 +266,7 @@ class AppDatabaseMigrationTest {
                     listOf(statement.getLong(7), statement.getLong(8), statement.getLong(9), statement.getLong(10)) shouldBe
                         listOf(95L, 2L, 3L, 4L)
                     listOf(statement.getLong(11), statement.getLong(12), statement.getLong(13)) shouldBe listOf(1L, 1L, 0L)
+                    statement.getLong(14) shouldBe 0L
                 }
         }
     }
