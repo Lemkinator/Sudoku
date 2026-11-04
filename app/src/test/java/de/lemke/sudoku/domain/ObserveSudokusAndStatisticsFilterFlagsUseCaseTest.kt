@@ -53,11 +53,11 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
             userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuSize.FOUR.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
             useCase().test {
-                awaitItem() shouldBe listOf(normal4x4)
+                awaitItem() shouldBe listOf(normal4x4.summary())
 
                 userSettings.filterFlags = SudokuFilterFlags.TYPE_ALL or SudokuSize.NINE.filterFlag or SudokuFilterFlags.DIFFICULTY_ALL
 
-                awaitItem() shouldBe listOf(normal9x9)
+                awaitItem() shouldBe listOf(normal9x9.summary())
                 cancelAndIgnoreRemainingEvents()
             }
         }

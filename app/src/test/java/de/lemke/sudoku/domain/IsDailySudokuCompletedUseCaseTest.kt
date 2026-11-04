@@ -43,7 +43,7 @@ class IsDailySudokuCompletedUseCaseTest : ShouldSpec(
             sudokusRepository = FakeSudokusRepository()
             useCase =
                 IsDailySudokuCompletedUseCase(
-                    GetAllSudokusUseCase(sudokusRepository, dispatcher),
+                    sudokusRepository,
                     Clock.fixed(Instant.parse("2026-01-01T23:59:59Z"), ZoneOffset.UTC),
                     dispatcher,
                 )

@@ -39,8 +39,8 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
@@ -62,6 +62,7 @@ import io.kotest.matchers.shouldBe
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -98,7 +99,7 @@ class TabSudokuFragmentTest {
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Inject
-    lateinit var getAllSudokus: GetAllSudokusUseCase
+    lateinit var sudokusRepository: SudokusRepository
 
     @Inject
     lateinit var userSettings: UserSettings
@@ -177,7 +178,7 @@ class TabSudokuFragmentTest {
             scenario.recreate()
             pausableDefaultDispatcher.resume()
             idleMainLooper()
-            val generated = runBlocking { getAllSudokus() }.single()
+            val generated = runBlocking { sudokusRepository.observeAllSummaries().first() }.single()
             scenario.onActivity { activity ->
                 activity.supportFragmentManager.fragments.size shouldBe 3
                 val started = shadowOf(activity).nextStartedActivity
@@ -203,7 +204,7 @@ class TabSudokuFragmentTest {
                 viewModel.onNewGame(SudokuSize.FOUR, Difficulty.VERY_EASY)
             }
             idleMainLooper()
-            val generated = runBlocking { getAllSudokus() }.single()
+            val generated = runBlocking { sudokusRepository.observeAllSummaries().first() }.single()
             scenario.onActivity { activity ->
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe SudokuLevelActivity::class.java.name
                 shadowOf(activity).nextStartedActivity shouldBe null
@@ -415,7 +416,7 @@ class TabSudokuFragmentTest {
             doubleClick(fragment.requireView().findViewById(R.id.newGameButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
-            runBlocking { getAllSudokus() }.size shouldBe 1
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.size shouldBe 1
         }
 
     @Test
@@ -457,7 +458,7 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 0
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().info.size shouldBe SudokuSize.FOUR
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.single().info.size shouldBe SudokuSize.FOUR
         }
 
     @Test
@@ -465,6 +466,6 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 2
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().info.size shouldBe SudokuSize.SIXTEEN
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.single().info.size shouldBe SudokuSize.SIXTEEN
         }
 }

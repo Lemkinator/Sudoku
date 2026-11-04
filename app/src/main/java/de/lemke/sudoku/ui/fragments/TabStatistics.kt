@@ -105,13 +105,13 @@ class TabStatistics : Fragment() {
         statisticsList.add(getString(R.string.time) to null)
         statisticsList.add(
             getString(R.string.best_time) to
-                if (stats.bestTimeSudoku != null) {
+                if (stats.bestTime != null) {
                     getString(
                         R.string.best_time_value,
-                        secondsToTimeString(stats.bestTimeSudoku.info.seconds),
-                        stats.bestTimeSudoku.info.size
+                        secondsToTimeString(stats.bestTime.info.seconds),
+                        stats.bestTime.info.size
                             .getLocalString(resources),
-                        stats.bestTimeSudoku.info.difficulty
+                        stats.bestTime.info.difficulty
                             .getLocalString(resources),
                     )
                 } else {

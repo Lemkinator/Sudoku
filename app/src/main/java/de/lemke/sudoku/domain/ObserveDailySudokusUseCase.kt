@@ -42,7 +42,7 @@ class ObserveDailySudokusUseCase @Inject constructor(
             .dailyShowUncompletedFlow
             .flatMapLatest { includeUncompleted ->
                 sudokusRepository
-                    .observeDailySudokus()
+                    .observeDailySummaries()
                     .map { sudokus ->
                         sudokus.filter {
                             if (includeUncompleted) {

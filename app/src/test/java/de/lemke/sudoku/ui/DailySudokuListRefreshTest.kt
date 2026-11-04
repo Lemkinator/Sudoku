@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -201,10 +202,10 @@ class DailySudokuListRefreshTest {
         }
     }
 
-    private fun shownSudoku(viewModel: DailySudokuViewModel): Sudoku =
+    private fun shownSudoku(viewModel: DailySudokuViewModel): GameSummary =
 
         viewModel.state.value.sudokus
             .filterIsInstance<SudokuItem>()
             .single()
-            .sudoku
+            .summary
 }

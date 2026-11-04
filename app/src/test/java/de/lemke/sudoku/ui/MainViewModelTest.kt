@@ -28,7 +28,6 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
@@ -65,16 +64,14 @@ class MainViewModelTest {
 
     private val savedIds: List<String> get() = sudokusRepository.saves.map { it.info.id.value }
 
-    private fun newViewModel(): MainViewModel {
-        val getAllSudokus = GetAllSudokusUseCase(sudokusRepository, dispatcher)
-        return MainViewModel(
+    private fun newViewModel(): MainViewModel =
+        MainViewModel(
             userSettings,
             ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), clock, dispatcher),
             SendDailyNotificationUseCase(dailyNotifications, userSettings),
-            CalculatePlayGamesSyncUseCase(getAllSudokus, dispatcher),
+            CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher),
             savedStateHandle,
         )
-    }
 
     private fun addImportFile() =
         sudokuDocuments.addDocument(uri, SudokuFileCodec.encode(testSudoku(sudokuId = SudokuId("imported")), clock.zone))

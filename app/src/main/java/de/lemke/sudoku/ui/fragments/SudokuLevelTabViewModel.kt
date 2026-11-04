@@ -53,8 +53,11 @@ data class SudokuLevelTabUiState(
     val sudokuLevel: List<SudokuListItem> = emptyList(),
     val isLoading: Boolean = true,
     val isGeneratingNextLevel: Boolean = false,
-    val hasNextLevelToStart: Boolean = false,
-)
+    /** The level the list offers on top and that is not saved until the player starts it. */
+    val nextLevel: Sudoku? = null,
+) {
+    val hasNextLevelToStart: Boolean get() = nextLevel != null
+}
 
 /** The start of a level row. The tab opens a [Result] or shows its error, and then reports it handled. */
 sealed interface LevelStart {
@@ -128,15 +131,15 @@ class SudokuLevelTabViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
         observeSudokuLevel(size).transformLatest { sudokuLevel ->
-            if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.sudoku?.completed == true) {
+            if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.summary?.completed == true) {
                 runCatching { findOrGenerateNextLevelSudoku() }
                     .onSuccess { nextLevel ->
                         emit(
                             SudokuLevelTabUiState(
-                                sudokuLevel = listOf(SudokuItem(nextLevel, nextLevel.levelNumber.toString())) + sudokuLevel,
+                                sudokuLevel = listOf(SudokuItem(nextLevel.summary(), nextLevel.levelNumber.toString())) + sudokuLevel,
                                 isLoading = false,
                                 isGeneratingNextLevel = false,
-                                hasNextLevelToStart = true,
+                                nextLevel = nextLevel,
                             ),
                         )
                         if (nextLevel.info.id != revealedNextLevelId) {
@@ -154,7 +157,6 @@ class SudokuLevelTabViewModel @Inject constructor(
                         sudokuLevel = sudokuLevel,
                         isLoading = false,
                         isGeneratingNextLevel = false,
-                        hasNextLevelToStart = false,
                     ),
                 )
             }
@@ -169,15 +171,16 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     fun confirmSudokuStart(
         position: Int,
-        sudoku: Sudoku,
+        sudokuId: SudokuId,
     ) {
         if (levelStart.value == LevelStart.Running) return
-        if (position != 0 || !state.value.hasNextLevelToStart) {
-            levelStart.value = LevelStart.Open(sudoku.info.id)
+        val nextLevel = state.value.nextLevel
+        if (position != 0 || nextLevel == null) {
+            levelStart.value = LevelStart.Open(sudokuId)
             return
         }
         levelStart.value = LevelStart.Running
-        viewModelScope.launch { levelStart.value = saveNextLevel(sudoku) }
+        viewModelScope.launch { levelStart.value = saveNextLevel(nextLevel) }
     }
 
     fun onLevelStartHandled(result: LevelStart.Result) {

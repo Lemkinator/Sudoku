@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -228,11 +229,11 @@ class TabHistoryListRefreshTest {
         }
     }
 
-    private fun topSudoku(viewModel: TabHistoryViewModel): Sudoku =
+    private fun topSudoku(viewModel: TabHistoryViewModel): GameSummary =
         viewModel.sudokuHistory.value
             .filterIsInstance<SudokuItem>()
             .first()
-            .sudoku
+            .summary
 
     private fun historyTab(activity: MainActivity) =
         activity.supportFragmentManager.fragments

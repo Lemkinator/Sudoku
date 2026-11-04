@@ -41,7 +41,6 @@ import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
@@ -70,6 +69,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -137,9 +137,6 @@ class SudokuActivityCompletionTest {
 
     private val syncCalculations = AtomicInteger()
 
-    @Inject
-    lateinit var getAllSudokus: GetAllSudokusUseCase
-
     @Before
     fun setup() {
         hiltRule.inject()
@@ -147,7 +144,7 @@ class SudokuActivityCompletionTest {
             maxLevelReads.incrementAndGet()
             maxLevelRead.await()
         }
-        fakeSudokusRepository.beforeGetAllSudokus = {
+        fakeSudokusRepository.beforeGetCompletedSummaries = {
             syncCalculations.incrementAndGet()
             syncCalculated.await()
         }
@@ -223,7 +220,7 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             idleMainLooper()
             activity.sudoku.info.id shouldNotBe sudokuId
-            runBlocking { getAllSudokus() }.size shouldBe 2
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.size shouldBe 2
         }
     }
 

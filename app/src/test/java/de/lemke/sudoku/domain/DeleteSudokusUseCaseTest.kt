@@ -49,7 +49,7 @@ class DeleteSudokusUseCaseTest : ShouldSpec(
             val sudokus = listOf(testSudoku(), testSudoku(), testSudoku())
             sudokus.forEach { sudokusRepository.saveSudoku(it) }
 
-            useCase(sudokus)
+            useCase(sudokus.map { it.info.id })
 
             sudokusRepository.deletedIds shouldBe sudokus.map { it.info.id }
             sudokusRepository.storedIds.shouldBeEmpty()

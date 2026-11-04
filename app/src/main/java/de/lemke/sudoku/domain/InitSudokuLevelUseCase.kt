@@ -18,7 +18,6 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,11 +31,10 @@ class InitSudokuLevelUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(size: SudokuSize) =
         withContext(defaultDispatcher) {
-            val sudokuLevel = sudokusRepository.getSudokuLevel(size)
+            val levels = sudokusRepository.getLevelNumbers(size)
             val maxLevel = getMaxSudokuLevel(size)
-            if (sudokuLevel.size < maxLevel) {
-                val missingLevels = (1..maxLevel).filter { level -> sudokuLevel.none { it.info.mode == GameMode.Level(level) } }
-                missingLevels.forEach { sudokusRepository.saveSudoku(generateSudokuLevel(size, it)) }
+            for (level in 1..maxLevel) {
+                if (level !in levels) sudokusRepository.saveSudoku(generateSudokuLevel(size, level))
             }
         }
 }

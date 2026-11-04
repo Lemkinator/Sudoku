@@ -35,8 +35,8 @@ class FakeSudokusRepositoryContractTest : SudokusRepositoryContract() {
             val stored = testSudoku()
             repository.saveSudoku(stored)
 
-            repository.deleteSudoku(testSudoku())
-            repository.deleteSudoku(stored)
+            repository.deleteSudokus(listOf(testSudoku().info.id))
+            repository.deleteSudokus(listOf(stored.info.id))
 
             repository.deletedIds shouldBe listOf(stored.info.id)
         }

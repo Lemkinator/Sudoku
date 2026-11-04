@@ -17,7 +17,7 @@
 package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuStatistics
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -29,7 +29,7 @@ private const val PERCENT_SCALE = 100
 class CalculateStatisticsUseCase @Inject constructor(
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(sudokus: List<Sudoku>): SudokuStatistics =
+    suspend operator fun invoke(sudokus: List<GameSummary>): SudokuStatistics =
         withContext(defaultDispatcher) {
             val sortedAsc = sudokus.sortedBy { it.info.updated }
             val completed = sortedAsc.filter { it.completed }
@@ -39,7 +39,7 @@ class CalculateStatisticsUseCase @Inject constructor(
                 gamesStarted = n,
                 gamesCompleted = c,
                 winRate = winRate(n, c),
-                bestTimeSudoku = completed.minByOrNull { it.info.seconds },
+                bestTime = completed.minByOrNull { it.info.seconds },
                 averageTime = if (c == 0) -1 else average(completed, c) { it.info.seconds.toLong() },
                 winsWithoutErrors = completed.count { it.info.errorsMade == 0 },
                 mostErrors = sudokus.maxOfOrNull { it.info.errorsMade } ?: 0,
@@ -90,18 +90,18 @@ class CalculateStatisticsUseCase @Inject constructor(
     ): Int = if (n == 0) 0 else (c.toFloat() / n * PERCENT_SCALE).roundToInt()
 
     private fun average(
-        completed: List<Sudoku>,
+        completed: List<GameSummary>,
         c: Int,
-        selector: (Sudoku) -> Long,
+        selector: (GameSummary) -> Long,
     ): Int = if (c == 0) 0 else (completed.sumOf(selector).toFloat() / c).roundToInt()
 
     private fun usageRate(
-        sudokus: List<Sudoku>,
+        sudokus: List<GameSummary>,
         n: Int,
-        predicate: (Sudoku) -> Boolean,
+        predicate: (GameSummary) -> Boolean,
     ): Float = if (n == 0) 0f else sudokus.count(predicate).toFloat() / n
 
-    private fun currentGameStreak(sortedAsc: List<Sudoku>): Int {
+    private fun currentGameStreak(sortedAsc: List<GameSummary>): Int {
         var streak = 0
         for (sudoku in sortedAsc.reversed()) {
             if (sudoku.completed) streak++ else break
@@ -109,7 +109,7 @@ class CalculateStatisticsUseCase @Inject constructor(
         return streak
     }
 
-    private fun bestGameStreak(sortedAsc: List<Sudoku>): Int {
+    private fun bestGameStreak(sortedAsc: List<GameSummary>): Int {
         var best = 0
         var current = 0
         for (sudoku in sortedAsc) {

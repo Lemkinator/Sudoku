@@ -52,7 +52,7 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
             sudokusRepository.saves.shouldBeEmpty()
         }
 
-        should("generates and saves exactly the missing levels") {
+        should("generates and saves exactly the missing levels, counting a level whose board is unreadable as present") {
             sudokusRepository.store(testLevelSudoku(SudokuSize.FOUR, level = 1))
             sudokusRepository.store(testLevelSudoku(SudokuSize.FOUR, level = 3))
             sudokusRepository.storeUnreadable(testLevelSudoku(SudokuSize.FOUR, level = 4))
@@ -60,7 +60,7 @@ class InitSudokuLevelUseCaseTest : ShouldSpec(
             useCase(SudokuSize.FOUR)
 
             sudokusRepository.saves.map { it.info.size to it.info.mode } shouldBe
-                listOf(SudokuSize.FOUR to GameMode.Level(2), SudokuSize.FOUR to GameMode.Level(4))
+                listOf(SudokuSize.FOUR to GameMode.Level(2))
         }
     },
 )

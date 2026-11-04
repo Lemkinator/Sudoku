@@ -153,7 +153,7 @@ private fun calculatePlayGamesSyncOver(vararg sudokus: Sudoku): CalculatePlayGam
     val dispatcher = UnconfinedTestDispatcher()
     val sudokusRepository = FakeSudokusRepository()
     sudokus.forEach { sudokusRepository.store(it) }
-    return CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(sudokusRepository, dispatcher), dispatcher)
+    return CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher)
 }
 
 class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(

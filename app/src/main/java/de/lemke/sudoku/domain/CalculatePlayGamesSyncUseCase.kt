@@ -18,6 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
@@ -25,6 +26,7 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
@@ -36,12 +38,12 @@ private const val MILLIS_PER_SECOND = 1000L
 private const val SPEED_ACHIEVEMENT_SECONDS = 10
 
 class CalculatePlayGamesSyncUseCase @Inject constructor(
-    private val getAllSudokus: GetAllSudokusUseCase,
+    private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
     suspend operator fun invoke(sudoku: Sudoku? = null): PlayGamesSync =
         withContext(defaultDispatcher) {
-            val sudokus = getAllSudokus().filter { it.completed }
+            val sudokus = sudokusRepository.getCompletedSummaries()
             val scores = baseScores(sudokus).toMutableList()
             val unlocks = mutableListOf<Int>()
             val increments = mutableListOf<Pair<Int, Int>>()
@@ -54,7 +56,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
             PlayGamesSync(scores, unlocks, increments)
         }
 
-    private fun baseScores(sudokus: List<Sudoku>): List<Pair<Int, Long>> =
+    private fun baseScores(sudokus: List<GameSummary>): List<Pair<Int, Long>> =
         listOf(
             R.string.leaderboard_total_wins to sudokus.size.toLong(),
             R.string.leaderboard_daily_sudokus to sudokus.count { it.info.mode == GameMode.Daily }.toLong(),
@@ -76,7 +78,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
 
     private fun addSizeStats(
         sudoku: Sudoku,
-        sudokus: List<Sudoku>,
+        sudokus: List<GameSummary>,
         scores: MutableList<Pair<Int, Long>>,
         unlocks: MutableList<Int>,
         increments: MutableList<Pair<Int, Int>>,
@@ -90,7 +92,7 @@ class CalculatePlayGamesSyncUseCase @Inject constructor(
 
     private fun addDifficultyStats(
         sudoku: Sudoku,
-        sudokus: List<Sudoku>,
+        sudokus: List<GameSummary>,
         scores: MutableList<Pair<Int, Long>>,
         increments: MutableList<Pair<Int, Int>>,
     ) {

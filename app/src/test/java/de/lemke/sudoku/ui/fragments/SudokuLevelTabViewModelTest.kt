@@ -65,7 +65,7 @@ private data class ShownLevels(
 
 private fun SudokuLevelTabUiState.shown() =
     ShownLevels(
-        levels = sudokuLevel.map { item -> (item as SudokuItem).sudoku.info.id to item.label },
+        levels = sudokuLevel.map { item -> (item as SudokuItem).summary.info.id to item.label },
         isLoading = isLoading,
         isGeneratingNextLevel = isGeneratingNextLevel,
         hasNextLevelToStart = hasNextLevelToStart,
@@ -73,7 +73,7 @@ private fun SudokuLevelTabUiState.shown() =
 
 private fun Sudoku.withSeconds(seconds: Int): Sudoku = copy(info = info.copy(seconds = seconds))
 
-private val SudokuLevelTabUiState.topLevel: Sudoku get() = (sudokuLevel.first() as SudokuItem).sudoku
+private val SudokuLevelTabUiState.topLevel: Sudoku get() = checkNotNull(nextLevel)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SudokuLevelTabViewModelTest : ShouldSpec(
@@ -162,7 +162,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                             isGeneratingNextLevel = false,
                             hasNextLevelToStart = true,
                         )
-                    (shown.sudokuLevel[1] as SudokuItem).sudoku.info.seconds shouldBe 30
+                    (shown.sudokuLevel[1] as SudokuItem).summary.info.seconds shouldBe 30
                 }
                 viewModel.reveal.value shouldBe null
             }
@@ -491,7 +491,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             val level = testSudoku(mode = GameMode.Level(1))
             val viewModel = newViewModel()
 
-            viewModel.confirmSudokuStart(1, level)
+            viewModel.confirmSudokuStart(1, level.info.id)
 
             viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
             repository.saves shouldBe emptyList()
@@ -505,7 +505,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             viewModel.state.test {
                 expectMostRecentItem().hasNextLevelToStart shouldBe false
 
-                viewModel.confirmSudokuStart(0, level)
+                viewModel.confirmSudokuStart(0, level.info.id)
             }
 
             viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
@@ -522,7 +522,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 shown.hasNextLevelToStart shouldBe true
                 nextLevel = shown.topLevel
 
-                viewModel.confirmSudokuStart(0, nextLevel)
+                viewModel.confirmSudokuStart(0, nextLevel.info.id)
                 cancelAndIgnoreRemainingEvents()
             }
 
@@ -543,7 +543,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 repository.store(nextLevel)
                 repository.observed = { it }
 
-                viewModel.confirmSudokuStart(0, nextLevel)
+                viewModel.confirmSudokuStart(0, nextLevel.info.id)
 
                 expectMostRecentItem().hasNextLevelToStart shouldBe false
             }
@@ -581,7 +581,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                     viewModel.loadFailed.value shouldBe true
                     viewModel.onLoadFailureHandled()
 
-                    viewModel.confirmSudokuStart(0, nextLevel)
+                    viewModel.confirmSudokuStart(0, nextLevel.info.id)
                     advanceUntilIdle()
 
                     expectMostRecentItem().shown() shouldBe
@@ -623,7 +623,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                     viewModel.loadFailed.value shouldBe true
                     viewModel.onLoadFailureHandled()
 
-                    viewModel.confirmSudokuStart(0, nextLevel)
+                    viewModel.confirmSudokuStart(0, nextLevel.info.id)
                     advanceUntilIdle()
 
                     viewModel.loadFailed.value shouldBe true
@@ -646,7 +646,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 shown.hasNextLevelToStart shouldBe true
                 nextLevel = shown.topLevel
 
-                viewModel.confirmSudokuStart(0, nextLevel)
+                viewModel.confirmSudokuStart(0, nextLevel.info.id)
             }
 
             viewModel.levelStart.value shouldBe LevelStart.Failed
@@ -666,7 +666,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                 shown.hasNextLevelToStart shouldBe true
                 nextLevel = shown.topLevel
 
-                viewModel.confirmSudokuStart(0, nextLevel)
+                viewModel.confirmSudokuStart(0, nextLevel.info.id)
             }
 
             viewModel.levelStart.value shouldBe LevelStart.Running
@@ -700,11 +700,11 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                     shown.hasNextLevelToStart shouldBe true
                     nextLevel = shown.topLevel
 
-                    viewModel.confirmSudokuStart(0, nextLevel)
+                    viewModel.confirmSudokuStart(0, nextLevel.info.id)
                     runCurrent()
                     viewModel.levelStart.value shouldBe LevelStart.Running
-                    viewModel.confirmSudokuStart(0, nextLevel)
-                    viewModel.confirmSudokuStart(1, testSudoku(mode = GameMode.Level(1), completed = true))
+                    viewModel.confirmSudokuStart(0, nextLevel.info.id)
+                    viewModel.confirmSudokuStart(1, testSudoku(mode = GameMode.Level(1), completed = true).info.id)
                     viewModel.levelStart.value shouldBe LevelStart.Running
                     saveGate.complete(Unit)
                     runCurrent()
@@ -719,12 +719,12 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
         should("handling the current result returns to idle and a repeated start opens the level again") {
             val level = testSudoku(mode = GameMode.Level(1))
             val viewModel = newViewModel()
-            viewModel.confirmSudokuStart(1, level)
+            viewModel.confirmSudokuStart(1, level.info.id)
 
             viewModel.onLevelStartHandled(LevelStart.Open(level.info.id))
 
             viewModel.levelStart.value shouldBe LevelStart.Idle
-            viewModel.confirmSudokuStart(1, level)
+            viewModel.confirmSudokuStart(1, level.info.id)
             viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
         }
 
@@ -732,7 +732,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             val level = testSudoku(mode = GameMode.Level(1))
             val otherLevel = testSudoku(mode = GameMode.Level(1))
             val viewModel = newViewModel()
-            viewModel.confirmSudokuStart(1, level)
+            viewModel.confirmSudokuStart(1, level.info.id)
 
             viewModel.onLevelStartHandled(LevelStart.Open(otherLevel.info.id))
             viewModel.onLevelStartHandled(LevelStart.Failed)

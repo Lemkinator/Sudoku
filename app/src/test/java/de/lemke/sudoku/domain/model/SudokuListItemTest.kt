@@ -34,10 +34,10 @@ class SudokuListItemTest : ShouldSpec(
             errorsMade: Int = 0,
             seconds: Int = 0,
             hintsUsed: Int = 0,
-        ): Sudoku =
-            testSudoku(sudokuId = id, difficulty = Difficulty.VERY_EASY, created = created).let {
-                it.copy(info = it.info.copy(errorsMade = errorsMade, seconds = seconds, hintsUsed = hintsUsed))
-            }
+        ): GameSummary =
+            testSudoku(sudokuId = id, difficulty = Difficulty.VERY_EASY, created = created)
+                .let { it.copy(info = it.info.copy(errorsMade = errorsMade, seconds = seconds, hintsUsed = hintsUsed)) }
+                .summary()
 
         should("equal an item over another instance with the same content, with the same hash code") {
             val item = SudokuItem(sudoku(errorsMade = 2, seconds = 75, hintsUsed = 1), "15.01.26")
@@ -55,11 +55,10 @@ class SudokuListItemTest : ShouldSpec(
             item shouldNotBeEqual SudokuItem(sudoku(hintsUsed = 1), "15.01.26")
         }
 
-        should("not equal an item whose sudoku has the same id but another cell value") {
+        should("not equal an item whose game has the same id but another progress") {
             val base = sudoku()
-            val moved = base.copy(board = base.board.with(1, base.board[1].copy(value = 1)))
 
-            SudokuItem(base, "15.01.26") shouldNotBeEqual SudokuItem(moved, "15.01.26")
+            SudokuItem(base, "15.01.26") shouldNotBeEqual SudokuItem(base.copy(progress = 50), "15.01.26")
         }
 
         should("not equal an item over the same sudoku with another label") {

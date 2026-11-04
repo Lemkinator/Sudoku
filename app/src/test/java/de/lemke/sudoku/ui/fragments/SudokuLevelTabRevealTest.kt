@@ -301,14 +301,14 @@ class SudokuLevelTabRevealTest {
         levelTab(size).binding.sudokuLevelsRecycler
 
     private fun SudokuLevelActivity.committedLevelId(position: Int): SudokuId =
-        (levelTab(SudokuSize.FOUR).sudokuListAdapter.currentList[position] as SudokuItem).sudoku.info.id
+        (levelTab(SudokuSize.FOUR).sudokuListAdapter.currentList[position] as SudokuItem).summary.info.id
 
     private fun SudokuLevelActivity.topLevelItem(): SudokuItem =
         levelTab(SudokuSize.FOUR)
             .viewModel.state.value.sudokuLevel
             .first() as SudokuItem
 
-    private fun SudokuLevelActivity.topLevelId(): SudokuId = topLevelItem().sudoku.info.id
+    private fun SudokuLevelActivity.topLevelId(): SudokuId = topLevelItem().summary.info.id
 
     private fun SudokuLevelActivity.topLevelLabel(): String = topLevelItem().label
 

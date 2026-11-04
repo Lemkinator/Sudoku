@@ -21,7 +21,6 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetRecentlyUpdatedNormalSudokuUseCase
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -75,7 +74,7 @@ class TabSudokuViewModelTest : ShouldSpec(
                     GenerateSudokuUseCase(GenerateFieldsUseCase(dispatcher, solvedBoardGenerator), dispatcher),
                     SaveSudokuUseCase(repository, dispatcher),
                     GetRecentlyUpdatedNormalSudokuUseCase(repository, dispatcher),
-                    IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(repository, dispatcher), clock, dispatcher),
+                    IsDailySudokuCompletedUseCase(repository, clock, dispatcher),
                 )
         }
 
@@ -183,7 +182,7 @@ class TabSudokuViewModelTest : ShouldSpec(
             repository.store(sudoku)
 
             sudoku.info.errorLimitReached(userSettings.errorLimit).shouldBeFalse()
-            viewModel.getContinuableSudoku() shouldBe sudoku
+            viewModel.getContinuableSudoku() shouldBe sudoku.summary()
         }
 
         should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {

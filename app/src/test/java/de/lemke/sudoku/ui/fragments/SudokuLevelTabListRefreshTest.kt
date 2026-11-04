@@ -41,6 +41,7 @@ import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -194,7 +195,7 @@ class SudokuLevelTabListRefreshTest {
         nextLevel.info.mode shouldBe GameMode.Level(2)
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
-        viewModel.confirmSudokuStart(0, nextLevel)
+        viewModel.confirmSudokuStart(0, nextLevel.info.id)
         idleMainLooper()
 
         viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
@@ -215,7 +216,7 @@ class SudokuLevelTabListRefreshTest {
             idleMainLooper()
             val nextLevel = topSudoku(viewModel)
 
-            viewModel.confirmSudokuStart(0, nextLevel)
+            viewModel.confirmSudokuStart(0, nextLevel.info.id)
             idleMainLooper()
 
             viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
@@ -299,11 +300,11 @@ class SudokuLevelTabListRefreshTest {
             SavedStateHandle(mapOf(SudokuLevelTab.KEY_SIZE to size.value)),
         )
 
-    private fun topSudoku(viewModel: SudokuLevelTabViewModel): Sudoku =
+    private fun topSudoku(viewModel: SudokuLevelTabViewModel): GameSummary =
         viewModel.state.value.sudokuLevel
             .filterIsInstance<SudokuItem>()
             .first()
-            .sudoku
+            .summary
 
     private fun levelTab(activity: SudokuLevelActivity) =
         activity.supportFragmentManager.fragments

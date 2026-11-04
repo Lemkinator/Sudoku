@@ -28,7 +28,6 @@ import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -65,7 +64,7 @@ class SudokuViewModelRig {
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), clock, dispatcher),
-            CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+            CalculatePlayGamesSyncUseCase(repository, dispatcher),
             userSettings,
             clock,
             LooperTimeSource,

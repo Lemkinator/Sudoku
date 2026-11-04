@@ -20,6 +20,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RewriteQueriesToDropUnusedColumns
 import de.lemke.sudoku.domain.model.GameMode
 import kotlinx.coroutines.flow.Flow
 
@@ -38,26 +39,44 @@ interface GameDao {
     @Query("SELECT * FROM game ORDER BY updatedAt DESC")
     suspend fun getAll(): List<GameEntity>
 
-    @Query("SELECT * FROM game ORDER BY updatedAt DESC")
-    fun observeAll(): Flow<List<GameEntity>>
-
-    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_NORMAL} ORDER BY updatedAt DESC")
-    fun observeNormal(): Flow<List<GameEntity>>
-
-    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_NORMAL} ORDER BY updatedAt DESC LIMIT 1")
-    suspend fun getRecentlyUpdatedNormal(): GameEntity?
-
-    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_DAILY} ORDER BY createdAt DESC")
-    fun observeDaily(): Flow<List<GameEntity>>
-
     @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_DAILY} ORDER BY createdAt DESC")
     suspend fun getDaily(): List<GameEntity>
 
     @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_LEVEL} AND size = :size ORDER BY level DESC")
-    fun observeLevels(size: Int): Flow<List<GameEntity>>
-
-    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_LEVEL} AND size = :size ORDER BY level DESC")
     suspend fun getLevels(size: Int): List<GameEntity>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game ORDER BY updatedAt DESC")
+    fun observeAllHeaders(): Flow<List<GameHeader>>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_NORMAL} ORDER BY updatedAt DESC")
+    fun observeNormalHeaders(): Flow<List<GameHeader>>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_DAILY} ORDER BY createdAt DESC")
+    fun observeDailyHeaders(): Flow<List<GameHeader>>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_LEVEL} AND size = :size ORDER BY level DESC")
+    fun observeLevelHeaders(size: Int): Flow<List<GameHeader>>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game WHERE completed = 1")
+    suspend fun getCompletedHeaders(): List<GameHeader>
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game WHERE mode = ${GameMode.CODE_NORMAL} ORDER BY updatedAt DESC LIMIT 1")
+    suspend fun getRecentlyUpdatedNormalHeader(): GameHeader?
+
+    @Query("SELECT EXISTS(SELECT 1 FROM game WHERE dailyDate = :epochDay)")
+    suspend fun hasDaily(epochDay: Long): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM game WHERE dailyDate = :epochDay AND completed = 1)")
+    suspend fun isDailyCompleted(epochDay: Long): Boolean
+
+    @Query("SELECT level FROM game WHERE size = :size AND level IS NOT NULL")
+    suspend fun getLevelNumbers(size: Int): List<Int>
 
     @Query("SELECT MAX(level) FROM game WHERE size = :size")
     suspend fun maxLevel(size: Int): Int?

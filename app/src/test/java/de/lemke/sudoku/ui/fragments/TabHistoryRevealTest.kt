@@ -202,7 +202,7 @@ class TabHistoryRevealTest {
             val deleted = newSudoku(seconds = 75, updated = NEXT_DAY)
             save(deleted)
             awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS + 2 }
-            runBlocking { deleteSudokus(listOf(deleted)) }
+            runBlocking { deleteSudokus(listOf(deleted.info.id)) }
             awaitMainLooperUntil { scenario.read { it.historySize() } == SEEDED_ROWS }
             scenario.moveToState(Lifecycle.State.RESUMED)
             awaitMainLooperUntil { scenario.read { it.adapterHoldsViewModelHistory() } }
@@ -271,7 +271,7 @@ class TabHistoryRevealTest {
             .sudokuHistory.value
             .filterIsInstance<SudokuItem>()
             .firstOrNull()
-            ?.sudoku
+            ?.summary
             ?.info
             ?.id
 

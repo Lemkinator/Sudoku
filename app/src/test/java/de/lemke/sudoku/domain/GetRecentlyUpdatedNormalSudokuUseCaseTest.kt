@@ -44,7 +44,7 @@ class GetRecentlyUpdatedNormalSudokuUseCaseTest : ShouldSpec(
             sudokusRepository.saveSudoku(testSudoku(created = LocalDateTime.of(2026, 1, 1, 10, 0)))
             sudokusRepository.saveSudoku(sudoku)
 
-            useCase() shouldBe sudoku
+            useCase() shouldBe sudoku.summary()
         }
     },
 )

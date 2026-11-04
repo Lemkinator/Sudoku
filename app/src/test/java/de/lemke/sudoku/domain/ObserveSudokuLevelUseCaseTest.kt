@@ -37,7 +37,8 @@ class ObserveSudokuLevelUseCaseTest : ShouldSpec(
             sudokusRepository.saveSudoku(sudoku)
 
             useCase(SudokuSize.NINE).test {
-                awaitItem().map { item -> (item as SudokuListItem.SudokuItem).sudoku to item.label } shouldBe listOf(sudoku to "5")
+                awaitItem().map { item -> (item as SudokuListItem.SudokuItem).summary to item.label } shouldBe
+                    listOf(sudoku.summary() to "5")
                 cancelAndIgnoreRemainingEvents()
             }
         }

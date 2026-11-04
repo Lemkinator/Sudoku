@@ -45,6 +45,7 @@ import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -147,7 +148,7 @@ class SudokuLevelTabTest {
     private fun clickItem(
         fragment: SudokuLevelTab,
         position: Int,
-        sudoku: Sudoku,
+        sudoku: GameSummary,
     ) {
         val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuLevelsRecycler, SudokuItem.VIEW_TYPE)
         fragment.singleLaunch {
@@ -187,7 +188,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 0, nextLevel)
 
@@ -205,7 +206,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             nextLevel.info.mode shouldBe GameMode.Level(2)
             fragment.binding.sudokuLevelsRecycler.top shouldBe 0
             insertGate = CompletableDeferred()
@@ -234,7 +235,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             insertGate = CompletableDeferred()
             insertCalls = 0
 
@@ -259,7 +260,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             insertCalls = 0
 
             clickItem(fragment, 0, nextLevel)
@@ -280,7 +281,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             insertFailure = SQLiteFullException("database or disk is full")
 
             clickItem(fragment, 0, nextLevel)
@@ -352,7 +353,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 0, level)
             clickItem(fragment, 0, level)
@@ -376,7 +377,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             clickItem(fragment, 0, firstLevel)
             clickItem(fragment, 0, firstLevel)
             generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
@@ -403,7 +404,7 @@ class SudokuLevelTabTest {
                         .filterIsInstance<SudokuLevelTab>()
                         .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
                 activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
-                fragment.viewModel.confirmSudokuStart(0, level)
+                fragment.viewModel.confirmSudokuStart(0, level.info.id)
             }
             idleMainLooper()
             scenario.onActivity { activity ->
@@ -434,7 +435,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 1, level)
 
@@ -455,7 +456,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 0, level)
 

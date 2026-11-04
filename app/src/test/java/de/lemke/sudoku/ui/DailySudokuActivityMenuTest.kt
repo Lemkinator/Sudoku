@@ -168,7 +168,7 @@ class DailySudokuActivityMenuTest {
             val sudoku = dailySudoku()
             runBlocking { saveSudoku(sudoku) }
             val holder = activity.sudokuListAdapter.onCreateViewHolder(activity.binding.dailySudokuRecycler, SudokuItem.VIEW_TYPE)
-            val item = SudokuItem(sudoku, label = "label")
+            val item = SudokuItem(sudoku.summary(), label = "label")
 
             activity.sudokuListAdapter.onClickItem.shouldNotBeNull()
             activity.sudokuListAdapter.onClickItem?.invoke(0, item, holder)

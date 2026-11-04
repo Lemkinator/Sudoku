@@ -32,8 +32,8 @@ class ObserveSudokuLevelUseCase @Inject constructor(
 ) {
     operator fun invoke(size: SudokuSize) =
         sudokusRepository
-            .observeSudokuLevel(size)
+            .observeLevelSummaries(size)
             .map { sudokus ->
-                sudokus.map { sudoku -> SudokuListItem.SudokuItem(sudoku, (sudoku.info.mode as GameMode.Level).number.toString()) }
+                sudokus.map { summary -> SudokuListItem.SudokuItem(summary, (summary.info.mode as GameMode.Level).number.toString()) }
             }.flowOn(defaultDispatcher)
 }

@@ -20,9 +20,9 @@ sealed class SudokuListItem {
     abstract val label: String
     abstract val stableId: Long
 
-    data class SudokuItem(val sudoku: Sudoku, override val label: String) : SudokuListItem() {
+    data class SudokuItem(val summary: GameSummary, override val label: String) : SudokuListItem() {
         override val stableId: Long get() =
-            sudoku.info.id
+            summary.info.id
                 .hashCode()
                 .toLong()
 

@@ -107,7 +107,8 @@ CLAUDE.md convention).
 **Room:** One entity, `GameEntity` (table `game`): a `GameHeader` of summary columns plus the `board` blob that `BoardCodec` writes
 (protobuf wire format, unknown fields kept in `Board.preserved`). Unique indices on (size, level) and on the day make a save replace the
 game it collides with. `MIGRATION_2_3` converts the per-cell tables and drops games it cannot read. Schema exported to `app/schemas/`.
-Mappers in `data/database/GameEntityMapper.kt`. Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the
+Mappers in `data/database/GameEntityMapper.kt`. Lists, statistics, Play Games sync and the daily alarm read `GameSummary` values
+(`GameInfo` plus `completed` and `progress`) from the header columns and never load a board; only `getSudokuById` does. Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the
 DAO code (`di/SudokusRepositoryModule.kt`).
 
 **Boundaries:** framework and Play Games calls sit behind interfaces with a `Default*` implementation bound in `di/`:

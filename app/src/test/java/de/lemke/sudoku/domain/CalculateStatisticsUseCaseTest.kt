@@ -19,7 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.SudokuSize.FOUR
 import de.lemke.sudoku.domain.model.SudokuSize.NINE
@@ -41,18 +41,19 @@ private fun statsSudoku(
     notesMade: Int = 0,
     eraserUsed: Boolean = false,
     updated: LocalDateTime = LocalDateTime.now(),
-): Sudoku =
+): GameSummary =
     testSudoku(size = size, difficulty = difficulty, updated = updated, completed = completed).let {
-        it.copy(
-            info =
-                it.info.copy(
-                    seconds = seconds,
-                    errorsMade = errorsMade,
-                    hintsUsed = hintsUsed,
-                    notesMade = notesMade,
-                    eraserUsed = eraserUsed,
-                ),
-        )
+        it
+            .copy(
+                info =
+                    it.info.copy(
+                        seconds = seconds,
+                        errorsMade = errorsMade,
+                        hintsUsed = hintsUsed,
+                        notesMade = notesMade,
+                        eraserUsed = eraserUsed,
+                    ),
+            ).summary()
     }
 
 @OptIn(ExperimentalCoroutinesApi::class)

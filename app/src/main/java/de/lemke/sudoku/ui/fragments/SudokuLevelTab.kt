@@ -125,7 +125,7 @@ class SudokuLevelTab : Fragment() {
         onClickItem = { position, sudokuListItem, viewHolder ->
             if (sudokuListItem is SudokuItem && viewModel.levelStart.value != LevelStart.Running) {
                 levelStartView = viewHolder.itemView
-                viewModel.confirmSudokuStart(position, sudokuListItem.sudoku)
+                viewModel.confirmSudokuStart(position, sudokuListItem.summary.info.id)
             }
         }
     }

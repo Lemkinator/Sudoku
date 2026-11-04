@@ -42,6 +42,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -57,7 +58,7 @@ private data class ShownDailies(
 
 private fun DailySudokuUiState.shown() =
     ShownDailies(
-        sudokus = sudokus.map { item -> if (item is SudokuItem) item.sudoku.info.id.value else "separator" },
+        sudokus = sudokus.map { item -> if (item is SudokuItem) item.summary.info.id.value else "separator" },
         isLoading = isLoading,
     )
 
@@ -112,7 +113,15 @@ class DailySudokuViewModelTest : ShouldSpec(
                 advanceTimeBy(5_001)
                 runCurrent()
                 repository.activeObservers shouldBe 0
-                repository.deleteSudoku(repository.getDailySudokus().single())
+                repository.deleteSudokus(
+                    listOf(
+                        repository
+                            .observeDailySummaries()
+                            .first()
+                            .single()
+                            .info.id,
+                    ),
+                )
                 viewModel.state.test {
                     runCurrent()
                     repository.activeObservers shouldBe 1

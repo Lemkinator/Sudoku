@@ -29,7 +29,6 @@ import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -111,7 +110,7 @@ class SudokuViewModelTest : ShouldSpec(
             maxLevelReads = 0
             syncCalculations = 0
             repository.beforeGetMaxSudokuLevel = { maxLevelReads++ }
-            repository.beforeGetAllSudokus = { syncCalculations++ }
+            repository.beforeGetCompletedSummaries = { syncCalculations++ }
         }
 
         fun viewModel(
@@ -131,7 +130,7 @@ class SudokuViewModelTest : ShouldSpec(
                 GetMaxSudokuLevelUseCase(repository, dispatcher),
                 QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
                 ShareSudokuUseCase(shareFiles, clock, shareDispatcher),
-                CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
+                CalculatePlayGamesSyncUseCase(repository, dispatcher),
                 UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
                 clock,
                 timeSource,
@@ -257,7 +256,7 @@ class SudokuViewModelTest : ShouldSpec(
             val completed = testSudoku(completed = true)
             val viewModel = playing(completed)
             val sync = CompletableDeferred<Unit>()
-            repository.beforeGetAllSudokus = { sync.await() }
+            repository.beforeGetCompletedSummaries = { sync.await() }
             viewModel.onCompleted()
             viewModel.onCompletionDismissed(SudokuCompletion.Summary(completed, FollowUp.NEW_GAME))
 
@@ -677,7 +676,7 @@ class SudokuViewModelTest : ShouldSpec(
             val calls = mutableListOf<String>()
             repository.beforeSave = { calls += "save" }
             repository.beforeGetMaxSudokuLevel = { calls += "max level" }
-            repository.beforeGetAllSudokus = { calls += "sync" }
+            repository.beforeGetCompletedSummaries = { calls += "sync" }
 
             viewModel.onCompleted()
 
@@ -976,7 +975,7 @@ class SudokuViewModelTest : ShouldSpec(
             val completed = testSudoku(completed = true)
             val viewModel = playing(completed)
             val sync = CompletableDeferred<Unit>()
-            repository.beforeGetAllSudokus = { sync.await() }
+            repository.beforeGetCompletedSummaries = { sync.await() }
 
             viewModel.onCompleted()
 
@@ -1013,7 +1012,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onCompleted keeps the summary and syncs nothing when the Play Games sync calculation fails") {
             val completed = testSudoku(completed = true)
             val viewModel = playing(completed)
-            repository.beforeGetAllSudokus = { throw IllegalStateException("query failed") }
+            repository.beforeGetCompletedSummaries = { throw IllegalStateException("query failed") }
 
             viewModel.onCompleted()
 
@@ -1039,7 +1038,7 @@ class SudokuViewModelTest : ShouldSpec(
         should("onCompleted falls back to an empty sync on a cancellation of the calculation in an active wrap-up") {
             val completed = testSudoku(completed = true)
             val viewModel = playing(completed)
-            repository.beforeGetAllSudokus = { throw CancellationException() }
+            repository.beforeGetCompletedSummaries = { throw CancellationException() }
 
             viewModel.onCompleted()
 
@@ -1183,7 +1182,7 @@ class SudokuViewModelTest : ShouldSpec(
             val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
             playing(completed, savedStateHandle).onCompleted()
             val restoredState = savedStateHandle.restoredAfterProcessDeath()
-            repository.deleteSudoku(completed)
+            repository.deleteSudokus(listOf(completed.info.id))
 
             val restored = viewModel(restoredState)
 

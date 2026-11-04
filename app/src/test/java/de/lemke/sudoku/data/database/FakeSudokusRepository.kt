@@ -17,9 +17,11 @@
 package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
@@ -63,53 +65,69 @@ class FakeSudokusRepository : SudokusRepository {
     var activeObservers = 0
         private set
 
-    var observed: (Flow<List<Sudoku>>) -> Flow<List<Sudoku>> = { it }
+    var observed: (Flow<List<GameSummary>>) -> Flow<List<GameSummary>> = { it }
     var beforeSave: suspend (Sudoku) -> Unit = {}
     var beforeDelete: suspend (SudokuId) -> Unit = {}
     var beforeGetMaxSudokuLevel: suspend () -> Unit = {}
-    var beforeGetAllSudokus: suspend () -> Unit = {}
+    var beforeGetCompletedSummaries: suspend () -> Unit = {}
     var saveFailure: Throwable? = null
 
     /** Stores [sudokus] without recording a save. */
     fun store(vararg sudokus: Sudoku) = sudokus.forEach { put(Stored(it, readable = true)) }
 
-    /** Stores [sudoku] as a game whose board cannot be read, so every read of it returns nothing. */
+    /** Stores [sudoku] as a game whose board cannot be read: its summary is listed, but reading the game returns nothing. */
     fun storeUnreadable(sudoku: Sudoku) = put(Stored(sudoku, readable = false))
 
-    override fun observeAllSudokus(): Flow<List<Sudoku>> = observe { it.byUpdatedDescending() }
+    override fun observeAllSummaries(): Flow<List<GameSummary>> = observe { it.byUpdatedDescending() }
 
-    override fun observeAllNormalSudokus(): Flow<List<Sudoku>> = observe { it.normal().byUpdatedDescending() }
+    override fun observeNormalSummaries(): Flow<List<GameSummary>> = observe { it.normal().byUpdatedDescending() }
 
-    override fun observeSudokuLevel(size: SudokuSize): Flow<List<Sudoku>> = observe { it.levels(size) }
+    override fun observeDailySummaries(): Flow<List<GameSummary>> = observe { it.dailies() }
 
-    override fun observeDailySudokus(): Flow<List<Sudoku>> = observe { it.dailies() }
+    override fun observeLevelSummaries(size: SudokuSize): Flow<List<GameSummary>> = observe { it.levels(size) }
 
-    override suspend fun getAllSudokus(): List<Sudoku> {
-        beforeGetAllSudokus()
-        return games.byUpdatedDescending().readable()
+    override suspend fun getCompletedSummaries(): List<GameSummary> {
+        beforeGetCompletedSummaries()
+        return games.byUpdatedDescending().summaries().filter { it.completed }
     }
 
-    override suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? =
+    override suspend fun isDailyCompleted(date: LocalDate): Boolean =
+        games.dailies().summaries().any {
+            it.completed &&
+                it.info.created.toLocalDate() == date
+        }
+
+    override suspend fun hasDaily(date: LocalDate): Boolean =
+        games.dailies().any {
+            it.sudoku.info.created
+                .toLocalDate() == date
+        }
+
+    override suspend fun getLevelNumbers(size: SudokuSize): Set<Int> =
+        games
+            .levels(size)
+            .map {
+                (it.sudoku.info.mode as GameMode.Level).number
+            }.toSet()
+
+    override suspend fun getRecentlyUpdatedNormalSummary(): GameSummary? =
         games
             .normal()
             .maxByOrNull { it.sudoku.info.updated }
-            ?.takeIf { it.readable }
             ?.sudoku
-
-    override suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> = games.levels(size).readable()
-
-    override suspend fun getDailySudokus(): List<Sudoku> = games.dailies().readable()
+            ?.summary()
 
     override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = games.firstOrNull { it.id == sudokuId && it.readable }?.sudoku
 
-    override suspend fun deleteSudoku(sudoku: Sudoku) {
-        beforeDelete(sudoku.info.id)
+    override suspend fun deleteSudokus(ids: List<SudokuId>) {
+        ids.forEach { beforeDelete(it) }
         val before =
             table.getAndUpdate { current ->
-                val kept = current.games.filterNot { it.id == sudoku.info.id }
+                val kept = current.games.filterNot { it.id in ids }
                 if (kept.size == current.games.size) current else Table(kept, current.writes + 1)
             }
-        if (before.games.any { it.id == sudoku.info.id }) synchronized(recordedDeletions) { recordedDeletions += sudoku.info.id }
+        val removed = ids.filter { id -> before.games.any { it.id == id } }
+        synchronized(recordedDeletions) { recordedDeletions += removed }
     }
 
     override suspend fun saveSudoku(sudoku: Sudoku) {
@@ -138,14 +156,14 @@ class FakeSudokusRepository : SudokusRepository {
             (mine.mode == GameMode.Daily && theirs.mode == GameMode.Daily && mine.created.toLocalDate() == theirs.created.toLocalDate())
     }
 
-    private fun observe(query: (List<Stored>) -> List<Stored>): Flow<List<Sudoku>> {
+    private fun observe(query: (List<Stored>) -> List<Stored>): Flow<List<GameSummary>> {
         observeCalls++
-        return observed(table.map { query(it.games).readable() })
+        return observed(table.map { query(it.games).summaries() })
             .onStart { activeObservers++ }
             .onCompletion { activeObservers-- }
     }
 
-    private fun List<Stored>.readable(): List<Sudoku> = filter { it.readable }.map { it.sudoku }
+    private fun List<Stored>.summaries(): List<GameSummary> = map { it.sudoku.summary() }
 
     private fun List<Stored>.byUpdatedDescending() = sortedByDescending { it.sudoku.info.updated }
 
