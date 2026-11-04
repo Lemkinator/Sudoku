@@ -251,8 +251,8 @@ class AppDatabaseMigrationTest {
             connection
                 .prepare(
                     "SELECT mode, level, dailyDate, size, difficulty, createdAt, updatedAt, seconds, hintsUsed, notesMade, errorsMade, " +
-                        "regionalHighlightingUsed, eraserUsed, numberHighlightingUsed, imported FROM game WHERE id IN ('level-2', 'daily-1000') " +
-                        "ORDER BY mode",
+                        "regionalHighlightingUsed, eraserUsed, numberHighlightingUsed, imported FROM game " +
+                        "WHERE id IN ('level-2', 'daily-1000') ORDER BY mode",
                 ).use { statement ->
                     statement.step() shouldBe true
                     listOf(statement.getLong(0), statement.getLong(2), statement.getLong(3)) shouldBe listOf(1L, 20727L, 4L)
