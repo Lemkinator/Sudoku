@@ -67,15 +67,7 @@ class AppDatabaseMigrationInstrumentedTest {
                 0,
                 "${DAY}T07:00:00",
                 "${DAY}T08:00:00",
-                open.map {
-                    if (it.index ==
-                        0
-                    ) {
-                        it.copy(value = FOUR)
-                    } else {
-                        it
-                    }
-                },
+                open.mapIndexed { index, field -> if (index == 0) field.copy(value = FOUR) else field },
             )
         }
         connection.close()
