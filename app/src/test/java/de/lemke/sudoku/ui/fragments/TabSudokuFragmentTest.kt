@@ -309,20 +309,23 @@ class TabSudokuFragmentTest {
     }
 
     @Test
-    fun `a failing query on refresh leaves the tab as it was and throws nothing`() =
+    fun `a failing database read on refresh keeps the buttons of the last good load and throws nothing`() =
         failOnUncaughtException {
             runBlocking { saveSudoku(formulaicSudoku()) }
             launch { fragment ->
+                val view = fragment.requireView()
+                val continueButton = view.findViewById<View>(R.id.continueGameButton)
+                val dailyButton = view.findViewById<View>(R.id.dailyButton)
+                val dailyAvailableButton = view.findViewById<View>(R.id.dailyAvailableButton)
+                listOf(continueButton.isVisible, dailyButton.isVisible, dailyAvailableButton.isVisible) shouldBe
+                    listOf(true, false, true)
                 database.openHelper.writableDatabase.execSQL("DROP TABLE game")
 
                 fragment.onHiddenChanged(false)
                 idleMainLooper()
 
-                fragment
-                    .requireView()
-                    .findViewById<View>(R.id.continueGameButton)
-                    .isVisible
-                    .shouldBeTrue()
+                listOf(continueButton.isVisible, dailyButton.isVisible, dailyAvailableButton.isVisible) shouldBe
+                    listOf(true, false, true)
             }
         }
 

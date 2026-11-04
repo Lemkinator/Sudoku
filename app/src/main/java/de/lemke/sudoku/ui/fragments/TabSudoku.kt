@@ -19,7 +19,6 @@ package de.lemke.sudoku.ui.fragments
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,12 +44,7 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
-
-private const val TAG = "TabSudoku"
-
-private val logRefreshFailure = CoroutineExceptionHandler { _, e -> Log.e(TAG, "Failed to refresh the sudoku tab", e) }
 
 @AndroidEntryPoint
 class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -157,8 +151,9 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     private fun refresh() {
         if (view == null) return
-        viewLifecycleOwner.lifecycleScope.launch(logRefreshFailure) {
-            val sudoku = viewModel.getContinuableSudoku()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val startTab = viewModel.loadStartTab() ?: return@launch
+            val sudoku = startTab.continuable
             if (sudoku != null) {
                 binding.continueGameButton.isVisible = true
                 binding.continueGameButton.text =
@@ -175,10 +170,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             } else {
                 binding.continueGameButton.isVisible = false
             }
-            viewModel.checkDailySudokuCompleted().let {
-                binding.dailyAvailableButton.isVisible = !it
-                binding.dailyButton.isVisible = it
-            }
+            binding.dailyAvailableButton.isVisible = !startTab.dailyCompleted
+            binding.dailyButton.isVisible = startTab.dailyCompleted
         }
     }
 }

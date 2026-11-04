@@ -16,6 +16,8 @@
 
 package de.lemke.sudoku.ui.fragments
 
+import android.database.sqlite.SQLiteException
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,6 +45,14 @@ sealed interface NewGame {
 
     data class Created(val sudokuId: SudokuId) : Result
 }
+
+/** What the start tab offers besides a new game: the sudoku to [continuable], and whether today's daily is done. */
+data class StartTab(
+    val continuable: GameSummary?,
+    val dailyCompleted: Boolean,
+)
+
+private const val TAG = "TabSudokuViewModel"
 
 @HiltViewModel
 class TabSudokuViewModel @Inject constructor(
@@ -84,8 +94,15 @@ class TabSudokuViewModel @Inject constructor(
         newGame.compareAndSet(result, NewGame.Idle)
     }
 
-    suspend fun getContinuableSudoku(): GameSummary? =
-        getRecentSudoku()?.takeIf { !it.completed && !it.info.errorLimitReached(userSettings.errorLimit) }
-
-    suspend fun checkDailySudokuCompleted(): Boolean = isDailySudokuCompleted()
+    /** The current [StartTab], or null if the database read fails, so the tab keeps what it shows. */
+    suspend fun loadStartTab(): StartTab? =
+        try {
+            StartTab(
+                continuable = getRecentSudoku()?.takeIf { !it.completed && !it.info.errorLimitReached(userSettings.errorLimit) },
+                dailyCompleted = isDailySudokuCompleted(),
+            )
+        } catch (e: SQLiteException) {
+            Log.e(TAG, "Failed to load the sudoku tab", e)
+            null
+        }
 }

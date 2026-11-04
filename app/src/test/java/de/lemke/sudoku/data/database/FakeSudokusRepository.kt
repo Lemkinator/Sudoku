@@ -70,6 +70,7 @@ class FakeSudokusRepository : SudokusRepository {
     var beforeDelete: suspend (SudokuId) -> Unit = {}
     var beforeGetMaxSudokuLevel: suspend () -> Unit = {}
     var beforeGetCompletedSummaries: suspend () -> Unit = {}
+    var beforeGetRecentlyUpdatedNormalSummary: suspend () -> Unit = {}
     var saveFailure: Throwable? = null
 
     /** Stores [sudokus] without recording a save. */
@@ -109,12 +110,14 @@ class FakeSudokusRepository : SudokusRepository {
                 (it.sudoku.info.mode as GameMode.Level).number
             }.toSet()
 
-    override suspend fun getRecentlyUpdatedNormalSummary(): GameSummary? =
-        games
+    override suspend fun getRecentlyUpdatedNormalSummary(): GameSummary? {
+        beforeGetRecentlyUpdatedNormalSummary()
+        return games
             .normal()
             .maxByOrNull { it.sudoku.info.updated }
             ?.sudoku
             ?.summary()
+    }
 
     override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = games.firstOrNull { it.id == sudokuId && it.readable }?.sudoku
 
