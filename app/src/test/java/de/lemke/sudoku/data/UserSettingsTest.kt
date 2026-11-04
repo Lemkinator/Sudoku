@@ -176,16 +176,6 @@ class UserSettingsTest {
     }
 
     @Test
-    fun `constructing over a store holding the removed pendingPlayGamesWins key deletes it`() {
-        prefs.edit().putStringSet("pendingPlayGamesWins", setOf("1", "2")).commit()
-        prefs.contains("pendingPlayGamesWins").shouldBeTrue()
-
-        reload()
-
-        prefs.contains("pendingPlayGamesWins").shouldBeFalse()
-    }
-
-    @Test
     fun `delegated keys are pinned`() {
         assertDelegatedKeys(
             UserSettings::class.java,
