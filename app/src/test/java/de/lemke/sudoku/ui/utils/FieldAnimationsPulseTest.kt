@@ -126,6 +126,24 @@ class FieldAnimationsPulseTest {
     }
 
     @Test
+    fun `pulsing the board from an interior field completes after the longer backward wave and leaves each field at rest`() {
+        val interior = fieldViews[10].position
+
+        val job = scope.animateFields(fieldViews, interior, setOf(FieldRegion.BOARD))
+
+        scope.advanceTimeBy(100)
+        scope.runCurrent()
+        job.isCompleted shouldBe false
+        scope.advanceTimeBy(100)
+        scope.runCurrent()
+        job.isCompleted shouldBe true
+        settleViewAnimations()
+
+        pulsedIndices() shouldBe fieldViews.indices.toSet()
+        assertAllFieldsAtRest()
+    }
+
+    @Test
     fun `pulsing no region finishes at once and pulses no field`() {
         val job = scope.animateFields(fieldViews, origin, emptySet())
 

@@ -61,7 +61,7 @@ fun CompletedRegions.fieldRegions(): Set<FieldRegion> =
         FieldRegion.BLOCK.takeIf { block },
     )
 
-/** Pulses the fields of [regions] around [position], outward in both directions. */
+/** Pulses the fields of [regions] around [position], outward in both directions. The job completes after both waves. */
 fun CoroutineScope.animateFields(
     fieldViews: List<FieldView>,
     position: Position,
@@ -80,8 +80,10 @@ fun CoroutineScope.animateFields(
             animateField(fieldView.fieldViewValue, blockSize = blockSize)
         }
     }
-    launch { reached { a, b -> a <= b }.reversed().forEach { pulse(it) } }
-    return launch { reached { a, b -> a > b }.forEach { pulse(it) } }
+    return launch {
+        launch { reached { a, b -> a <= b }.reversed().forEach { pulse(it) } }
+        reached { a, b -> a > b }.forEach { pulse(it) }
+    }
 }
 
 private suspend fun animateField(
