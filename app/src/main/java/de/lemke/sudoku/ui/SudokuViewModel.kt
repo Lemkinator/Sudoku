@@ -212,7 +212,7 @@ class SudokuViewModel @Inject constructor(
 
     private var wrapUp: Job? = null
     private var ticker: Job? = null
-    private var nextTick: ComparableTimeMark = timeSource.markNow()
+    private lateinit var nextTick: ComparableTimeMark
     private var untilNextTick: Duration = 1.seconds
 
     init {
