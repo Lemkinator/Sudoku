@@ -25,7 +25,6 @@ import androidx.room.Transaction
 import java.time.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 
-/** What decides which other game a saved game replaces: its mode level, its size and when it was created. */
 data class SudokuIdentity(
     val modeLevel: Int,
     val size: Int,
