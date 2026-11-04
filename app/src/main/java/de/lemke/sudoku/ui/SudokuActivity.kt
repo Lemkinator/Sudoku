@@ -713,7 +713,7 @@ class SudokuActivity : AppCompatActivity() {
         dialog.getButton(BUTTON_POSITIVE).setOnClickListenerWithProgress { _, _ ->
             val radioGroup = DialogCompat.requireViewById(dialog, R.id.shareRadioGroup) as RadioGroup
             val content = ShareContent.fromRadioButtonId(radioGroup.checkedRadioButtonId)
-            singleLaunch { withPlaying { share(content, it.sudoku) } }
+            singleLaunch { share(content, playing.sudoku) }
         }
     }
 

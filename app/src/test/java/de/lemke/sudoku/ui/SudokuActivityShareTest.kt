@@ -18,6 +18,7 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Looper
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.IntentCompat
@@ -50,6 +51,9 @@ import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kjson.parseJSON
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -157,6 +161,25 @@ class SudokuActivityShareTest {
             val send = IntentCompat.getParcelableExtra(started, Intent.EXTRA_INTENT, Intent::class.java)!!
             send.type shouldBe "text/plain"
             send.getStringExtra(Intent.EXTRA_TEXT) shouldBe activity.sudoku.getLocalStatisticsStringShare(activity.resources)
+        }
+
+    @Test
+    fun `sharing the statistics shares the sudoku the dialog shows, not one that moved on since`() =
+        launch(formulaicSudoku(SudokuSize.FOUR)) { activity ->
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share))
+            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
+            activity.viewModel.onResumed()
+            repeat(3) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
+            activity.sudoku.info.timeString shouldBe "00:03"
+            dialog.findViewById<RadioGroup>(R.id.shareRadioGroup)?.check(R.id.radioButtonText)
+
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+            awaitMainLooperUntil { shadowOf(activity).peekNextStartedActivity() != null }
+
+            val send = IntentCompat.getParcelableExtra(shadowOf(activity).nextStartedActivity, Intent.EXTRA_INTENT, Intent::class.java)!!
+            val text = send.getStringExtra(Intent.EXTRA_TEXT)!!
+            text shouldContain "Time: 00:00 "
+            text shouldNotContain "00:03"
         }
 
     @Test
