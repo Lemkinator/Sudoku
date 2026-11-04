@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
@@ -86,18 +87,20 @@ class SudokuViewModelSavedStateTest {
 
     @Test
     fun `a pending summary survives a saved state written to a parcel and read back`() {
-        repository.store(completed)
+        val almost = completed.copy(board = completed.board.with(1, completed.board[1].copy(value = null)))
+        repository.store(almost)
         val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
         val viewModel = viewModel(savedStateHandle)
-        viewModel.onGameStarted(SudokuGame.Ready(completed))
-        viewModel.onCompleted()
+        viewModel.onGameStarted(SudokuGame.Ready(almost))
+        viewModel.onResumed()
+        val won = checkNotNull(viewModel.onMove(BoardMove.Enter(1, completed.board[1].solution)))
         idleMainLooper()
-        viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+        viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
 
         val savedState = savedStateHandle.savedStateProvider().saveState().throughParcel()
         val restored = viewModel(SavedStateHandle.createHandle(savedState, null))
 
-        restored.game.value shouldBe SudokuGame.Ready(completed)
-        restored.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+        restored.game.value shouldBe SudokuGame.Ready(won)
+        restored.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
     }
 }

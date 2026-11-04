@@ -144,13 +144,11 @@ class SudokuViewModelPhaseTest {
     }
 
     @Test
-    fun `onCompleted keeps a sudoku completed after the start won`() {
+    fun `a sudoku completed after the start stays won`() {
         val solved = testSudoku(completed = true)
         val viewModel = playing(solved.copy(board = solved.board.with(1, solved.board[1].copy(value = null))))
         viewModel.onResumed()
         viewModel.onMove(BoardMove.Enter(1, 2))
-
-        viewModel.onCompleted()
 
         viewModel.game.value.shouldBePlaying(SudokuKind.Normal, 3, Phase.Won)
     }

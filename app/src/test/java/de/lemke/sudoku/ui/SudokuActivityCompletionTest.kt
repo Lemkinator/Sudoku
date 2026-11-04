@@ -252,10 +252,7 @@ class SudokuActivityCompletionTest {
 
     @Test
     fun `a failed save of a completed sudoku shows an error toast instead of the completion dialog`() {
-        val sudoku =
-            almostSolvedSudoku(SudokuId.generate()).let {
-                it.copy(board = it.board.with(0, it.board[0].copy(value = it.board[0].solution)))
-            }
+        val sudoku = almostSolvedSudoku(SudokuId.generate())
         fakeSudokusRepository.store(sudoku)
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
@@ -263,8 +260,11 @@ class SudokuActivityCompletionTest {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
             fakeSudokusRepository.saveFailure = IllegalStateException("disk full")
 
-            scenario.onActivity { activity -> activity.viewModel.onCompleted() }
-            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
+            scenario.onActivity { activity ->
+                activity.select(0)
+                activity.select(activity.sudoku.info.size.cellCount)
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2500))
 
             scenario.onActivity { activity ->
                 ShadowToast.getTextOfLatestToast() shouldBe "Could not save the sudoku"
@@ -308,6 +308,29 @@ class SudokuActivityCompletionTest {
         }
     }
 
+    @Test
+    fun `leaving the activity while the winning move animates still saves the win and syncs Play Games once`() {
+        val sudokuId = SudokuId.generate()
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
+        Robolectric.buildActivity(SudokuActivity::class.java, intent).use { controller ->
+            controller.setup()
+            idleMainLooper()
+            val animating = controller.get()
+            animating.select(0)
+            animating.select(animating.sudoku.info.size.cellCount)
+
+            animating.onBackPressedDispatcher.onBackPressed()
+            repeat(3) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
+            idleMainLooper()
+
+            animating.isFinishing shouldBe true
+            fakeSudokusRepository.saves.count { it.completed } shouldBe 1
+            syncCalculations.get() shouldBe 1
+        }
+    }
+
     private fun SudokuActivity.resetVisible(): Boolean {
         val menu = RoboMenu(this)
         val reset = menu.add(0, R.id.menu_reset, 0, "Restart")
@@ -327,7 +350,7 @@ class SudokuActivityCompletionTest {
             val animating = controller.get()
             animating.select(0)
             animating.select(animating.sudoku.info.size.cellCount)
-            animating.viewModel.completion.value shouldBe SudokuCompletion.Pending
+            animating.viewModel.completion.value shouldNotBe SudokuCompletion.Idle
             animating.resetVisible() shouldBe false
 
             controller.recreate()
@@ -342,7 +365,7 @@ class SudokuActivityCompletionTest {
             dialogs.single().getButton(AlertDialog.BUTTON_NEUTRAL).performClick()
             idleMainLooper()
             activity.resetVisible() shouldBe true
-            fakeSudokusRepository.saves.count { it.completed } shouldBe 2
+            fakeSudokusRepository.saves.count { it.completed } shouldBe 1
             fakePlayGamesSyncApplier.applied.size shouldBe 1
             syncCalculations.get() shouldBe 1
         }
