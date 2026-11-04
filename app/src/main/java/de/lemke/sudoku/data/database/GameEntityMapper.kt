@@ -28,7 +28,6 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-/** The row of this game. [zone] turns the local stamps into epoch milliseconds. */
 fun Sudoku.toEntity(zone: ZoneId): GameEntity = GameEntity(summary().toHeader(zone), BoardCodec.encode(board))
 
 /** The game of this row, or null if its header or its board is unreadable. */

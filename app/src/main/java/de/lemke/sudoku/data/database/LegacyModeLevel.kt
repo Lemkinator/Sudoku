@@ -21,7 +21,7 @@ import de.lemke.sudoku.domain.model.GameMode
 private const val LEGACY_MODE_NORMAL = 0
 private const val LEGACY_MODE_DAILY = -1
 
-/** The mode level the version 2 tables and the backup format keep for this mode: 0 normal, -1 daily, the number for a level. */
+/** The mode level the former tables and the backup format keep for this mode: 0 normal, -1 daily, the number for a level. */
 fun GameMode.toLegacyModeLevel(): Int =
     when (this) {
         GameMode.Normal -> LEGACY_MODE_NORMAL
@@ -29,7 +29,6 @@ fun GameMode.toLegacyModeLevel(): Int =
         is GameMode.Level -> number
     }
 
-/** The mode of a stored mode level, or null if no mode has that level. */
 fun legacyGameModeOrNull(modeLevel: Int): GameMode? =
     when {
         modeLevel == LEGACY_MODE_NORMAL -> GameMode.Normal

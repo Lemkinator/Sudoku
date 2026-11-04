@@ -88,6 +88,8 @@ class ProtoWireTest : ShouldSpec(
 
         should("reject a length beyond the message") { ProtoReader.fields("1205616263".hexToByteArray()).shouldBeNull() }
 
+        should("reject a length delimited field without a length") { ProtoReader.fields("12".hexToByteArray()).shouldBeNull() }
+
         should("reject a negative length") {
             ProtoReader.fields("12".hexToByteArray() + ByteArray(9) { 0xff.toByte() } + byteArrayOf(1)).shouldBeNull()
         }
@@ -99,7 +101,7 @@ class ProtoWireTest : ShouldSpec(
         should("reject field number 0") { ProtoReader.fields("0001".hexToByteArray()).shouldBeNull() }
 
         should("reject a field number beyond Int") {
-            ProtoReader.fields("ffffffff1f01".hexToByteArray()).shouldBeNull()
+            ProtoReader.fields("ffffffff7f01".hexToByteArray()).shouldBeNull()
         }
 
         should("reject group wire types") {

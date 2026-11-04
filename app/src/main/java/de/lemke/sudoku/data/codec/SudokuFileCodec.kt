@@ -117,7 +117,7 @@ object SudokuFileCodec {
         size: SudokuSize,
         zone: ZoneId,
     ): GameInfo? {
-        val id = (this[FIELD_ID] as? BytesField)?.value?.toString(Charsets.UTF_8)?.takeIf { it.isNotEmpty() }
+        val id = (this[FIELD_ID] as? BytesField)?.let { it.value.toString(Charsets.UTF_8) }?.takeIf { it.isNotEmpty() }
         val mode = int(FIELD_MODE)?.let { GameMode.fromCode(it, int(FIELD_LEVEL)) }
         val difficulty = int(FIELD_DIFFICULTY)?.let(Difficulty::fromCodeOrNull)
         val countsValid = COUNT_FIELDS.all { int(it) != null }

@@ -131,7 +131,7 @@ class SudokuLevelTabViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun levelStates(): Flow<SudokuLevelTabUiState> =
         observeSudokuLevel(size).transformLatest { sudokuLevel ->
-            if (sudokuLevel.isEmpty() || (sudokuLevel.firstOrNull() as? SudokuItem)?.summary?.completed == true) {
+            if (sudokuLevel.isEmpty() || (sudokuLevel.first() as SudokuItem).summary.completed) {
                 runCatching { findOrGenerateNextLevelSudoku() }
                     .onSuccess { nextLevel ->
                         emit(

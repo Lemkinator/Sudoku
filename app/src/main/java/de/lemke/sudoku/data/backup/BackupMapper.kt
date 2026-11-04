@@ -88,7 +88,8 @@ fun entryOf(
     game: GameEntity,
     zone: ZoneId,
 ): SudokuBackupEntry? =
-    game.header.toSummary(zone)?.info?.let { info ->
+    game.header.toSummary(zone)?.let { summary ->
+        val info = summary.info
         SudokuBackupEntry(
             id = info.id.value,
             size = info.size.value,
@@ -122,7 +123,7 @@ fun entryOf(
 fun progressOf(
     entry: SudokuBackupEntry,
     zone: ZoneId,
-): Int = gameFromBackup(entry, zone)?.header?.progress ?: 0
+): Int = gameFromBackup(entry, zone)?.let { it.header.progress } ?: 0
 
 private fun boardBytesOrNull(text: String): ByteArray? =
     try {

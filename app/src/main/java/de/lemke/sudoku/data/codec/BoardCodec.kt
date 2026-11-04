@@ -67,7 +67,7 @@ object BoardCodec {
     /** The board of [bytes], or null if they are no board of this format. */
     fun decode(bytes: ByteArray): Board? {
         val fields = ProtoReader.fields(bytes)
-        val (known, unknown) = fields.orEmpty().partition { it.number in FIELD_FORMAT..FIELD_NOTES }
+        val (known, unknown) = fields.orEmpty().partition { it.number <= FIELD_NOTES }
         val byNumber = known.associateBy { it.number }
         val preserved = PreservedFields(ProtoWriter().apply { unknown.forEach { raw(it.raw) } }.toByteArray())
         return if (byNumber.varint(FIELD_FORMAT) == FORMAT.toLong()) byNumber.toBoardOrNull(preserved) else null
@@ -75,8 +75,10 @@ object BoardCodec {
 
     private fun Cell.toByte(): Byte = ((value ?: 0) or (origin.code shl CELL_ORIGIN_SHIFT)).toByte()
 
-    private fun List<Int>.toNibbles(): ByteArray =
-        ByteArray((size + 1) / 2) { (((getOrNull(it * 2) ?: 0) shl NIBBLE_BITS) or (getOrNull(it * 2 + 1) ?: 0)).toByte() }
+    private fun List<Int>.toNibbles(): ByteArray {
+        val padded = if (size % 2 == 0) this else this + 0
+        return ByteArray(padded.size / 2) { ((padded[it * 2] shl NIBBLE_BITS) or padded[it * 2 + 1]).toByte() }
+    }
 
     private fun Map<Int, ProtoField>.varint(number: Int): Long? = (this[number] as? VarintField)?.value
 
@@ -104,17 +106,21 @@ object BoardCodec {
             }
 
             is BytesField -> {
-                ProtoReader
-                    .packedVarints(field.value)
-                    ?.chunked(2)
-                    ?.takeIf { pairs -> pairs.all { it.size == 2 && it[0] in 0 until size.cellCount && it[1] ushr size.value == 0L } }
-                    ?.associate { it[0].toInt() to NoteMask(it[1].toInt()) }
+                val pairs = ProtoReader.packedVarints(field.value)?.chunked(2)
+                if (pairs != null && pairs.areNotesOf(size)) pairs.associate { it[0].toInt() to NoteMask(it[1].toInt()) } else null
             }
 
             else -> {
                 null
             }
         }
+
+    private fun List<List<Long>>.areNotesOf(size: SudokuSize): Boolean {
+        for (pair in this) {
+            if (pair.size != 2 || pair[0] !in 0L until size.cellCount || pair[1] ushr size.value != 0L) return false
+        }
+        return true
+    }
 
     private fun cellsOrNull(
         size: SudokuSize,

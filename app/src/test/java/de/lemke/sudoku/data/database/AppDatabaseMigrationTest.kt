@@ -275,7 +275,9 @@ class AppDatabaseMigrationTest {
 
         fun List<SeedField>.at2(change: (SeedField) -> SeedField) = map { if (it.index == 2) change(it) else it }
         broken("null-solution", fields = valid.at2 { it.copy(solution = null) })
+        broken("solution-0", fields = valid.at2 { it.copy(solution = 0) })
         broken("solution-5", fields = valid.at2 { it.copy(solution = 5) })
+        broken("value-0", fields = valid.at2 { it.copy(value = 0) })
         broken("value-5", fields = valid.at2 { it.copy(value = 5) })
         broken("other-size-field", fields = valid.at2 { it.copy(gameSize = NINE) })
         broken("extra-field", fields = valid + SeedField(16, 1))

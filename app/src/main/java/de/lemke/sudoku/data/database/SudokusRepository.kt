@@ -32,13 +32,10 @@ private const val MAX_IDS_PER_DELETE = 500
 interface SudokusRepository {
     fun observeAllSummaries(): Flow<List<GameSummary>>
 
-    /** The normal games, most recently updated first. */
     fun observeNormalSummaries(): Flow<List<GameSummary>>
 
-    /** The daily games, newest day first. */
     fun observeDailySummaries(): Flow<List<GameSummary>>
 
-    /** The level games of [size], highest level first. */
     fun observeLevelSummaries(size: SudokuSize): Flow<List<GameSummary>>
 
     suspend fun getCompletedSummaries(): List<GameSummary>

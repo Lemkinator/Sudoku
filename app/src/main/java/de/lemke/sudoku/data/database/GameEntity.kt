@@ -20,7 +20,6 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 
-/** The columns of a `game` row that describe a game. A list reads only these and never the board blob. */
 data class GameHeader(
     val id: String,
     val mode: Int,
@@ -44,7 +43,6 @@ data class GameHeader(
     val progress: Int,
 )
 
-/** One game: its [header] columns and the board in the [de.lemke.sudoku.data.codec.BoardCodec] format. */
 @Entity(
     tableName = "game",
     primaryKeys = ["id"],

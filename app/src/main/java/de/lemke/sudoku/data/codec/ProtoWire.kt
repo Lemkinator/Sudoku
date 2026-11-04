@@ -70,7 +70,6 @@ class ProtoWriter {
         value: String,
     ) = bytes(number, value.toByteArray(Charsets.UTF_8))
 
-    /** Appends already encoded fields. */
     fun raw(encoded: ByteArray) = out.write(encoded)
 
     /** Appends a varint without a tag, the element format of a packed repeated field. */
@@ -104,7 +103,6 @@ object ProtoReader {
         return fields
     }
 
-    /** The varints of a packed repeated field. */
     fun packedVarints(bytes: ByteArray): List<Long>? {
         val cursor = Cursor(bytes)
         val values = mutableListOf<Long>()
@@ -132,9 +130,9 @@ object ProtoReader {
 
         fun field(): ProtoField? {
             val start = position
-            val tag = varint()
-            val number = tag?.ushr(TAG_SHIFT)?.takeIf { it in 1..Int.MAX_VALUE }?.toInt()
-            return if (tag == null || number == null) {
+            val tag = varint() ?: return null
+            val number = (tag ushr TAG_SHIFT).takeIf { it in 1L..Int.MAX_VALUE.toLong() }?.toInt()
+            return if (number == null) {
                 null
             } else {
                 when ((tag and WIRE_TYPE_MASK).toInt()) {
@@ -148,8 +146,9 @@ object ProtoReader {
         }
 
         private fun take(count: Long?): ByteArray? =
-            count?.takeIf { it in 0..bytes.size - position }?.toInt()?.let { length ->
-                bytes.copyOfRange(position, position + length).also { position += length }
+            count?.takeIf { it in 0L..(bytes.size - position).toLong() }?.let { length ->
+                val end = position + length.toInt()
+                bytes.copyOfRange(position, end).also { position = end }
             }
 
         private fun rawSince(start: Int): ByteArray = bytes.copyOfRange(start, position)

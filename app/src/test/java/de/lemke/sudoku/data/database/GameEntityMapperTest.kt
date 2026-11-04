@@ -118,6 +118,12 @@ class GameEntityMapperTest : ShouldSpec(
             GameEntity(sudoku().toEntity(utc).header, nine.board).toSudoku(utc).shouldBeNull()
         }
 
+        should("read no game from a row whose header names no size") {
+            val row = sudoku().toEntity(utc)
+
+            GameEntity(row.header.copy(size = 6), row.board).toSudoku(utc).shouldBeNull()
+        }
+
         should("read no game from a board that cannot be decoded") {
             GameEntity(sudoku().toEntity(utc).header, byteArrayOf(1)).toSudoku(utc).shouldBeNull()
         }

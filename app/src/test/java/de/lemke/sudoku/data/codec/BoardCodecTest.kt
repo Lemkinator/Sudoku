@@ -178,11 +178,19 @@ class BoardCodecTest : ShouldSpec(
                 Cell(3, 3, CellOrigin.HINT)
         }
 
+        should("decode an empty notes field as a board without notes") {
+            BoardCodec.decode(message(notes = "")).shouldNotBeNull()[1].notes shouldBe NoteMask.EMPTY
+        }
+
         should("read notes with an odd count of numbers as unreadable") {
             BoardCodec.decode(message(notes = "010601")).shouldBeNull()
         }
 
         should("read notes for a cell beyond the board as unreadable") { BoardCodec.decode(message(notes = "1006")).shouldBeNull() }
+
+        should("read notes for a negative cell index as unreadable") {
+            BoardCodec.decode(message(notes = "ffffffffffffffffff0106")).shouldBeNull()
+        }
 
         should("read a note mask beyond the size as unreadable") { BoardCodec.decode(message(notes = "0110")).shouldBeNull() }
 

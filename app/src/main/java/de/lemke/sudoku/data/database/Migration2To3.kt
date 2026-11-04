@@ -77,7 +77,6 @@ val MIGRATION_2_3 =
         }
     }
 
-/** One stored field row. */
 private class LegacyField(
     val sudokuId: String,
     val gameSize: Int,
@@ -142,7 +141,6 @@ private fun SupportSQLiteDatabase.readLegacyBoards(sizes: Map<String, SudokuSize
         flush()
     }
 
-/** The info of a stored sudoku row, or null if its size, mode or stamps name nothing this version knows. */
 private fun Cursor.legacyInfoOrNull(): GameInfo? {
     val size = SudokuSize.fromValueOrNull(int("size"))
     val mode = legacyGameModeOrNull(int("modeLevel"))
@@ -184,7 +182,6 @@ private fun Cursor.legacyField(): LegacyField =
         notes = string("notes"),
     )
 
-/** The board of [fields], or null unless they are exactly one readable field per cell of [size]. */
 private fun legacyBoardOrNull(
     size: SudokuSize,
     fields: List<LegacyField>,

@@ -192,7 +192,10 @@ class SudokuFileCodecTest : ShouldSpec(
             SudokuFileCodec.decode(valid(3 to 2L, 4 to 0L), utc).shouldBeNull()
         }
 
-        should("read an unknown difficulty as unreadable") { SudokuFileCodec.decode(valid(5 to 7L), utc).shouldBeNull() }
+        should("read an unknown difficulty as unreadable") {
+            SudokuFileCodec.decode(valid(5 to 7L), utc).shouldBeNull()
+            SudokuFileCodec.decode(valid(5 to (1L shl 32)), utc).shouldBeNull()
+        }
 
         should("read a counter outside the Int range as unreadable") {
             listOf(8, 9, 10, 11, 13, 12).forEach { field ->
