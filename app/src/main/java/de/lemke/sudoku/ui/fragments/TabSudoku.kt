@@ -18,7 +18,6 @@ package de.lemke.sudoku.ui.fragments
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.database.sqlite.SQLiteException
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -46,9 +45,12 @@ import de.lemke.sudoku.ui.SudokuLevelActivity
 import dev.oneuiproject.oneui.delegates.AppBarAwareYTranslator
 import dev.oneuiproject.oneui.delegates.ViewYTranslator
 import dev.oneuiproject.oneui.layout.DrawerLayout
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 
 private const val TAG = "TabSudoku"
+
+private val logRefreshFailure = CoroutineExceptionHandler { _, e -> Log.e(TAG, "Failed to refresh the sudoku tab", e) }
 
 @AndroidEntryPoint
 class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
@@ -155,36 +157,28 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     private fun refresh() {
         if (view == null) return
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                showContinueGame()
-                viewModel.checkDailySudokuCompleted().let {
-                    binding.dailyAvailableButton.isVisible = !it
-                    binding.dailyButton.isVisible = it
+        viewLifecycleOwner.lifecycleScope.launch(logRefreshFailure) {
+            val sudoku = viewModel.getContinuableSudoku()
+            if (sudoku != null) {
+                binding.continueGameButton.isVisible = true
+                binding.continueGameButton.text =
+                    getString(
+                        R.string.continue_game,
+                        sudoku.info.size.getLocalString(resources),
+                        sudoku.info.difficulty.getLocalString(resources),
+                    )
+                binding.continueGameButton.onSingleLaunchClick {
+                    binding.continueGameButton.transformToActivity(
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value),
+                    )
                 }
-            } catch (e: SQLiteException) {
-                Log.e(TAG, "Failed to refresh the sudoku tab", e)
+            } else {
+                binding.continueGameButton.isVisible = false
             }
-        }
-    }
-
-    private suspend fun showContinueGame() {
-        val sudoku = viewModel.getContinuableSudoku()
-        if (sudoku != null) {
-            binding.continueGameButton.isVisible = true
-            binding.continueGameButton.text =
-                getString(
-                    R.string.continue_game,
-                    sudoku.info.size.getLocalString(resources),
-                    sudoku.info.difficulty.getLocalString(resources),
-                )
-            binding.continueGameButton.onSingleLaunchClick {
-                binding.continueGameButton.transformToActivity(
-                    Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value),
-                )
+            viewModel.checkDailySudokuCompleted().let {
+                binding.dailyAvailableButton.isVisible = !it
+                binding.dailyButton.isVisible = it
             }
-        } else {
-            binding.continueGameButton.isVisible = false
         }
     }
 }
