@@ -17,8 +17,11 @@
 package de.lemke.sudoku.data.database
 
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.execSQL
 import de.lemke.sudoku.domain.model.SudokuSize
+
+private const val GIVEN_EVERY = 3
 
 /** One row of the version 2 `field` table. */
 data class SeedField(
@@ -44,7 +47,7 @@ fun patternSolution(
 /** The fields of a pattern board of [size] where every cell is empty except the cells in [given] and the cells [filled] reports. */
 fun patternFields(
     size: SudokuSize,
-    given: (Int) -> Boolean = { it % 3 == 0 },
+    given: (Int) -> Boolean = { it % GIVEN_EVERY == 0 },
     filled: (Int) -> Boolean = { false },
 ): List<SeedField> =
     List(size.cellCount) { index ->
@@ -74,12 +77,7 @@ class LegacyDatabaseSeed(private val connection: SQLiteConnection) {
                     "isChecklist, isReverseChecklist, checklistNumber, hintsUsed, notesMade, errorsMade, created, updated, seconds) " +
                     "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 0, 0, 2, 3, 4, ?, ?, 95)",
             ).use { statement ->
-                statement.bindText(1, id)
-                statement.bindLong(2, size.toLong())
-                statement.bindLong(3, difficulty.toLong())
-                statement.bindLong(4, modeLevel.toLong())
-                statement.bindText(5, created)
-                statement.bindText(6, updated)
+                statement.bindAll(id, size, difficulty, modeLevel, created, updated)
                 statement.step()
             }
         connection
@@ -87,17 +85,32 @@ class LegacyDatabaseSeed(private val connection: SQLiteConnection) {
                 "INSERT INTO field (sudokuId, gameSize, `index`, solution, value, given, hint, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             ).use { statement ->
                 fields.forEach { field ->
-                    statement.bindText(1, id)
-                    statement.bindLong(2, (field.gameSize ?: size).toLong())
-                    statement.bindLong(3, field.index.toLong())
-                    field.solution?.let { statement.bindLong(4, it.toLong()) } ?: statement.bindNull(4)
-                    field.value?.let { statement.bindLong(5, it.toLong()) } ?: statement.bindNull(5)
-                    statement.bindLong(6, if (field.given) 1 else 0)
-                    statement.bindLong(7, if (field.hint) 1 else 0)
-                    statement.bindText(8, field.notes)
+                    statement.bindAll(
+                        id,
+                        field.gameSize ?: size,
+                        field.index,
+                        field.solution,
+                        field.value,
+                        field.given,
+                        field.hint,
+                        field.notes,
+                    )
                     statement.step()
                     statement.reset()
                 }
             }
+    }
+}
+
+private fun SQLiteStatement.bindAll(vararg values: Any?) {
+    values.forEachIndexed { position, value ->
+        val index = position + 1
+        when (value) {
+            null -> bindNull(index)
+            is String -> bindText(index, value)
+            is Int -> bindLong(index, value.toLong())
+            is Boolean -> bindLong(index, if (value) 1 else 0)
+            else -> error("Unsupported value $value")
+        }
     }
 }

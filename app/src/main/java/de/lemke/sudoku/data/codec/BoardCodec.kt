@@ -38,7 +38,7 @@ private const val CELL_ORIGIN_MASK = 0x07
 object BoardCodec {
     const val FORMAT = 1
 
-    /** The largest blob [decode] reads. A 16x16 board takes 394 bytes; unknown fields are kept verbatim and must stay in a cursor window. */
+    /** The largest blob [decode] reads. A 16x16 board takes 394 bytes; kept unknown fields must still fit a cursor window. */
     const val MAX_BYTES = 64 * 1024
 
     fun encode(board: Board): ByteArray =

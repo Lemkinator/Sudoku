@@ -123,7 +123,7 @@ private fun SupportSQLiteDatabase.readLegacyGames(zone: ZoneId): List<Sudoku> {
     return infos.mapNotNull { info -> boards[info.id.value]?.let { Sudoku(info, it) } }
 }
 
-/** The readable boards by sudoku id. The fields stream by sudoku id, so the rows of one game at a time are held as fields. */
+/** The readable boards by sudoku id. The field rows stream by sudoku id and become a board per game; all decoded boards stay in memory. */
 private fun SupportSQLiteDatabase.readLegacyBoards(sizes: Map<String, SudokuSize>): Map<String, Board> =
     buildMap {
         val group = mutableListOf<LegacyField>()
