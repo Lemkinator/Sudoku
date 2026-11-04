@@ -28,6 +28,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
@@ -67,7 +68,13 @@ class MainViewModelTest {
     private fun newViewModel(): MainViewModel =
         MainViewModel(
             userSettings,
-            ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), clock, dispatcher),
+            ImportSudokuUseCase(
+                sudokuDocuments,
+                GetSudokuUseCase(sudokusRepository, dispatcher),
+                SaveSudokuUseCase(sudokusRepository, dispatcher),
+                clock,
+                dispatcher,
+            ),
             SendDailyNotificationUseCase(dailyNotifications, userSettings),
             CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher),
             savedStateHandle,

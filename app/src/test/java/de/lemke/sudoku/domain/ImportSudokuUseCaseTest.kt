@@ -26,6 +26,7 @@ import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.testSudoku
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -59,7 +60,13 @@ class ImportSudokuUseCaseTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val clock = Clock.systemUTC()
     private val useCase =
-        ImportSudokuUseCase(DefaultSudokuDocuments(context), SaveSudokuUseCase(sudokusRepository, dispatcher), clock, dispatcher)
+        ImportSudokuUseCase(
+            DefaultSudokuDocuments(context),
+            GetSudokuUseCase(sudokusRepository, dispatcher),
+            SaveSudokuUseCase(sudokusRepository, dispatcher),
+            clock,
+            dispatcher,
+        )
 
     private fun uriFor(content: ByteArray): Uri {
         val file = temporaryFolder.newFile("sudoku-import.sudoku").apply { writeBytes(content) }
@@ -94,6 +101,46 @@ class ImportSudokuUseCaseTest {
             val uri = uriFor(fileOf(solved))
 
             useCase(uri) shouldBe solved.copy(info = solved.info.copy(source = GameSource.IMPORTED))
+
+            sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.IMPORTED)
+        }
+
+    @Test
+    fun `a solved file replacing the player's own win keeps the game own`() =
+        runTest {
+            val replacedId = SudokuId("stored-game")
+            val created = LocalDateTime.of(2026, 11, 3, 12, 0, 5)
+            sudokusRepository.store(testSudoku(sudokuId = replacedId, created = created, completed = true))
+            val uri = uriFor(fileOf(testSudoku(sudokuId = replacedId, created = created, completed = true)))
+
+            useCase(uri).shouldNotBeNull().info.source shouldBe GameSource.OWN
+
+            sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.OWN)
+        }
+
+    @Test
+    fun `a solved file replacing an unfinished own game becomes an imported game`() =
+        runTest {
+            val replacedId = SudokuId("stored-game")
+            val created = LocalDateTime.of(2026, 11, 3, 12, 0, 5)
+            sudokusRepository.store(testSudoku(sudokuId = replacedId, created = created))
+            val uri = uriFor(fileOf(testSudoku(sudokuId = replacedId, created = created, completed = true)))
+
+            useCase(uri).shouldNotBeNull().info.source shouldBe GameSource.IMPORTED
+
+            sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.IMPORTED)
+        }
+
+    @Test
+    fun `a solved file replacing an imported win stays imported`() =
+        runTest {
+            val replacedId = SudokuId("stored-game")
+            val created = LocalDateTime.of(2026, 11, 3, 12, 0, 5)
+            val stored = testSudoku(sudokuId = replacedId, created = created, completed = true)
+            sudokusRepository.store(stored.copy(info = stored.info.copy(source = GameSource.IMPORTED)))
+            val uri = uriFor(fileOf(testSudoku(sudokuId = replacedId, created = created, completed = true)))
+
+            useCase(uri).shouldNotBeNull().info.source shouldBe GameSource.IMPORTED
 
             sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.IMPORTED)
         }
