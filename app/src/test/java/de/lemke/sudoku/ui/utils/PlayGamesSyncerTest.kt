@@ -25,11 +25,12 @@ import com.google.android.gms.tasks.Tasks
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import io.kotest.matchers.shouldBe
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -52,16 +53,16 @@ class PlayGamesSyncerTest {
     private val gamesSignIn = FakeGamesSignIn()
     private val applier = FakePlayGamesSyncApplier()
 
-    private fun sync(check: Task<Boolean>) {
-        gamesSignIn.authenticationCheck = check
-        val scope = TestScope()
-        val job = scope.launch { PlayGamesSyncer(gamesSignIn, applier)(activity, SYNC) }
-        scope.runCurrent()
-        shadowOf(Looper.getMainLooper()).idle()
-        scope.advanceTimeBy(10_001)
-        scope.runCurrent()
-        job.isCompleted shouldBe true
-    }
+    private fun sync(check: Task<Boolean>) =
+        runTest {
+            gamesSignIn.authenticationCheck = check
+            val job = launch { PlayGamesSyncer(gamesSignIn, applier)(activity, SYNC) }
+            runCurrent()
+            shadowOf(Looper.getMainLooper()).idle()
+            advanceTimeBy(SILENT_TASK_TIMEOUT + 1.milliseconds)
+            runCurrent()
+            job.isCompleted shouldBe true
+        }
 
     @Test
     fun `applies the sync when the player is authenticated`() {

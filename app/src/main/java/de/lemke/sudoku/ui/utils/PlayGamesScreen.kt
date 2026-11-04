@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 
-private val SILENT_TASK_TIMEOUT = 10.seconds
+internal val SILENT_TASK_TIMEOUT = 10.seconds
 
 /** A Play Games overlay screen that the drawer opens. */
 enum class PlayGamesScreen {
