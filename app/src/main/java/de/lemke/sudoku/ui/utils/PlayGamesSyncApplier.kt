@@ -38,6 +38,19 @@ class DefaultPlayGamesSyncApplier @Inject constructor() : PlayGamesSyncApplier {
         val leaderboards = PlayGames.getLeaderboardsClient(activity)
         sync.leaderboardScores.forEach { (leaderboardId, score) -> leaderboards.submitScore(activity.getString(leaderboardId), score) }
         sync.achievementUnlocks.forEach { achievementId -> achievements.unlock(activity.getString(achievementId)) }
-        sync.achievementIncrements.forEach { (achievementId, amount) -> achievements.increment(activity.getString(achievementId), amount) }
+        sync.achievementSteps.forEach { (achievementId, steps) -> achievements.setSteps(activity.getString(achievementId), steps) }
+    }
+}
+
+/** Applies a [PlayGamesSync] if the player is signed in to Play Games; the silent check gives up after 10 s and sends nothing. */
+class PlayGamesSyncer @Inject constructor(
+    private val gamesSignIn: GamesSignIn,
+    private val applier: PlayGamesSyncApplier,
+) {
+    suspend operator fun invoke(
+        activity: Activity,
+        sync: PlayGamesSync,
+    ) {
+        if (gamesSignIn.isAuthenticated(activity).silentCompletionOrNull()?.authenticated == true) applier.apply(activity, sync)
     }
 }

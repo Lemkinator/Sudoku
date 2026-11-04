@@ -24,19 +24,15 @@ import de.lemke.commonutils.freshTestPreferences
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.LooperTimeSource
 import de.lemke.sudoku.data.FakeSudokuShareFiles
-import de.lemke.sudoku.data.PendingPlayGamesWins
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
-import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
-import de.lemke.sudoku.domain.QueuePlayGamesWinUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.BoardMove
@@ -60,7 +56,6 @@ class SudokuViewModelSavedStateTest {
     private val completed = testSudoku(completed = true)
     private val repository = FakeSudokusRepository()
     private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-    private val pendingWins = PendingPlayGamesWins(userSettings)
 
     private fun viewModel(savedStateHandle: SavedStateHandle): SudokuViewModel {
         val dispatcher = Dispatchers.Main
@@ -73,9 +68,7 @@ class SudokuViewModelSavedStateTest {
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), Clock.systemDefaultZone(), dispatcher),
-            QueuePlayGamesWinUseCase(pendingWins),
-            GetPendingPlayGamesSyncUseCase(pendingWins, repository, CalculatePlayGamesSyncUseCase(repository, dispatcher), dispatcher),
-            ClearPlayGamesWinsUseCase(pendingWins),
+            CalculatePlayGamesSyncUseCase(repository, dispatcher),
             userSettings,
             Clock.systemDefaultZone(),
             LooperTimeSource,
@@ -106,9 +99,13 @@ class SudokuViewModelSavedStateTest {
         viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
 
         val savedState = savedStateHandle.savedStateProvider().saveState().throughParcel()
+        var summaryReads = 0
+        repository.beforeGetCompletedSummaries = { summaryReads++ }
         val restored = viewModel(SavedStateHandle.createHandle(savedState, null))
 
         restored.game.value shouldBe SudokuGame.Ready(won)
         restored.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
+        restored.playGamesSync.value shouldBe null
+        summaryReads shouldBe 0
     }
 }

@@ -22,19 +22,15 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.AdjustableClock
 import de.lemke.sudoku.LooperTimeSource
 import de.lemke.sudoku.data.FakeSudokuShareFiles
-import de.lemke.sudoku.data.PendingPlayGamesWins
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
-import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
-import de.lemke.sudoku.domain.QueuePlayGamesWinUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.Sudoku
@@ -53,7 +49,6 @@ class SudokuViewModelRig {
     val clock = AdjustableClock(Instant.parse("2026-01-15T12:00:00Z"))
     val repository = FakeSudokusRepository()
     val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-    val pendingWins = PendingPlayGamesWins(userSettings)
 
     fun playing(sudoku: Sudoku): SudokuViewModel = ready(sudoku).also { it.onGameStarted(SudokuGame.Ready(sudoku)) }
 
@@ -69,9 +64,7 @@ class SudokuViewModelRig {
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), clock, dispatcher),
-            QueuePlayGamesWinUseCase(pendingWins),
-            GetPendingPlayGamesSyncUseCase(pendingWins, repository, CalculatePlayGamesSyncUseCase(repository, dispatcher), dispatcher),
-            ClearPlayGamesWinsUseCase(pendingWins),
+            CalculatePlayGamesSyncUseCase(repository, dispatcher),
             userSettings,
             clock,
             LooperTimeSource,

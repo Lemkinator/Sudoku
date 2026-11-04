@@ -16,7 +16,6 @@
 
 package de.lemke.sudoku.ui
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Looper
 import android.widget.TextView
@@ -24,6 +23,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.gms.tasks.Tasks
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -37,7 +37,6 @@ import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.ui.utils.FakeInAppReview
 import de.lemke.commonutils.ui.utils.FakeInAppReview.Call.ShowIfPossible
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.PendingPlayGamesWins
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.GamesSignInModule
@@ -45,15 +44,14 @@ import de.lemke.sudoku.di.SudokusRepositoryModule
 import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
-import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
-import de.lemke.sudoku.ui.utils.DefaultGamesSignIn
 import de.lemke.sudoku.ui.utils.DefaultPlayGamesIntentProvider
+import de.lemke.sudoku.ui.utils.FakeGamesSignIn
 import de.lemke.sudoku.ui.utils.FakePlayGamesSyncApplier
 import de.lemke.sudoku.ui.utils.GamesSignIn
 import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
@@ -96,9 +94,6 @@ class SudokuActivityCompletionTest {
     @Inject
     lateinit var settings: SettingsRepository
 
-    @Inject
-    lateinit var pendingWins: PendingPlayGamesWins
-
     private val fakeSudokusRepository = FakeSudokusRepository()
 
     @BindValue
@@ -110,24 +105,15 @@ class SudokuActivityCompletionTest {
 
     private val fakePlayGamesSyncApplier = FakePlayGamesSyncApplier()
 
-    private val reviewCallsWhenApplied = mutableListOf<Int>()
+    @BindValue
+    @JvmField
+    val playGamesSyncApplier: PlayGamesSyncApplier = fakePlayGamesSyncApplier
+
+    private val fakeGamesSignIn = FakeGamesSignIn().apply { authenticationCheck = Tasks.forResult(true) }
 
     @BindValue
     @JvmField
-    val playGamesSyncApplier: PlayGamesSyncApplier =
-        object : PlayGamesSyncApplier by fakePlayGamesSyncApplier {
-            override fun apply(
-                activity: Activity,
-                sync: PlayGamesSync,
-            ) {
-                reviewCallsWhenApplied += fakeInAppReview.calls.size
-                fakePlayGamesSyncApplier.apply(activity, sync)
-            }
-        }
-
-    @BindValue
-    @JvmField
-    val gamesSignIn: GamesSignIn = DefaultGamesSignIn()
+    val gamesSignIn: GamesSignIn = fakeGamesSignIn
 
     @BindValue
     @JvmField
@@ -313,7 +299,7 @@ class SudokuActivityCompletionTest {
     }
 
     @Test
-    fun `leaving the activity while the winning move animates saves the win and the next activity applies the sync once`() {
+    fun `leaving the activity while the winning move animates saves the win and the next app start syncs it`() {
         val sudokuId = SudokuId.generate()
         fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
@@ -331,31 +317,50 @@ class SudokuActivityCompletionTest {
             controller.pause()
             controller.destroy()
             idleMainLooper()
-            pendingWins.all() shouldBe setOf(sudokuId)
-            fakePlayGamesSyncApplier.applied.size shouldBe 0
+            syncCalculations.get() shouldBe 0
 
             saved.complete(Unit)
             idleMainLooper()
             fakeSudokusRepository.saves.count { it.completed } shouldBe 1
-            fakePlayGamesSyncApplier.applied.size shouldBe 0
-            pendingWins.all() shouldBe setOf(sudokuId)
+            fakePlayGamesSyncApplier.applied.shouldBeEmpty()
         }
 
-        ActivityScenario.launch<SudokuActivity>(Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)).use {
+        ActivityScenario.launch(MainActivity::class.java).use {
             idleMainLooper()
+
+            fakePlayGamesSyncApplier.applied.single().run {
+                leaderboardScores.first() shouldBe (R.string.leaderboard_total_wins to 1L)
+                achievementUnlocks.first() shouldBe R.string.achievement_first_win
+            }
+            fakeInAppReview.calls.shouldBeEmpty()
+        }
+    }
+
+    @Test
+    fun `opening a saved win syncs nothing and asks for no in-app review`() {
+        val sudokuId = SudokuId.generate()
+        fakeSudokusRepository.store(testSudoku(size = SudokuSize.FOUR, sudokuId = sudokuId, completed = true))
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+
+        ActivityScenario.launch<SudokuActivity>(Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)).use {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
             idleMainLooper()
 
-            fakePlayGamesSyncApplier.applied.size shouldBe 1
-            fakePlayGamesSyncApplier.applied
-                .single()
-                .achievementUnlocks
-                .first() shouldBe R.string.achievement_first_win
-            pendingWins.all() shouldBe emptySet()
+            syncCalculations.get() shouldBe 0
+            fakePlayGamesSyncApplier.applied.shouldBeEmpty()
+            fakeInAppReview.calls.shouldBeEmpty()
         }
-        ActivityScenario.launch<SudokuActivity>(Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)).use {
-            idleMainLooper()
-            fakePlayGamesSyncApplier.applied.size shouldBe 1
+    }
+
+    @Test
+    fun `a win is not synced to Play Games while the player is signed out, but still asks for the in-app review`() {
+        val sudokuId = SudokuId.generate()
+        fakeSudokusRepository.store(almostSolvedSudoku(sudokuId))
+        fakeGamesSignIn.authenticationCheck = Tasks.forResult(false)
+        completeBoard(sudokuId) {
+            awaitMainLooperUntil { fakeInAppReview.calls.isNotEmpty() }
+            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakePlayGamesSyncApplier.applied.shouldBeEmpty()
         }
     }
 
@@ -380,6 +385,7 @@ class SudokuActivityCompletionTest {
             animating.select(animating.sudoku.info.size.cellCount)
             animating.viewModel.completion.value shouldNotBe SudokuCompletion.Idle
             animating.resetVisible() shouldBe false
+            idleMainLooper()
 
             controller.recreate()
             repeat(3) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1)) }
@@ -580,7 +586,6 @@ class SudokuActivityCompletionTest {
 
             scenario.onActivity { activity -> activity.viewModel.playGamesSync.value shouldBe null }
             fakePlayGamesSyncApplier.applied.size shouldBe 1
-            reviewCallsWhenApplied shouldBe listOf(0)
             fakeInAppReview.calls.single().shouldBeInstanceOf<ShowIfPossible>()
             syncCalculations.get() shouldBe 1
         }

@@ -25,6 +25,7 @@ import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -149,32 +150,181 @@ private fun wonSudoku(
         )
     }
 
-@OptIn(ExperimentalCoroutinesApi::class)
-private fun calculatePlayGamesSyncOver(vararg sudokus: Sudoku): CalculatePlayGamesSyncUseCase {
-    val dispatcher = UnconfinedTestDispatcher()
-    val sudokusRepository = FakeSudokusRepository()
-    sudokus.forEach { sudokusRepository.store(it) }
-    return CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher)
-}
+private fun repositoryOver(vararg sudokus: Sudoku): FakeSudokusRepository = FakeSudokusRepository().also { it.store(*sudokus) }
 
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun calculatePlayGamesSyncOver(sudokusRepository: FakeSudokusRepository): CalculatePlayGamesSyncUseCase =
+    CalculatePlayGamesSyncUseCase(sudokusRepository, UnconfinedTestDispatcher())
+
+private fun calculatePlayGamesSyncOver(vararg sudokus: Sudoku): CalculatePlayGamesSyncUseCase =
+    calculatePlayGamesSyncOver(repositoryOver(*sudokus))
+
+private val fastFour = wonSudoku(seconds = 5, eraserUsed = true, hintsUsed = 0)
+private val slowFourLevel = wonSudoku(mode = GameMode.Level(1), seconds = 40, hintsUsed = 2, notesMade = 3)
+private val nineDaily =
+    wonSudoku(
+        size = SudokuSize.NINE,
+        difficulty = HARD,
+        mode = GameMode.Daily(LocalDate.of(2026, 1, 1)),
+        seconds = 200,
+        hintsUsed = 1,
+        isChecklist = true,
+    )
+private val nineNormal = wonSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 100, hintsUsed = 1, isReverseChecklist = true)
+private val sixteenLevel =
+    wonSudoku(size = SudokuSize.SIXTEEN, difficulty = EXPERT, mode = GameMode.Level(1), seconds = 500, hintsUsed = 3)
+
+@OptIn(ExperimentalCoroutinesApi::class)
 class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
     {
-        should("only submit base leaderboard scores, no unlocks or increments, when no sudoku just finished") {
-            val useCase = calculatePlayGamesSyncOver(wonSudoku())
+        should("derive every leaderboard score, unlock and step count from the stored completed games") {
+            val useCase = calculatePlayGamesSyncOver(fastFour, slowFourLevel, nineDaily, nineNormal, sixteenLevel)
 
-            val sync = useCase(null)
-
-            sync.leaderboardScores.map { it.first } shouldContain R.string.leaderboard_total_wins
-            sync.leaderboardScores.map { it.first } shouldNotContain R.string.leaderboard_best_time
-            sync.achievementUnlocks shouldBe emptyList()
-            sync.achievementIncrements shouldBe emptyList()
+            useCase() shouldBe
+                PlayGamesSync(
+                    leaderboardScores =
+                        listOf(
+                            R.string.leaderboard_total_wins to 5L,
+                            R.string.leaderboard_daily_sudokus to 1L,
+                            R.string.leaderboard_level_44 to 1L,
+                            R.string.leaderboard_level_99 to 0L,
+                            R.string.leaderboard_level_1616 to 1L,
+                            R.string.leaderboard_best_time to 5_000L,
+                            R.string.leaderboard_wins_44 to 2L,
+                            R.string.leaderboard_time_44_very_easy to 5_000L,
+                            R.string.leaderboard_wins_44_very_easy to 2L,
+                            R.string.leaderboard_wins_99 to 2L,
+                            R.string.leaderboard_time_99_hard to 100_000L,
+                            R.string.leaderboard_wins_99_hard to 2L,
+                            R.string.leaderboard_wins_1616 to 1L,
+                            R.string.leaderboard_time_1616_expert to 500_000L,
+                            R.string.leaderboard_wins_1616_expert to 1L,
+                        ),
+                    achievementUnlocks =
+                        listOf(
+                            R.string.achievement_first_win,
+                            R.string.achievement_eraser,
+                            R.string.achievement_no_hints,
+                            R.string.achievement_use_notes,
+                            R.string.achievement_checklist,
+                            R.string.achievement_reverse_checklist,
+                            R.string.achievement_i_am_speed,
+                            R.string.achievement_stopwatch_44,
+                            R.string.achievement_stopwatch_99,
+                        ),
+                    achievementSteps =
+                        listOf(
+                            R.string.achievement_10_sudokus_44 to 2,
+                            R.string.achievement_50_sudokus_44 to 2,
+                            R.string.achievement_10_sudokus_99 to 2,
+                            R.string.achievement_50_sudokus_99 to 2,
+                            R.string.achievement_10_sudokus_1616 to 1,
+                            R.string.achievement_50_sudokus_1616 to 1,
+                            R.string.achievement_10_sudokus_very_easy to 2,
+                            R.string.achievement_50_sudokus_very_easy to 2,
+                            R.string.achievement_10_sudokus_hard to 2,
+                            R.string.achievement_50_sudokus_hard to 2,
+                            R.string.achievement_10_sudokus_expert to 1,
+                            R.string.achievement_50_sudokus_expert to 1,
+                        ),
+                )
         }
 
-        should("unlock the no-hints and eraser achievements but not the checklist ones for a plain win") {
-            val won = wonSudoku(eraserUsed = true, hintsUsed = 0, notesMade = 0)
-            val useCase = calculatePlayGamesSyncOver(won)
+        should("return an equal sync when invoked a second time") {
+            val useCase = calculatePlayGamesSyncOver(fastFour, slowFourLevel, nineDaily, nineNormal, sixteenLevel)
 
-            val unlocks = useCase(won).achievementUnlocks
+            val first = useCase()
+
+            useCase() shouldBe first
+        }
+
+        should("only submit the zero base scores, no unlocks or steps, for an empty store") {
+            val useCase = calculatePlayGamesSyncOver()
+
+            useCase() shouldBe
+                PlayGamesSync(
+                    leaderboardScores =
+                        listOf(
+                            R.string.leaderboard_total_wins to 0L,
+                            R.string.leaderboard_daily_sudokus to 0L,
+                            R.string.leaderboard_level_44 to 0L,
+                            R.string.leaderboard_level_99 to 0L,
+                            R.string.leaderboard_level_1616 to 0L,
+                        ),
+                    achievementUnlocks = emptyList(),
+                    achievementSteps = emptyList(),
+                )
+        }
+
+        should("ignore sudokus that are not completed") {
+            val unfinished = testSudoku(size = SudokuSize.NINE, difficulty = HARD)
+            val useCase = calculatePlayGamesSyncOver(fastFour, unfinished)
+
+            useCase().leaderboardScores.first() shouldBe (R.string.leaderboard_total_wins to 1L)
+        }
+
+        should("drop a deleted game from the sync and from the statistics") {
+            val repository = repositoryOver(fastFour, slowFourLevel, nineDaily, nineNormal, sixteenLevel)
+            val sync = calculatePlayGamesSyncOver(repository)
+            val statistics = CalculateStatisticsUseCase(UnconfinedTestDispatcher())
+            val delete = DeleteSudokusUseCase(repository, UnconfinedTestDispatcher())
+            statistics(repository.getCompletedSummaries()).gamesCompleted shouldBe 5
+
+            delete(listOf(nineNormal.info.id))
+
+            sync() shouldBe
+                PlayGamesSync(
+                    leaderboardScores =
+                        listOf(
+                            R.string.leaderboard_total_wins to 4L,
+                            R.string.leaderboard_daily_sudokus to 1L,
+                            R.string.leaderboard_level_44 to 1L,
+                            R.string.leaderboard_level_99 to 0L,
+                            R.string.leaderboard_level_1616 to 1L,
+                            R.string.leaderboard_best_time to 5_000L,
+                            R.string.leaderboard_wins_44 to 2L,
+                            R.string.leaderboard_time_44_very_easy to 5_000L,
+                            R.string.leaderboard_wins_44_very_easy to 2L,
+                            R.string.leaderboard_wins_99 to 1L,
+                            R.string.leaderboard_time_99_hard to 200_000L,
+                            R.string.leaderboard_wins_99_hard to 1L,
+                            R.string.leaderboard_wins_1616 to 1L,
+                            R.string.leaderboard_time_1616_expert to 500_000L,
+                            R.string.leaderboard_wins_1616_expert to 1L,
+                        ),
+                    achievementUnlocks =
+                        listOf(
+                            R.string.achievement_first_win,
+                            R.string.achievement_eraser,
+                            R.string.achievement_no_hints,
+                            R.string.achievement_use_notes,
+                            R.string.achievement_checklist,
+                            R.string.achievement_i_am_speed,
+                            R.string.achievement_stopwatch_44,
+                        ),
+                    achievementSteps =
+                        listOf(
+                            R.string.achievement_10_sudokus_44 to 2,
+                            R.string.achievement_50_sudokus_44 to 2,
+                            R.string.achievement_10_sudokus_99 to 1,
+                            R.string.achievement_50_sudokus_99 to 1,
+                            R.string.achievement_10_sudokus_1616 to 1,
+                            R.string.achievement_50_sudokus_1616 to 1,
+                            R.string.achievement_10_sudokus_very_easy to 2,
+                            R.string.achievement_50_sudokus_very_easy to 2,
+                            R.string.achievement_10_sudokus_hard to 1,
+                            R.string.achievement_50_sudokus_hard to 1,
+                            R.string.achievement_10_sudokus_expert to 1,
+                            R.string.achievement_50_sudokus_expert to 1,
+                        ),
+                )
+            val remaining = statistics(repository.getCompletedSummaries())
+            remaining.gamesCompleted shouldBe 4
+            remaining.totalSecondsPlayed shouldBe 745L
+        }
+
+        should("unlock the no-hints and eraser achievements but not the notes and checklist ones for a plain win") {
+            val unlocks = calculatePlayGamesSyncOver(wonSudoku(eraserUsed = true, hintsUsed = 0))().achievementUnlocks
 
             unlocks shouldContain R.string.achievement_first_win
             unlocks shouldContain R.string.achievement_eraser
@@ -183,74 +333,20 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
             unlocks shouldNotContain R.string.achievement_checklist
         }
 
-        should("unlock the notes and checklist achievements when their flags are set") {
-            val sudoku = wonSudoku(notesMade = 3, isChecklist = true, isReverseChecklist = true)
-            val useCase = calculatePlayGamesSyncOver(sudoku)
-
-            val unlocks = useCase(sudoku).achievementUnlocks
-
-            unlocks shouldContain R.string.achievement_use_notes
-            unlocks shouldContain R.string.achievement_checklist
-            unlocks shouldContain R.string.achievement_reverse_checklist
-        }
-
         should("unlock the speed achievement only under its 10-second threshold") {
-            val fast = wonSudoku(seconds = 9)
-            val slow = wonSudoku(seconds = 10)
-            val useCase = calculatePlayGamesSyncOver(fast, slow)
-
-            useCase(fast).achievementUnlocks shouldContain R.string.achievement_i_am_speed
-            useCase(slow).achievementUnlocks shouldNotContain R.string.achievement_i_am_speed
+            calculatePlayGamesSyncOver(wonSudoku(seconds = 9))().achievementUnlocks shouldContain R.string.achievement_i_am_speed
+            calculatePlayGamesSyncOver(wonSudoku(seconds = 10))().achievementUnlocks shouldNotContain R.string.achievement_i_am_speed
         }
 
-        should("not unlock the no-hints achievement when a hint was used") {
-            val sudoku = wonSudoku(hintsUsed = 1)
-            val useCase = calculatePlayGamesSyncOver(sudoku)
-
-            useCase(sudoku).achievementUnlocks shouldNotContain R.string.achievement_no_hints
-        }
-
-        should("count only sudokus matching size, and matching both size and difficulty, for their respective win totals") {
-            val sudoku = wonSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 42)
-            val sameSizeDifferentDifficulty = wonSudoku(size = SudokuSize.NINE, difficulty = VERY_EASY)
-            val differentSize = wonSudoku(size = SudokuSize.FOUR)
-            val useCase = calculatePlayGamesSyncOver(sudoku, sameSizeDifferentDifficulty, differentSize)
-
-            val scores = useCase(sudoku).leaderboardScores.toMap()
-
-            scores[R.string.leaderboard_wins_99] shouldBe 2L
-            scores[R.string.leaderboard_wins_99_hard] shouldBe 1L
-        }
-
-        should("submit the base scores, counting level sudokus only toward the level leaderboard of their size") {
-            val useCase =
-                calculatePlayGamesSyncOver(
-                    wonSudoku(size = SudokuSize.FOUR, mode = GameMode.Level(1)),
-                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Level(1)),
-                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Level(2)),
-                    wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(1)),
-                    wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(2)),
-                    wonSudoku(size = SudokuSize.SIXTEEN, mode = GameMode.Level(3)),
-                    wonSudoku(size = SudokuSize.FOUR),
-                    wonSudoku(size = SudokuSize.NINE, mode = GameMode.Daily(LocalDate.of(2026, 1, 1))),
-                )
-
-            useCase(null).leaderboardScores shouldBe
-                listOf(
-                    R.string.leaderboard_total_wins to 8L,
-                    R.string.leaderboard_daily_sudokus to 1L,
-                    R.string.leaderboard_level_44 to 1L,
-                    R.string.leaderboard_level_99 to 2L,
-                    R.string.leaderboard_level_1616 to 3L,
-                )
+        should("not unlock the no-hints achievement when every win used a hint") {
+            calculatePlayGamesSyncOver(wonSudoku(hintsUsed = 1))().achievementUnlocks shouldNotContain R.string.achievement_no_hints
         }
 
         should("submit the time and win-count leaderboards of each size and difficulty pair") {
             sizeDifficultyExpectations.forEach { expected ->
-                val sudoku = wonSudoku(size = expected.size, difficulty = expected.difficulty, seconds = 42)
-                val useCase = calculatePlayGamesSyncOver(sudoku)
-
-                val scores = useCase(sudoku).leaderboardScores
+                val scores =
+                    calculatePlayGamesSyncOver(wonSudoku(size = expected.size, difficulty = expected.difficulty, seconds = 42))()
+                        .leaderboardScores
 
                 withClue("${expected.size} ${expected.difficulty}") {
                     scores shouldContain (expected.timeLeaderboard to 42_000L)
@@ -259,16 +355,13 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
             }
         }
 
-        should("increment the 10 and 50 sudokus achievements and submit the wins leaderboard of each size") {
+        should("set the 10 and 50 sudokus achievements and submit the wins leaderboard of each size") {
             sizeExpectations.forEach { expected ->
-                val sudoku = wonSudoku(size = expected.size)
-                val useCase = calculatePlayGamesSyncOver(sudoku)
-
-                val sync = useCase(sudoku)
+                val sync = calculatePlayGamesSyncOver(wonSudoku(size = expected.size))()
 
                 withClue(expected.size) {
-                    sync.achievementIncrements shouldContain (expected.achievement10 to 1)
-                    sync.achievementIncrements shouldContain (expected.achievement50 to 1)
+                    sync.achievementSteps shouldContain (expected.achievement10 to 1)
+                    sync.achievementSteps shouldContain (expected.achievement50 to 1)
                     sync.leaderboardScores shouldContain (expected.winsLeaderboard to 1L)
                 }
             }
@@ -276,27 +369,23 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("unlock the stopwatch achievement of each size only below its threshold") {
             sizeExpectations.forEach { expected ->
-                val fast = wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds - 1)
-                val slow = wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds)
-                val useCase = calculatePlayGamesSyncOver(fast, slow)
+                val fast = calculatePlayGamesSyncOver(wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds - 1))()
+                val slow = calculatePlayGamesSyncOver(wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds))()
 
                 withClue(expected.size) {
-                    useCase(fast).achievementUnlocks shouldContain expected.stopwatchAchievement
-                    useCase(slow).achievementUnlocks shouldNotContain expected.stopwatchAchievement
+                    fast.achievementUnlocks shouldContain expected.stopwatchAchievement
+                    slow.achievementUnlocks shouldNotContain expected.stopwatchAchievement
                 }
             }
         }
 
-        should("increment the 10 and 50 sudokus achievements of each difficulty") {
+        should("set the 10 and 50 sudokus achievements of each difficulty") {
             difficultyAchievementExpectations.forEach { (difficulty, achievement10, achievement50) ->
-                val sudoku = wonSudoku(difficulty = difficulty)
-                val useCase = calculatePlayGamesSyncOver(sudoku)
-
-                val increments = useCase(sudoku).achievementIncrements
+                val steps = calculatePlayGamesSyncOver(wonSudoku(difficulty = difficulty))().achievementSteps
 
                 withClue(difficulty) {
-                    increments shouldContain (achievement10 to 1)
-                    increments shouldContain (achievement50 to 1)
+                    steps shouldContain (achievement10 to 1)
+                    steps shouldContain (achievement50 to 1)
                 }
             }
         }

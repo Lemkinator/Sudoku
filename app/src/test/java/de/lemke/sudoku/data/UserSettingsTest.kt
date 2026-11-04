@@ -71,7 +71,6 @@ class UserSettingsTest {
         settings.dailySudokuNotificationHour shouldBe 9
         settings.dailySudokuNotificationMinute shouldBe 0
         settings.currentLevelTab shouldBe 1
-        settings.pendingPlayGamesWins shouldBe emptySet()
     }
 
     @Test
@@ -177,6 +176,16 @@ class UserSettingsTest {
     }
 
     @Test
+    fun `constructing over a store holding the removed pendingPlayGamesWins key deletes it`() {
+        prefs.edit().putStringSet("pendingPlayGamesWins", setOf("1", "2")).commit()
+        prefs.contains("pendingPlayGamesWins").shouldBeTrue()
+
+        reload()
+
+        prefs.contains("pendingPlayGamesWins").shouldBeFalse()
+    }
+
+    @Test
     fun `delegated keys are pinned`() {
         assertDelegatedKeys(
             UserSettings::class.java,
@@ -194,7 +203,6 @@ class UserSettingsTest {
                 "dailySudokuNotificationHour",
                 "dailySudokuNotificationMinute",
                 "currentLevelTab",
-                "pendingPlayGamesWins",
             ),
         )
     }

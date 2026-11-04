@@ -64,11 +64,11 @@ import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.MoveResult
-import de.lemke.sudoku.domain.model.PendingPlayGamesSync
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldRegion
-import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.PlayGamesSyncer
 import de.lemke.sudoku.ui.utils.SelectionIndices
 import de.lemke.sudoku.ui.utils.SelectionTarget
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
@@ -78,6 +78,7 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.R as oneuiR
 import dev.oneuiproject.oneui.design.R as designR
@@ -131,7 +132,7 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var userSettings: UserSettings
 
     @Inject
-    lateinit var playGamesSyncApplier: PlayGamesSyncApplier
+    lateinit var playGamesSyncer: PlayGamesSyncer
 
     @Inject
     lateinit var inAppReview: InAppReview
@@ -394,10 +395,10 @@ class SudokuActivity : AppCompatActivity() {
         dialog.showOnce(COMPLETED_DIALOG_TAG)?.let { completionDialog = it }
     }
 
-    private fun onPlayGamesSync(pending: PendingPlayGamesSync) {
-        playGamesSyncApplier.apply(this, pending.sync)
+    private fun onPlayGamesSync(sync: PlayGamesSync) {
+        viewModel.onPlayGamesSyncHandled(sync)
         inAppReview.showIfPossible(this)
-        viewModel.onPlayGamesSyncHandled(pending)
+        lifecycleScope.launch { playGamesSyncer(this@SudokuActivity, sync) }
     }
 
     private fun onErrorLimitReached(playing: SudokuGame.Playing) {

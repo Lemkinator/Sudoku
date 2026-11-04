@@ -23,11 +23,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
-import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
-import de.lemke.sudoku.domain.model.PendingPlayGamesSync
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,14 +51,14 @@ class MainViewModel @Inject constructor(
     private val importSudoku: ImportSudokuUseCase,
     private val sendDailyNotification: SendDailyNotificationUseCase,
     private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
-    private val getPendingPlayGamesSync: GetPendingPlayGamesSyncUseCase,
-    private val clearPlayGamesWins: ClearPlayGamesWinsUseCase,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val importedSudoku: StateFlow<ImportedSudoku>
         field = MutableStateFlow<ImportedSudoku>(ImportedSudoku.Idle)
 
     private var importingFile: String? = null
+
+    private var playGamesSyncOffered = false
 
     /**
      * Imports the file at [uri] once, also when a recreated or restored activity hands the same [uri] again.
@@ -83,14 +81,11 @@ class MainViewModel @Inject constructor(
         importedSudoku.compareAndSet(result, ImportedSudoku.Idle)
     }
 
-    /** The Play Games sync to apply: the one of the wins no activity applied yet, else the standings of all completed sudokus. */
-    suspend fun onScreenReady(): PendingPlayGamesSync {
+    /** The Play Games sync of all completed sudokus, offered once per app start; later calls return null. */
+    suspend fun onScreenReady(): PlayGamesSync? {
         sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
-        return getPendingPlayGamesSync() ?: PendingPlayGamesSync(emptySet(), calculatePlayGamesSync())
-    }
-
-    fun onPlayGamesSyncApplied(sync: PendingPlayGamesSync) {
-        clearPlayGamesWins(sync.wins)
+        if (playGamesSyncOffered) return null
+        return calculatePlayGamesSync().also { playGamesSyncOffered = true }
     }
 
     private companion object {

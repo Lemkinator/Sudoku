@@ -33,6 +33,7 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.di.GamesSignInModule
+import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.ui.utils.FakeGamesSignIn
 import de.lemke.sudoku.ui.utils.FakePlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.FakePlayGamesSyncApplier
@@ -76,9 +77,11 @@ class MainActivityGamesSignInTest {
     @JvmField
     val playGamesIntentProvider: PlayGamesIntentProvider = fakeIntentProvider
 
+    private val fakeSyncApplier = FakePlayGamesSyncApplier()
+
     @BindValue
     @JvmField
-    val playGamesSyncApplier: PlayGamesSyncApplier = FakePlayGamesSyncApplier()
+    val playGamesSyncApplier: PlayGamesSyncApplier = fakeSyncApplier
 
     @Inject
     lateinit var settings: SettingsRepository
@@ -90,9 +93,12 @@ class MainActivityGamesSignInTest {
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
+    private var startupChecks = 0
+
     private fun launch(block: (MainActivity) -> Unit) {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             idleMainLooper()
+            startupChecks = fakeGamesSignIn.authenticationChecks
             scenario.onActivity { activity -> block(activity) }
         }
     }
@@ -109,13 +115,49 @@ class MainActivityGamesSignInTest {
         item.invoke()
     }
 
+    private val emptyStoreSync =
+        PlayGamesSync(
+            leaderboardScores =
+                listOf(
+                    R.string.leaderboard_total_wins to 0L,
+                    R.string.leaderboard_daily_sudokus to 0L,
+                    R.string.leaderboard_level_44 to 0L,
+                    R.string.leaderboard_level_99 to 0L,
+                    R.string.leaderboard_level_1616 to 0L,
+                ),
+        )
+
+    @Test
+    fun `the first screen syncs Play Games once when the player is signed in`() {
+        fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
+
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            idleMainLooper()
+            fakeSyncApplier.applied shouldBe listOf(emptyStoreSync)
+
+            scenario.recreate()
+            idleMainLooper()
+            fakeSyncApplier.applied shouldBe listOf(emptyStoreSync)
+        }
+    }
+
+    @Test
+    fun `the first screen does not sync Play Games when the player is signed out`() {
+        ActivityScenario.launch(MainActivity::class.java).use {
+            idleMainLooper()
+
+            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeSyncApplier.applied shouldBe emptyList()
+        }
+    }
+
     @Test
     fun `achievements_dest opens achievements directly when already authenticated`() =
         launch { activity ->
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             clickAchievements(activity)
             idleMainLooper()
-            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeGamesSignIn.authenticationChecks - startupChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 0
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
@@ -172,7 +214,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.signIns shouldBe 0
             ShadowToast.shownToastCount() shouldBe 0
             clickAchievements(activity)
-            fakeGamesSignIn.authenticationChecks shouldBe 2
+            fakeGamesSignIn.authenticationChecks - startupChecks shouldBe 2
         }
 
     @Test
@@ -183,7 +225,7 @@ class MainActivityGamesSignInTest {
             clickAchievements(activity)
             clickAchievements(activity)
             idleMainLooper()
-            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeGamesSignIn.authenticationChecks - startupChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 1
             ShadowToast.shownToastCount() shouldBe 1
         }
@@ -194,7 +236,7 @@ class MainActivityGamesSignInTest {
             fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
             clickLeaderboards(activity)
             idleMainLooper()
-            fakeGamesSignIn.authenticationChecks shouldBe 1
+            fakeGamesSignIn.authenticationChecks - startupChecks shouldBe 1
             fakeGamesSignIn.signIns shouldBe 0
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.LEADERBOARDS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"

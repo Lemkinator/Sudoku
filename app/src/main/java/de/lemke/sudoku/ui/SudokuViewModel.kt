@@ -21,20 +21,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
+import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
-import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
-import de.lemke.sudoku.domain.QueuePlayGamesWinUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Highlighting
 import de.lemke.sudoku.domain.model.MoveResult
-import de.lemke.sudoku.domain.model.PendingPlayGamesSync
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
@@ -187,9 +184,7 @@ class SudokuViewModel @Inject constructor(
     private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
     private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
-    private val queuePlayGamesWin: QueuePlayGamesWinUseCase,
-    private val getPendingPlayGamesSync: GetPendingPlayGamesSyncUseCase,
-    private val clearPlayGamesWins: ClearPlayGamesWinsUseCase,
+    private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
     private val userSettings: UserSettings,
     private val clock: Clock,
     private val timeSource: TimeSource.WithComparableMarks,
@@ -203,9 +198,9 @@ class SudokuViewModel @Inject constructor(
     val completion: StateFlow<SudokuCompletion>
         field = MutableStateFlow<SudokuCompletion>(SudokuCompletion.Idle)
 
-    /** The Play Games sync of the queued wins. The activity applies it and then reports it handled, which dequeues the wins. */
-    val playGamesSync: StateFlow<PendingPlayGamesSync?>
-        field = MutableStateFlow<PendingPlayGamesSync?>(null)
+    /** Play Games sync of all completed sudokus, set once this win is saved. The activity applies it, then reports it handled. */
+    val playGamesSync: StateFlow<PlayGamesSync?>
+        field = MutableStateFlow<PlayGamesSync?>(null)
 
     private var wrapUp: Job? = null
     private var ticker: Job? = null
@@ -213,7 +208,6 @@ class SudokuViewModel @Inject constructor(
     private var untilNextTick: Duration = 1.seconds
 
     init {
-        viewModelScope.launch { playGamesSync.compareAndSet(null, orOnFailure(null) { getPendingPlayGamesSync() }) }
         val id = savedStateHandle.get<String>(KEY_SUDOKU_ID)
         if (id == null) {
             game.value = SudokuGame.NotFound
@@ -280,8 +274,7 @@ class SudokuViewModel @Inject constructor(
         completion.compareAndSet(failure, SudokuCompletion.Idle)
     }
 
-    fun onPlayGamesSyncHandled(sync: PendingPlayGamesSync) {
-        clearPlayGamesWins(sync.wins)
+    fun onPlayGamesSyncHandled(sync: PlayGamesSync) {
         playGamesSync.compareAndSet(sync, null)
     }
 
@@ -305,7 +298,6 @@ class SudokuViewModel @Inject constructor(
             game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
             updateTicker()
             if (played.sudoku.completed) {
-                queuePlayGamesWin(played.sudoku.info.id)
                 wrapUp(played.sudoku)
             } else {
                 queueSudokuSave.launch(played.sudoku)
@@ -391,11 +383,10 @@ class SudokuViewModel @Inject constructor(
                     is SudokuCompletion.Summary -> {
                         savedStateHandle[KEY_PENDING_SUMMARY] = PendingSummary(result.followUp)
                         completion.value = result
-                        playGamesSync.value = pendingPlayGamesSync()
+                        playGamesSync.value = orOnFailure(PlayGamesSync()) { calculatePlayGamesSync() }
                     }
 
                     SudokuCompletion.Failed -> {
-                        clearPlayGamesWins(setOf(completed.info.id))
                         completion.value = result
                     }
                 }
@@ -415,9 +406,6 @@ class SudokuViewModel @Inject constructor(
             savedStateHandle.remove<PendingSummary>(KEY_PENDING_SUMMARY)
         }
     }
-
-    private suspend fun pendingPlayGamesSync(): PendingPlayGamesSync =
-        orOnFailure(null) { getPendingPlayGamesSync() } ?: PendingPlayGamesSync(emptySet(), PlayGamesSync())
 
     private suspend inline fun <T> orOnFailure(
         fallback: T,

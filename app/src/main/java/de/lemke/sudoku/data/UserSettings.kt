@@ -29,12 +29,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
 private const val DEFAULT_DAILY_NOTIFICATION_HOUR = 9
+private const val REMOVED_PENDING_PLAY_GAMES_WINS = "pendingPlayGamesWins"
 
 /** Sudoku-specific settings, layered on top of common-utils [SettingsRepository]. */
 class UserSettings(
     preferences: SharedPreferences,
     scope: CoroutineScope,
 ) : SettingsRepository(preferences) {
+    init {
+        preferences.edit().remove(REMOVED_PENDING_PLAY_GAMES_WINS).apply()
+    }
+
     var difficultySliderValue: Int by preferences.delegates.int(2).sanitized { it.coerceIn(0, Difficulty.max) }
     var sizeSliderValue: Int by preferences.delegates.int(1)
     var keepScreenOn: Boolean by preferences.delegates.boolean(true)
@@ -51,7 +56,6 @@ class UserSettings(
     var dailySudokuNotificationHour: Int by preferences.delegates.int(DEFAULT_DAILY_NOTIFICATION_HOUR)
     var dailySudokuNotificationMinute: Int by preferences.delegates.int(0)
     var currentLevelTab: Int by preferences.delegates.int(1)
-    var pendingPlayGamesWins: Set<String> by preferences.delegates.stringSet()
 
     /**
      * Reactive view of [dailyShowUncompleted] — [ObserveDailySudokusUseCase][de.lemke.sudoku.domain.ObserveDailySudokusUseCase]

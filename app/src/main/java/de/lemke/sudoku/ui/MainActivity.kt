@@ -96,7 +96,7 @@ import de.lemke.sudoku.ui.utils.GamesSignIn
 import de.lemke.sudoku.ui.utils.PlayGamesIntentProvider
 import de.lemke.sudoku.ui.utils.PlayGamesScreen
 import de.lemke.sudoku.ui.utils.PlayGamesScreenLaunch
-import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.PlayGamesSyncer
 import de.lemke.sudoku.ui.utils.preparePlayGamesScreen
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var playGamesIntentProvider: PlayGamesIntentProvider
 
     @Inject
-    lateinit var playGamesSyncApplier: PlayGamesSyncApplier
+    lateinit var playGamesSyncer: PlayGamesSyncer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -174,9 +174,7 @@ class MainActivity : AppCompatActivity() {
         collectState(viewModel.importedSudoku, minActiveState = RESUMED) { if (it is ImportedSudoku.Result) onImportedSudokuResult(it) }
         lifecycleScope.launch {
             isUIReady = true
-            val pending = viewModel.onScreenReady()
-            playGamesSyncApplier.apply(this@MainActivity, pending.sync)
-            viewModel.onPlayGamesSyncApplied(pending)
+            viewModel.onScreenReady()?.let { playGamesSyncer(this@MainActivity, it) }
         }
     }
 

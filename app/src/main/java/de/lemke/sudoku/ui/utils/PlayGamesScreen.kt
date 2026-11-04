@@ -66,9 +66,9 @@ suspend fun Activity.preparePlayGamesScreen(
     }
 }
 
-private val Task<Boolean>.authenticated: Boolean get() = resultOrNull() == true
+internal val Task<Boolean>.authenticated: Boolean get() = resultOrNull() == true
 
-private suspend fun <T> Task<T>.silentCompletionOrNull(): Task<T>? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { awaitCompletion() }
+internal suspend fun <T> Task<T>.silentCompletionOrNull(): Task<T>? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { awaitCompletion() }
 
 private suspend fun <T> Task<T>.awaitCompletion(): Task<T> =
     suspendCancellableCoroutine { continuation -> addOnCompleteListener { task -> continuation.resume(task) } }

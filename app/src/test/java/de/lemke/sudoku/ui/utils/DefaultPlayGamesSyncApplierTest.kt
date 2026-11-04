@@ -50,19 +50,35 @@ class DefaultPlayGamesSyncApplierTest : ShouldSpec(
             unmockkAll()
         }
 
-        should("submit every leaderboard score, unlock and increment every achievement under its resolved id") {
+        should("submit every leaderboard score, unlock and set the steps of every achievement under its resolved id") {
             DefaultPlayGamesSyncApplier().apply(
                 activity,
                 PlayGamesSync(
                     leaderboardScores = listOf(R.string.leaderboard_total_wins to 42L),
                     achievementUnlocks = listOf(R.string.achievement_eraser),
-                    achievementIncrements = listOf(R.string.achievement_use_notes to 3),
+                    achievementSteps = listOf(R.string.achievement_use_notes to 3),
                 ),
             )
 
             verify(exactly = 1) { leaderboards.submitScore("leaderboard-total-wins", 42L) }
             verify(exactly = 1) { achievements.unlock("achievement-eraser") }
-            verify(exactly = 1) { achievements.increment("achievement-use-notes", 3) }
+            verify(exactly = 1) { achievements.setSteps("achievement-use-notes", 3) }
+        }
+
+        should("send the same absolute calls again when the same sync is applied twice") {
+            val sync =
+                PlayGamesSync(
+                    leaderboardScores = listOf(R.string.leaderboard_total_wins to 42L),
+                    achievementUnlocks = listOf(R.string.achievement_eraser),
+                    achievementSteps = listOf(R.string.achievement_use_notes to 3),
+                )
+
+            DefaultPlayGamesSyncApplier().apply(activity, sync)
+            DefaultPlayGamesSyncApplier().apply(activity, sync)
+
+            verify(exactly = 2) { leaderboards.submitScore("leaderboard-total-wins", 42L) }
+            verify(exactly = 2) { achievements.unlock("achievement-eraser") }
+            verify(exactly = 2) { achievements.setSteps("achievement-use-notes", 3) }
         }
 
         should("call no Play Games client for an empty sync") {
@@ -70,7 +86,7 @@ class DefaultPlayGamesSyncApplierTest : ShouldSpec(
 
             verify(exactly = 0) { leaderboards.submitScore(any(), any()) }
             verify(exactly = 0) { achievements.unlock(any()) }
-            verify(exactly = 0) { achievements.increment(any(), any()) }
+            verify(exactly = 0) { achievements.setSteps(any(), any()) }
         }
     },
 )

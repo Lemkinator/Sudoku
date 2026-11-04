@@ -24,19 +24,14 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeSudokuDocuments
-import de.lemke.sudoku.data.PendingPlayGamesWins
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.ClearPlayGamesWinsUseCase
-import de.lemke.sudoku.domain.GetPendingPlayGamesSyncUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.model.GameMode
-import de.lemke.sudoku.domain.model.PendingPlayGamesSync
-import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.nulls.shouldBeNull
@@ -58,7 +53,6 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class, sdk = [36])
 class MainViewModelTest {
     private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
-    private val pendingWins = PendingPlayGamesWins(userSettings)
     private val dailyNotifications = FakeDailyNotifications()
     private val sudokusRepository = FakeSudokusRepository()
     private val sudokuDocuments = FakeSudokuDocuments()
@@ -76,13 +70,6 @@ class MainViewModelTest {
             ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), clock, dispatcher),
             SendDailyNotificationUseCase(dailyNotifications, userSettings),
             CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher),
-            GetPendingPlayGamesSyncUseCase(
-                pendingWins,
-                sudokusRepository,
-                CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher),
-                dispatcher,
-            ),
-            ClearPlayGamesWinsUseCase(pendingWins),
             savedStateHandle,
         )
 
@@ -217,7 +204,7 @@ class MainViewModelTest {
         }
 
     @Test
-    fun `onScreenReady returns calculatePlayGamesSync's result`() =
+    fun `onScreenReady returns the sync derived from the completed sudokus once`() =
         runTest {
             sudokusRepository.store(
                 testSudoku(completed = true),
@@ -225,39 +212,39 @@ class MainViewModelTest {
                 testSudoku(mode = GameMode.Daily(LocalDate.now()), completed = true),
                 testSudoku(),
             )
-            viewModel.onScreenReady() shouldBe
-                PendingPlayGamesSync(
-                    wins = emptySet(),
-                    sync =
-                        PlayGamesSync(
-                            leaderboardScores =
-                                listOf(
-                                    R.string.leaderboard_total_wins to 3L,
-                                    R.string.leaderboard_daily_sudokus to 1L,
-                                    R.string.leaderboard_level_44 to 1L,
-                                    R.string.leaderboard_level_99 to 0L,
-                                    R.string.leaderboard_level_1616 to 0L,
-                                ),
-                        ),
+            val sync = viewModel.onScreenReady()
+
+            checkNotNull(sync).leaderboardScores.take(5) shouldBe
+                listOf(
+                    R.string.leaderboard_total_wins to 3L,
+                    R.string.leaderboard_daily_sudokus to 1L,
+                    R.string.leaderboard_level_44 to 1L,
+                    R.string.leaderboard_level_99 to 0L,
+                    R.string.leaderboard_level_1616 to 0L,
                 )
+            sync.achievementUnlocks.first() shouldBe R.string.achievement_first_win
+            viewModel.onScreenReady().shouldBeNull()
         }
 
     @Test
-    fun `onScreenReady returns the sync of a queued win until it is applied`() =
+    fun `onScreenReady sets the daily notification on every call`() =
         runTest {
-            val won = testSudoku(sudokuId = SudokuId("won"), completed = true)
-            sudokusRepository.store(won)
-            pendingWins.add(won.info.id)
+            userSettings.dailySudokuNotificationEnabled = true
+            viewModel.onScreenReady()
+            dailyNotifications.schedule(10, 30)
+            viewModel.onScreenReady()
+            dailyNotifications.scheduled shouldBe FakeDailyNotifications.AlarmTime(hour = 9, minute = 0)
+        }
 
-            val pending = viewModel.onScreenReady()
+    @Test
+    fun `onScreenReady offers the sync again to a new view model`() =
+        runTest {
+            sudokusRepository.store(testSudoku(completed = true))
+            val first = viewModel.onScreenReady()
 
-            pending.wins shouldBe setOf(SudokuId("won"))
-            pending.sync.achievementUnlocks.first() shouldBe R.string.achievement_first_win
-            viewModel.onScreenReady() shouldBe pending
+            val second = newViewModel().onScreenReady()
 
-            viewModel.onPlayGamesSyncApplied(pending)
-
-            pendingWins.all() shouldBe emptySet()
-            viewModel.onScreenReady().wins shouldBe emptySet()
+            checkNotNull(first).leaderboardScores.first() shouldBe (R.string.leaderboard_total_wins to 1L)
+            second shouldBe first
         }
 }
