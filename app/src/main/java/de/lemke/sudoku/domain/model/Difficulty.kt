@@ -32,7 +32,7 @@ enum class Difficulty(
     EXPERT(code = 4, givensFour = 4, givensNine = 23, givensSixteen = 116),
     ;
 
-    // Persisted/serialized as this ordinal (see fromInt/getLocalString(ordinal, ...)); entry order is the contract.
+    // Entry order is the index into R.array.difficulty and the difficulty seekbar progress.
     val value: Int get() = ordinal
 
     fun getLocalString(resources: Resources): String = resources.getStringArray(R.array.difficulty)[this.ordinal]
