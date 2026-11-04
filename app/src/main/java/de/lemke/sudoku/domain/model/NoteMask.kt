@@ -36,6 +36,9 @@ value class NoteMask(val bits: Int) {
 
         fun of(vararg digits: Int): NoteMask = NoteMask(digits.fold(0) { bits, digit -> bits or bitOf(digit) })
 
-        private fun bitOf(digit: Int): Int = 1 shl (digit - 1)
+        private fun bitOf(digit: Int): Int {
+            val shift = digit - 1
+            return 1 shl shift
+        }
     }
 }
