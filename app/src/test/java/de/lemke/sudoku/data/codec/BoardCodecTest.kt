@@ -59,6 +59,18 @@ private fun message(
             notes?.let { bytes(5, it.hexToByteArray()) }
         }.toByteArray()
 
+/** The golden board followed by an unknown field 6 that fills the blob to [total] bytes. */
+@OptIn(ExperimentalStdlibApi::class)
+private fun goldenPaddedTo(total: Int): ByteArray {
+    val golden = GOLDEN_4X4.hexToByteArray()
+    val tagAndThreeByteLength = 4
+    return ProtoWriter()
+        .apply {
+            raw(golden)
+            bytes(6, ByteArray(total - golden.size - tagAndThreeByteLength))
+        }.toByteArray()
+}
+
 @OptIn(ExperimentalStdlibApi::class)
 class BoardCodecTest : ShouldSpec(
     {
@@ -80,6 +92,18 @@ class BoardCodecTest : ShouldSpec(
             val extra = "3007" + "3a03616263" + "450a0b0c0d"
             val board = BoardCodec.decode((GOLDEN_4X4 + extra).hexToByteArray()).shouldNotBeNull()
             BoardCodec.encode(board).toHexString() shouldBe GOLDEN_4X4 + extra
+        }
+
+        should("decode a blob of exactly the size limit and keep its unknown field") {
+            val blob = goldenPaddedTo(BoardCodec.MAX_BYTES)
+            blob.size shouldBe 65_536
+            BoardCodec.encode(BoardCodec.decode(blob).shouldNotBeNull()) shouldBe blob
+        }
+
+        should("read a blob one byte beyond the size limit as unreadable") {
+            val blob = goldenPaddedTo(BoardCodec.MAX_BYTES + 1)
+            blob.size shouldBe 65_537
+            BoardCodec.decode(blob).shouldBeNull()
         }
 
         should("size fresh boards") {

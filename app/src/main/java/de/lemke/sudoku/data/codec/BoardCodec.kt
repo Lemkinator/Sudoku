@@ -38,6 +38,9 @@ private const val CELL_ORIGIN_MASK = 0x07
 object BoardCodec {
     const val FORMAT = 1
 
+    /** The largest blob [decode] reads. A 16x16 board takes 394 bytes; unknown fields are kept verbatim and must stay in a cursor window. */
+    const val MAX_BYTES = 64 * 1024
+
     fun encode(board: Board): ByteArray =
         ProtoWriter()
             .apply {
@@ -64,8 +67,9 @@ object BoardCodec {
                 raw(board.preserved.bytes)
             }.toByteArray()
 
-    /** The board of [bytes], or null if they are no board of this format. */
+    /** The board of [bytes], or null if they are no board of this format or exceed [MAX_BYTES]. */
     fun decode(bytes: ByteArray): Board? {
+        if (bytes.size > MAX_BYTES) return null
         val fields = ProtoReader.fields(bytes)
         val (known, unknown) = fields.orEmpty().partition { it.number <= FIELD_NOTES }
         val byNumber = known.associateBy { it.number }
