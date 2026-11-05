@@ -18,13 +18,14 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.os.Looper
+import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
-import de.lemke.commonutils.data.SettingsRepository
+import de.lemke.sudoku.data.UserSettings
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -57,7 +58,7 @@ class IntroActivityAnimationTest {
     val hiltRule = HiltTestRule(this)
 
     @Inject
-    lateinit var settings: SettingsRepository
+    lateinit var settings: UserSettings
 
     @Before
     fun setup() {
@@ -150,15 +151,15 @@ class IntroActivityAnimationTest {
             idle(1200)
             activity.selected.shouldBeNull()
             activity.binding.numberButton8.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
             idle(1200)
             activity.binding.numberButton5.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
             idle(1200)
             activity.selected shouldBe 21
             idle(1200)
             activity.binding.numberButton2.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
             idle(1200)
             activity.selected shouldBe DEMO_CELL_INDEX_4
         }
@@ -204,7 +205,8 @@ class IntroActivityAnimationTest {
         }
 
     @Test
-    fun `a lesson pulses its target cell whatever the animation setting says`() =
+    fun `a lesson pulses its target cell although animations are turned off`() {
+        settings.animationsEnabled = false
         launch { activity ->
             activity.toStep(IntroStep.SELECT_CELL)
 
@@ -214,15 +216,36 @@ class IntroActivityAnimationTest {
             activity.binding.board.isAnimating
                 .shouldBeFalse()
         }
+    }
 
     @Test
-    fun `a lesson without an animation ends its job at once`() =
+    fun `a stopped activity pauses the lesson loop and a restart resumes it`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        ActivityScenario.launch<IntroActivity>(Intent(context, IntroActivity::class.java)).use { scenario ->
+            lateinit var shown: () -> Set<Int>
+            scenario.onActivity { activity -> shown = { activity.highlighted } }
+            idle(1800)
+            shown() shouldBe ROW_1
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            idle(10_000)
+            shown() shouldBe ROW_1
+
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            idle(900)
+            shown() shouldBe BLOCK_0
+            idle(900)
+            shown() shouldBe ROW_1
+        }
+    }
+
+    @Test
+    fun `a lesson without an animation leaves the board still`() =
         launch { activity ->
             activity.toStep(IntroStep.SELECTION)
-            val job = activity.animation.shouldNotBeNull()
-            idle(50)
+            idle(5000)
 
-            job.isCompleted.shouldBeTrue()
+            activity.highlighted shouldBe emptySet()
             activity.binding.board.isAnimating
                 .shouldBeFalse()
         }

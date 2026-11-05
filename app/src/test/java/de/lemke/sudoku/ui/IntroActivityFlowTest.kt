@@ -244,7 +244,7 @@ class IntroActivityFlowTest {
 
             activity.state.step shouldBe IntroStep.ENTER_ROW_COLUMN
             activity.binding.numberButton2.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
             activity.binding.board.render
                 ?.highlightedDigit shouldBe DEMO_SELECT_DIGIT
         }
@@ -302,7 +302,7 @@ class IntroActivityFlowTest {
             activity.binding.noteButton.performClick()
             activity.state.input.notesMode shouldBe true
             activity.binding.noteButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
             activity.binding.noteButton.performClick()
             activity.state.input.notesMode shouldBe false
         }

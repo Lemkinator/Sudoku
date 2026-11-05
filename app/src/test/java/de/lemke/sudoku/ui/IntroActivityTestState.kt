@@ -17,15 +17,8 @@
 package de.lemke.sudoku.ui
 
 import android.animation.ValueAnimator
-import android.util.TypedValue
-import androidx.appcompat.R
 
-internal val IntroActivity.colorPrimary: Int
-    get() {
-        val value = TypedValue()
-        theme.resolveAttribute(R.attr.colorPrimary, value, true)
-        return value.data
-    }
+internal const val INTRO_PRIMARY_COLOR: Int = 0xFFCF7200.toInt()
 
 /** The tutorial pulse never ends while the paused test clock stands still, so animations finish at their first frame. */
 internal fun finishAnimationsAtFirstFrame() {

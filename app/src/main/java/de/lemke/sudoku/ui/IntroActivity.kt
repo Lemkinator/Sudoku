@@ -37,7 +37,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.RESUMED
+import androidx.lifecycle.Lifecycle.State.STARTED
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.SingleLaunchResultLauncher
 import de.lemke.commonutils.ui.utils.advanceOnboarding
@@ -165,7 +167,7 @@ class IntroActivity : AppCompatActivity() {
             animatedStep = step
             animation?.cancel()
             demo = IntroDemo()
-            animation = lifecycleScope.launch { animate(step) }
+            animation = lifecycleScope.launch { repeatOnLifecycle(STARTED) { animate(step) } }
         }
         val input = demo.input ?: state.input
         binding.board.render =
