@@ -27,6 +27,8 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import de.lemke.sudoku.ui.game.BoardInput
+import de.lemke.sudoku.ui.game.Selection
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,5 +90,15 @@ class IntroViewModelSavedStateTest {
         viewModel.onNotificationChoiceHandled(NotificationChoice.Saved)
 
         viewModel(restoredHandle(savedStateHandle)).notificationChoice.value shouldBe NotificationChoice.Pending
+    }
+
+    @Test
+    fun `every selection and the entered numbers of the lesson state survive a parcel`() {
+        listOf(Selection.Cell(4), Selection.Digit(2), Selection.Delete, Selection.Hint).forEach { selection ->
+            val state = IntroState(IntroStep.TOOLS, BoardInput(selection, notesMode = true), mapOf(4 to 5, 24 to 3))
+            val savedStateHandle = SavedStateHandle().also { it["state"] = state }
+
+            restoredHandle(savedStateHandle).get<IntroState>("state") shouldBe state
+        }
     }
 }
