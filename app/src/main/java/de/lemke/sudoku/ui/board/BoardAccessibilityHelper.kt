@@ -62,20 +62,6 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
         node.setCollectionItemInfo(AccessibilityNodeInfoCompat.CollectionItemInfoCompat.obtain(position.row, 1, position.column, 1, false))
     }
 
-    fun onRenderChanged(
-        old: BoardRender?,
-        new: BoardRender?,
-    ) {
-        if (old == null || new == null || old.board.size != new.board.size) {
-            invalidateRoot()
-            return
-        }
-        for (index in 0 until new.board.size.cellCount) {
-            val selectionChanged = (index == old.selected) != (index == new.selected)
-            if (selectionChanged || old.board[index] != new.board[index]) invalidateVirtualView(index)
-        }
-    }
-
     override fun onPopulateNodeForHost(node: AccessibilityNodeInfoCompat) {
         val render = view.render ?: return
         val size = render.board.size.value
@@ -102,6 +88,20 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
                 false
             }
         }
+
+    fun onRenderChanged(
+        old: BoardRender?,
+        new: BoardRender?,
+    ) {
+        if (old == null || new == null || old.board.size != new.board.size) {
+            invalidateRoot()
+            return
+        }
+        for (index in 0 until new.board.size.cellCount) {
+            val selectionChanged = (index == old.selected) != (index == new.selected)
+            if (selectionChanged || old.board[index] != new.board[index]) invalidateVirtualView(index)
+        }
+    }
 
     private fun describe(
         cell: Cell,
