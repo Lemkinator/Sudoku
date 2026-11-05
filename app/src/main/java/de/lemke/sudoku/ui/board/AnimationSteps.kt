@@ -34,9 +34,9 @@ fun animationSteps(
         (0 until size.cellCount).filter { index ->
             val position = Position.create(index, size)
             regions.board ||
-                regions.row && position.row == origin.row ||
-                regions.column && position.column == origin.column ||
-                regions.block && position.block == origin.block
+                (regions.row && position.row == origin.row) ||
+                (regions.column && position.column == origin.column) ||
+                (regions.block && position.block == origin.block)
         }
     val backward = reached.filter { it <= from }.asReversed()
     val forward = reached.filter { it > from }
