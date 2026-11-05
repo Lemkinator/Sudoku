@@ -47,6 +47,18 @@ class IntroTutorialTest : ShouldSpec(
             at(IntroStep.SELECT_CELL).tap(InputTap.Cell(0)) shouldBe at(IntroStep.SELECT_CELL)
         }
 
+        should("ignore the demo cell in the select-cell lesson when something is selected") {
+            at(IntroStep.SELECT_CELL, Selection.Cell(1)).tap(InputTap.Cell(4)) shouldBe at(IntroStep.SELECT_CELL, Selection.Cell(1))
+        }
+
+        should("ignore a number in the enter-number lesson without a selected cell") {
+            at(IntroStep.ENTER_NUMBER).tap(InputTap.Digit(5)) shouldBe at(IntroStep.ENTER_NUMBER)
+        }
+
+        should("ignore number 2 in the select-number lesson when something is selected") {
+            at(IntroStep.SELECT_NUMBER, Selection.Digit(3)).tap(InputTap.Digit(2)) shouldBe at(IntroStep.SELECT_NUMBER, Selection.Digit(3))
+        }
+
         should("ignore the demo cell before its lesson") {
             at(IntroStep.BLOCKS).tap(InputTap.Cell(4)) shouldBe at(IntroStep.BLOCKS)
         }

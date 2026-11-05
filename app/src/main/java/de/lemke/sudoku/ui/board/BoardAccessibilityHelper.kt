@@ -36,16 +36,22 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
     ): Int = view.cellAt(x, y).takeIf { it >= 0 } ?: NO_VIEW
 
     override fun getVisibleVirtualViews(virtualViewIds: MutableList<Int>) {
-        val board = view.render?.board ?: return
-        virtualViewIds.addAll(0 until board.size.cellCount)
+        val render = view.render ?: return
+        virtualViewIds.addAll(0 until render.board.size.cellCount)
     }
 
     override fun onPopulateNodeForVirtualView(
         virtualViewId: Int,
         node: AccessibilityNodeInfoCompat,
     ) {
-        val board = checkNotNull(view.render).board
-        val geometry = checkNotNull(view.geometry)
+        val render = view.render
+        val geometry = view.geometry
+        if (render == null || geometry == null) {
+            node.contentDescription = view.resources.getString(R.string.cell_empty)
+            node.setBoundsInParent(Rect())
+            return
+        }
+        val board = render.board
         val position = board.position(virtualViewId)
         val box = geometry.cellBox(virtualViewId)
         node.contentDescription = describe(board[virtualViewId], position.row + 1, position.column + 1)
@@ -56,11 +62,8 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
     }
 
     override fun onPopulateNodeForHost(node: AccessibilityNodeInfoCompat) {
-        val size =
-            view.render
-                ?.board
-                ?.size
-                ?.value ?: return
+        val render = view.render ?: return
+        val size = render.board.size.value
         node.setCollectionInfo(AccessibilityNodeInfoCompat.CollectionInfoCompat.obtain(size, size, false))
     }
 

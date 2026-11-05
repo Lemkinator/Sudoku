@@ -200,24 +200,24 @@ class IntroActivity : AppCompatActivity() {
     private suspend fun animate(step: IntroStep) {
         when (step) {
             IntroStep.BLOCKS -> {
-                animateRegions(step)
+                animateRegions()
             }
 
             IntroStep.SELECT_CELL -> {
-                animateTarget(step, tutorialBoard.rowOf(0), DEMO_CELL_INDEX_4)
+                animateTarget(tutorialBoard.rowOf(0), DEMO_CELL_INDEX_4)
             }
 
             IntroStep.ENTER_ROW_COLUMN -> {
                 val rows = tutorialBoard.rowOf(DEMO_ROW_FIRST_CELL_3) + tutorialBoard.rowOf(DEMO_ROW_FIRST_CELL_4)
-                animateTarget(step, rows, DEMO_CELL_INDEX_49)
+                animateTarget(rows, DEMO_CELL_INDEX_49)
             }
 
             IntroStep.ENTER_BLOCK -> {
-                animateTarget(step, tutorialBoard.blockOf(DEMO_BLOCK_CELL_6), DEMO_CELL_INDEX_24)
+                animateTarget(tutorialBoard.blockOf(DEMO_BLOCK_CELL_6), DEMO_CELL_INDEX_24)
             }
 
             IntroStep.NUMBER_ENTRY_DEMO -> {
-                animateNumberEntry(step)
+                animateNumberEntry()
             }
 
             IntroStep.SELECTION,
@@ -230,9 +230,9 @@ class IntroActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun animateRegions(step: IntroStep) {
+    private suspend fun animateRegions() {
         val regions = listOf(tutorialBoard.blockOf(0), tutorialBoard.rowOf(DEMO_ROW_1_CELL), tutorialBoard.columnOf(DEMO_COLUMN_5_CELL))
-        while (viewModel.state.value.step == step) {
+        while (true) {
             for (cells in regions) {
                 delay(SHOW_MILLIS.milliseconds)
                 showDemo(IntroDemo(cells = cells.toSet()))
@@ -242,18 +242,17 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private suspend fun animateTarget(
-        step: IntroStep,
         highlighted: Collection<Int>,
         target: Int,
     ) {
         showDemo(IntroDemo(cells = highlighted.toSet()))
-        while (viewModel.state.value.step == step) {
+        while (true) {
             pulse(listOf(target))
             delay(PULSE_PAUSE_MILLIS.milliseconds)
         }
     }
 
-    private suspend fun animateNumberEntry(step: IntroStep) {
+    private suspend fun animateNumberEntry() {
         val frames =
             listOf(
                 BoardInput(Selection.Cell(DEMO_CELL_INDEX_4)),
@@ -262,7 +261,7 @@ class IntroActivity : AppCompatActivity() {
                 BoardInput(Selection.Cell(DEMO_ENTRY_CELL_21)),
                 BoardInput(Selection.Digit(DEMO_SELECT_DIGIT)),
             )
-        while (viewModel.state.value.step == step) {
+        while (true) {
             for (frame in frames) {
                 delay(ENTRY_MILLIS.milliseconds)
                 showDemo(IntroDemo(input = frame))

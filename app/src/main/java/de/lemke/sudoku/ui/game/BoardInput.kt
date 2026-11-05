@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.ui.game
 
+import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.apply
@@ -107,7 +108,7 @@ private fun fromDigit(
 
         tap is InputTap.Cell -> {
             val move = input.enter(tap.index, digit.digit)
-            val completed = (sudoku.board.apply(move)?.board ?: sudoku.board).completedDigits
+            val completed = sudoku.board.afterwards(move).completedDigits
             InputStep(input.copy(selection = nextOpenDigit(digit.digit, completed, sudoku.board.size.value)), move)
         }
 
@@ -138,7 +139,7 @@ private fun fromHint(
 
         tap is InputTap.Cell -> {
             val move = BoardMove.RevealHint(tap.index)
-            val hintLeft = (sudoku.play(move)?.sudoku ?: sudoku).info.isHintAvailable
+            val hintLeft = sudoku.afterwards(move).info.isHintAvailable
             InputStep(input.copy(selection = Selection.Hint.takeIf { hintLeft }), move)
         }
 
@@ -163,3 +164,13 @@ private fun nextOpenDigit(
         .take(digitCount)
         .firstOrNull { it !in completed }
         ?.let(Selection::Digit)
+
+private fun Board.afterwards(move: BoardMove): Board {
+    val result = apply(move)
+    return if (result == null) this else result.board
+}
+
+private fun Sudoku.afterwards(move: BoardMove): Sudoku {
+    val played = play(move)
+    return if (played == null) this else played.sudoku
+}

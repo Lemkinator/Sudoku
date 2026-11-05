@@ -23,8 +23,10 @@ import android.graphics.Color
 import android.os.Looper
 import android.os.SystemClock
 import android.util.TypedValue
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View.MeasureSpec
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.ColorUtils
@@ -345,6 +347,68 @@ class SudokuBoardViewTest {
         moving.sameAs(rest).shouldBeFalse()
         draw().sameAs(rest).shouldBeTrue()
         ended shouldBe 1
+    }
+
+    @Test
+    fun `an animation draws nothing different before its first frame`() {
+        val rest = draw()
+
+        view.animateCells(listOf(listOf(0, 3)), CellAnimation.WAVE)
+        val started = draw()
+        view.animateCells(listOf(listOf(40)), CellAnimation.PULSE)
+        val pulseStarted = draw()
+
+        started.sameAs(rest).shouldBeTrue()
+        pulseStarted.sameAs(rest).shouldBeTrue()
+    }
+
+    @Test
+    fun `removing the render during an animation lets it end quietly`() {
+        var ended = 0
+        view.animateCells(listOf(listOf(0)), CellAnimation.PULSE) { ended++ }
+
+        view.render = null
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+        ended shouldBe 1
+    }
+
+    @Test
+    fun `a view without a size draws nothing`() {
+        val bare = SudokuBoardView(context)
+        bare.render = BoardRender(testSudoku(SudokuSize.NINE).board)
+        val bitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
+
+        bare.draw(Canvas(bitmap))
+
+        bitmap.getPixel(5, 5) shouldBe Color.TRANSPARENT
+    }
+
+    @Test
+    fun `notes on a cell that holds a value stay hidden`() {
+        val board = testSudoku(SudokuSize.FOUR).board
+        val plain = board.with(1, Cell(board[1].solution, value = board[1].solution))
+        val noted = board.with(1, Cell(board[1].solution, value = board[1].solution, notes = NoteMask.of(1, 2)))
+
+        view.render = BoardRender(plain)
+        val without = draw()
+        view.render = BoardRender(noted)
+
+        draw().sameAs(without).shouldBeTrue()
+    }
+
+    @Test
+    fun `a focused view hands the arrow keys to its cells`() {
+        val activity = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
+        val focusable = SudokuBoardView(activity)
+        focusable.render = BoardRender(testSudoku(SudokuSize.NINE).board)
+        focusable.isFocusableInTouchMode = true
+        activity.setContentView(focusable, ViewGroup.LayoutParams(SIDE, SIDE))
+
+        focusable.requestFocus().shouldBeTrue()
+
+        focusable.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)).shouldBeTrue()
+        focusable.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)).shouldBeFalse()
     }
 
     @Test

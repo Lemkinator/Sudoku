@@ -144,9 +144,8 @@ class SudokuBoardView @JvmOverloads constructor(
 
     var render: BoardRender? = null
         set(value) {
-            val sizeChanged = field?.board?.size != value?.board?.size
             field = value
-            if (sizeChanged) rebuildGeometry()
+            rebuildGeometry()
             rebuildCellLayouts()
             invalidate()
             accessibilityHelper.invalidateRoot()
@@ -163,6 +162,7 @@ class SudokuBoardView @JvmOverloads constructor(
 
     init {
         ViewCompat.setAccessibilityDelegate(this, accessibilityHelper)
+        isFocusable = true
         clipToOutline = true
         outlineProvider =
             object : ViewOutlineProvider() {
@@ -251,7 +251,8 @@ class SudokuBoardView @JvmOverloads constructor(
         style: CellAnimation,
         onEnd: () -> Unit = {},
     ) {
-        val board = render?.board ?: return
+        val render = render ?: return
+        val board = render.board
         if (steps.isEmpty()) {
             onEnd()
             return
@@ -283,7 +284,8 @@ class SudokuBoardView @JvmOverloads constructor(
     }
 
     private fun updatePeaks() {
-        val blockSize = geometry?.size?.blockSize ?: return
+        val geometry = geometry ?: return
+        val blockSize = geometry.size.blockSize
         cellPeaks.fill(0f)
         for (running in animations) {
             val elapsed = running.animator.animatedValue as Float
@@ -312,7 +314,7 @@ class SudokuBoardView @JvmOverloads constructor(
         boardPath.addRoundRect(0f, 0f, side, side, rebuilt.cornerRadius, rebuilt.cornerRadius, Path.Direction.CW)
         val half = metrics.border * HALF
         borderRect.set(half, half, side - half, side - half)
-        cellPeaks = FloatArray(board.size.cellCount)
+        if (cellPeaks.size != board.size.cellCount) cellPeaks = FloatArray(board.size.cellCount)
     }
 
     private fun rebuildCellLayouts() {

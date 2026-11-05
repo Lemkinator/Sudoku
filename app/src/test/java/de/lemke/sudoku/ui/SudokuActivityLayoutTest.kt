@@ -26,6 +26,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
+import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.SudokuId
@@ -33,6 +34,7 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.game.Selection
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import java.time.Duration
@@ -118,6 +120,22 @@ class SudokuActivityLayoutTest {
                 (controls.right <= board.left).shouldBeTrue()
             }
         }
+
+    @Test
+    fun `a move that completes no region starts no animation`() {
+        userSettings.animationsEnabled = true
+        launch { scenario ->
+            scenario.onActivity { activity ->
+                activity.tapCell(1)
+                activity.tapDigit(2)
+                idleMainLooper()
+
+                activity.sudoku.board[1].value shouldBe 2
+                activity.binding.board.isAnimating
+                    .shouldBeFalse()
+            }
+        }
+    }
 
     @Test
     fun `recreation keeps the selection and the notes mode and the timer ticks once per second`() =

@@ -171,6 +171,36 @@ class IntroActivityAnimationTest {
         }
 
     @Test
+    fun `the select-cell lesson ends its loop once the cell is tapped`() =
+        launch { activity ->
+            activity.toStep(IntroStep.SELECT_CELL)
+            idle(50)
+
+            activity.tapCell(DEMO_CELL_INDEX_4)
+            idle(2100)
+
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
+        }
+
+    @Test
+    fun `the caution lesson ends its loop once the lesson changes`() =
+        launch { activity ->
+            activity.toStep(IntroStep.NUMBER_ENTRY_DEMO)
+            idle(1200)
+
+            activity.next()
+            repeat(6) { idle(1200) }
+
+            activity.animation
+                .shouldNotBeNull()
+                .isCompleted
+                .shouldBeTrue()
+        }
+
+    @Test
     fun `leaving a lesson ends its animation and clears the tint`() =
         launch { activity ->
             idle(900)

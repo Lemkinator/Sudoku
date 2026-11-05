@@ -131,6 +131,13 @@ class BoardInputTest : ShouldSpec(
                 InputStep(BoardInput(Selection.Hint), BoardMove.RevealHint(1))
         }
 
+        should("keep the hint selected when its cell is refused while a hint is left") {
+            val hintsLeft = testSudoku(size = SudokuSize.NINE)
+
+            reduceInput(BoardInput(Selection.Hint), InputTap.Cell(0), hintsLeft) shouldBe
+                InputStep(BoardInput(Selection.Hint), BoardMove.RevealHint(0))
+        }
+
         should("drop the hint selection when the last hint is used") {
             reduceInput(BoardInput(Selection.Hint), InputTap.Cell(1), sudoku()) shouldBe InputStep(none, BoardMove.RevealHint(1))
         }

@@ -135,7 +135,7 @@ class BoardAccessibilityHelperTest {
 
     @Test
     fun `an unknown action is refused`() {
-        helper.getAccessibilityNodeProvider(view)!!.performAction(2, AccessibilityNodeInfo.ACTION_FOCUS, null).shouldBeFalse()
+        helper.getAccessibilityNodeProvider(view)!!.performAction(2, AccessibilityNodeInfo.ACTION_SCROLL_FORWARD, null).shouldBeFalse()
 
         clicked shouldBe null
     }
@@ -174,6 +174,31 @@ class BoardAccessibilityHelperTest {
 
         view.dispatchGenericMotionEvent(hover(150f, 50f)).shouldBeTrue()
         view.dispatchGenericMotionEvent(hover(1f, 1f)).shouldBeFalse()
+    }
+
+    @Test
+    fun `a cell of a removed board reads as empty`() {
+        view.render = null
+
+        node(3).contentDescription shouldBe "empty"
+    }
+
+    @Test
+    fun `a cell of a view without a size reads as empty`() {
+        val bare = SudokuBoardView(context)
+        bare.render = BoardRender(golden4())
+        val bareHelper = BoardAccessibilityHelper(bare)
+
+        val node = checkNotNull(checkNotNull(bareHelper.getAccessibilityNodeProvider(bare)).createAccessibilityNodeInfo(1))
+
+        node.contentDescription shouldBe "empty"
+    }
+
+    @Test
+    fun `the host of a removed board reports no grid`() {
+        view.render = null
+
+        node(ExploreByTouchHelper.HOST_ID).collectionInfo shouldBe null
     }
 
     @Test
