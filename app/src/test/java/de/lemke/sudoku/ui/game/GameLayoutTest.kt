@@ -17,6 +17,7 @@
 package de.lemke.sudoku.ui.game
 
 import android.app.Application
+import android.content.Context
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup.LayoutParams
@@ -74,5 +75,45 @@ class GameLayoutTest {
 
         board.bounds() shouldBe listOf(40, 0, 640, 600)
         controls.bounds() shouldBe listOf(640, 0, 960, 600)
+    }
+
+    private class TallView(context: Context) : View(context) {
+        override fun onMeasure(
+            widthMeasureSpec: Int,
+            heightMeasureSpec: Int,
+        ) = setMeasuredDimension(resolveSize(DESIRED, widthMeasureSpec), resolveSize(DESIRED, heightMeasureSpec))
+
+        private companion object {
+            const val DESIRED = 5000
+        }
+    }
+
+    @Test
+    fun `scrolling controls below the board leave half the board side`() {
+        val layout = GameLayout(context)
+        val board = View(context)
+        val controls = TallView(context)
+        layout.addView(board, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        layout.addView(controls, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+
+        layout(layout, 500, 1000)
+
+        board.bounds() shouldBe listOf(125, 0, 375, 250)
+        controls.bounds() shouldBe listOf(0, 250, 500, 1000)
+    }
+
+    @Test
+    fun `scrolling controls at the end leave half the board side`() {
+        val attributes = Robolectric.buildAttributeSet().addAttribute(R.attr.controlsPosition, "end").build()
+        val layout = GameLayout(context, attributes)
+        val board = View(context)
+        val controls = TallView(context)
+        layout.addView(board, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        layout.addView(controls, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
+
+        layout(layout, 1000, 600)
+
+        board.bounds() shouldBe listOf(0, 150, 300, 450)
+        controls.bounds() shouldBe listOf(300, 0, 1000, 600)
     }
 }

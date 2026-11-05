@@ -26,6 +26,7 @@ import android.view.ViewGroup
 import androidx.core.content.res.use
 import de.lemke.sudoku.R
 import de.lemke.sudoku.ui.board.Box
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 class GameLayout @JvmOverloads constructor(
@@ -47,10 +48,13 @@ class GameLayout @JvmOverloads constructor(
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val height = MeasureSpec.getSize(heightMeasureSpec)
         val params = controls.layoutParams
+        val boardReserve = min(width, height) / 2
         if (controlsAtEnd) {
-            controls.measure(getChildMeasureSpec(makeMeasureSpec(width, AT_MOST), 0, params.width), makeMeasureSpec(height, EXACTLY))
+            val limit = makeMeasureSpec(width - boardReserve, AT_MOST)
+            controls.measure(getChildMeasureSpec(limit, 0, params.width), makeMeasureSpec(height, EXACTLY))
         } else {
-            controls.measure(makeMeasureSpec(width, EXACTLY), getChildMeasureSpec(makeMeasureSpec(height, AT_MOST), 0, params.height))
+            val limit = makeMeasureSpec(height - boardReserve, AT_MOST)
+            controls.measure(makeMeasureSpec(width, EXACTLY), getChildMeasureSpec(limit, 0, params.height))
         }
         val arrangement = arrangement(width, height)
         val side = arrangement.board.width.roundToInt()
