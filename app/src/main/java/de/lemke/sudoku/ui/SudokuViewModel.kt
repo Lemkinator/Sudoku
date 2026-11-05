@@ -40,6 +40,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.game.BoardInput
 import de.lemke.sudoku.ui.game.InputTap
+import de.lemke.sudoku.ui.game.Selection
 import de.lemke.sudoku.ui.game.boardRenderOf
 import de.lemke.sudoku.ui.game.reduceInput
 import java.io.Serializable
@@ -337,7 +338,7 @@ class SudokuViewModel @Inject constructor(
         input: BoardInput,
     ) {
         val render = boardRenderOf(sudoku.board, input, userSettings.highlightRegional, userSettings.highlightNumber)
-        if (render.showsPeers) markUsed(Highlighting.REGIONAL)
+        if (render.showPeers && input.selection is Selection.Cell) markUsed(Highlighting.REGIONAL)
         if (render.highlightedDigit != null) markUsed(Highlighting.NUMBER)
     }
 
