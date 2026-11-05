@@ -49,6 +49,7 @@ import dev.oneuiproject.oneui.design.R as designR
 
 private const val HALF = 0.5f
 private const val NO_CELL = -1
+private const val MAX_ALPHA = 255
 
 /** Draws a whole sudoku board on one canvas: tones, lines, values and notes inside one rounded board path. */
 class SudokuBoardView @JvmOverloads constructor(
@@ -394,7 +395,7 @@ class SudokuBoardView @JvmOverloads constructor(
             val scale = 1f + (style.scale - 1f) * peak
             canvas.rotate(style.rotationDegrees * peak, content.centerX, content.centerY)
             canvas.scale(scale, scale, content.centerX, content.centerY)
-            valuePaint.alpha = (255 * (1f - (1f - style.alpha) * peak)).toInt()
+            valuePaint.alpha = (MAX_ALPHA * (1f - (1f - style.alpha) * peak)).toInt()
         }
         valueChar[0] = value.toSudokuDigitChar()
         drawCentered(canvas, valueChar, 0, valuePaint, content.centerX, content.centerY)

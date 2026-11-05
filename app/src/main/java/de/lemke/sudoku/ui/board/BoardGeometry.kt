@@ -91,14 +91,21 @@ class BoardGeometry(
         x: Float,
         y: Float,
     ): Int? {
-        val side = metrics.side
-        if (x < 0f || y < 0f || x >= side || y >= side) return null
-        val dx = x - x.coerceIn(cornerRadius, side - cornerRadius)
-        val dy = y - y.coerceIn(cornerRadius, side - cornerRadius)
-        if (dx * dx + dy * dy > cornerRadius * cornerRadius) return null
+        if (!isOnBoard(x, y)) return null
         val col = (0 until size.value).first { x < edge(it + 1) }
         val row = (0 until size.value).first { y < edge(it + 1) }
         return row * size.value + col
+    }
+
+    private fun isOnBoard(
+        x: Float,
+        y: Float,
+    ): Boolean {
+        val side = metrics.side
+        if (x < 0f || y < 0f || x >= side || y >= side) return false
+        val dx = x - x.coerceIn(cornerRadius, side - cornerRadius)
+        val dy = y - y.coerceIn(cornerRadius, side - cornerRadius)
+        return dx * dx + dy * dy <= cornerRadius * cornerRadius
     }
 
     private fun arcInset(distanceFromCorner: Float): Float =
