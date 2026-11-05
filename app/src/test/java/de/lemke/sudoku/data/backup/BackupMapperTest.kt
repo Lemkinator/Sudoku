@@ -127,6 +127,22 @@ class BackupMapperTest : ShouldSpec(
             } shouldBe listOf(GameSource.OWN, GameSource.IMPORTED)
         }
 
+        should("keep the day of a daily game that differs from its created day through the entry, its key and a JSON round trip") {
+            val day = LocalDate.of(2026, 5, 3)
+            val sudoku = gameOf(SudokuSize.FOUR, id = "daily").let { it.copy(info = it.info.copy(mode = GameMode.Daily(day))) }
+
+            val entry = entryOfGame(sudoku)
+            val decoded = Json.decodeFromString(SudokuBackupEntry.serializer(), Json.encodeToString(SudokuBackupEntry.serializer(), entry))
+
+            listOf(entry, decoded).map { it.key() } shouldBe List(2) { SudokuBackupKey.Daily(day) }
+            decoded shouldBe entry
+            gameFromBackup(decoded, NEW_YORK)
+                .shouldNotBeNull()
+                .toSudoku(NEW_YORK)
+                .shouldNotBeNull()
+                .info.mode shouldBe GameMode.Daily(day)
+        }
+
         should("read an entry without an imported field as an own game") {
             val json =
                 """{"id":"g","size":4,"difficulty":"EASY","modeLevel":0,"created":"2026-05-02T08:00:00+02:00",""" +

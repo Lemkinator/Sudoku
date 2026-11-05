@@ -16,12 +16,16 @@
 
 package de.lemke.sudoku.data.backup
 
+import de.lemke.sudoku.data.database.legacyGameModeOrNull
+import de.lemke.sudoku.domain.model.GameMode
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import kotlinx.serialization.Serializable
 
 /**
  * One game of a backup. [difficulty] is the name of a `Difficulty`, [modeLevel] is 0 for a normal game, -1 for a daily one and the
- * level for a level one, and [board] is the Base64 of the stored board blob.
+ * level for a level one, [dailyDate] is the day a daily game was made for, and [board] is the Base64 of the stored board blob. An
+ * entry without [dailyDate] takes the day of [created].
  */
 @Serializable
 data class SudokuBackupEntry(
@@ -42,5 +46,9 @@ data class SudokuBackupEntry(
     val notesMade: Int = 0,
     val errorsMade: Int = 0,
     val imported: Boolean = false,
+    @Serializable(with = LocalDateSerializer::class) val dailyDate: LocalDate? = null,
     val board: String,
-)
+) {
+    /** The mode of the entry, or null if [modeLevel] names none. */
+    fun modeOrNull(): GameMode? = legacyGameModeOrNull(modeLevel, dailyDate ?: created.toLocalDate())
+}

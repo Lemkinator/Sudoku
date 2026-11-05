@@ -17,6 +17,7 @@
 package de.lemke.sudoku.data.backup
 
 import de.lemke.sudoku.data.codec.BoardCodec
+import de.lemke.sudoku.data.database.legacyGameModeOrNull
 import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.GameMode
@@ -46,14 +47,16 @@ fun backupEntry(
         Board.of(SudokuSize.FOUR, FOUR_SOLUTION.map { it - '0' }, FOUR_GIVENS.toSet()).let { fresh ->
             Board(fresh.size, fresh.cells.mapIndexed { index, cell -> if (index in filled) cell.copy(value = cell.solution) else cell })
         }
+    val createdAt = OffsetDateTime.parse(created)
     return SudokuBackupEntry(
         id = id,
         size = 4,
         difficulty = "EASY",
         modeLevel = modeLevel,
-        created = OffsetDateTime.parse(created),
+        created = createdAt,
         updated = OffsetDateTime.parse(updated),
         seconds = seconds,
+        dailyDate = (legacyGameModeOrNull(modeLevel, createdAt.toLocalDate()) as? GameMode.Daily)?.date,
         board = Base64.getEncoder().encodeToString(BoardCodec.encode(board)),
     )
 }

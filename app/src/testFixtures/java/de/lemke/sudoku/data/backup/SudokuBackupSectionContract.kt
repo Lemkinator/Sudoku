@@ -21,6 +21,7 @@ import de.lemke.commonutils.backup.ClashCase
 import de.lemke.commonutils.backup.SectionFixture
 import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.domain.model.GameMode
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 private const val SUDOKUS_V2 =
@@ -63,7 +64,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                                 id = "22222222-bbbb",
                                 modeLevel = -1,
                                 created = "2026-05-03T07:30:00+02:00",
-                            ),
+                            ).copy(dailyDate = LocalDate.parse("2026-05-03")),
                         ),
                 ),
         )

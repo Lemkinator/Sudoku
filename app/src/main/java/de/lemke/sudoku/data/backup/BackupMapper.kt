@@ -18,12 +18,12 @@ package de.lemke.sudoku.data.backup
 
 import de.lemke.sudoku.data.codec.BoardCodec
 import de.lemke.sudoku.data.database.GameEntity
-import de.lemke.sudoku.data.database.legacyGameModeOrNull
 import de.lemke.sudoku.data.database.toHeader
 import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.data.database.toSummary
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameInfo
+import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuId
@@ -56,7 +56,7 @@ private fun infoOrNull(
 ): GameInfo? {
     val size = SudokuSize.fromValueOrNull(entry.size)
     val difficulty = Difficulty.fromNameOrNull(entry.difficulty)
-    val mode = legacyGameModeOrNull(entry.modeLevel, entry.created.toLocalDate())
+    val mode = entry.modeOrNull()
     return if (size != null && difficulty != null && mode != null && entry.seconds >= 0) {
         GameInfo(
             id = SudokuId(entry.id),
@@ -118,6 +118,7 @@ fun entryOf(
             notesMade = info.notesMade,
             errorsMade = info.errorsMade,
             imported = info.source == GameSource.IMPORTED,
+            dailyDate = (info.mode as? GameMode.Daily)?.date,
             board = Base64.getEncoder().encodeToString(game.board),
         )
     }
