@@ -19,6 +19,7 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.os.Looper
 import android.view.KeyEvent
+import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -301,6 +302,11 @@ class SudokuActivityLifecycleTest {
 
             activity.selection shouldBe Selection.Cell(1)
             activity.sudoku.board shouldBe before
+            listOf(View.FOCUS_DOWN, View.FOCUS_RIGHT).forEach { direction ->
+                val next = checkNotNull(activity.binding.board.focusSearch(direction))
+                next shouldNotBe activity.binding.board
+                next.rootView shouldBe activity.window.decorView.rootView
+            }
         }
 
     @Test
