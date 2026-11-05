@@ -133,8 +133,8 @@ class SudokuActivityGameOverTest {
         testSudoku(mode = GameMode.Daily(today.minusDays(1).toLocalDate()), created = today.minusDays(1), completed = completed)
 
     private fun SudokuActivity.makeAnError() {
-        select(1)
-        select(sudoku.info.size.cellCount)
+        tapCell(1)
+        tapDigit(1)
     }
 
     private fun restartButtonShown(): Boolean =
@@ -194,9 +194,9 @@ class SudokuActivityGameOverTest {
         launch(almostLost(GameMode.Level(2))) { activity ->
             activity.makeAnError()
 
-            activity.select(2)
+            activity.tapCell(2)
 
-            activity.selected.shouldBeNull()
+            activity.selection.shouldBeNull()
         }
 
     @Test
@@ -214,7 +214,7 @@ class SudokuActivityGameOverTest {
 
             scenario.onActivity { activity ->
                 activity.binding.resumeButton.isVisible shouldBe false
-                activity.binding.gameLayout.isVisible shouldBe true
+                activity.binding.board.isVisible shouldBe true
                 secondsAtError shouldBeGreaterThan 0
                 val saved = runBlocking { sudokusRepository.getSudokuById(activity.sudoku.info.id) }.shouldNotBeNull()
                 saved.info.errorsMade shouldBe 3

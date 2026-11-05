@@ -17,7 +17,20 @@
 package de.lemke.sudoku.ui
 
 import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.ui.game.Selection
 
 internal val SudokuActivity.playing: SudokuGame.Playing get() = viewModel.game.value as SudokuGame.Playing
 
 internal val SudokuActivity.sudoku: Sudoku get() = playing.sudoku
+
+internal val SudokuActivity.selection: Selection? get() = viewModel.input.value.selection
+
+internal fun SudokuActivity.tapCell(index: Int) = checkNotNull(binding.board.onCellClick)(index)
+
+internal fun SudokuActivity.longPressCell(index: Int) = checkNotNull(binding.board.onCellLongClick)(index)
+
+internal fun SudokuActivity.tapDigit(digit: Int) = sudokuButtons[digit - 1].performClick()
+
+internal fun SudokuActivity.tapDelete() = binding.deleteButton.performClick()
+
+internal fun SudokuActivity.tapHint() = binding.hintButton.performClick()

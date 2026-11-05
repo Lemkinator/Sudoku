@@ -38,6 +38,11 @@ import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_DAILY_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.Sudoku.Companion.MODE_LEVEL_ERROR_LIMIT
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import de.lemke.sudoku.ui.game.BoardInput
+import de.lemke.sudoku.ui.game.InputTap
+import de.lemke.sudoku.ui.game.Selection
+import de.lemke.sudoku.ui.game.boardRenderOf
+import de.lemke.sudoku.ui.game.reduceInput
 import java.io.Serializable
 import java.time.Clock
 import java.time.LocalDate
@@ -174,6 +179,7 @@ private fun Sudoku.kind(): SudokuKind =
     }
 
 private const val KEY_PENDING_SUMMARY = "pending_summary"
+private const val KEY_INPUT = "board_input"
 
 @HiltViewModel
 class SudokuViewModel @Inject constructor(
@@ -201,6 +207,10 @@ class SudokuViewModel @Inject constructor(
     /** Play Games sync of all completed sudokus, set once this win is saved. The activity applies it, then reports it handled. */
     val playGamesSync: StateFlow<PlayGamesSync?>
         field = MutableStateFlow<PlayGamesSync?>(null)
+
+    /** The selection and the notes mode of the player, kept in the saved state so a recreated screen continues the input. */
+    val input: StateFlow<BoardInput>
+        field = savedStateHandle.getMutableStateFlow(KEY_INPUT, BoardInput())
 
     private var wrapUp: Job? = null
     private var ticker: Job? = null
@@ -236,6 +246,7 @@ class SudokuViewModel @Inject constructor(
             wrapUp?.join()
             val restarted = sudoku.restarted()
             queueSudokuSave(restarted).await()
+            input.update { it.copy(selection = null) }
             game.value = SudokuGame.Ready(restarted)
         }
     }
@@ -252,6 +263,7 @@ class SudokuViewModel @Inject constructor(
                 }
             queueSudokuSave(next).await()
             savedStateHandle[KEY_SUDOKU_ID] = next.info.id.value
+            input.update { it.copy(selection = null) }
             game.value = SudokuGame.Ready(next)
         }
     }
@@ -310,7 +322,29 @@ class SudokuViewModel @Inject constructor(
         updatePlaying { if (it.lastMove == result) it.copy(lastMove = null) else it }
     }
 
-    fun onHighlightingUsed(highlighting: Highlighting) {
+    /** Applies [tap] to the input of a running sudoku and plays the move it completes. */
+    fun onTap(tap: InputTap) {
+        val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing } ?: return
+        val step = reduceInput(input.value, tap, playing.sudoku)
+        input.value = step.input
+        markHighlightingUsed(playing.sudoku, step.input)
+        step.move?.let(::onMove)
+    }
+
+    fun onNotesToggled() {
+        input.update { it.copy(notesMode = !it.notesMode) }
+    }
+
+    private fun markHighlightingUsed(
+        sudoku: Sudoku,
+        input: BoardInput,
+    ) {
+        val render = boardRenderOf(sudoku.board, input, userSettings.highlightRegional, userSettings.highlightNumber)
+        if (render.showPeers && input.selection is Selection.Cell) markUsed(Highlighting.REGIONAL)
+        if (render.highlightedDigit != null) markUsed(Highlighting.NUMBER)
+    }
+
+    private fun markUsed(highlighting: Highlighting) {
         updatePlaying { it.copy(sudoku = it.sudoku.withHighlightingUsed(highlighting)) }
     }
 

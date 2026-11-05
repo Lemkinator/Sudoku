@@ -38,13 +38,15 @@ import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
-import de.lemke.sudoku.domain.model.Highlighting
 import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import de.lemke.sudoku.ui.game.BoardInput
+import de.lemke.sudoku.ui.game.InputTap
+import de.lemke.sudoku.ui.game.Selection
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -68,6 +70,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+
+private const val KEY_BOARD_INPUT = "board_input"
 
 private fun SavedStateHandle.restoredAfterProcessDeath(): SavedStateHandle = SavedStateHandle(keys().associateWith { get<Any>(it) })
 
@@ -498,12 +502,13 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.playingGame().lastMove?.move shouldBe BoardMove.Enter(2, 3)
         }
 
-        should("a used highlighting before a sudoku plays changes nothing") {
+        should("a tap before a sudoku plays changes nothing") {
             val viewModel = viewModel()
 
-            viewModel.onHighlightingUsed(Highlighting.NUMBER)
+            viewModel.onTap(InputTap.Cell(1))
 
             viewModel.game.value shouldBe SudokuGame.NotFound
+            viewModel.input.value shouldBe BoardInput()
         }
 
         should("a move while paused is ignored") {
@@ -632,18 +637,145 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.playingGame().lastMove shouldBe second
         }
 
-        should("onHighlightingUsed marks the highlighting on the playing sudoku") {
+        should("selecting a cell marks the regional highlighting as used") {
             val viewModel = playing(testSudoku())
+            viewModel.onResumed()
 
-            viewModel.onHighlightingUsed(Highlighting.REGIONAL)
-            viewModel.onHighlightingUsed(Highlighting.NUMBER)
+            viewModel.onTap(InputTap.Cell(1))
 
             viewModel
                 .playingGame()
                 .sudoku.info.regionalHighlightingUsed shouldBe true
             viewModel
                 .playingGame()
+                .sudoku.info.numberHighlightingUsed shouldBe false
+        }
+
+        should("selecting a digit marks the number highlighting as used") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+
+            viewModel.onTap(InputTap.Digit(2))
+
+            viewModel
+                .playingGame()
                 .sudoku.info.numberHighlightingUsed shouldBe true
+            viewModel
+                .playingGame()
+                .sudoku.info.regionalHighlightingUsed shouldBe false
+        }
+
+        should("selecting a cell with a value marks both highlightings as used") {
+            val viewModel = playing(testSudoku().withValue(1, 2))
+            viewModel.onResumed()
+
+            viewModel.onTap(InputTap.Cell(1))
+
+            viewModel
+                .playingGame()
+                .sudoku.info.numberHighlightingUsed shouldBe true
+            viewModel
+                .playingGame()
+                .sudoku.info.regionalHighlightingUsed shouldBe true
+        }
+
+        should("highlightings the player switched off are not marked as used") {
+            userSettings.highlightRegional = false
+            userSettings.highlightNumber = false
+            val viewModel = playing(testSudoku().withValue(1, 2))
+            viewModel.onResumed()
+
+            viewModel.onTap(InputTap.Cell(1))
+            viewModel.onTap(InputTap.Clear)
+            viewModel.onTap(InputTap.Digit(2))
+
+            viewModel
+                .playingGame()
+                .sudoku.info.regionalHighlightingUsed shouldBe false
+            viewModel
+                .playingGame()
+                .sudoku.info.numberHighlightingUsed shouldBe false
+        }
+
+        should("a cell tap followed by a digit tap plays the digit and clears the selection") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+
+            viewModel.onTap(InputTap.Cell(1))
+            viewModel.input.value shouldBe BoardInput(Selection.Cell(1))
+            viewModel.onTap(InputTap.Digit(2))
+
+            viewModel
+                .playingGame()
+                .sudoku.board[1]
+                .value shouldBe 2
+            viewModel.input.value shouldBe BoardInput()
+        }
+
+        should("a digit tap in notes mode toggles a note") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+            viewModel.onNotesToggled()
+
+            viewModel.onTap(InputTap.Cell(1))
+            viewModel.onTap(InputTap.Digit(3))
+
+            viewModel
+                .playingGame()
+                .sudoku.board[1]
+                .notes shouldBe NoteMask.of(3)
+            viewModel.input.value shouldBe BoardInput(notesMode = true)
+        }
+
+        should("toggling the notes mode twice restores it") {
+            val viewModel = playing(testSudoku())
+
+            viewModel.onNotesToggled()
+            viewModel.onNotesToggled()
+
+            viewModel.input.value.notesMode shouldBe false
+        }
+
+        should("a tap while the game is paused changes nothing") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+            viewModel.onPaused()
+
+            viewModel.onTap(InputTap.Cell(1))
+
+            viewModel.input.value shouldBe BoardInput()
+        }
+
+        should("a tap after the game was lost changes nothing") {
+            val viewModel = playing(testSudoku().withErrors(3))
+            viewModel.onResumed()
+
+            viewModel.onTap(InputTap.Cell(1))
+
+            viewModel.input.value shouldBe BoardInput()
+        }
+
+        should("a restart drops the selection and keeps the notes mode") {
+            val viewModel = playing(testSudoku(completed = true))
+            viewModel.onNotesToggled()
+            viewModel.onTap(InputTap.Clear)
+
+            viewModel.onRestart()
+
+            viewModel.input.value shouldBe BoardInput(notesMode = true)
+        }
+
+        should("a selection survives a restore of the saved state") {
+            val sudoku = testSudoku()
+            val handle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.info.id.value))
+            val viewModel = playing(sudoku, handle)
+            viewModel.onResumed()
+            viewModel.onNotesToggled()
+            viewModel.onTap(InputTap.Cell(7))
+
+            val restored = viewModel(handle.restoredAfterProcessDeath())
+
+            restored.input.value shouldBe BoardInput(Selection.Cell(7), notesMode = true)
         }
 
         should("onPaused before a sudoku plays saves nothing") {
@@ -1061,7 +1193,7 @@ class SudokuViewModelTest : ShouldSpec(
             viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
             viewModel.onCompletionDismissed(SudokuCompletion.Summary(won, FollowUp.NEW_GAME))
             viewModel.completion.value shouldBe SudokuCompletion.Idle
-            savedStateHandle.keys() shouldBe setOf(KEY_SUDOKU_ID)
+            savedStateHandle.keys() shouldBe setOf(KEY_SUDOKU_ID, KEY_BOARD_INPUT)
         }
 
         should("onCompletionHandled returns a failed wrap-up to idle") {
@@ -1120,7 +1252,7 @@ class SudokuViewModelTest : ShouldSpec(
             val next = repository.lastSaved()
             viewModel.completion.value shouldBe SudokuCompletion.Idle
             viewModel.game.value shouldBe SudokuGame.Ready(next)
-            savedStateHandle.keys() shouldBe setOf(KEY_SUDOKU_ID)
+            savedStateHandle.keys() shouldBe setOf(KEY_SUDOKU_ID, KEY_BOARD_INPUT)
             savedStateHandle.get<String>(KEY_SUDOKU_ID) shouldBe next.info.id.value
         }
 
@@ -1146,7 +1278,7 @@ class SudokuViewModelTest : ShouldSpec(
             repository.store(won.withValue(1, null))
 
             viewModel(restoredState).completion.value shouldBe SudokuCompletion.Idle
-            restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID)
+            restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID, KEY_BOARD_INPUT)
         }
 
         should("a pending summary of a sudoku that no longer exists is dropped") {
@@ -1160,7 +1292,7 @@ class SudokuViewModelTest : ShouldSpec(
 
             restored.game.value shouldBe SudokuGame.NotFound
             restored.completion.value shouldBe SudokuCompletion.Idle
-            restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID)
+            restoredState.keys() shouldBe setOf(KEY_SUDOKU_ID, KEY_BOARD_INPUT)
         }
 
         should("onPlayGamesSyncHandled clears the sync, and a stale handled call keeps the current one") {

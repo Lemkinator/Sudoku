@@ -160,8 +160,8 @@ class SudokuActivityCompletionTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             idleMainLooper()
@@ -251,8 +251,8 @@ class SudokuActivityCompletionTest {
             fakeSudokusRepository.saveFailure = IllegalStateException("disk full")
 
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2500))
 
@@ -274,8 +274,8 @@ class SudokuActivityCompletionTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             scenario.onActivity { activity -> activity.viewModel.completion.value shouldBe SudokuCompletion.Running }
@@ -310,8 +310,8 @@ class SudokuActivityCompletionTest {
             controller.setup()
             idleMainLooper()
             val animating = controller.get()
-            animating.select(0)
-            animating.select(animating.sudoku.info.size.cellCount)
+            animating.tapCell(0)
+            animating.tapDigit(1)
 
             animating.onBackPressedDispatcher.onBackPressed()
             controller.pause()
@@ -381,8 +381,8 @@ class SudokuActivityCompletionTest {
             controller.setup()
             idleMainLooper()
             val animating = controller.get()
-            animating.select(0)
-            animating.select(animating.sudoku.info.size.cellCount)
+            animating.tapCell(0)
+            animating.tapDigit(1)
             animating.viewModel.completion.value shouldNotBe SudokuCompletion.Idle
             animating.resetVisible() shouldBe false
             idleMainLooper()
@@ -413,8 +413,8 @@ class SudokuActivityCompletionTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             awaitMainLooperUntil {
                 fakeInAppReview.calls.isNotEmpty() &&
@@ -450,8 +450,8 @@ class SudokuActivityCompletionTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             awaitMainLooperUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
             val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
@@ -479,8 +479,8 @@ class SudokuActivityCompletionTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             awaitMainLooperUntil { ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().any { it.isShowing } }
             val dialog = ShadowDialog.getShownDialogs().filterIsInstance<AlertDialog>().single()
@@ -571,8 +571,8 @@ class SudokuActivityCompletionTest {
         val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuId.value)
         ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
-                activity.select(0)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(0)
+                activity.tapDigit(1)
             }
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(2000))
             scenario.onActivity { activity ->

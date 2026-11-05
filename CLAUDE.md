@@ -127,8 +127,9 @@ timeout, so Room queries run only while the screen collects. The upstream restar
 steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a `viewModelScope.async` that the upstream awaits. A
 `catch` ahead of `stateInViewModel` sets the screen's `loadFailed` state once per failed run; the next return retries.
 A refused next-level start (its level is already saved) also restarts the level list query.
-`SudokuViewModel` owns the played sudoku (`SudokuGame`), its moves (`onMove`) and its one ticker job, and keeps its id in the
-`SavedStateHandle`, so a restart or a follow-up game survives recreation. Every write of the played sudoku goes through
+`SudokuViewModel` owns the played sudoku (`SudokuGame`), its moves (`onMove`), the player's input (`BoardInput`: selection and notes mode,
+reduced from taps by `reduceInput`) and its one ticker job, and keeps its id and input in the
+`SavedStateHandle`, so a restart, a rotation or a follow-up game survives recreation. Every write of the played sudoku goes through
 `QueueSudokuSaveUseCase`: it queues the immutable value and runs the writes one after another in `@ApplicationScope`, so a closing screen
 cannot cancel a save. A queued save that has not started takes the newer snapshot of its game, so a burst of moves writes once. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
 The winning move starts the wrap-up in the
