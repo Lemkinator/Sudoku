@@ -197,7 +197,7 @@ class SudokuLevelTabListRefreshTest {
         nextLevel.info.mode shouldBe GameMode.Level(2)
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
-        viewModel.confirmSudokuStart(0, nextLevel.info.id)
+        viewModel.confirmSudokuStart(nextLevel.info.id)
         idleMainLooper()
 
         viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
@@ -218,7 +218,7 @@ class SudokuLevelTabListRefreshTest {
             idleMainLooper()
             val nextLevel = topSudoku(viewModel)
 
-            viewModel.confirmSudokuStart(0, nextLevel.info.id)
+            viewModel.confirmSudokuStart(nextLevel.info.id)
             idleMainLooper()
 
             viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)

@@ -404,7 +404,7 @@ class SudokuLevelTabTest {
                         .filterIsInstance<SudokuLevelTab>()
                         .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
                 activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
-                fragment.viewModel.confirmSudokuStart(0, level.info.id)
+                fragment.viewModel.confirmSudokuStart(level.info.id)
             }
             idleMainLooper()
             scenario.onActivity { activity ->

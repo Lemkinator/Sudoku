@@ -169,13 +169,10 @@ class SudokuLevelTabViewModel @Inject constructor(
         return generateSudokuLevel(size, level).also { nextLevelSudoku = it }
     }
 
-    fun confirmSudokuStart(
-        position: Int,
-        sudokuId: SudokuId,
-    ) {
+    fun confirmSudokuStart(sudokuId: SudokuId) {
         if (levelStart.value == LevelStart.Running) return
         val nextLevel = state.value.nextLevel
-        if (position != 0 || nextLevel == null) {
+        if (nextLevel == null || nextLevel.info.id != sudokuId) {
             levelStart.value = LevelStart.Open(sudokuId)
             return
         }
