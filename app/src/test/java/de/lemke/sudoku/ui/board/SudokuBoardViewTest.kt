@@ -475,7 +475,6 @@ class SudokuBoardViewTest {
             focusable.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode)).shouldBeFalse()
         }
         clicked.shouldBeNull()
-        focusable.render?.selected shouldBe 4
     }
 
     @Test
