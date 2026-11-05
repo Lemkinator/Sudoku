@@ -41,7 +41,14 @@ object BoardCodec {
     /** The largest blob [decode] reads. A 16x16 board takes 394 bytes; kept unknown fields must still fit a cursor window. */
     const val MAX_BYTES = 64 * 1024
 
-    fun encode(board: Board): ByteArray =
+    /** The blob of [board]. Its unknown fields are left out if they would push the blob beyond [MAX_BYTES], which [decode] rejects. */
+    fun encode(board: Board): ByteArray {
+        val known = encodeKnown(board)
+        val preserved = board.preserved.bytes
+        return if (known.size + preserved.size <= MAX_BYTES) known + preserved else known
+    }
+
+    private fun encodeKnown(board: Board): ByteArray =
         ProtoWriter()
             .apply {
                 varint(FIELD_FORMAT, FORMAT.toLong())
@@ -64,7 +71,6 @@ object BoardCodec {
                             }.toByteArray(),
                     )
                 }
-                raw(board.preserved.bytes)
             }.toByteArray()
 
     /** The board of [bytes], or null if they are no board of this format or exceed [MAX_BYTES]. */

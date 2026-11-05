@@ -100,6 +100,26 @@ class BoardCodecTest : ShouldSpec(
             BoardCodec.encode(BoardCodec.decode(blob).shouldNotBeNull()) shouldBe blob
         }
 
+        should("leave out the unknown fields that would push a saved board beyond the size limit, so it stays readable") {
+            val size = SudokuSize.SIXTEEN
+            val crowded = fresh(size)
+            val loaded =
+                BoardCodec
+                    .decode(
+                        ProtoWriter()
+                            .apply {
+                                raw(BoardCodec.encode(crowded))
+                                bytes(6, ByteArray(BoardCodec.MAX_BYTES - BoardCodec.encode(crowded).size - 4))
+                            }.toByteArray(),
+                    ).shouldNotBeNull()
+            val noted = Board(size, loaded.cells.map { it.copy(notes = NoteMask((1 shl size.value) - 1)) }, loaded.preserved)
+
+            val saved = BoardCodec.encode(noted)
+
+            (saved.size <= BoardCodec.MAX_BYTES) shouldBe true
+            BoardCodec.decode(saved) shouldBe Board(size, noted.cells)
+        }
+
         should("read a blob one byte beyond the size limit as unreadable") {
             val blob = goldenPaddedTo(BoardCodec.MAX_BYTES + 1)
             blob.size shouldBe 65_537
