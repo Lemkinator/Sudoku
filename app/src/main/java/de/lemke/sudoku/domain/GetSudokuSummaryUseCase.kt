@@ -18,16 +18,18 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
+import de.lemke.sudoku.domain.model.GameSummary
+import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 
-class DeleteInvalidSudokusUseCase @Inject constructor(
+class GetSudokuSummaryUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke() =
+    suspend operator fun invoke(sudokuId: SudokuId): GameSummary? =
         withContext(defaultDispatcher) {
-            sudokusRepository.deleteInvalidSudokus()
+            sudokusRepository.getSummaryById(sudokuId)
         }
 }

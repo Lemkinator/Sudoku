@@ -42,6 +42,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -85,7 +86,7 @@ class DailySudokuActivityMenuTest {
     private fun dailySudoku(sudokuId: SudokuId = SudokuId.generate()): Sudoku =
         testSudoku(
             size = SudokuSize.FOUR,
-            mode = GameMode.Daily,
+            mode = GameMode.Daily(LocalDate.now(testClock)),
             difficulty = Difficulty.VERY_EASY,
             sudokuId = sudokuId,
             created = LocalDateTime.now(testClock),
@@ -168,7 +169,7 @@ class DailySudokuActivityMenuTest {
             val sudoku = dailySudoku()
             runBlocking { saveSudoku(sudoku) }
             val holder = activity.sudokuListAdapter.onCreateViewHolder(activity.binding.dailySudokuRecycler, SudokuItem.VIEW_TYPE)
-            val item = SudokuItem(sudoku, label = "label")
+            val item = SudokuItem(sudoku.summary(), label = "label")
 
             activity.sudokuListAdapter.onClickItem.shouldNotBeNull()
             activity.sudokuListAdapter.onClickItem?.invoke(0, item, holder)

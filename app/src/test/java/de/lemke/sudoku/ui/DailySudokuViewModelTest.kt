@@ -21,7 +21,6 @@ import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.GenerateDailySudokuUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.InitDailySudokusUseCase
@@ -36,6 +35,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -43,6 +43,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -58,7 +59,7 @@ private data class ShownDailies(
 
 private fun DailySudokuUiState.shown() =
     ShownDailies(
-        sudokus = sudokus.map { item -> if (item is SudokuItem) item.sudoku.info.id.value else "separator" },
+        sudokus = sudokus.map { item -> if (item is SudokuItem) item.summary.info.id.value else "separator" },
         isLoading = isLoading,
     )
 
@@ -89,7 +90,7 @@ class DailySudokuViewModelTest : ShouldSpec(
         fun dailySudoku(
             created: LocalDateTime,
             completed: Boolean = false,
-        ) = testSudoku(mode = GameMode.Daily, created = created, completed = completed)
+        ) = testSudoku(mode = GameMode.Daily(created.toLocalDate()), created = created, completed = completed)
 
         should("observe today's daily sudokus only while state is collected and map them to the UI state") {
             val today = dailySudoku(created = LocalDateTime.of(2026, 1, 15, 9, 0))
@@ -113,7 +114,15 @@ class DailySudokuViewModelTest : ShouldSpec(
                 advanceTimeBy(5_001)
                 runCurrent()
                 repository.activeObservers shouldBe 0
-                repository.deleteSudoku(repository.getDailySudokus().single())
+                repository.deleteSudokus(
+                    listOf(
+                        repository
+                            .observeDailySummaries()
+                            .first()
+                            .single()
+                            .info.id,
+                    ),
+                )
                 viewModel.state.test {
                     runCurrent()
                     repository.activeObservers shouldBe 1
@@ -121,7 +130,7 @@ class DailySudokuViewModelTest : ShouldSpec(
                 }
 
                 repository.saves.map { it.info.mode to it.info.created } shouldBe
-                    listOf(GameMode.Daily to LocalDateTime.of(2026, 1, 15, 12, 0))
+                    listOf(GameMode.Daily(LocalDate.of(2026, 1, 15)) to LocalDateTime.of(2026, 1, 15, 12, 0))
             }
         }
 

@@ -21,7 +21,6 @@ import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveAllNormalSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
@@ -46,7 +45,7 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 
-private fun List<SudokuListItem>.shape(): List<String> = map { item -> if (item is SudokuItem) item.sudoku.info.id.value else "separator" }
+private fun List<SudokuListItem>.shape(): List<String> = map { item -> if (item is SudokuItem) item.summary.info.id.value else "separator" }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabHistoryViewModelTest : ShouldSpec(
@@ -212,7 +211,7 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.sudokuHistory.test {
-                repository.deleteSudoku(removed)
+                repository.deleteSudokus(listOf(removed.info.id))
                 expectMostRecentItem().shape() shouldBe listOf("separator", "sudoku-b")
             }
             viewModel.reveal.value shouldBe null
@@ -290,11 +289,11 @@ class TabHistoryViewModelTest : ShouldSpec(
             val viewModel = newViewModel()
 
             viewModel.deletion.value shouldBe HistoryDeletion.Idle
-            viewModel.onDeleteSelected(sudokus)
+            viewModel.onDeleteSelected(sudokus.map { it.info.id })
 
             viewModel.deletion.value shouldBe HistoryDeletion.Finished
             repository.deletedIds shouldBe listOf(sudokuA, sudokuB)
-            repository.storedRows.map { it.sudoku.id } shouldBe listOf("sudoku-c")
+            repository.storedIds shouldBe listOf(SudokuId("sudoku-c"))
         }
 
         should("a second delete while the first runs is refused and deletes once") {
@@ -305,10 +304,10 @@ class TabHistoryViewModelTest : ShouldSpec(
                 repository.beforeDelete = { deleteGate.await() }
                 val viewModel = newViewModel()
 
-                viewModel.onDeleteSelected(sudokus)
+                viewModel.onDeleteSelected(sudokus.map { it.info.id })
                 runCurrent()
                 viewModel.deletion.value shouldBe HistoryDeletion.Running
-                viewModel.onDeleteSelected(sudokus)
+                viewModel.onDeleteSelected(sudokus.map { it.info.id })
                 deleteGate.complete(Unit)
                 runCurrent()
 
@@ -321,12 +320,12 @@ class TabHistoryViewModelTest : ShouldSpec(
             val sudokus = listOf(sudoku(sudokuA, NINE_O_CLOCK))
             repository.store(*sudokus.toTypedArray())
             val viewModel = newViewModel()
-            viewModel.onDeleteSelected(sudokus)
+            viewModel.onDeleteSelected(sudokus.map { it.info.id })
 
             viewModel.onDeletionHandled(HistoryDeletion.Finished)
 
             viewModel.deletion.value shouldBe HistoryDeletion.Idle
-            viewModel.onDeleteSelected(sudokus)
+            viewModel.onDeleteSelected(sudokus.map { it.info.id })
             viewModel.deletion.value shouldBe HistoryDeletion.Finished
         }
 
@@ -337,7 +336,7 @@ class TabHistoryViewModelTest : ShouldSpec(
                 val deleteGate = CompletableDeferred<Unit>()
                 repository.beforeDelete = { deleteGate.await() }
                 val viewModel = newViewModel()
-                viewModel.onDeleteSelected(sudokus)
+                viewModel.onDeleteSelected(sudokus.map { it.info.id })
                 runCurrent()
 
                 viewModel.onDeletionHandled(HistoryDeletion.Finished)

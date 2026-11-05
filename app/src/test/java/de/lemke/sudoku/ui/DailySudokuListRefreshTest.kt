@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.InitDailySudokusUseCase
 import de.lemke.sudoku.domain.ObserveDailySudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -43,6 +44,7 @@ import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.shouldBe
 import java.time.Clock
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -107,7 +109,7 @@ class DailySudokuListRefreshTest {
     ): Sudoku =
         listSudoku(
             sudokuId = sudokuId,
-            mode = GameMode.Daily,
+            mode = GameMode.Daily(LocalDate.now(testClock)),
             filled = filled,
             errorsMade = errorsMade,
             seconds = seconds,
@@ -184,9 +186,9 @@ class DailySudokuListRefreshTest {
     }
 
     @Test
-    fun `an unreadable daily sudoku shows the load error once and marks it handled`() {
+    fun `a failing query shows the daily load error once and marks it handled`() {
         save(todaysSudoku(filled = 0, errorsMade = 0, seconds = 0))
-        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        database.openHelper.writableDatabase.execSQL("DROP TABLE game")
         ActivityScenario.launch(DailySudokuActivity::class.java).use { scenario ->
             idleMainLooper()
 
@@ -201,10 +203,10 @@ class DailySudokuListRefreshTest {
         }
     }
 
-    private fun shownSudoku(viewModel: DailySudokuViewModel): Sudoku =
+    private fun shownSudoku(viewModel: DailySudokuViewModel): GameSummary =
 
         viewModel.state.value.sudokus
             .filterIsInstance<SudokuItem>()
             .single()
-            .sudoku
+            .summary
 }

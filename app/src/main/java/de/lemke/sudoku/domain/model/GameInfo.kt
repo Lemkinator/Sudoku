@@ -16,6 +16,7 @@
 
 package de.lemke.sudoku.domain.model
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
 
@@ -42,7 +43,10 @@ data class GameInfo(
     val isChecklist: Boolean = false,
     val isReverseChecklist: Boolean = false,
     val checklistNumber: Int = 0,
+    val source: GameSource = GameSource.OWN,
 ) {
+    val dailyDate: LocalDate? get() = (mode as? GameMode.Daily)?.date
+
     val availableHints: Int get() = size.hintLimit - hintsUsed
 
     val isHintAvailable: Boolean get() = mode == GameMode.Normal && hintsUsed < size.hintLimit
@@ -60,6 +64,9 @@ data class GameInfo(
             } else {
                 String.format(Locale.getDefault(), "%02d:%02d", seconds / SECONDS_PER_MINUTE, seconds % SECONDS_PER_MINUTE)
             }
+
+    /** The day of a daily game; throws for a game of another mode. */
+    fun requireDailyDate(): LocalDate = (mode as GameMode.Daily).date
 
     fun errorLimitReached(errorLimit: Int): Boolean = if (errorLimit == 0) false else errorsMade >= errorLimit
 

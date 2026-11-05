@@ -26,6 +26,8 @@ import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.di.BackupModule
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
+import java.time.Clock
+import java.time.ZoneId
 import java.util.TimeZone
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -43,13 +45,13 @@ class SudokuBackupSectionInstrumentedTest : SudokuBackupSectionContract() {
         Room
             .inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java)
             .build()
-    private val section = SudokuBackupSection(database.sudokuDao())
+    private val section = SudokuBackupSection(database.gameDao())
     private val transaction =
         UnconfinedTestDispatcher().let { dispatcher ->
             BackupModule.provideBackupTransaction(
                 database,
                 QueueSudokuSaveUseCase(
-                    DefaultSudokusRepository(database.sudokuDao()),
+                    DefaultSudokusRepository(database.gameDao(), Clock.system(ZoneId.of("Europe/Berlin"))),
                     CoroutineScope(SupervisorJob() + dispatcher),
                     dispatcher,
                 ),

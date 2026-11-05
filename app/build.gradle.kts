@@ -146,6 +146,7 @@ android {
         // Context.assets, which only sees the debug variant's merged assets for local unit tests, not a "test"
         // source set). Debug-only, so release APKs never bundle these.
         getByName("debug").assets.directories += "$projectDir/schemas"
+        getByName("androidTest").assets.directories += "$projectDir/schemas"
     }
     testOptions {
         unitTests {
@@ -212,7 +213,6 @@ dependencies {
     implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
-    implementation(libs.bundles.json)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.room.runtime)
     implementation(libs.hilt.android)
@@ -248,6 +248,7 @@ dependencies {
     androidTestImplementation(testFixtures(libs.common.utils))
     androidTestImplementation(libs.bundles.android.test)
     androidTestImplementation(libs.junit4)
+    androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.turbine)
     androidTestImplementation(libs.kotest.assertions.core)
     androidTestImplementation(libs.coroutines.test)

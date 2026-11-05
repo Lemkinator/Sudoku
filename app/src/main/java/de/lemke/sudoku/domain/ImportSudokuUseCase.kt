@@ -20,18 +20,23 @@ import android.net.Uri
 import android.util.Log
 import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.SudokuDocuments
-import de.lemke.sudoku.data.database.sudokuFromExport
+import de.lemke.sudoku.data.codec.SudokuFileCodec
+import de.lemke.sudoku.domain.model.GameSource
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
-import io.kjson.parseJSON
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
-import net.pwall.json.schema.JSONSchema
+
+private const val TAG = "ImportSudokuUseCase"
 
 class ImportSudokuUseCase @Inject constructor(
     private val sudokuDocuments: SudokuDocuments,
+    private val getSummary: GetSudokuSummaryUseCase,
     private val saveSudoku: SaveSudokuUseCase,
+    private val clock: Clock,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     @Suppress("TooGenericExceptionCaught")
@@ -39,25 +44,19 @@ class ImportSudokuUseCase @Inject constructor(
         withContext(ioDispatcher) {
             if (uri == null) return@withContext null
             try {
-                val schema = JSONSchema.parse(sudokuDocuments.readAsset("schemas/sudoku.json"))
-                val json = sudokuDocuments.readText(uri)
-                val output = schema.validateBasic(json)
-                output.errors?.forEach { Log.e("ImportSudokuUseCase", "${it.error} - ${it.instanceLocation}") }
-                if (output.errors.isNullOrEmpty()) {
-                    val sudoku = sudokuFromExport(json.parseJSON())
-                    if (sudoku == null) {
-                        Log.e("ImportDataUseCase", "Invalid Sudoku")
-                        return@withContext null
-                    }
-                    saveSudoku(sudoku)
-                    return@withContext sudoku
-                } else {
-                    Log.e("ImportDataUseCase", "JSON Schema validation failed")
-                }
+                val sudoku = SudokuFileCodec.decode(sudokuDocuments.readBytes(uri), clock.zone)?.markedImported()
+                if (sudoku == null) Log.e(TAG, "Invalid sudoku file") else saveSudoku(sudoku)
+                sudoku
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                Log.e("ImportDataUseCase", "Error when reading file:", e)
+                Log.e(TAG, "Error when reading file:", e)
+                null
             }
-            return@withContext null
         }
+
+    /** A game that arrives solved is nobody's played win here, unless it replaces the player's own win. */
+    private suspend fun Sudoku.markedImported(): Sudoku =
+        if (!completed || getSummary(info.id)?.isOwnWin == true) this else copy(info = info.copy(source = GameSource.IMPORTED))
 }
+
+private val GameSummary.isOwnWin: Boolean get() = completed && info.source == GameSource.OWN

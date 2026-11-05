@@ -116,16 +116,15 @@ sealed interface SudokuShare {
 }
 
 /**
- * The wrap-up of the completed sudoku. It is [Pending] from the winning move until the activity reports the win shown,
- * and no restart can overwrite the sudoku before then. The activity shows a [Summary] until the player dismisses it,
- * and reports a [Failed] wrap-up handled once it showed it.
+ * The wrap-up of the completed sudoku. The winning move starts it and it is [Running] until the sudoku is saved and its follow-up
+ * is known, and no restart can overwrite the sudoku before then. The winning move also queues the win durably for the Play Games
+ * sync, which stays queued until an activity applied it. The activity shows a [Summary] until the player dismisses it, and reports
+ * a [Failed] wrap-up handled once it showed it.
  */
 sealed interface SudokuCompletion {
     sealed interface Result : SudokuCompletion
 
     data object Idle : SudokuCompletion
-
-    data object Pending : SudokuCompletion
 
     data object Running : SudokuCompletion
 
@@ -136,13 +135,6 @@ sealed interface SudokuCompletion {
 
     data object Failed : Result
 }
-
-private val SudokuCompletion.wrapUpStarted: Boolean
-    get() =
-        when (this) {
-            SudokuCompletion.Idle, SudokuCompletion.Pending -> false
-            SudokuCompletion.Running, is SudokuCompletion.Result -> true
-        }
 
 /** Whether a sudoku of [kind] in [phase] can be restarted, which erases its record. */
 internal fun restartPolicy(
@@ -175,8 +167,8 @@ private data class PendingSummary(
 }
 
 private fun Sudoku.kind(): SudokuKind =
-    when (info.mode) {
-        GameMode.Daily -> SudokuKind.Daily(info.created.toLocalDate())
+    when (val mode = info.mode) {
+        is GameMode.Daily -> SudokuKind.Daily(mode.date)
         is GameMode.Level -> SudokuKind.Level
         GameMode.Normal -> SudokuKind.Normal
     }
@@ -206,7 +198,7 @@ class SudokuViewModel @Inject constructor(
     val completion: StateFlow<SudokuCompletion>
         field = MutableStateFlow<SudokuCompletion>(SudokuCompletion.Idle)
 
-    /** The Play Games sync of the completed sudoku. The activity applies it and then reports it handled. */
+    /** Play Games sync of all completed sudokus, set once this win is saved. The activity applies it, then reports it handled. */
     val playGamesSync: StateFlow<PlayGamesSync?>
         field = MutableStateFlow<PlayGamesSync?>(null)
 
@@ -274,28 +266,6 @@ class SudokuViewModel @Inject constructor(
         share.compareAndSet(result, SudokuShare.Idle)
     }
 
-    fun onCompleted() {
-        refreshPhase()
-        val playing = game.value as? SudokuGame.Playing
-        if (playing == null || !playing.sudoku.completed || completion.value.wrapUpStarted) return
-        val completed = playing.sudoku
-        completion.value = SudokuCompletion.Running
-        wrapUp =
-            viewModelScope.launch {
-                when (val result = summaryOf(completed)) {
-                    is SudokuCompletion.Summary -> {
-                        savedStateHandle[KEY_PENDING_SUMMARY] = PendingSummary(result.followUp)
-                        completion.value = result
-                        playGamesSync.value = playGamesSyncOf(completed)
-                    }
-
-                    SudokuCompletion.Failed -> {
-                        completion.value = result
-                    }
-                }
-            }
-    }
-
     fun onCompletionDismissed(summary: SudokuCompletion.Summary) {
         if (completion.compareAndSet(summary, SudokuCompletion.Idle)) savedStateHandle.remove<PendingSummary>(KEY_PENDING_SUMMARY)
     }
@@ -326,9 +296,12 @@ class SudokuViewModel @Inject constructor(
         val played = playing?.let { it.sudoku.play(move) }
         if (playing != null && played != null) {
             game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
-            if (played.sudoku.completed) completion.value = SudokuCompletion.Pending
             updateTicker()
-            queueSudokuSave.launch(played.sudoku)
+            if (played.sudoku.completed) {
+                wrapUp(played.sudoku)
+            } else {
+                queueSudokuSave.launch(played.sudoku)
+            }
         }
         return played?.sudoku
     }
@@ -402,6 +375,24 @@ class SudokuViewModel @Inject constructor(
             else -> Phase.Playing
         }
 
+    private fun wrapUp(completed: Sudoku) {
+        completion.value = SudokuCompletion.Running
+        wrapUp =
+            viewModelScope.launch {
+                when (val result = summaryOf(completed)) {
+                    is SudokuCompletion.Summary -> {
+                        savedStateHandle[KEY_PENDING_SUMMARY] = PendingSummary(result.followUp)
+                        completion.value = result
+                        playGamesSync.value = orOnFailure(PlayGamesSync()) { calculatePlayGamesSync() }
+                    }
+
+                    SudokuCompletion.Failed -> {
+                        completion.value = result
+                    }
+                }
+            }
+    }
+
     private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
         val saved = orOnFailure(false) { queueSudokuSave(completed).await().let { true } }
         return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
@@ -416,9 +407,6 @@ class SudokuViewModel @Inject constructor(
         }
     }
 
-    private suspend fun playGamesSyncOf(completed: Sudoku): PlayGamesSync =
-        orOnFailure(PlayGamesSync()) { calculatePlayGamesSync(completed) }
-
     private suspend inline fun <T> orOnFailure(
         fallback: T,
         block: () -> T,
@@ -432,6 +420,6 @@ class SudokuViewModel @Inject constructor(
         when (val mode = completed.info.mode) {
             is GameMode.Level -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.info.size) == mode.number }
             GameMode.Normal -> FollowUp.NEW_GAME
-            GameMode.Daily -> null
+            is GameMode.Daily -> null
         }
 }

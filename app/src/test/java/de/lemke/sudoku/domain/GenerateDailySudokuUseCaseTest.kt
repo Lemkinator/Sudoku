@@ -24,6 +24,7 @@ import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +41,7 @@ class GenerateDailySudokuUseCaseTest : ShouldSpec(
         should("mark the sudoku as daily mode, stamp created from the injected clock, and pick a supported difficulty") {
             val sudoku = useCase(SudokuSize.NINE)
 
-            sudoku.info.mode shouldBe GameMode.Daily
+            sudoku.info.mode shouldBe GameMode.Daily(LocalDate.of(2026, 2, 15))
             sudoku.info.created shouldBe LocalDateTime.ofInstant(fixedInstant, ZoneOffset.UTC)
             sudoku.info.difficulty shouldBeIn listOf(Difficulty.VERY_EASY, Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD)
         }

@@ -38,6 +38,6 @@ class DefaultPlayGamesSyncApplier @Inject constructor() : PlayGamesSyncApplier {
         val leaderboards = PlayGames.getLeaderboardsClient(activity)
         sync.leaderboardScores.forEach { (leaderboardId, score) -> leaderboards.submitScore(activity.getString(leaderboardId), score) }
         sync.achievementUnlocks.forEach { achievementId -> achievements.unlock(activity.getString(achievementId)) }
-        sync.achievementIncrements.forEach { (achievementId, amount) -> achievements.increment(activity.getString(achievementId), amount) }
+        sync.achievementSteps.forEach { (achievementId, steps) -> achievements.setSteps(activity.getString(achievementId), steps) }
     }
 }

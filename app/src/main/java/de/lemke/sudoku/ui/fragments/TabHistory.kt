@@ -166,7 +166,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             } else {
                 if (sudokuListItem is SudokuItem) {
                     viewHolder.itemView.transformToActivity(
-                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.info.id.value),
+                        Intent(requireActivity(), SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudokuListItem.summary.info.id.value),
                     )
                 }
             }
@@ -209,7 +209,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             viewModel.sudokuHistory.value
                 .filterIsInstance<SudokuItem>()
                 .filter { it.stableId in selectedIds }
-                .map { it.sudoku }
+                .map { it.summary.info.id }
         viewModel.onDeleteSelected(selectedSudokus)
     }
 

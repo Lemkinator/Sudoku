@@ -19,9 +19,11 @@ package de.lemke.sudoku.data.database
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,44 +40,20 @@ class AppDatabaseValidationTest {
     fun `reopening a persisted database validates its schema and keeps saved data intact`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val dbName = "validation-test-${System.nanoTime()}"
-        val sudokuId = "id-2"
-        val now = LocalDateTime.now()
+        val sudoku = testSudoku(created = LocalDateTime.of(2026, 3, 14, 12, 0, 5))
 
         Room
             .databaseBuilder(context, AppDatabase::class.java, dbName)
             .build()
             .apply {
-                runBlocking {
-                    sudokuDao().insert(
-                        SudokuDb(
-                            id = sudokuId,
-                            size = 4,
-                            difficulty = 0,
-                            modeLevel = 0,
-                            regionalHighlightingUsed = false,
-                            numberHighlightingUsed = false,
-                            eraserUsed = false,
-                            isChecklist = false,
-                            isReverseChecklist = false,
-                            checklistNumber = 0,
-                            hintsUsed = 0,
-                            notesMade = 0,
-                            errorsMade = 0,
-                            created = now,
-                            updated = now,
-                            seconds = 0,
-                        ),
-                        emptyList(),
-                    )
-                }
+                runBlocking { gameDao().save(sudoku.toEntity(ZoneOffset.UTC)) }
                 close()
             }
 
         val reopened = Room.databaseBuilder(context, AppDatabase::class.java, dbName).build()
-        val row = runBlocking { reopened.sudokuDao().getById(sudokuId) }.shouldNotBeNull()
-        row.sudoku.id shouldBe sudokuId
-        row.sudoku.size shouldBe 4
-        row.sudoku.created shouldBe now
+        val game = runBlocking { reopened.gameDao().getById(sudoku.info.id.value) }.shouldNotBeNull()
+        game.header.size shouldBe 4
+        game.toSudoku(ZoneOffset.UTC) shouldBe sudoku
         reopened.close()
 
         context.deleteDatabase(dbName)

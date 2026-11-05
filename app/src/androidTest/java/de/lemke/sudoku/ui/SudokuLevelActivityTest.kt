@@ -111,7 +111,7 @@ class SudokuLevelActivityTest {
                     nextLevelId =
                         it
                             .topLevelItem()
-                            .sudoku.info.id
+                            .summary.info.id
                 }
                 scenario.moveToState(Lifecycle.State.CREATED)
                 runBlocking { saveSudoku(completedLevel(COMPLETED_LEVELS + 1, checkNotNull(nextLevelId))) }

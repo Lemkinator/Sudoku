@@ -23,6 +23,7 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.testSudoku
 import io.kotest.matchers.shouldBe
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -122,35 +123,35 @@ class SudokuViewModelRestartTest {
 
     @Test
     fun `a lost daily sudoku of today restarts`() {
-        val sudoku = lost(testSudoku(mode = GameMode.Daily, created = today))
+        val sudoku = lost(testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 15)), created = today))
 
         restart(sudoku).shouldHaveRestarted(sudoku)
     }
 
     @Test
     fun `a won daily sudoku of today does not restart`() {
-        val sudoku = testSudoku(mode = GameMode.Daily, created = today, completed = true)
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 15)), created = today, completed = true)
 
         restart(sudoku).shouldHaveKept(sudoku, 0)
     }
 
     @Test
     fun `a lost daily sudoku of an earlier day does not restart`() {
-        val sudoku = lost(testSudoku(mode = GameMode.Daily, created = today.minusDays(1)))
+        val sudoku = lost(testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 14)), created = today.minusDays(1)))
 
         restart(sudoku).shouldHaveKept(sudoku, 3)
     }
 
     @Test
     fun `a won daily sudoku of an earlier day does not restart`() {
-        val sudoku = testSudoku(mode = GameMode.Daily, created = today.minusDays(1), completed = true)
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 14)), created = today.minusDays(1), completed = true)
 
         restart(sudoku).shouldHaveKept(sudoku, 0)
     }
 
     @Test
     fun `a lost daily sudoku of today still restarts after the clock passes midnight`() {
-        val sudoku = lost(testSudoku(mode = GameMode.Daily, created = today))
+        val sudoku = lost(testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 15)), created = today))
         val viewModel = rig.playing(sudoku)
         rig.clock.advanceTo(Instant.parse("2026-01-16T00:00:01Z"))
 
@@ -163,14 +164,14 @@ class SudokuViewModelRestartTest {
 
     @Test
     fun `a daily sudoku of today in progress does not restart`() {
-        val sudoku = testSudoku(mode = GameMode.Daily, created = today).withErrors(1)
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 15)), created = today).withErrors(1)
 
         restart(sudoku).shouldHaveKept(sudoku, 1)
     }
 
     @Test
     fun `a daily sudoku of an earlier day in progress does not restart`() {
-        val sudoku = testSudoku(mode = GameMode.Daily, created = today.minusDays(1)).withErrors(1)
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 14)), created = today.minusDays(1)).withErrors(1)
 
         restart(sudoku).shouldHaveKept(sudoku, 1)
     }

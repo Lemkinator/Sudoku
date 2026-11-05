@@ -19,7 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.matchesSudokuFilterFlags
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,8 +32,8 @@ class ObserveSudokusAndStatisticsFilterFlagsUseCase @Inject constructor(
     private val userSettings: UserSettings,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    operator fun invoke(): Flow<List<Sudoku>> =
-        combine(userSettings.filterFlagsFlow, sudokusRepository.observeAllSudokus()) { flags, sudokus ->
-            sudokus.filter { flags.matchesSudokuFilterFlags(it) }
+    operator fun invoke(): Flow<List<GameSummary>> =
+        combine(userSettings.filterFlagsFlow, sudokusRepository.observeAllSummaries()) { flags, sudokus ->
+            sudokus.filter { flags.matchesSudokuFilterFlags(it.info) }
         }.flowOn(defaultDispatcher)
 }

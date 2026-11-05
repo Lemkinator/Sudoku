@@ -25,6 +25,7 @@ import java.time.LocalDateTime
 
 private val SOLUTIONS = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1)
 private val CREATED = LocalDateTime.of(2026, 1, 15, 12, 0)
+private val DAILY = GameMode.Daily(CREATED.toLocalDate())
 
 private fun gameInfo(
     id: SudokuId = SudokuId("sudoku-test"),
@@ -97,7 +98,7 @@ class SudokuTest : ShouldSpec(
             mapOf(
                 "id" to base.copy(info = base.info.copy(id = SudokuId("other"))),
                 "difficulty" to base.copy(info = base.info.copy(difficulty = Difficulty.HARD)),
-                "mode" to base.copy(info = base.info.copy(mode = GameMode.Daily)),
+                "mode" to base.copy(info = base.info.copy(mode = DAILY)),
                 "regionalHighlightingUsed" to base.copy(info = base.info.copy(regionalHighlightingUsed = true)),
                 "numberHighlightingUsed" to base.copy(info = base.info.copy(numberHighlightingUsed = true)),
                 "eraserUsed" to base.copy(info = base.info.copy(eraserUsed = true)),
@@ -153,7 +154,7 @@ class SudokuTest : ShouldSpec(
             }
 
             should("offer no hint in a daily or level sudoku") {
-                gameInfo(mode = GameMode.Daily).isHintAvailable shouldBe false
+                gameInfo(mode = DAILY).isHintAvailable shouldBe false
                 gameInfo(mode = GameMode.Level(3)).isHintAvailable shouldBe false
             }
 
@@ -217,8 +218,15 @@ class SudokuTest : ShouldSpec(
                 played.restarted() shouldBe fresh.copy(info = fresh.info.copy(updated = CREATED.plusSeconds(1)))
             }
 
+            should("turn an imported game into the player's own") {
+                val imported = fourByFour(info = gameInfo().copy(source = GameSource.IMPORTED))
+
+                imported.restarted().info.source shouldBe GameSource.OWN
+                imported.initialCopy().info.source shouldBe GameSource.OWN
+            }
+
             should("keep the id, the mode and the stamps") {
-                val daily = fourByFour(info = gameInfo(mode = GameMode.Daily)).tick(CREATED.plusSeconds(5))
+                val daily = fourByFour(info = gameInfo(mode = DAILY)).tick(CREATED.plusSeconds(5))
 
                 daily.restarted().info shouldBe daily.info.copy(seconds = 0)
             }
@@ -233,7 +241,7 @@ class SudokuTest : ShouldSpec(
         context("initialCopy") {
             val created = LocalDateTime.of(2024, 5, 1, 8, 0)
             val started =
-                fourByFour(given = setOf(0), info = gameInfo(mode = GameMode.Daily).copy(created = created))
+                fourByFour(given = setOf(0), info = gameInfo(mode = GameMode.Daily(created.toLocalDate())).copy(created = created))
                     .played(BoardMove.Enter(1, 2), BoardMove.ToggleNote(2, 3))
                     .withHighlightingUsed(Highlighting.REGIONAL)
                     .tick(created.plusMinutes(3))
@@ -271,7 +279,7 @@ class SudokuTest : ShouldSpec(
         context("copyAsNormal") {
             should("keep the game with a new id and normal mode") {
                 val daily =
-                    fourByFour(given = setOf(0), info = gameInfo(mode = GameMode.Daily))
+                    fourByFour(given = setOf(0), info = gameInfo(mode = DAILY))
                         .played(BoardMove.Enter(1, 2), BoardMove.ToggleNote(2, 3))
                         .tick(CREATED.plusSeconds(1))
 
@@ -469,7 +477,7 @@ class SudokuTest : ShouldSpec(
 
         context("hints") {
             should("reject a hint in a daily sudoku") {
-                fourByFour(info = gameInfo(mode = GameMode.Daily)).play(BoardMove.RevealHint(1)) shouldBe null
+                fourByFour(info = gameInfo(mode = DAILY)).play(BoardMove.RevealHint(1)) shouldBe null
             }
 
             should("reject a hint in a level sudoku") {

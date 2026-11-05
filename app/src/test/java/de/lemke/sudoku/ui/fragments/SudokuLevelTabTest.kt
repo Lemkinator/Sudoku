@@ -34,9 +34,8 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.FieldDb
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.GameDao
+import de.lemke.sudoku.data.database.GameEntity
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
 import de.lemke.sudoku.di.SudokusRepositoryModule
@@ -46,6 +45,7 @@ import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -59,6 +59,7 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -90,23 +91,21 @@ class SudokuLevelTabTest {
     private var insertCalls = 0
     private var insertFailure: Exception? = null
     private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
-    private val sudokuDao = database.sudokuDao()
+    private val gameDao = database.gameDao()
 
     @BindValue
     @JvmField
     val sudokusRepository: SudokusRepository =
         DefaultSudokusRepository(
-            object : SudokuDao by sudokuDao {
-                override suspend fun insert(
-                    sudoku: SudokuDb,
-                    fields: List<FieldDb>,
-                ) {
+            object : GameDao by gameDao {
+                override suspend fun save(game: GameEntity) {
                     insertCalls++
                     insertFailure?.let { throw it }
                     insertGate.await()
-                    sudokuDao.insert(sudoku, fields)
+                    gameDao.save(game)
                 }
             },
+            Clock.systemDefaultZone(),
         )
 
     @Inject
@@ -149,7 +148,7 @@ class SudokuLevelTabTest {
     private fun clickItem(
         fragment: SudokuLevelTab,
         position: Int,
-        sudoku: Sudoku,
+        sudoku: GameSummary,
     ) {
         val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuLevelsRecycler, SudokuItem.VIEW_TYPE)
         fragment.singleLaunch {
@@ -189,7 +188,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 0, nextLevel)
 
@@ -207,7 +206,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             nextLevel.info.mode shouldBe GameMode.Level(2)
             fragment.binding.sudokuLevelsRecycler.top shouldBe 0
             insertGate = CompletableDeferred()
@@ -236,7 +235,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             insertGate = CompletableDeferred()
             insertCalls = 0
 
@@ -261,7 +260,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             insertCalls = 0
 
             clickItem(fragment, 0, nextLevel)
@@ -282,7 +281,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             insertFailure = SQLiteFullException("database or disk is full")
 
             clickItem(fragment, 0, nextLevel)
@@ -295,9 +294,9 @@ class SudokuLevelTabTest {
     }
 
     @Test
-    fun `an unreadable level shows the load error once and marks it handled`() {
+    fun `a failing query shows the level load error once and marks it handled`() {
         runBlocking { saveSudoku(levelSudoku(level = 1, completed = false)) }
-        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        database.openHelper.writableDatabase.execSQL("DROP TABLE game")
         settings.currentLevelTab = 0
         ActivityScenario.launch(SudokuLevelActivity::class.java).use { scenario ->
             idleMainLooper()
@@ -354,7 +353,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 0, level)
             clickItem(fragment, 0, level)
@@ -378,7 +377,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
             clickItem(fragment, 0, firstLevel)
             clickItem(fragment, 0, firstLevel)
             generateSequence { shadowOf(fragment.requireActivity()).nextStartedActivity }.toList().size shouldBe 1
@@ -405,7 +404,7 @@ class SudokuLevelTabTest {
                         .filterIsInstance<SudokuLevelTab>()
                         .first { it.arguments?.getInt(SudokuLevelTab.KEY_SIZE) == 4 }
                 activity.singleLaunchActivity(Intent(activity, MainActivity::class.java)) shouldBe true
-                fragment.viewModel.confirmSudokuStart(0, level)
+                fragment.viewModel.confirmSudokuStart(level.info.id)
             }
             idleMainLooper()
             scenario.onActivity { activity ->
@@ -436,7 +435,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 1, level)
 
@@ -457,7 +456,7 @@ class SudokuLevelTabTest {
                 (
                     fragment.viewModel.state.value.sudokuLevel
                         .first() as SudokuItem
-                ).sudoku
+                ).summary
 
             clickItem(fragment, 0, level)
 

@@ -21,7 +21,6 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetRecentlyUpdatedNormalSudokuUseCase
 import de.lemke.sudoku.domain.IsDailySudokuCompletedUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
@@ -34,11 +33,13 @@ import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
@@ -75,7 +76,7 @@ class TabSudokuViewModelTest : ShouldSpec(
                     GenerateSudokuUseCase(GenerateFieldsUseCase(dispatcher, solvedBoardGenerator), dispatcher),
                     SaveSudokuUseCase(repository, dispatcher),
                     GetRecentlyUpdatedNormalSudokuUseCase(repository, dispatcher),
-                    IsDailySudokuCompletedUseCase(GetAllSudokusUseCase(repository, dispatcher), clock, dispatcher),
+                    IsDailySudokuCompletedUseCase(repository, clock, dispatcher),
                 )
         }
 
@@ -159,47 +160,51 @@ class TabSudokuViewModelTest : ShouldSpec(
             viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
         }
 
-        should("getContinuableSudoku returns null when getRecentSudoku finds nothing") {
-            viewModel.getContinuableSudoku() shouldBe null
+        should("loadStartTab offers no continuable sudoku when getRecentSudoku finds nothing") {
+            viewModel.loadStartTab().shouldNotBeNull().continuable shouldBe null
         }
 
-        should("getContinuableSudoku returns null when the recent sudoku is already completed") {
+        should("loadStartTab offers no continuable sudoku when the recent sudoku is already completed") {
             repository.store(testSudoku(completed = true))
 
-            viewModel.getContinuableSudoku() shouldBe null
+            viewModel.loadStartTab().shouldNotBeNull().continuable shouldBe null
         }
 
-        should("getContinuableSudoku returns null when the recent sudoku's error limit is reached") {
+        should("loadStartTab offers no continuable sudoku when the recent sudoku's error limit is reached") {
             val fresh = testSudoku()
             val sudoku = fresh.copy(info = fresh.info.copy(errorsMade = userSettings.errorLimit))
             repository.store(sudoku)
 
             sudoku.info.errorLimitReached(userSettings.errorLimit).shouldBeTrue()
-            viewModel.getContinuableSudoku() shouldBe null
+            viewModel.loadStartTab().shouldNotBeNull().continuable shouldBe null
         }
 
-        should("getContinuableSudoku returns the sudoku when it is neither completed nor error-limit-reached") {
+        should("loadStartTab returns the sudoku when it is neither completed nor error-limit-reached") {
             val sudoku = testSudoku()
             repository.store(sudoku)
 
             sudoku.info.errorLimitReached(userSettings.errorLimit).shouldBeFalse()
-            viewModel.getContinuableSudoku() shouldBe sudoku
+            viewModel.loadStartTab()?.continuable shouldBe sudoku.summary()
         }
 
-        should("checkDailySudokuCompleted returns true when today's daily sudoku is completed") {
-            repository.store(testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock), completed = true))
+        should("loadStartTab reports the daily completed when today's daily sudoku is completed") {
+            repository.store(testSudoku(mode = GameMode.Daily(LocalDate.now(clock)), created = LocalDateTime.now(clock), completed = true))
 
-            viewModel.checkDailySudokuCompleted().shouldBeTrue()
+            viewModel.loadStartTab()?.dailyCompleted shouldBe true
         }
 
-        should("checkDailySudokuCompleted returns false when isDailySudokuCompleted returns false") {
+        should("loadStartTab reports the daily open when only an earlier daily and a normal sudoku are completed") {
             repository.store(
-                testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock)),
-                testSudoku(mode = GameMode.Daily, created = LocalDateTime.now(clock).minusDays(1), completed = true),
+                testSudoku(mode = GameMode.Daily(LocalDate.now(clock)), created = LocalDateTime.now(clock)),
+                testSudoku(
+                    mode = GameMode.Daily(LocalDate.now(clock).minusDays(1)),
+                    created = LocalDateTime.now(clock).minusDays(1),
+                    completed = true,
+                ),
                 testSudoku(completed = true),
             )
 
-            viewModel.checkDailySudokuCompleted().shouldBeFalse()
+            viewModel.loadStartTab()?.dailyCompleted shouldBe false
         }
     },
 )

@@ -23,12 +23,17 @@ private const val PERCENT_SCALE = 100
 class Board private constructor(
     val size: SudokuSize,
     owned: Owned,
+    val preserved: PreservedFields,
 ) {
     private class Owned(val cells: List<Cell>)
 
     val cells: List<Cell> = Collections.unmodifiableList(owned.cells)
 
-    constructor(size: SudokuSize, cells: List<Cell>) : this(size, Owned(cells.toList()))
+    constructor(
+        size: SudokuSize,
+        cells: List<Cell>,
+        preserved: PreservedFields = PreservedFields.NONE,
+    ) : this(size, Owned(cells.toList()), preserved)
 
     init {
         require(cells.size == size.cellCount) { "Expected ${size.cellCount} cells but got ${cells.size}" }
@@ -58,11 +63,11 @@ class Board private constructor(
                 .filterValues { it >= size.value }
                 .keys
 
-    override fun equals(other: Any?): Boolean = other is Board && size == other.size && cells == other.cells
+    override fun equals(other: Any?): Boolean = other is Board && size == other.size && cells == other.cells && preserved == other.preserved
 
-    override fun hashCode(): Int = 31 * size.hashCode() + cells.hashCode()
+    override fun hashCode(): Int = (31 * size.hashCode() + cells.hashCode()) * 31 + preserved.hashCode()
 
-    override fun toString(): String = "Board(size=$size, cells=$cells)"
+    override fun toString(): String = "Board(size=$size, cells=$cells, preserved=$preserved)"
 
     operator fun get(index: Int): Cell = cells[index]
 
@@ -83,12 +88,16 @@ class Board private constructor(
     fun isBlockCompleted(block: Int): Boolean = blockIndices(block).all { cells[it].correct }
 
     fun initial(): Board =
-        Board(size, Owned(cells.map { if (it.origin == CellOrigin.GIVEN) it.copy(notes = NoteMask.EMPTY) else Cell(it.solution) }))
+        Board(
+            size,
+            Owned(cells.map { if (it.origin == CellOrigin.GIVEN) it.copy(notes = NoteMask.EMPTY) else Cell(it.solution) }),
+            preserved,
+        )
 
     fun with(
         index: Int,
         cell: Cell,
-    ): Board = Board(size, Owned(cells.toMutableList().also { it[index] = cell }))
+    ): Board = Board(size, Owned(cells.toMutableList().also { it[index] = cell }), preserved)
 
     private fun rowIndices(row: Int): List<Int> = List(size.value) { row * size.value + it }
 

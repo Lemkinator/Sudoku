@@ -17,13 +17,14 @@
 package de.lemke.sudoku.domain.model
 
 /**
- * Data-only description of what to sync to Play Games — leaderboard scores to submit, achievements to unlock, and
- * achievements to increment, each keyed by string resource id. Deliberately holds no [android.app.Activity] reference
+ * Data-only description of what to sync to Play Games — leaderboard scores to submit, achievements to unlock, and the
+ * steps of incremental achievements to set, each keyed by string resource id. Every entry is absolute, so applying
+ * the same sync again changes nothing. Deliberately holds no [android.app.Activity] reference
  * so it can be computed on a background dispatcher; the UI layer resolves the string resources and performs the
  * actual `PlayGames` client calls.
  */
 data class PlayGamesSync(
     val leaderboardScores: List<Pair<Int, Long>> = emptyList(),
     val achievementUnlocks: List<Int> = emptyList(),
-    val achievementIncrements: List<Pair<Int, Int>> = emptyList(),
+    val achievementSteps: List<Pair<Int, Int>> = emptyList(),
 )

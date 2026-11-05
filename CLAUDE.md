@@ -90,7 +90,8 @@ because sign-in needs the Activity. It signs in through `GamesSignIn` and fetche
 (VERY_EASY…EXPERT, stored by `code`). Moves are pure: `Board.apply(BoardMove)` returns a `MoveResult`, and `Sudoku.play(move)` adds the
 counters and returns a new `Sudoku`. The domain holds no timer and no listener; `SudokuViewModel` owns the ticker and every move.
 
-**Sudoku modes:** `GameMode`: `Normal`, `Daily`, `Level(number)`.
+**Sudoku modes:** `GameMode`: `Normal`, `Daily(date)`, `Level(number)`. A daily game keeps the day it was made for as `date`, stored in
+the `dailyDate` column, whatever zone the device is in later.
 
 ## Key Patterns
 
@@ -104,11 +105,15 @@ the `@IoDispatcher`/`@DefaultDispatcher`/`@MainDispatcher`-qualified `CoroutineD
 **Use cases:** Single-responsibility, `@Inject` constructor. Return domain types or `Flow<>`. Named with action-verb field names (parent
 CLAUDE.md convention).
 
-**Room:** Two entities (`SudokuDb`, `FieldDb`). Schema exported to `app/schemas/`. Bidirectional mappers in `data/database/`.
-Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the DAO code (`di/SudokusRepositoryModule.kt`).
+**Room:** One entity, `GameEntity` (table `game`): a `GameHeader` of summary columns plus the `board` blob that `BoardCodec` writes
+(protobuf wire format, unknown fields kept in `Board.preserved`). Unique indices on (size, level) and on the day make a save replace the
+game it collides with. `MIGRATION_2_3` converts the per-cell tables and drops games it cannot read. Schema exported to `app/schemas/`.
+Mappers in `data/database/GameEntityMapper.kt`. Lists, statistics, Play Games sync and the daily alarm read `GameSummary` values
+(`GameInfo` plus `completed` and `progress`) from the header columns and never load a board; only `getSudokuById` does. Use cases depend on `interface SudokusRepository`; `DefaultSudokusRepository` holds the
+DAO code (`di/SudokusRepositoryModule.kt`).
 
 **Boundaries:** framework and Play Games calls sit behind interfaces with a `Default*` implementation bound in `di/`:
-`SudokuDocuments` (picked documents and assets), `SudokuShareFiles` (shared sudoku files), `DailyNotifications`
+`SudokuDocuments` (picked documents), `SudokuShareFiles` (shared sudoku files), `DailyNotifications`
 (notification channel, alarm and permission state), `GamesSignIn`, `PlayGamesIntentProvider` and `PlayGamesSyncApplier`.
 Use cases and ViewModels take no `Context`.
 
@@ -125,10 +130,17 @@ A refused next-level start (its level is already saved) also restarts the level 
 `SudokuViewModel` owns the played sudoku (`SudokuGame`), its moves (`onMove`) and its one ticker job, and keeps its id in the
 `SavedStateHandle`, so a restart or a follow-up game survives recreation. Every write of the played sudoku goes through
 `QueueSudokuSaveUseCase`: it queues the immutable value and runs the writes one after another in `@ApplicationScope`, so a closing screen
-cannot cancel a save. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
-The finish dialog's summary stays in the `SavedStateHandle` until the player dismisses it.
+cannot cancel a save. A queued save that has not started takes the newer snapshot of its game, so a burst of moves writes once. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
+The winning move starts the wrap-up in the
+ViewModel (save, follow-up lookup), so leaving or rotating during the win animation loses nothing; the activity only holds the finish
+dialog back until the animation ends. The dialog's summary stays in the `SavedStateHandle` until the player dismisses it. The Play
+Games sync derives from the completed sudokus stored (`CalculatePlayGamesSyncUseCase`): every score, unlock and achievement step is
+absolute, so applying it twice changes nothing. A game that a `.sudoku` file brought in already solved carries `GameSource.IMPORTED` (the `imported` column and backup field); it counts in the win totals only, never in times, unlocks or 10/50 steps. `SudokuViewModel` sets it once the win save committed, and the activity requests the
+in-app review with it; `MainViewModel.onScreenReady` offers it once per ViewModel. `PlayGamesSyncer` applies it only after the silent
+sign-in check succeeds.
 
-**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game) into common-utils' backup. A
+**Backup:** `di/BackupModule` binds `SudokuBackupSection` (the `sudokus` section, `.sudokubackup` files; `.sudoku` names a shared single game, a protobuf-wire message written by `SudokuFileCodec`) into common-utils' backup. The section is version 2 and reads no older one: an entry holds the Base64 of the stored board blob, which
+export copies and import validates by decoding. A
 restore runs inside `QueueSudokuSaveUseCase.exclusive`, so no queued game save interleaves with it. Backups are signed
 (`di/BackupSigningModule`): the build reads Gradle property or env var `backupSigningKey` / `BACKUP_SIGNING_KEY` (GitHub secret
 of the release workflow, and the owner's `~/.gradle/gradle.properties`) into `BuildConfig`. Without it a build signs with the
@@ -142,7 +154,6 @@ Never commit or print the release key.
 - `com.google.dagger:hilt-android` — DI
 - `androidx.room` — Persistence
 - `com.google.android.gms:play-services-games-v2` — Play Games achievements/leaderboards
-- `io.kjson:kjson` — JSON for the single-sudoku share and import
 - `org.jetbrains.kotlinx:kotlinx-serialization-json` — the backup sections (`data/backup/`)
 
 `app/src/main/res/values/games-ids.xml` is the verbatim Play Console export; never edit it.

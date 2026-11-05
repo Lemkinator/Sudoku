@@ -20,22 +20,22 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import java.io.File
 
-/** Returns [file] for every write and records each written sudoku id with its JSON in [writes]. */
+/** Returns [file] for every write and records each written sudoku id with its bytes in [writes]. */
 class FakeSudokuShareFiles(
     private val file: File,
 ) : SudokuShareFiles {
     data class Write(
         val sudokuId: SudokuId,
-        val json: String,
+        val bytes: ByteArray,
     )
 
     val writes = mutableListOf<Write>()
 
     override suspend fun write(
         sudoku: Sudoku,
-        json: String,
+        bytes: ByteArray,
     ): File {
-        writes += Write(sudoku.info.id, json)
+        writes += Write(sudoku.info.id, bytes)
         return file
     }
 }

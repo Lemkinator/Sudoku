@@ -18,7 +18,7 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.database.SudokusRepository
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.SudokuId
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -27,8 +27,5 @@ class DeleteSudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(sudokus: List<Sudoku>) =
-        withContext(defaultDispatcher) {
-            sudokus.forEach { sudokusRepository.deleteSudoku(it) }
-        }
+    suspend operator fun invoke(ids: List<SudokuId>) = withContext(defaultDispatcher) { sudokusRepository.deleteSudokus(ids) }
 }

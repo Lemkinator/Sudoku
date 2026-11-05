@@ -23,7 +23,6 @@ import de.lemke.commonutils.ui.utils.stateInViewModel
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
-import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -68,7 +67,7 @@ class TabHistoryViewModel @Inject constructor(
     val sudokuHistory: StateFlow<List<SudokuListItem>> =
         observeSudokuHistory()
             .transform { newHistory ->
-                val sudokus = newHistory.filterIsInstance<SudokuItem>().map { it.sudoku }
+                val sudokus = newHistory.filterIsInstance<SudokuItem>().map { it.summary }
                 val previous = previousUpdates
                 previousUpdates = sudokus.associate { it.info.id to it.info.updated }
                 emit(newHistory)
@@ -83,11 +82,11 @@ class TabHistoryViewModel @Inject constructor(
     val deletion: StateFlow<HistoryDeletion>
         field = MutableStateFlow<HistoryDeletion>(HistoryDeletion.Idle)
 
-    fun onDeleteSelected(sudokus: List<Sudoku>) {
+    fun onDeleteSelected(ids: List<SudokuId>) {
         if (deletion.value == HistoryDeletion.Running) return
         deletion.value = HistoryDeletion.Running
         viewModelScope.launch {
-            deleteSudoku(sudokus)
+            deleteSudoku(ids)
             deletion.value = HistoryDeletion.Finished
         }
     }

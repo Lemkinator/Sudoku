@@ -19,15 +19,21 @@ package de.lemke.sudoku.data.backup
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import de.lemke.commonutils.backup.DirectBackupTransaction
+import de.lemke.commonutils.backup.core.BackupApp
+import de.lemke.commonutils.backup.core.BackupEngine
+import de.lemke.commonutils.backup.core.BackupExport
+import de.lemke.commonutils.backup.core.BackupFileExtension
+import de.lemke.commonutils.backup.core.BackupReadResult
+import de.lemke.commonutils.backup.core.BackupRefusal
 import de.lemke.commonutils.backup.core.BackupSection
 import de.lemke.commonutils.backup.core.BackupTransaction
 import de.lemke.commonutils.backup.core.EntryCheck
+import de.lemke.commonutils.backup.core.MergeableSection
 import de.lemke.sudoku.data.database.AppDatabase
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.FieldDb
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuDb
-import de.lemke.sudoku.data.database.sudokuWithFieldsToDb
+import de.lemke.sudoku.data.database.GameDao
+import de.lemke.sudoku.data.database.GameEntity
+import de.lemke.sudoku.data.database.toEntity
 import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.di.BackupModule
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
@@ -39,11 +45,13 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Base64
 import java.util.TimeZone
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineScope
@@ -83,7 +91,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
                 .build()
         defaultZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone(BERLIN))
-        section = SudokuBackupSection(database.sudokuDao())
+        section = SudokuBackupSection(database.gameDao())
     }
 
     @After
@@ -96,46 +104,30 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
 
     override fun transaction(): BackupTransaction = transaction
 
-    private fun storedFieldCount(): Int =
-        database.query("SELECT COUNT(*) FROM field", null).use {
+    private fun storedGameCount(): Int =
+        database.query("SELECT COUNT(*) FROM game", null).use {
             it.moveToFirst()
             it.getInt(0)
         }
 
-    private suspend fun store(vararg sudokus: Sudoku) =
-        sudokus.forEach {
-            val rows = sudokuWithFieldsToDb(it)
-            database.sudokuDao().insert(rows.sudoku, rows.fields)
-        }
+    private suspend fun store(vararg sudokus: Sudoku) = sudokus.forEach { database.gameDao().save(it.toEntity(ZoneId.systemDefault())) }
 
     @Test
-    fun `clear removes every game and its fields`(): Unit =
+    fun `clear removes every game`(): Unit =
         runBlocking {
             store(testSudoku(), testSudoku())
 
             section.clear()
 
             section.exportEntries().shouldBeEmpty()
-            storedFieldCount() shouldBe 0
+            storedGameCount() shouldBe 0
         }
 
     @Test
-    fun `an export leaves out a game that cannot be read`(): Unit =
+    fun `an export leaves out a game whose header cannot be read`(): Unit =
         runBlocking {
-            val unreadable = sudokuWithFieldsToDb(testSudoku())
-            database.sudokuDao().insert(unreadable.sudoku, unreadable.fields.drop(1))
-            val readable = testSudoku()
-            store(readable)
-
-            section.exportEntries().map { it.id } shouldBe listOf(readable.info.id.value)
-        }
-
-    @Test
-    fun `an export leaves out a game with a solution that has no digit`(): Unit =
-        runBlocking {
-            val sudoku = testSudoku()
-            val rows = sudokuWithFieldsToDb(sudoku)
-            database.sudokuDao().insert(rows.sudoku, listOf(rows.fields.first().copy(solution = 0)) + rows.fields.drop(1))
+            val unreadable = testSudoku().toEntity(ZoneId.systemDefault())
+            database.gameDao().save(GameEntity(unreadable.header.copy(size = 6), unreadable.board))
             val readable = testSudoku()
             store(readable)
 
@@ -146,7 +138,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     fun `local entries find a game by id, day and size with level`(): Unit =
         runBlocking {
             val normal = testSudoku()
-            val daily = testSudoku(mode = GameMode.Daily, created = LocalDateTime.of(2026, 5, 3, 7, 30))
+            val daily = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 5, 3)), created = LocalDateTime.of(2026, 5, 3, 7, 30))
             val level = testSudoku(mode = GameMode.Level(3))
             store(normal, daily, level, testSudoku(), testSudoku(mode = GameMode.Level(4)))
             val keys =
@@ -173,7 +165,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     fun `local entries ignore daily and level games when no key asks for them`(): Unit =
         runBlocking {
             val normal = testSudoku()
-            store(normal, testSudoku(mode = GameMode.Daily), testSudoku(mode = GameMode.Level(1)))
+            store(normal, testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 5, 3))), testSudoku(mode = GameMode.Level(1)))
 
             val local = section.localEntries(setOf(SudokuBackupKey.Normal(normal.info.id.value)))
 
@@ -193,37 +185,13 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     @Test
     fun `replace swaps the local game for the merged one`(): Unit =
         runBlocking {
-            val local = backupEntry(id = "local", modeLevel = GameMode.Daily.toLegacyModeLevel(), solvedCells = 2)
-            val merged = backupEntry(id = "merged", modeLevel = GameMode.Daily.toLegacyModeLevel(), solvedCells = 6)
+            val local = backupEntry(id = "local", modeLevel = -1, solvedCells = 2, dailyDate = LocalDate.parse("2026-05-02"))
+            val merged = backupEntry(id = "merged", modeLevel = -1, solvedCells = 6, dailyDate = LocalDate.parse("2026-05-02"))
             section.insert(listOf(local))
 
             section.replace(local, merged)
 
             section.exportEntries() shouldBe listOf(merged)
-        }
-
-    @Test
-    fun `a game with a given cell off its solution survives an export and an import`(): Unit =
-        runBlocking {
-            val base = testSudoku()
-            val given = base.board[0]
-            val offSolution = if (given.solution == 1) 2 else 1
-            val sudoku = base.copy(board = base.board.with(0, given.copy(value = offSolution)))
-            store(sudoku)
-            val exported = section.exportEntries()
-
-            section.clear()
-            section.insert(exported)
-
-            exported.map { it.id } shouldBe listOf(sudoku.info.id.value)
-            section.exportEntries() shouldBe exported
-            database
-                .sudokuDao()
-                .getById(sudoku.info.id.value)
-                .shouldNotBeNull()
-                .fields
-                .first { it.index == 0 }
-                .value shouldBe offSolution
         }
 
     @Test
@@ -249,18 +217,20 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
             val kept = listOf(testSudoku(), testSudoku())
             store(*kept.toTypedArray())
             val before = section.exportEntries()
-            val dao = database.sudokuDao()
+            val dao = database.gameDao()
             val dispatcher = UnconfinedTestDispatcher()
-            val queue = QueueSudokuSaveUseCase(DefaultSudokusRepository(dao), CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
+            val queue =
+                QueueSudokuSaveUseCase(
+                    DefaultSudokusRepository(dao, Clock.systemDefaultZone()),
+                    CoroutineScope(SupervisorJob() + dispatcher),
+                    dispatcher,
+                )
             var inserts = 0
             val failingDao =
-                object : SudokuDao by dao {
-                    override suspend fun insert(
-                        sudoku: SudokuDb,
-                        fields: List<FieldDb>,
-                    ) {
+                object : GameDao by dao {
+                    override suspend fun save(game: GameEntity) {
                         check(++inserts < 2) { "disk full" }
-                        dao.insert(sudoku, fields)
+                        dao.save(game)
                     }
                 }
             val failing = SudokuBackupSection(failingDao)
@@ -292,8 +262,52 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     }
 
     @Test
-    fun `the section reads no format before its first version`() {
+    fun `the section reads no format before its first readable version`() {
         shouldThrow<IllegalStateException> { section.upgrade(0, JsonObject(emptyMap())) }.message shouldBe
-            "The sudokus section has no format before version 1"
+            "The sudokus section has no format before version 2"
     }
+
+    @Test
+    fun `an exported entry carries the stored board bytes`(): Unit =
+        runBlocking {
+            val sudoku = testSudoku()
+            store(sudoku)
+
+            val stored = database.gameDao().getById(sudoku.info.id.value).shouldNotBeNull()
+
+            section.exportEntries().single().board shouldBe Base64.getEncoder().encodeToString(stored.board)
+        }
+
+    @Test
+    fun `a restored entry stores the bytes of its board`(): Unit =
+        runBlocking {
+            val entry = backupEntry(id = "restored", solvedCells = 4)
+
+            section.insert(listOf(entry))
+
+            val stored = database.gameDao().getById("restored").shouldNotBeNull()
+            Base64.getEncoder().encodeToString(stored.board) shouldBe entry.board
+            section.exportEntries() shouldBe listOf(entry)
+        }
+
+    @Test
+    fun `an entry with a broken board is invalid`() {
+        section.validate(backupEntry().copy(board = "AAA=")) shouldBe EntryCheck.Invalid("The game is broken")
+    }
+
+    @Test
+    fun `a version 1 section is refused`(): Unit =
+        runBlocking {
+            val former =
+                object : MergeableSection<SudokuBackupEntry, SudokuBackupKey> by section {
+                    override val version: Int = 1
+                    override val minReadableVersion: Int = 1
+                }
+            val app = BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup"))
+            val written = BackupEngine(setOf(former), transaction, app, { "2026-10-30T12:00:00Z" }).export()
+            val files = (written as BackupExport.Files).files.toMutableMap()
+
+            BackupEngine(setOf(section), transaction, app, { "2026-10-30T12:00:00Z" }).read(files) shouldBe
+                BackupReadResult.Refused(BackupRefusal.TooOldSection("sudokus", 1))
+        }
 }

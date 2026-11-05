@@ -31,7 +31,7 @@ import androidx.recyclerview.widget.RecyclerView
 import de.lemke.commonutils.ui.utils.onSingleLaunchClick
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.GameMode
-import de.lemke.sudoku.domain.model.Sudoku
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
@@ -126,7 +126,7 @@ class SudokuListAdapter(
 
                     Payload.HIGHLIGHT -> {
                         when (val item = currentList[position]) {
-                            is SudokuItem -> holder.bindSudoku(item.sudoku)
+                            is SudokuItem -> holder.bindSummary(item.summary)
                             is SeparatorItem -> Unit
                         }
                     }
@@ -145,14 +145,14 @@ class SudokuListAdapter(
             }
 
             is SudokuItem -> {
-                holder.bindSudoku(item.sudoku)
+                holder.bindSummary(item.summary)
                 holder.bindActionMode(getItemId(position))
             }
         }
     }
 
     fun revealPositionOf(sudokuId: SudokuId): Int {
-        val position = currentList.indexOfFirst { it is SudokuItem && it.sudoku.info.id == sudokuId }
+        val position = currentList.indexOfFirst { it is SudokuItem && it.summary.info.id == sudokuId }
         return if (position > 0 && currentList[position - 1] is SeparatorItem) position - 1 else position
     }
 
@@ -170,7 +170,7 @@ class SudokuListAdapter(
                     newItem: SudokuListItem,
                 ): Boolean =
                     when (oldItem) {
-                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku.info.id == newItem.sudoku.info.id
+                        is SudokuItem if newItem is SudokuItem -> oldItem.summary.info.id == newItem.summary.info.id
                         is SeparatorItem if newItem is SeparatorItem -> oldItem.stableId == newItem.stableId
                         else -> false
                     }
@@ -180,7 +180,7 @@ class SudokuListAdapter(
                     newItem: SudokuListItem,
                 ): Boolean =
                     when (oldItem) {
-                        is SudokuItem if newItem is SudokuItem -> oldItem.sudoku == newItem.sudoku
+                        is SudokuItem if newItem is SudokuItem -> oldItem.summary == newItem.summary
                         is SeparatorItem if newItem is SeparatorItem -> oldItem == newItem
                         else -> false
                     }
@@ -204,34 +204,32 @@ class SudokuListAdapter(
             }
         }
 
-        fun bindSudoku(sudoku: Sudoku) {
+        fun bindSummary(summary: GameSummary) {
             textView.text =
                 when (mode) {
                     Mode.DAILY -> {
-                        sudoku.info.created
-                            .toLocalDate()
-                            .formatFull
+                        summary.info.requireDailyDate().formatFull
                     }
 
                     Mode.LEVEL -> {
-                        context.getString(R.string.level_number, (sudoku.info.mode as GameMode.Level).number)
+                        context.getString(R.string.level_number, (summary.info.mode as GameMode.Level).number)
                     }
 
                     else -> {
                         context.getString(
                             R.string.size_and_difficulty,
-                            sudoku.info.size.getLocalString(context.resources),
-                            sudoku.info.difficulty.getLocalString(context.resources),
+                            summary.info.size.getLocalString(context.resources),
+                            summary.info.difficulty.getLocalString(context.resources),
                         )
                     }
                 }
             val (icon, stateDescription) =
                 when {
-                    sudoku.info.errorLimitReached(errorLimit) -> {
+                    summary.info.errorLimitReached(errorLimit) -> {
                         dev.oneuiproject.oneui.R.drawable.ic_oui_error to R.string.sudoku_state_error_limit_reached
                     }
 
-                    sudoku.completed -> {
+                    summary.completed -> {
                         dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline to R.string.completed_title
                     }
 
@@ -243,19 +241,19 @@ class SudokuListAdapter(
             imageView!!.contentDescription = context.getString(stateDescription)
             textViewSmall!!.text =
                 buildString {
-                    append(context.getString(R.string.current_time, sudoku.info.timeString))
-                    if (!sudoku.completed) {
-                        append(" | ").append(context.getString(R.string.current_progress, sudoku.progress))
+                    append(context.getString(R.string.current_time, summary.info.timeString))
+                    if (!summary.completed) {
+                        append(" | ").append(context.getString(R.string.current_progress, summary.progress))
                     }
                     append(" | ").append(
                         if (errorLimit == 0) {
-                            context.getString(R.string.current_errors, sudoku.info.errorsMade)
+                            context.getString(R.string.current_errors, summary.info.errorsMade)
                         } else {
-                            context.getString(R.string.current_errors_with_limit, sudoku.info.errorsMade, errorLimit)
+                            context.getString(R.string.current_errors_with_limit, summary.info.errorsMade, errorLimit)
                         },
                     )
                     if (mode == Mode.NORMAL) {
-                        append(" | ").append(context.getString(R.string.current_hints, sudoku.info.hintsUsed))
+                        append(" | ").append(context.getString(R.string.current_hints, summary.info.hintsUsed))
                     }
                 }
         }

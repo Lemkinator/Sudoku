@@ -17,9 +17,11 @@
 package de.lemke.sudoku.data.database
 
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
@@ -29,139 +31,151 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 
 /**
- * Keeps [SudokuWithFields] rows in memory in insertion order and answers with the DAO's orderings.
- * Records every landed save as the saved sudoku in [saves], every deleted id in [deletedIds], every observe call in [observeCalls]
- * and counts the collectors of observed flows in [activeObservers].
+ * Keeps games in memory in insertion order and answers with the DAO's orderings. A save replaces the games it collides with,
+ * as the table's unique indices do. Records every landed save as the saved sudoku in [saves], every deleted id in [deletedIds],
+ * every observe call in [observeCalls] and counts the collectors of observed flows in [activeObservers].
  */
 class FakeSudokusRepository : SudokusRepository {
-    /** Counts [writes] so that a write leaving [rows] equal still emits, as Room's invalidation does. */
+    private data class Stored(
+        val sudoku: Sudoku,
+        val readable: Boolean,
+    ) {
+        val id: SudokuId get() = sudoku.info.id
+    }
+
+    /** Counts [writes] so that a write leaving [games] equal still emits, as Room's invalidation does. */
     private data class Table(
-        val rows: List<SudokuWithFields> = emptyList(),
+        val games: List<Stored> = emptyList(),
         val writes: Int = 0,
     )
 
     private val table = MutableStateFlow(Table())
-    private val rows: List<SudokuWithFields> get() = table.value.rows
+    private val games: List<Stored> get() = table.value.games
     private val recordedSaves = mutableListOf<Sudoku>()
     private val recordedDeletions = mutableListOf<SudokuId>()
 
     val saves: List<Sudoku> get() = synchronized(recordedSaves) { recordedSaves.toList() }
     val deletedIds: List<SudokuId> get() = synchronized(recordedDeletions) { recordedDeletions.toList() }
-    val storedRows: List<SudokuWithFields> get() = rows
+
+    /** The ids of every stored game, readable or not. */
+    val storedIds: List<SudokuId> get() = games.map { it.id }
 
     var observeCalls = 0
         private set
     var activeObservers = 0
         private set
 
-    var observed: (Flow<List<Sudoku>>) -> Flow<List<Sudoku>> = { it }
+    var observed: (Flow<List<GameSummary>>) -> Flow<List<GameSummary>> = { it }
     var beforeSave: suspend (Sudoku) -> Unit = {}
     var beforeDelete: suspend (SudokuId) -> Unit = {}
     var beforeGetMaxSudokuLevel: suspend () -> Unit = {}
-    var beforeGetAllSudokus: suspend () -> Unit = {}
+    var beforeGetCompletedSummaries: suspend () -> Unit = {}
+    var beforeGetRecentlyUpdatedNormalSummary: suspend () -> Unit = {}
     var saveFailure: Throwable? = null
 
     /** Stores [sudokus] without recording a save. */
-    fun store(vararg sudokus: Sudoku) = sudokus.forEach { insertRows(sudokuWithFieldsToDb(it)) }
+    fun store(vararg sudokus: Sudoku) = sudokus.forEach { put(Stored(it, readable = true)) }
 
-    /** Stores [sudokuWithFields] as given, like a raw DAO insert, so a test can add an unreadable row. */
-    fun insertRows(sudokuWithFields: SudokuWithFields) {
-        table.update { current ->
-            Table(current.rows.filterNot { it.sudoku.id == sudokuWithFields.sudoku.id } + sudokuWithFields, current.writes + 1)
+    /** Stores [sudoku] as a game whose board cannot be read: its summary is listed, but reading the game returns nothing. */
+    fun storeUnreadable(sudoku: Sudoku) = put(Stored(sudoku, readable = false))
+
+    override fun observeAllSummaries(): Flow<List<GameSummary>> = observe { it.byUpdatedDescending() }
+
+    override fun observeNormalSummaries(): Flow<List<GameSummary>> = observe { it.normal().byUpdatedDescending() }
+
+    override fun observeDailySummaries(): Flow<List<GameSummary>> = observe { it.dailies() }
+
+    override fun observeLevelSummaries(size: SudokuSize): Flow<List<GameSummary>> = observe { it.levels(size) }
+
+    override suspend fun getCompletedSummaries(): List<GameSummary> {
+        beforeGetCompletedSummaries()
+        return games.byUpdatedDescending().summaries().filter { it.completed }
+    }
+
+    override suspend fun isDailyCompleted(date: LocalDate): Boolean =
+        games.dailies().summaries().any {
+            it.completed &&
+                it.info.dailyDate == date
         }
+
+    override suspend fun hasDaily(date: LocalDate): Boolean =
+        games.dailies().any {
+            it.sudoku.info.dailyDate == date
+        }
+
+    override suspend fun getLevelNumbers(size: SudokuSize): Set<Int> =
+        games
+            .levels(size)
+            .map {
+                (it.sudoku.info.mode as GameMode.Level).number
+            }.toSet()
+
+    override suspend fun getRecentlyUpdatedNormalSummary(): GameSummary? {
+        beforeGetRecentlyUpdatedNormalSummary()
+        return games
+            .normal()
+            .maxByOrNull { it.sudoku.info.updated }
+            ?.sudoku
+            ?.summary()
     }
 
-    override fun observeAllSudokus(): Flow<List<Sudoku>> = observe { it.byUpdatedDescending() }
+    override suspend fun getSummaryById(sudokuId: SudokuId): GameSummary? = games.firstOrNull { it.id == sudokuId }?.sudoku?.summary()
 
-    override fun observeAllNormalSudokus(): Flow<List<Sudoku>> = observe { it.normal().byUpdatedDescending() }
+    override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = games.firstOrNull { it.id == sudokuId && it.readable }?.sudoku
 
-    override fun observeSudokuLevel(size: SudokuSize): Flow<List<Sudoku>> = observe { it.levels(size) }
-
-    override fun observeDailySudokus(): Flow<List<Sudoku>> = observe { it.dailies() }
-
-    override suspend fun getAllSudokus(): List<Sudoku> {
-        beforeGetAllSudokus()
-        return rows.byUpdatedDescending().readable()
-    }
-
-    override suspend fun getRecentlyUpdatedNormalSudoku(): Sudoku? = sudokuFromDb(rows.normal().maxByOrNull { it.sudoku.updated })
-
-    override suspend fun getSudokuLevel(size: SudokuSize): List<Sudoku> = rows.levels(size).readable()
-
-    override suspend fun getDailySudokus(): List<Sudoku> = rows.dailies().readable()
-
-    override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = sudokuFromDb(rows.firstOrNull { it.sudoku.id == sudokuId.value })
-
-    override suspend fun deleteSudoku(sudoku: Sudoku) {
-        beforeDelete(sudoku.info.id)
-        delete(setOf(sudoku.info.id.value))
+    override suspend fun deleteSudokus(ids: List<SudokuId>) {
+        ids.forEach { beforeDelete(it) }
+        val before =
+            table.getAndUpdate { current ->
+                val kept = current.games.filterNot { it.id in ids }
+                if (kept.size == current.games.size) current else Table(kept, current.writes + 1)
+            }
+        val removed = ids.filter { id -> before.games.any { it.id == id } }
+        synchronized(recordedDeletions) { recordedDeletions += removed }
     }
 
     override suspend fun saveSudoku(sudoku: Sudoku) {
         beforeSave(sudoku)
         saveFailure?.let { throw it }
-        val rows = sudokuWithFieldsToDb(sudoku)
-        replacedBy(rows.sudoku)?.let { delete(setOf(it.id)) }
-        insertRows(rows)
+        put(Stored(sudoku, readable = true))
         synchronized(recordedSaves) { recordedSaves += sudoku }
     }
 
     override suspend fun getMaxSudokuLevel(size: SudokuSize): Int {
         beforeGetMaxSudokuLevel()
-        return rows.levels(size).maxOfOrNull { it.sudoku.modeLevel } ?: 0
+        return games.levels(size).maxOfOrNull { (it.sudoku.info.mode as GameMode.Level).number } ?: 0
     }
 
-    override suspend fun deleteInvalidSudokus() {
-        val invalidIds =
-            rows
-                .filter { sudokuFromDb(it) == null }
-                .map { it.sudoku.id }
-                .toSet()
-        if (invalidIds.isNotEmpty()) delete(invalidIds)
+    private fun put(stored: Stored) {
+        table.update { current ->
+            Table(current.games.filterNot { it.collidesWith(stored) } + stored, current.writes + 1)
+        }
     }
 
-    private fun observe(query: (List<SudokuWithFields>) -> List<SudokuWithFields>): Flow<List<Sudoku>> {
+    private fun Stored.collidesWith(other: Stored): Boolean {
+        val mine = sudoku.info
+        val theirs = other.sudoku.info
+        return id == other.id ||
+            (mine.mode is GameMode.Level && mine.mode == theirs.mode && mine.size == theirs.size) ||
+            (mine.dailyDate != null && mine.dailyDate == theirs.dailyDate)
+    }
+
+    private fun observe(query: (List<Stored>) -> List<Stored>): Flow<List<GameSummary>> {
         observeCalls++
-        return observed(table.map { query(it.rows).readable() })
+        return observed(table.map { query(it.games).summaries() })
             .onStart { activeObservers++ }
             .onCompletion { activeObservers-- }
     }
 
-    private fun delete(ids: Set<String>) {
-        val before =
-            table.getAndUpdate { current ->
-                val kept = current.rows.filterNot { it.sudoku.id in ids }
-                if (kept.size == current.rows.size) current else Table(kept, current.writes + 1)
-            }
-        val removedIds = ids.filter { id -> before.rows.any { it.sudoku.id == id } }
-        synchronized(recordedDeletions) { recordedDeletions += removedIds.map(::SudokuId) }
-    }
+    private fun List<Stored>.summaries(): List<GameSummary> = map { it.sudoku.summary() }
 
-    private fun replacedBy(sudoku: SudokuDb): SudokuDb? =
-        when (legacyGameModeOrNull(sudoku.modeLevel)) {
-            GameMode.Daily -> {
-                rows.dailies().filter { it.sudoku.created.toLocalDate() == sudoku.created.toLocalDate() }
-            }
+    private fun List<Stored>.byUpdatedDescending() = sortedByDescending { it.sudoku.info.updated }
 
-            is GameMode.Level -> {
-                rows.filter { it.sudoku.size == sudoku.size && it.sudoku.modeLevel == sudoku.modeLevel }
-            }
+    private fun List<Stored>.normal() = filter { it.sudoku.info.mode == GameMode.Normal }
 
-            GameMode.Normal, null -> {
-                emptyList()
-            }
-        }.firstOrNull { sudokuFromDb(it) != null }?.takeIf { it.sudoku.id != sudoku.id }?.sudoku
+    private fun List<Stored>.levels(size: SudokuSize) =
+        filter { it.sudoku.info.size == size && it.sudoku.info.mode is GameMode.Level }
+            .sortedByDescending { (it.sudoku.info.mode as GameMode.Level).number }
 
-    private fun List<SudokuWithFields>.readable(): List<Sudoku> = mapNotNull(::sudokuFromDb)
-
-    private fun List<SudokuWithFields>.byUpdatedDescending() = sortedByDescending { it.sudoku.updated }
-
-    private fun List<SudokuWithFields>.normal() = filter { legacyGameModeOrNull(it.sudoku.modeLevel) == GameMode.Normal }
-
-    private fun List<SudokuWithFields>.levels(size: SudokuSize) =
-        filter { it.sudoku.size == size.value && legacyGameModeOrNull(it.sudoku.modeLevel) is GameMode.Level }
-            .sortedByDescending { it.sudoku.modeLevel }
-
-    private fun List<SudokuWithFields>.dailies() =
-        filter { legacyGameModeOrNull(it.sudoku.modeLevel) == GameMode.Daily }.sortedByDescending { it.sudoku.created }
+    private fun List<Stored>.dailies() = filter { it.sudoku.info.mode is GameMode.Daily }.sortedByDescending { it.sudoku.info.created }
 }

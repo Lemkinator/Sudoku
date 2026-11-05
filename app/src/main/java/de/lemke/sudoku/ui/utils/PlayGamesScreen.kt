@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 
-private val SILENT_TASK_TIMEOUT = 10.seconds
+internal val SILENT_TASK_TIMEOUT = 10.seconds
 
 /** A Play Games overlay screen that the drawer opens. */
 enum class PlayGamesScreen {
@@ -66,9 +66,9 @@ suspend fun Activity.preparePlayGamesScreen(
     }
 }
 
-private val Task<Boolean>.authenticated: Boolean get() = resultOrNull() == true
+internal val Task<Boolean>.authenticated: Boolean get() = resultOrNull() == true
 
-private suspend fun <T> Task<T>.silentCompletionOrNull(): Task<T>? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { awaitCompletion() }
+internal suspend fun <T> Task<T>.silentCompletionOrNull(): Task<T>? = withTimeoutOrNull(SILENT_TASK_TIMEOUT) { awaitCompletion() }
 
 private suspend fun <T> Task<T>.awaitCompletion(): Task<T> =
     suspendCancellableCoroutine { continuation -> addOnCompleteListener { task -> continuation.resume(task) } }

@@ -25,20 +25,20 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeSudokuDocuments
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.sudokuToExport
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
+import de.lemke.sudoku.domain.GetSudokuSummaryUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.model.GameMode
-import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.testSudoku
-import io.kjson.stringifyJSON
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
+import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -58,25 +58,30 @@ class MainViewModelTest {
     private val sudokusRepository = FakeSudokusRepository()
     private val sudokuDocuments = FakeSudokuDocuments()
     private val dispatcher = UnconfinedTestDispatcher()
-    private val uri = Uri.parse("content://files/opened.json")
+    private val clock = Clock.systemDefaultZone()
+    private val uri = Uri.parse("content://files/opened.sudoku")
     private var savedStateHandle = SavedStateHandle()
     private val viewModel = newViewModel()
 
     private val savedIds: List<String> get() = sudokusRepository.saves.map { it.info.id.value }
 
-    private fun newViewModel(): MainViewModel {
-        val getAllSudokus = GetAllSudokusUseCase(sudokusRepository, dispatcher)
-        return MainViewModel(
+    private fun newViewModel(): MainViewModel =
+        MainViewModel(
             userSettings,
-            ImportSudokuUseCase(sudokuDocuments, SaveSudokuUseCase(sudokusRepository, dispatcher), dispatcher),
+            ImportSudokuUseCase(
+                sudokuDocuments,
+                GetSudokuSummaryUseCase(sudokusRepository, dispatcher),
+                SaveSudokuUseCase(sudokusRepository, dispatcher),
+                clock,
+                dispatcher,
+            ),
             SendDailyNotificationUseCase(dailyNotifications, userSettings),
-            CalculatePlayGamesSyncUseCase(getAllSudokus, dispatcher),
+            CalculatePlayGamesSyncUseCase(sudokusRepository, dispatcher),
             savedStateHandle,
         )
-    }
 
     private fun addImportFile() =
-        sudokuDocuments.addDocument(uri, sudokuToExport(testSudoku(sudokuId = SudokuId("imported"))).stringifyJSON())
+        sudokuDocuments.addDocument(uri, SudokuFileCodec.encode(testSudoku(sudokuId = SudokuId("imported")), clock.zone))
 
     private fun gateSaves(gate: CompletableDeferred<Unit>) {
         sudokusRepository.beforeSave = { gate.await() }
@@ -179,7 +184,7 @@ class MainViewModelTest {
     @Test
     fun `onFileOpened imports a different file opened later`() {
         addImportFile()
-        val otherUri = Uri.parse("content://files/other.json")
+        val otherUri = Uri.parse("content://files/other.sudoku")
         viewModel.onFileOpened(uri)
         idleMainLooper()
         viewModel.onFileOpened(otherUri)
@@ -206,24 +211,47 @@ class MainViewModelTest {
         }
 
     @Test
-    fun `onScreenReady returns calculatePlayGamesSync's result`() =
+    fun `onScreenReady returns the sync derived from the completed sudokus once`() =
         runTest {
             sudokusRepository.store(
                 testSudoku(completed = true),
                 testSudoku(mode = GameMode.Level(1), completed = true),
-                testSudoku(mode = GameMode.Daily, completed = true),
+                testSudoku(mode = GameMode.Daily(LocalDate.now()), completed = true),
                 testSudoku(),
             )
-            viewModel.onScreenReady() shouldBe
-                PlayGamesSync(
-                    leaderboardScores =
-                        listOf(
-                            R.string.leaderboard_total_wins to 3L,
-                            R.string.leaderboard_daily_sudokus to 1L,
-                            R.string.leaderboard_level_44 to 1L,
-                            R.string.leaderboard_level_99 to 0L,
-                            R.string.leaderboard_level_1616 to 0L,
-                        ),
+            val sync = viewModel.onScreenReady()
+
+            checkNotNull(sync).leaderboardScores.take(5) shouldBe
+                listOf(
+                    R.string.leaderboard_total_wins to 3L,
+                    R.string.leaderboard_daily_sudokus to 1L,
+                    R.string.leaderboard_level_44 to 1L,
+                    R.string.leaderboard_level_99 to 0L,
+                    R.string.leaderboard_level_1616 to 0L,
                 )
+            sync.achievementUnlocks.first() shouldBe R.string.achievement_first_win
+            viewModel.onScreenReady().shouldBeNull()
+        }
+
+    @Test
+    fun `onScreenReady sets the daily notification on every call`() =
+        runTest {
+            userSettings.dailySudokuNotificationEnabled = true
+            viewModel.onScreenReady()
+            dailyNotifications.schedule(10, 30)
+            viewModel.onScreenReady()
+            dailyNotifications.scheduled shouldBe FakeDailyNotifications.AlarmTime(hour = 9, minute = 0)
+        }
+
+    @Test
+    fun `onScreenReady offers the sync again to a new view model`() =
+        runTest {
+            sudokusRepository.store(testSudoku(completed = true))
+            val first = viewModel.onScreenReady()
+
+            val second = newViewModel().onScreenReady()
+
+            checkNotNull(first).leaderboardScores.first() shouldBe (R.string.leaderboard_total_wins to 1L)
+            second shouldBe first
         }
 }

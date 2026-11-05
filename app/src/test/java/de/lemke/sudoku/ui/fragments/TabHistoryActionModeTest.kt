@@ -35,11 +35,9 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuDb
+import de.lemke.sudoku.data.database.GameDao
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SudokusRepositoryModule
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
@@ -58,9 +56,11 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.Clock
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -87,19 +87,20 @@ class TabHistoryActionModeTest {
     private var deleteGate = CompletableDeferred(Unit)
     private var deleteCalls = 0
     private val database = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext())
-    private val sudokuDao = database.sudokuDao()
+    private val gameDao = database.gameDao()
 
     @BindValue
     @JvmField
     val sudokusRepository: SudokusRepository =
         DefaultSudokusRepository(
-            object : SudokuDao by sudokuDao {
-                override suspend fun delete(vararg sudokus: SudokuDb) {
+            object : GameDao by gameDao {
+                override suspend fun deleteByIds(ids: List<String>) {
                     deleteCalls++
                     deleteGate.await()
-                    sudokuDao.delete(*sudokus)
+                    gameDao.deleteByIds(ids)
                 }
             },
+            Clock.systemDefaultZone(),
         )
 
     @Inject
@@ -107,9 +108,6 @@ class TabHistoryActionModeTest {
 
     @Inject
     lateinit var saveSudoku: SaveSudokuUseCase
-
-    @Inject
-    lateinit var getAllSudokus: GetAllSudokusUseCase
 
     @Inject
     lateinit var userSettings: UserSettings
@@ -194,7 +192,7 @@ class TabHistoryActionModeTest {
 
             drawerLayout.isActionMode.shouldBeFalse()
             fragment.sudokuListAdapter.isActionMode.shouldBeFalse()
-            runBlocking { getAllSudokus() }.shouldBeEmpty()
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.shouldBeEmpty()
         }
     }
 
@@ -226,11 +224,11 @@ class TabHistoryActionModeTest {
             deleteGate.complete(Unit)
             idleMainLooper()
 
-            deleteCalls shouldBe 2
+            deleteCalls shouldBe 1
             drawerLayout.isActionMode.shouldBeFalse()
             fragment.sudokuListAdapter.isActionMode.shouldBeFalse()
             progressDialog.isShowing.shouldBeFalse()
-            runBlocking { getAllSudokus() }.shouldBeEmpty()
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.shouldBeEmpty()
         }
     }
 
@@ -263,7 +261,7 @@ class TabHistoryActionModeTest {
             val progressDialogs = ShadowDialog.getShownDialogs().filterIsInstance<ProgressDialog>()
             progressDialogs.size shouldBe 1
             progressDialogs.single().isShowing.shouldBeFalse()
-            runBlocking { getAllSudokus() }.shouldBeEmpty()
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.shouldBeEmpty()
         }
     }
 
@@ -281,7 +279,7 @@ class TabHistoryActionModeTest {
             idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeTrue()
-            runBlocking { getAllSudokus() } shouldBe listOf(sudoku)
+            runBlocking { sudokusRepository.observeAllSummaries().first() } shouldBe listOf(sudoku.summary())
         }
     }
 
@@ -291,7 +289,7 @@ class TabHistoryActionModeTest {
         runBlocking { saveSudoku(sudoku) }
         launch { fragment ->
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
-            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku.summary(), "label"), holder)
             idleMainLooper()
 
             val started = shadowOf(fragment.requireActivity()).nextStartedActivity
@@ -307,8 +305,8 @@ class TabHistoryActionModeTest {
         runBlocking { saveSudoku(sudoku) }
         launch { fragment ->
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
-            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
-            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku, "label"), holder)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku.summary(), "label"), holder)
+            fragment.sudokuListAdapter.onClickItem?.invoke(0, SudokuItem(sudoku.summary(), "label"), holder)
             idleMainLooper()
 
             val activity = shadowOf(fragment.requireActivity())
@@ -326,7 +324,7 @@ class TabHistoryActionModeTest {
             idleMainLooper()
 
             val holder = fragment.sudokuListAdapter.onCreateViewHolder(fragment.binding.sudokuHistoryList, SudokuItem.VIEW_TYPE)
-            val item = SudokuItem(sudoku, "label")
+            val item = SudokuItem(sudoku.summary(), "label")
             fragment.sudokuListAdapter.onClickItem?.invoke(0, item, holder)
 
             fragment.sudokuListAdapter.getSelectedIds() shouldBe setOf(item.stableId)

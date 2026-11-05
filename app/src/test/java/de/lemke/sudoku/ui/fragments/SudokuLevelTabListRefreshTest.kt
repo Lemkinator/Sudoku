@@ -41,6 +41,7 @@ import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -52,6 +53,7 @@ import de.lemke.sudoku.ui.utils.listSudoku
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -140,7 +142,8 @@ class SudokuLevelTabListRefreshTest {
             created = LocalDateTime.of(2026, 1, 15, 9, 0),
         )
 
-    private fun dailySudoku(): Sudoku = testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily, difficulty = Difficulty.EASY)
+    private fun dailySudoku(): Sudoku =
+        testSudoku(size = SudokuSize.NINE, mode = GameMode.Daily(LocalDate.now()), difficulty = Difficulty.EASY)
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 
@@ -194,10 +197,10 @@ class SudokuLevelTabListRefreshTest {
         nextLevel.info.mode shouldBe GameMode.Level(2)
         save(currentLevelTwo(filled = 8, errorsMade = 2, seconds = 75))
 
-        viewModel.confirmSudokuStart(0, nextLevel)
+        viewModel.confirmSudokuStart(nextLevel.info.id)
         idleMainLooper()
 
-        viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
+        viewModel.levelStart.value shouldBe LevelStart.Idle
 
         runBlocking { getSudoku(nextLevel.info.id) } shouldBe null
         val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()
@@ -215,7 +218,7 @@ class SudokuLevelTabListRefreshTest {
             idleMainLooper()
             val nextLevel = topSudoku(viewModel)
 
-            viewModel.confirmSudokuStart(0, nextLevel)
+            viewModel.confirmSudokuStart(nextLevel.info.id)
             idleMainLooper()
 
             viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
@@ -277,10 +280,10 @@ class SudokuLevelTabListRefreshTest {
     }
 
     @Test
-    fun `a level with an unreadable timestamp shows the level load error`() {
+    fun `a failing query shows the level load error`() {
         userSettings.currentLevelTab = 0
         save(completedLevelOne())
-        database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'")
+        database.openHelper.writableDatabase.execSQL("DROP TABLE game")
         ActivityScenario.launch(SudokuLevelActivity::class.java).use {
             idleMainLooper()
 
@@ -299,11 +302,11 @@ class SudokuLevelTabListRefreshTest {
             SavedStateHandle(mapOf(SudokuLevelTab.KEY_SIZE to size.value)),
         )
 
-    private fun topSudoku(viewModel: SudokuLevelTabViewModel): Sudoku =
+    private fun topSudoku(viewModel: SudokuLevelTabViewModel): GameSummary =
         viewModel.state.value.sudokuLevel
             .filterIsInstance<SudokuItem>()
             .first()
-            .sudoku
+            .summary
 
     private fun levelTab(activity: SudokuLevelActivity) =
         activity.supportFragmentManager.fragments

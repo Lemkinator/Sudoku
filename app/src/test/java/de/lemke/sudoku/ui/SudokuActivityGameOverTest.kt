@@ -129,6 +129,9 @@ class SudokuActivityGameOverTest {
         created: LocalDateTime = today,
     ) = testSudoku(mode = mode, created = created).withErrors(2)
 
+    private fun pastDaily(completed: Boolean = false) =
+        testSudoku(mode = GameMode.Daily(today.minusDays(1).toLocalDate()), created = today.minusDays(1), completed = completed)
+
     private fun SudokuActivity.makeAnError() {
         select(1)
         select(sudoku.info.size.cellCount)
@@ -147,7 +150,7 @@ class SudokuActivityGameOverTest {
 
     @Test
     fun `the game-over dialog of a lost daily sudoku of today offers Restart`() =
-        launch(almostLost(GameMode.Daily)) { activity ->
+        launch(almostLost(GameMode.Daily(today.toLocalDate()))) { activity ->
             activity.makeAnError()
 
             restartButtonShown() shouldBe true
@@ -284,7 +287,7 @@ class SudokuActivityGameOverTest {
 
     @Test
     fun `a past daily sudoku offers neither Pause nor Restart`() =
-        launch(testSudoku(mode = GameMode.Daily, created = today.minusDays(1)).withErrors(3)) { activity ->
+        launch(pastDaily().withErrors(3)) { activity ->
             val (pause, reset) = activity.menuItems()
 
             pause.isVisible shouldBe false
@@ -320,19 +323,19 @@ class SudokuActivityGameOverTest {
 
     @Test
     fun `a lost daily sudoku of today offers Restart in the menu`() =
-        launch(testSudoku(mode = GameMode.Daily, created = today).withErrors(3)) { activity ->
+        launch(testSudoku(mode = GameMode.Daily(today.toLocalDate()), created = today).withErrors(3)) { activity ->
             activity.menuItems().second.isVisible shouldBe true
         }
 
     @Test
     fun `a won daily sudoku of today offers no Restart`() =
-        launch(testSudoku(mode = GameMode.Daily, created = today, completed = true)) { activity ->
+        launch(testSudoku(mode = GameMode.Daily(today.toLocalDate()), created = today, completed = true)) { activity ->
             activity.menuItems().second.isVisible shouldBe false
         }
 
     @Test
     fun `a won past daily sudoku offers no Restart`() =
-        launch(testSudoku(mode = GameMode.Daily, created = today.minusDays(1), completed = true)) { activity ->
+        launch(pastDaily(completed = true)) { activity ->
             activity.menuItems().second.isVisible shouldBe false
         }
 }

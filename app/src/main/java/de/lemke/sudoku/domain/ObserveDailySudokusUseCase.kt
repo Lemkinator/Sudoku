@@ -42,24 +42,25 @@ class ObserveDailySudokusUseCase @Inject constructor(
             .dailyShowUncompletedFlow
             .flatMapLatest { includeUncompleted ->
                 sudokusRepository
-                    .observeDailySudokus()
+                    .observeDailySummaries()
                     .map { sudokus ->
                         sudokus.filter {
                             if (includeUncompleted) {
                                 true
                             } else {
                                 it.completed
-                            } || it.info.created.toLocalDate() == date
+                            } || it.info.requireDailyDate() == date
                         }
                     }.map { sudokus ->
                         val dailySudokus: MutableList<SudokuListItem> =
-                            sudokus.map { SudokuListItem.SudokuItem(it, it.info.created.monthAndYear) }.toMutableList()
+                            sudokus.map { SudokuListItem.SudokuItem(it, it.info.requireDailyDate().monthAndYear) }.toMutableList()
                         var offset = 0
                         var oldDate: LocalDate? = null
                         sudokus.forEachIndexed { index, sudoku ->
-                            if (oldDate == null || oldDate.month != sudoku.info.created.month) {
-                                dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(sudoku.info.created.monthAndYear))
-                                oldDate = sudoku.info.created.toLocalDate()
+                            val dailyDate = sudoku.info.requireDailyDate()
+                            if (oldDate == null || oldDate.month != dailyDate.month) {
+                                dailySudokus.add(index + offset, SudokuListItem.SeparatorItem(dailyDate.monthAndYear))
+                                oldDate = dailyDate
                                 offset++
                             }
                         }

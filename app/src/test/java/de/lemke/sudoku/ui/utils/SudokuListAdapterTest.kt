@@ -178,7 +178,7 @@ class SudokuListAdapterTest {
 
     @Test
     fun `getItemViewType distinguishes sudoku items from separators`() {
-        val sudokuItem = SudokuItem(sudokuFixture(), "A")
+        val sudokuItem = SudokuItem(sudokuFixture().summary(), "A")
         val separatorItem = SeparatorItem("Sep")
         val adapter = buildAdapter()
         adapter.submitList(listOf(sudokuItem, separatorItem))
@@ -189,7 +189,7 @@ class SudokuListAdapterTest {
 
     @Test
     fun `getItemId and getItemCount reflect the submitted list`() {
-        val sudokuItem = SudokuItem(sudokuFixture(), "A")
+        val sudokuItem = SudokuItem(sudokuFixture().summary(), "A")
         val separatorItem = SeparatorItem("Sep")
         val adapter = buildAdapter()
         adapter.submitList(listOf(sudokuItem, separatorItem))
@@ -208,10 +208,10 @@ class SudokuListAdapterTest {
         adapter.submitList(
             listOf(
                 SeparatorItem("16.01.26"),
-                SudokuItem(headingSudoku, "16.01.26"),
-                SudokuItem(secondSudoku, "16.01.26"),
+                SudokuItem(headingSudoku.summary(), "16.01.26"),
+                SudokuItem(secondSudoku.summary(), "16.01.26"),
                 SeparatorItem("15.01.26"),
-                SudokuItem(olderSudoku, "15.01.26"),
+                SudokuItem(olderSudoku.summary(), "15.01.26"),
             ),
         )
 
@@ -225,7 +225,7 @@ class SudokuListAdapterTest {
     fun `revealPositionOf returns row 0 for a sudoku in the first row`() {
         val sudoku = sudokuFixture()
         val adapter = buildAdapter()
-        adapter.submitList(listOf(SudokuItem(sudoku, "16.01.26"), SeparatorItem("15.01.26")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "16.01.26"), SeparatorItem("15.01.26")))
 
         adapter.revealPositionOf(sudoku.info.id) shouldBe 0
     }
@@ -272,7 +272,7 @@ class SudokuListAdapterTest {
     fun `onBindViewHolder in NORMAL mode with no error limit shows size, difficulty and hints`() {
         val sudoku = sudokuFixture(hintsUsed = 2)
         val adapter = buildAdapter(mode = Mode.NORMAL, errorLimit = 0)
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
         adapter.onBindViewHolder(holder, 0)
@@ -286,7 +286,7 @@ class SudokuListAdapterTest {
     fun `onBindViewHolder with an error limit not yet reached keeps the time icon`() {
         val sudoku = sudokuFixture(errorsMade = 1)
         val adapter = buildAdapter(mode = Mode.NORMAL, errorLimit = 3)
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
         adapter.onBindViewHolder(holder, 0)
@@ -299,7 +299,7 @@ class SudokuListAdapterTest {
     fun `onBindViewHolder in LEVEL mode with the error limit reached shows the level and error icon`() {
         val sudoku = sudokuFixture(mode = GameMode.Level(5), errorsMade = 3)
         val adapter = buildAdapter(mode = Mode.LEVEL, errorLimit = 3)
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
         adapter.onBindViewHolder(holder, 0)
@@ -312,14 +312,14 @@ class SudokuListAdapterTest {
     @Test
     fun `onBindViewHolder in DAILY mode for a completed sudoku shows the date and crown icon`() {
         val created = LocalDateTime.of(2024, 3, 15, 10, 30)
-        val sudoku = sudokuFixture(completed = true, created = created)
+        val sudoku = sudokuFixture(mode = GameMode.Daily(created.toLocalDate()), completed = true, created = created)
         val adapter = buildAdapter(mode = Mode.DAILY, errorLimit = 3)
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
         adapter.onBindViewHolder(holder, 0)
 
-        holder.textView.text shouldBe created.toLocalDate().formatFull
+        holder.textView.text shouldBe "Friday, March 15, 2024"
         smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.DAILY)
         assertIcon(holder, dev.oneuiproject.oneui.R.drawable.ic_oui_crown_outline, "Completed")
     }
@@ -328,7 +328,7 @@ class SudokuListAdapterTest {
     fun `onBindViewHolder with empty payloads delegates to the plain bind`() {
         val sudoku = sudokuFixture()
         val adapter = buildAdapter()
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
         adapter.onBindViewHolder(holder, 0, mutableListOf())
@@ -340,7 +340,7 @@ class SudokuListAdapterTest {
     fun `onBindViewHolder with a SELECTION_MODE payload updates action mode without rebinding content`() {
         val sudoku = sudokuFixture()
         val adapter = buildAdapter()
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         // MultiSelectorDelegate's lateinit `adapter` is set only by configureWith().
         adapter.configureWith(layoutRecyclerViewWith(adapter))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
@@ -357,7 +357,7 @@ class SudokuListAdapterTest {
     fun `onBindViewHolder with a HIGHLIGHT payload rebinds a sudoku item's content`() {
         val sudoku = sudokuFixture(errorsMade = 3)
         val adapter = buildAdapter(errorLimit = 0)
-        adapter.submitList(listOf(SudokuItem(sudoku, "A")))
+        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
         adapter.onBindViewHolder(holder, 0)
         adapter.errorLimit = 3
@@ -388,13 +388,13 @@ class SudokuListAdapterTest {
         val adapter = buildAdapter()
         val recyclerView = layoutRecyclerViewWith(adapter)
 
-        adapter.submitList(listOf(SudokuItem(listSudoku(idA, GameMode.Normal, 0, 0, 0, created), "A"), separator))
+        adapter.submitList(listOf(SudokuItem(listSudoku(idA, GameMode.Normal, 0, 0, 0, created).summary(), "A"), separator))
         recyclerView.awaitSmallText(0, "00:00 | 0% | Errors: 0 | Hints: 0") shouldBe "00:00 | 0% | Errors: 0 | Hints: 0"
 
-        adapter.submitList(listOf(SudokuItem(listSudoku(idA, GameMode.Normal, 16, 2, 75, created), "A"), separator))
+        adapter.submitList(listOf(SudokuItem(listSudoku(idA, GameMode.Normal, 16, 2, 75, created).summary(), "A"), separator))
         recyclerView.awaitSmallText(0, "01:15 | Errors: 2 | Hints: 0") shouldBe "01:15 | Errors: 2 | Hints: 0"
 
-        adapter.submitList(listOf(SudokuItem(listSudoku(SudokuId.generate(), GameMode.Normal, 4, 1, 30, created), "B")))
+        adapter.submitList(listOf(SudokuItem(listSudoku(SudokuId.generate(), GameMode.Normal, 4, 1, 30, created).summary(), "B")))
         recyclerView.awaitSmallText(0, "00:30 | 25% | Errors: 1 | Hints: 0") shouldBe "00:30 | 25% | Errors: 1 | Hints: 0"
         adapter.itemCount shouldBe 1
     }
@@ -422,7 +422,7 @@ class SudokuListAdapterTest {
     @Test
     fun `diffCallback falls through to else for a sudoku item and separator pair`() {
         val callback = diffCallback()
-        val sudokuItem = SudokuItem(sudokuFixture(), "A")
+        val sudokuItem = SudokuItem(sudokuFixture().summary(), "A")
         val separator = SeparatorItem("A")
 
         callback.areItemsTheSame(sudokuItem, separator) shouldBe false
@@ -451,7 +451,7 @@ class SudokuListAdapterTest {
     @Test
     fun `the click listener wired in onCreateViewHolder reports the bound position`() {
         val sudoku = sudokuFixture()
-        val item = SudokuItem(sudoku, "A")
+        val item = SudokuItem(sudoku.summary(), "A")
         val adapter = buildAdapter()
         adapter.submitList(listOf(item))
         var clicked: Pair<Int, SudokuListItem>? = null
@@ -467,7 +467,7 @@ class SudokuListAdapterTest {
     @Test
     fun `the long-click listener wired in onCreateViewHolder invokes onLongClickItem and consumes the event`() {
         val sudoku = sudokuFixture()
-        val item = SudokuItem(sudoku, "A")
+        val item = SudokuItem(sudoku.summary(), "A")
         val adapter = buildAdapter()
         adapter.submitList(listOf(item))
         var longClicked = false

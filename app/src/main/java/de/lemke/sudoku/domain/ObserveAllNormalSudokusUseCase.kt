@@ -26,5 +26,5 @@ class ObserveAllNormalSudokusUseCase @Inject constructor(
     private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    operator fun invoke() = sudokusRepository.observeAllNormalSudokus().flowOn(defaultDispatcher)
+    operator fun invoke() = sudokusRepository.observeNormalSummaries().flowOn(defaultDispatcher)
 }

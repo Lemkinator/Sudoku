@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package de.lemke.sudoku.data.database
+package de.lemke.sudoku.domain.model
 
-import androidx.room.TypeConverter
-import java.time.LocalDateTime
+/** Who played the win of a game. */
+enum class GameSource {
+    /** The player solved this game here, or has not solved it yet. */
+    OWN,
 
-/** Type converters to map between SQLite types and entity types. */
-object Converters {
-    /** Returns the string representation of the [localDateTime]. */
-    @TypeConverter
-    fun localDateTimeToDb(localDateTime: LocalDateTime): String = localDateTime.toString()
-
-    /** Returns the [LocalDateTime] represented by the [localDateTimeString]. */
-    @TypeConverter
-    fun localDateTimeFromDb(localDateTimeString: String): LocalDateTime = LocalDateTime.parse(localDateTimeString)
+    /** The game came already solved from a shared file, so nobody played its win here. */
+    IMPORTED,
 }

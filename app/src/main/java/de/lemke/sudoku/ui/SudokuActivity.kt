@@ -68,7 +68,7 @@ import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.ui.utils.FieldRegion
-import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
+import de.lemke.sudoku.ui.utils.PlayGamesSyncer
 import de.lemke.sudoku.ui.utils.SelectionIndices
 import de.lemke.sudoku.ui.utils.SelectionTarget
 import de.lemke.sudoku.ui.utils.SudokuViewAdapter
@@ -78,6 +78,7 @@ import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import de.lemke.commonutils.R as commonutilsR
 import dev.oneuiproject.oneui.R as oneuiR
 import dev.oneuiproject.oneui.design.R as designR
@@ -90,6 +91,7 @@ class SudokuActivity : AppCompatActivity() {
     private lateinit var loadingDialog: ProgressDialog
     private var shareDialog: AlertDialog? = null
     private var completionDialog: AlertDialog? = null
+    private var winAnimating = false
     private var gameOverDialog: AlertDialog? = null
     private val playing get() = viewModel.game.value as? SudokuGame.Playing
     private val SudokuGame.Playing.selectionIndices get() = SelectionIndices(sudoku.info.size)
@@ -130,7 +132,7 @@ class SudokuActivity : AppCompatActivity() {
     lateinit var userSettings: UserSettings
 
     @Inject
-    lateinit var playGamesSyncApplier: PlayGamesSyncApplier
+    lateinit var playGamesSyncer: PlayGamesSyncer
 
     @Inject
     lateinit var inAppReview: InAppReview
@@ -153,9 +155,15 @@ class SudokuActivity : AppCompatActivity() {
         collectState(viewModel.game, minActiveState = RESUMED) { onGame(it) }
         collectState(viewModel.share, minActiveState = RESUMED) { if (it is SudokuShare.Result) onShareResult(it) }
         collectState(viewModel.completion) { invalidateOptionsMenu() }
-        collectState(viewModel.completion, minActiveState = RESUMED) { if (it is SudokuCompletion.Result) onCompletionResult(it) }
+        collectState(viewModel.completion, minActiveState = RESUMED) {
+            if (it is SudokuCompletion.Result &&
+                !winAnimating
+            ) {
+                onCompletionResult(it)
+            }
+        }
         collectState(viewModel.playGamesSync, minActiveState = RESUMED) { it?.let(::onPlayGamesSync) }
-        if (viewModel.completion.value == SudokuCompletion.Pending) onSudokuCompleted()
+        if (viewModel.completion.value != SudokuCompletion.Idle) showWon()
     }
 
     override fun onDestroy() {
@@ -345,11 +353,16 @@ class SudokuActivity : AppCompatActivity() {
             .start()
     }
 
-    private fun onSudokuCompleted() {
+    private fun showWon() {
         animateGameButtonsVisibility(false)
-        viewModel.onCompleted()
         invalidateOptionsMenu()
         updateKeepScreenOn()
+    }
+
+    private fun onWinAnimationEnded() {
+        winAnimating = false
+        showWon()
+        (viewModel.completion.value as? SudokuCompletion.Result)?.let(::onCompletionResult)
     }
 
     private fun onCompletionResult(result: SudokuCompletion.Result) {
@@ -383,9 +396,9 @@ class SudokuActivity : AppCompatActivity() {
     }
 
     private fun onPlayGamesSync(sync: PlayGamesSync) {
-        playGamesSyncApplier.apply(this, sync)
-        inAppReview.showIfPossible(this)
         viewModel.onPlayGamesSyncHandled(sync)
+        inAppReview.showIfPossible(this)
+        lifecycleScope.launch { playGamesSyncer(this@SudokuActivity, sync) }
     }
 
     private fun onErrorLimitReached(playing: SudokuGame.Playing) {
@@ -592,11 +605,12 @@ class SudokuActivity : AppCompatActivity() {
         }
         if (result.completed.board) {
             if (userSettings.animationsEnabled) {
+                winAnimating = true
                 lifecycleScope
                     .animateFields(gameAdapter.fieldViews, position, setOf(FieldRegion.BOARD))
-                    .invokeOnCompletion { cause -> if (cause == null) onSudokuCompleted() }
+                    .invokeOnCompletion { cause -> if (cause == null) onWinAnimationEnded() }
             } else {
-                onSudokuCompleted()
+                showWon()
             }
         }
         if (playing.phase == Phase.Lost) onErrorLimitReached(playing)
@@ -676,7 +690,7 @@ class SudokuActivity : AppCompatActivity() {
         val detail =
             when (val mode = info.mode) {
                 GameMode.Normal -> info.difficulty.getLocalString(resources)
-                GameMode.Daily -> info.created.dateFormatShort
+                is GameMode.Daily -> mode.date.dateFormatShort
                 is GameMode.Level -> getString(R.string.level_number, mode.number)
             }
         binding.sudokuToolbarLayout.setTitle(getString(R.string.sudoku_title_detail, getString(R.string.sudoku), detail))

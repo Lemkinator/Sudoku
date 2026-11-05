@@ -18,15 +18,18 @@ package de.lemke.sudoku.domain
 
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.R
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
+import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSource
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.PlayGamesSync
-import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,72 +39,91 @@ private const val MILLIS_PER_SECOND = 1000L
 private const val SPEED_ACHIEVEMENT_SECONDS = 10
 
 class CalculatePlayGamesSyncUseCase @Inject constructor(
-    private val getAllSudokus: GetAllSudokusUseCase,
+    private val sudokusRepository: SudokusRepository,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) {
-    suspend operator fun invoke(sudoku: Sudoku? = null): PlayGamesSync =
+    /**
+     * What Play Games must hold for every completed sudoku now stored, whatever was reported before. A game imported from a file
+     * counts in the win totals only; unlocks, steps and times come from the player's own wins.
+     */
+    suspend operator fun invoke(): PlayGamesSync =
         withContext(defaultDispatcher) {
-            val sudokus = getAllSudokus().filter { it.completed }
-            val scores = baseScores(sudokus).toMutableList()
-            val unlocks = mutableListOf<Int>()
-            val increments = mutableListOf<Pair<Int, Int>>()
-            if (sudoku != null) {
-                unlocks += winUnlocks(sudoku)
-                scores += R.string.leaderboard_best_time to sudoku.info.seconds * MILLIS_PER_SECOND
-                addSizeStats(sudoku, sudokus, scores, unlocks, increments)
-                addDifficultyStats(sudoku, sudokus, scores, increments)
-            }
-            PlayGamesSync(scores, unlocks, increments)
+            val wins = sudokusRepository.getCompletedSummaries().map(GameSummary::info)
+            val bySize = wins.groupedBy(SudokuSize.entries) { it.size }
+            val played = wins.played()
+            val playedBySize = played.groupedBy(SudokuSize.entries) { it.size }
+            val playedByDifficulty = played.groupedBy(Difficulty.entries) { it.difficulty }
+            PlayGamesSync(
+                leaderboardScores = leaderboardScores(wins, bySize),
+                achievementUnlocks = achievementUnlocks(played, playedBySize),
+                achievementSteps = achievementSteps(playedBySize, playedByDifficulty),
+            )
         }
 
-    private fun baseScores(sudokus: List<Sudoku>): List<Pair<Int, Long>> =
-        listOf(
-            R.string.leaderboard_total_wins to sudokus.size.toLong(),
-            R.string.leaderboard_daily_sudokus to sudokus.count { it.info.mode == GameMode.Daily }.toLong(),
-        ) +
-            SudokuSize.entries.map { size ->
-                size.playGames.levelLeaderboard to sudokus.count { it.info.size == size && it.info.mode is GameMode.Level }.toLong()
-            }
-
-    private fun winUnlocks(sudoku: Sudoku): List<Int> =
+    private fun leaderboardScores(
+        wins: List<GameInfo>,
+        bySize: Map<SudokuSize, List<GameInfo>>,
+    ): List<Pair<Int, Long>> =
         buildList {
-            add(R.string.achievement_first_win)
-            if (sudoku.info.eraserUsed) add(R.string.achievement_eraser)
-            if (sudoku.info.hintsUsed == 0) add(R.string.achievement_no_hints)
-            if (sudoku.info.notesMade > 0) add(R.string.achievement_use_notes)
-            if (sudoku.info.isChecklist) add(R.string.achievement_checklist)
-            if (sudoku.info.isReverseChecklist) add(R.string.achievement_reverse_checklist)
-            if (sudoku.info.seconds < SPEED_ACHIEVEMENT_SECONDS) add(R.string.achievement_i_am_speed)
+            add(R.string.leaderboard_total_wins to wins.size.toLong())
+            add(R.string.leaderboard_daily_sudokus to wins.count { it.mode is GameMode.Daily }.toLong())
+            SudokuSize.entries.forEach { size ->
+                add(size.playGames.levelLeaderboard to wins.count { it.size == size && it.mode is GameMode.Level }.toLong())
+            }
+            val played = wins.played()
+            if (played.isNotEmpty()) add(R.string.leaderboard_best_time to played.fastest())
+            bySize.forEach { (size, ofSize) ->
+                add(size.playGames.winsLeaderboard to ofSize.size.toLong())
+                ofSize.groupedBy(Difficulty.entries) { it.difficulty }.forEach { (difficulty, ofDifficulty) ->
+                    val leaderboards = size.leaderboards(difficulty)
+                    val playedOfDifficulty = ofDifficulty.played()
+                    if (playedOfDifficulty.isNotEmpty()) add(leaderboards.time to playedOfDifficulty.fastest())
+                    add(leaderboards.wins to ofDifficulty.size.toLong())
+                }
+            }
         }
 
-    private fun addSizeStats(
-        sudoku: Sudoku,
-        sudokus: List<Sudoku>,
-        scores: MutableList<Pair<Int, Long>>,
-        unlocks: MutableList<Int>,
-        increments: MutableList<Pair<Int, Int>>,
-    ) {
-        val stats = sudoku.info.size.playGames
-        increments += stats.achievement10 to 1
-        increments += stats.achievement50 to 1
-        if (sudoku.info.seconds < stats.stopwatchSeconds) unlocks += stats.stopwatchAchievement
-        scores += stats.winsLeaderboard to sudokus.count { it.info.size == sudoku.info.size }.toLong()
-    }
+    private fun achievementUnlocks(
+        wins: List<GameInfo>,
+        bySize: Map<SudokuSize, List<GameInfo>>,
+    ): List<Int> =
+        buildList {
+            if (wins.isNotEmpty()) add(R.string.achievement_first_win)
+            if (wins.any { it.eraserUsed }) add(R.string.achievement_eraser)
+            if (wins.any { it.hintsUsed == 0 }) add(R.string.achievement_no_hints)
+            if (wins.any { it.notesMade > 0 }) add(R.string.achievement_use_notes)
+            if (wins.any { it.isChecklist }) add(R.string.achievement_checklist)
+            if (wins.any { it.isReverseChecklist }) add(R.string.achievement_reverse_checklist)
+            if (wins.any { it.seconds < SPEED_ACHIEVEMENT_SECONDS }) add(R.string.achievement_i_am_speed)
+            bySize.forEach { (size, ofSize) ->
+                val stats = size.playGames
+                if (ofSize.any { it.seconds < stats.stopwatchSeconds }) add(stats.stopwatchAchievement)
+            }
+        }
 
-    private fun addDifficultyStats(
-        sudoku: Sudoku,
-        sudokus: List<Sudoku>,
-        scores: MutableList<Pair<Int, Long>>,
-        increments: MutableList<Pair<Int, Int>>,
-    ) {
-        val achievements = sudoku.info.difficulty.achievements
-        increments += achievements.achievement10 to 1
-        increments += achievements.achievement50 to 1
-        val leaderboards = sudoku.info.size.leaderboards(sudoku.info.difficulty)
-        scores += leaderboards.time to sudoku.info.seconds * MILLIS_PER_SECOND
-        scores += leaderboards.wins to
-            sudokus.count { it.info.size == sudoku.info.size && it.info.difficulty == sudoku.info.difficulty }.toLong()
-    }
+    private fun achievementSteps(
+        bySize: Map<SudokuSize, List<GameInfo>>,
+        byDifficulty: Map<Difficulty, List<GameInfo>>,
+    ): List<Pair<Int, Int>> =
+        buildList {
+            bySize.forEach { (size, ofSize) ->
+                add(size.playGames.achievement10 to ofSize.size)
+                add(size.playGames.achievement50 to ofSize.size)
+            }
+            byDifficulty.forEach { (difficulty, ofDifficulty) ->
+                add(difficulty.achievements.achievement10 to ofDifficulty.size)
+                add(difficulty.achievements.achievement50 to ofDifficulty.size)
+            }
+        }
+
+    private fun List<GameInfo>.played(): List<GameInfo> = filter { it.source == GameSource.OWN }
+
+    private fun List<GameInfo>.fastest(): Long = fold(Long.MAX_VALUE) { fastest, win -> minOf(fastest, win.seconds * MILLIS_PER_SECOND) }
+
+    private fun <K> List<GameInfo>.groupedBy(
+        keys: Iterable<K>,
+        key: (GameInfo) -> K,
+    ): Map<K, List<GameInfo>> = keys.associateWith { wanted -> filter { key(it) == wanted } }.filterValues { it.isNotEmpty() }
 }
 
 private data class SizePlayGames(

@@ -41,8 +41,6 @@ import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.TestPersistenceModule
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.DefaultSudokusRepository
-import de.lemke.sudoku.data.database.SudokuDao
-import de.lemke.sudoku.data.database.SudokuWithFields
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SudokusRepositoryModule
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -69,30 +67,12 @@ import org.robolectric.shadows.ShadowDialog
 import org.robolectric.shadows.ShadowToast
 
 @OptIn(ExperimentalCoroutinesApi::class)
-@UninstallModules(SudokusRepositoryModule::class)
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
 @Config(application = HiltTestApplication::class, sdk = [36])
 class SettingsFragmentTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
-
-    private var getAllGate = CompletableDeferred(Unit)
-    private var getAllCalls = 0
-    private val sudokuDao = TestPersistenceModule.provideTestAppDatabase(ApplicationProvider.getApplicationContext()).sudokuDao()
-
-    @BindValue
-    @JvmField
-    val sudokusRepository: SudokusRepository =
-        DefaultSudokusRepository(
-            object : SudokuDao by sudokuDao {
-                override suspend fun getAll(): List<SudokuWithFields> {
-                    getAllCalls++
-                    getAllGate.await()
-                    return sudokuDao.getAll()
-                }
-            },
-        )
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -188,52 +168,6 @@ class SettingsFragmentTest {
             val activity = shadowOf(fragment.requireActivity())
             activity.nextStartedActivity?.component?.className shouldBe IntroActivity::class.java.name
             activity.nextStartedActivity shouldBe null
-        }
-
-    // endregion
-
-    // region deleteInvalidSudokus
-
-    @Test
-    fun `deleteInvalidSudokus preference shows a confirmation dialog`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("deleteInvalidSudokus")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val dialog = ShadowDialog.getLatestDialog()
-            dialog.shouldNotBeNull()
-            dialog.isShowing.shouldBeTrue()
-        }
-
-    @Test
-    fun `tapping the deleteInvalidSudokus delete button twice deletes once and dismisses once the deletion finished`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("deleteInvalidSudokus")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
-            val deleteButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-
-            deleteButton.performClick()
-            deleteButton.performClick()
-            idleMainLooper()
-
-            getAllCalls shouldBe 1
-            dialog.isShowing.shouldBeTrue()
-            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(500))
-            idleMainLooper()
-            dialog.isShowing.shouldBeFalse()
-            getAllCalls shouldBe 1
-        }
-
-    @Test
-    fun `deleteInvalidSudokus preference's delete button confirms and dismisses`() =
-        launch { fragment ->
-            val pref = fragment.pref<PreferenceScreen>("deleteInvalidSudokus")
-            pref.onPreferenceClickListener?.onPreferenceClick(pref)
-            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
-            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(600))
-            idleMainLooper()
-            dialog.isShowing.shouldBeFalse()
         }
 
     // endregion
@@ -389,14 +323,6 @@ class SettingsFragmentTest {
             fragment.removePref<PreferenceScreen>("intro")
             fragment.initIntroPreference()
             fragment.findPreference<PreferenceScreen>("intro").shouldBeNull()
-        }
-
-    @Test
-    fun `deleteInvalidSudokus init logs and no-ops when the preference is missing`() =
-        launch { fragment ->
-            fragment.removePref<PreferenceScreen>("deleteInvalidSudokus")
-            fragment.initDeleteInvalidSudokusPreference()
-            fragment.findPreference<PreferenceScreen>("deleteInvalidSudokus").shouldBeNull()
         }
 
     @Test

@@ -35,6 +35,7 @@ import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.GameMode
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
@@ -199,7 +200,7 @@ class TabHistoryListRefreshTest {
     }
 
     @Test
-    fun `a sudoku whose timestamp becomes unreadable shows the history load error once and marks it handled`() {
+    fun `a failing query shows the history load error once and marks it handled`() {
         save(olderSudoku())
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { it.onTabItemSelected(0) }
@@ -211,7 +212,10 @@ class TabHistoryListRefreshTest {
             ShadowToast.showedToast("Failed to load sudoku history") shouldBe false
 
             // Room notifies its observers when a transaction ends, never after a raw write alone.
-            database.runInTransaction { database.openHelper.writableDatabase.execSQL("UPDATE sudoku SET updated = 'unreadable'") }
+            database.runInTransaction {
+                database.openHelper.writableDatabase.execSQL("UPDATE game SET seconds = seconds")
+                database.openHelper.writableDatabase.execSQL("DROP TABLE game")
+            }
             idleMainLooper()
 
             ShadowToast.showedToast("Failed to load sudoku history") shouldBe true
@@ -225,11 +229,11 @@ class TabHistoryListRefreshTest {
         }
     }
 
-    private fun topSudoku(viewModel: TabHistoryViewModel): Sudoku =
+    private fun topSudoku(viewModel: TabHistoryViewModel): GameSummary =
         viewModel.sudokuHistory.value
             .filterIsInstance<SudokuItem>()
             .first()
-            .sudoku
+            .summary
 
     private fun historyTab(activity: MainActivity) =
         activity.supportFragmentManager.fragments

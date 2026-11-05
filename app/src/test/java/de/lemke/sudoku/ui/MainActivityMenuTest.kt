@@ -43,7 +43,7 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.data.database.sudokuToExport
+import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuFilterFlags
@@ -52,13 +52,13 @@ import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
-import io.kjson.stringifyJSON
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
+import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -336,8 +336,8 @@ class MainActivityMenuTest {
 
     private fun withImportFile(block: (file: File, sudoku: Sudoku) -> Unit) {
         val sudoku = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.VERY_EASY, completed = true)
-        val file = File.createTempFile("main-activity-import", ".json")
-        file.writeText(sudokuToExport(sudoku).stringifyJSON())
+        val file = File.createTempFile("main-activity-import", ".sudoku")
+        file.writeBytes(SudokuFileCodec.encode(sudoku, ZoneId.systemDefault()))
         try {
             block(file, sudoku)
         } finally {

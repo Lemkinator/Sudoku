@@ -139,7 +139,7 @@ class DailySudokuActivity : AppCompatActivity() {
                     Intent(
                         this@DailySudokuActivity,
                         SudokuActivity::class.java,
-                    ).putExtra(KEY_SUDOKU_ID, sudokuListItem.sudoku.info.id.value),
+                    ).putExtra(KEY_SUDOKU_ID, sudokuListItem.summary.info.id.value),
                 )
             }
         }

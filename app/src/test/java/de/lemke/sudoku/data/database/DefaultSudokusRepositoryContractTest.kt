@@ -18,6 +18,8 @@ package de.lemke.sudoku.data.database
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import de.lemke.sudoku.domain.model.Sudoku
+import java.time.Clock
 import java.util.concurrent.Executor
 import org.junit.After
 import org.junit.Before
@@ -42,7 +44,7 @@ class DefaultSudokusRepositoryContractTest : SudokusRepositoryContract() {
                 .setQueryExecutor(directExecutor)
                 .setTransactionExecutor(directExecutor)
                 .build()
-        repository = DefaultSudokusRepository(database.sudokuDao())
+        repository = DefaultSudokusRepository(database.gameDao(), Clock.systemDefaultZone())
     }
 
     @After
@@ -50,12 +52,15 @@ class DefaultSudokusRepositoryContractTest : SudokusRepositoryContract() {
         database.close()
     }
 
-    override suspend fun insertRows(rows: SudokuWithFields) = database.sudokuDao().insert(rows.sudoku, rows.fields)
+    override suspend fun storeUnreadable(sudoku: Sudoku) {
+        val game = sudoku.toEntity(Clock.systemDefaultZone().zone)
+        database.gameDao().save(GameEntity(game.header, byteArrayOf(1)))
+    }
 
     override suspend fun storedIds(): Set<String> =
         database
-            .sudokuDao()
+            .gameDao()
             .getAll()
-            .map { it.sudoku.id }
+            .map { it.header.id }
             .toSet()
 }

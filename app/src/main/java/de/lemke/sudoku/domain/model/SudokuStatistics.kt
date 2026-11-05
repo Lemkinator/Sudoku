@@ -20,7 +20,7 @@ data class SudokuStatistics(
     val gamesStarted: Int,
     val gamesCompleted: Int,
     val winRate: Int,
-    val bestTimeSudoku: Sudoku?,
+    val bestTime: GameSummary?,
     val averageTime: Int,
     val winsWithoutErrors: Int,
     val mostErrors: Int,

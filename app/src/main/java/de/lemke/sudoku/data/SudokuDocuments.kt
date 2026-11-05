@@ -20,8 +20,16 @@ import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.ByteArrayOutputStream
 import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.InputStream
 import javax.inject.Inject
+
+/** The largest document [SudokuDocuments.readBytes] reads. A sudoku file is below 1 KiB. */
+const val MAX_DOCUMENT_BYTES = 1024 * 1024
+
+private const val READ_BUFFER_BYTES = 8 * 1024
 
 /** What a picked document reports about itself before it is read. */
 data class DocumentInfo(
@@ -30,12 +38,13 @@ data class DocumentInfo(
     val mimeType: String?,
 )
 
-/** Reads and writes picked documents and reads bundled assets as text. */
+/** Reads picked documents. */
 interface SudokuDocuments {
-    /** Reads the document at [uri]; throws [FileNotFoundException] when its provider has no content for it. */
-    fun readText(uri: Uri): String
-
-    fun readAsset(path: String): String
+    /**
+     * Reads the document at [uri]; throws [FileNotFoundException] when its provider has no content for it and [IOException] when
+     * the document is larger than [MAX_DOCUMENT_BYTES].
+     */
+    fun readBytes(uri: Uri): ByteArray
 
     fun describe(uri: Uri): DocumentInfo
 }
@@ -43,19 +52,24 @@ interface SudokuDocuments {
 class DefaultSudokuDocuments @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) : SudokuDocuments {
-    override fun readText(uri: Uri): String {
+    override fun readBytes(uri: Uri): ByteArray {
         val stream = context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("No content for $uri")
-        return stream.reader().use { it.readText() }
+        return stream.use { it.readAtMost(MAX_DOCUMENT_BYTES) }
     }
-
-    override fun readAsset(path: String): String =
-        context.assets
-            .open(path)
-            .reader()
-            .use { it.readText() }
 
     override fun describe(uri: Uri): DocumentInfo {
         val document = DocumentFile.fromSingleUri(context, uri) ?: return DocumentInfo(exists = false, readable = false, mimeType = null)
         return DocumentInfo(exists = document.exists(), readable = document.canRead(), mimeType = document.type)
+    }
+}
+
+private fun InputStream.readAtMost(limit: Int): ByteArray {
+    val content = ByteArrayOutputStream()
+    val buffer = ByteArray(READ_BUFFER_BYTES)
+    while (true) {
+        val read = read(buffer, 0, minOf(buffer.size, limit + 1 - content.size()))
+        if (read < 0) return content.toByteArray()
+        content.write(buffer, 0, read)
+        if (content.size() > limit) throw IOException("Document is larger than $limit bytes")
     }
 }

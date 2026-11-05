@@ -152,7 +152,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
     private fun refresh() {
         if (view == null) return
         viewLifecycleOwner.lifecycleScope.launch {
-            val sudoku = viewModel.getContinuableSudoku()
+            val startTab = viewModel.loadStartTab() ?: return@launch
+            val sudoku = startTab.continuable
             if (sudoku != null) {
                 binding.continueGameButton.isVisible = true
                 binding.continueGameButton.text =
@@ -169,10 +170,8 @@ class TabSudoku : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
             } else {
                 binding.continueGameButton.isVisible = false
             }
-            viewModel.checkDailySudokuCompleted().let {
-                binding.dailyAvailableButton.isVisible = !it
-                binding.dailyButton.isVisible = it
-            }
+            binding.dailyAvailableButton.isVisible = !startTab.dailyCompleted
+            binding.dailyButton.isVisible = startTab.dailyCompleted
         }
     }
 }

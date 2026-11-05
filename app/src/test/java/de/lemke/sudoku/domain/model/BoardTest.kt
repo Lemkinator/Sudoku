@@ -50,6 +50,14 @@ class BoardTest : ShouldSpec(
             listOf(position.row, position.column, position.block) shouldBe listOf(1, 2, 1)
         }
 
+        should("keep the preserved fields through a changed cell and through the initial board") {
+            val preserved = PreservedFields(byteArrayOf(0x30, 0x07))
+            val board = Board(SudokuSize.FOUR, fresh4().cells, preserved)
+
+            board.with(1, Cell(2, value = 2)).preserved shouldBe preserved
+            board.initial().preserved shouldBe preserved
+        }
+
         should("keep no reference to the list it was built from") {
             val source = fresh4().cells.toMutableList()
             val board = Board(SudokuSize.FOUR, source)
@@ -72,6 +80,7 @@ class BoardTest : ShouldSpec(
             fresh4() shouldNotBe fresh4().with(1, Cell(2, value = 2))
             fresh4().equals("board") shouldBe false
             fresh4() shouldNotBe fresh9()
+            fresh4() shouldNotBe Board(SudokuSize.FOUR, fresh4().cells, PreservedFields(byteArrayOf(0x30, 0x07)))
         }
 
         should("describe itself by size and cells") {
@@ -93,7 +102,7 @@ class BoardTest : ShouldSpec(
                 "Cell(solution=1, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
                 "Cell(solution=2, value=null, origin=PLAYER, notes=NoteMask(bits=0)), " +
                 "Cell(solution=3, value=3, origin=GIVEN, notes=NoteMask(bits=0))" +
-                "])"
+                "], preserved=PreservedFields(0 bytes))"
         }
 
         should("reject a board with 15 of 16 cells") {

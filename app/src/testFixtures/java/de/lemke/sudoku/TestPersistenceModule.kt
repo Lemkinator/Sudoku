@@ -25,7 +25,7 @@ import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 import de.lemke.commonutils.HiltTestRule
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.data.database.SudokuDao
+import de.lemke.sudoku.data.database.GameDao
 import de.lemke.sudoku.di.PersistenceModule
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicInteger
@@ -62,5 +62,5 @@ object TestPersistenceModule {
             .let { HiltTestRule.closeAfterTest(it, AppDatabase::close) }
 
     @Provides
-    fun provideSudokuDao(database: AppDatabase): SudokuDao = database.sudokuDao()
+    fun provideGameDao(database: AppDatabase): GameDao = database.gameDao()
 }

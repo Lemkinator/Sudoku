@@ -58,6 +58,8 @@ class MainViewModel @Inject constructor(
 
     private var importingFile: String? = null
 
+    private var playGamesSyncOffered = false
+
     /**
      * Imports the file at [uri] once, also when a recreated or restored activity hands the same [uri] again.
      * A process death during the import imports the file again, which replaces the sudoku stored under the file's id.
@@ -79,9 +81,11 @@ class MainViewModel @Inject constructor(
         importedSudoku.compareAndSet(result, ImportedSudoku.Idle)
     }
 
-    suspend fun onScreenReady(): PlayGamesSync {
+    /** The Play Games sync of all completed sudokus, offered once per ViewModel; later calls return null. */
+    suspend fun onScreenReady(): PlayGamesSync? {
         sendDailyNotification.setDailySudokuNotification(enable = userSettings.dailySudokuNotificationEnabled)
-        return calculatePlayGamesSync()
+        if (playGamesSyncOffered) return null
+        return calculatePlayGamesSync().also { playGamesSyncOffered = true }
     }
 
     private companion object {

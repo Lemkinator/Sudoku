@@ -49,6 +49,8 @@ data class Sudoku(val info: GameInfo, val board: Board) {
 
     val progress: Int get() = board.progress
 
+    fun summary(): GameSummary = GameSummary(info, completed, progress)
+
     /** Applies [move] and the counters it changes; null when the board rejects it or no hint is left. */
     fun play(move: BoardMove): GameMove? {
         val result = board.takeIf { move !is BoardMove.RevealHint || info.isHintAvailable }?.apply(move) ?: return null
@@ -83,7 +85,7 @@ data class Sudoku(val info: GameInfo, val board: Board) {
             R.string.sudokuStatisticsString,
             when (val mode = info.mode) {
                 GameMode.Normal -> resources.getString(R.string.normal_sudoku)
-                GameMode.Daily -> resources.getString(R.string.daily_sudoku)
+                is GameMode.Daily -> resources.getString(R.string.daily_sudoku)
                 is GameMode.Level -> resources.getString(R.string.level_number, mode.number)
             },
             info.size.value,
@@ -125,6 +127,7 @@ private fun GameInfo.zeroed(): GameInfo =
         isChecklist = false,
         isReverseChecklist = false,
         checklistNumber = 0,
+        source = GameSource.OWN,
     )
 
 fun Int?.toSudokuString(): CharSequence? =
@@ -145,7 +148,8 @@ fun Char.toSudokuInt(): Int? =
         else -> null
     }
 
-val LocalDateTime.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-val LocalDateTime.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
+val LocalDate.monthAndYear: String get() = format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+val LocalDate.dateFormatShort: String get() = format(ofLocalizedDate(FormatStyle.SHORT))
+val LocalDateTime.dateFormatShort: String get() = toLocalDate().dateFormatShort
 val LocalDate.formatFull: String get() = format(ofLocalizedDate(FULL))
 val LocalDateTime.formatFull: String get() = format(ofLocalizedDateTime(FULL, MEDIUM).withZone(systemDefault()))

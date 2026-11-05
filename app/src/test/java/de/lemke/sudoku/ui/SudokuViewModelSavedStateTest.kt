@@ -30,12 +30,12 @@ import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
@@ -55,6 +55,7 @@ import org.robolectric.annotation.Config
 class SudokuViewModelSavedStateTest {
     private val completed = testSudoku(completed = true)
     private val repository = FakeSudokusRepository()
+    private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
 
     private fun viewModel(savedStateHandle: SavedStateHandle): SudokuViewModel {
         val dispatcher = Dispatchers.Main
@@ -66,9 +67,9 @@ class SudokuViewModelSavedStateTest {
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
-            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), dispatcher),
-            CalculatePlayGamesSyncUseCase(GetAllSudokusUseCase(repository, dispatcher), dispatcher),
-            UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher())),
+            ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), Clock.systemDefaultZone(), dispatcher),
+            CalculatePlayGamesSyncUseCase(repository, dispatcher),
+            userSettings,
             Clock.systemDefaultZone(),
             LooperTimeSource,
         ).also { idleMainLooper() }
@@ -87,18 +88,24 @@ class SudokuViewModelSavedStateTest {
 
     @Test
     fun `a pending summary survives a saved state written to a parcel and read back`() {
-        repository.store(completed)
+        val almost = completed.copy(board = completed.board.with(1, completed.board[1].copy(value = null)))
+        repository.store(almost)
         val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
         val viewModel = viewModel(savedStateHandle)
-        viewModel.onGameStarted(SudokuGame.Ready(completed))
-        viewModel.onCompleted()
+        viewModel.onGameStarted(SudokuGame.Ready(almost))
+        viewModel.onResumed()
+        val won = checkNotNull(viewModel.onMove(BoardMove.Enter(1, completed.board[1].solution)))
         idleMainLooper()
-        viewModel.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+        viewModel.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
 
         val savedState = savedStateHandle.savedStateProvider().saveState().throughParcel()
+        var summaryReads = 0
+        repository.beforeGetCompletedSummaries = { summaryReads++ }
         val restored = viewModel(SavedStateHandle.createHandle(savedState, null))
 
-        restored.game.value shouldBe SudokuGame.Ready(completed)
-        restored.completion.value shouldBe SudokuCompletion.Summary(completed, FollowUp.NEW_GAME)
+        restored.game.value shouldBe SudokuGame.Ready(won)
+        restored.completion.value shouldBe SudokuCompletion.Summary(won, FollowUp.NEW_GAME)
+        restored.playGamesSync.value shouldBe null
+        summaryReads shouldBe 0
     }
 }

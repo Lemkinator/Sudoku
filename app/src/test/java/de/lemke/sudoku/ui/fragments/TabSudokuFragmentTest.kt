@@ -39,8 +39,9 @@ import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
+import de.lemke.sudoku.data.database.AppDatabase
+import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.di.SolvedBoardGeneratorModule
-import de.lemke.sudoku.domain.GetAllSudokusUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SolvedBoardGenerator
@@ -59,9 +60,11 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -98,10 +101,13 @@ class TabSudokuFragmentTest {
     lateinit var saveSudoku: SaveSudokuUseCase
 
     @Inject
-    lateinit var getAllSudokus: GetAllSudokusUseCase
+    lateinit var sudokusRepository: SudokusRepository
 
     @Inject
     lateinit var userSettings: UserSettings
+
+    @Inject
+    lateinit var database: AppDatabase
 
     @Before
     fun setup() {
@@ -177,7 +183,7 @@ class TabSudokuFragmentTest {
             scenario.recreate()
             pausableDefaultDispatcher.resume()
             idleMainLooper()
-            val generated = runBlocking { getAllSudokus() }.single()
+            val generated = runBlocking { sudokusRepository.observeAllSummaries().first() }.single()
             scenario.onActivity { activity ->
                 activity.supportFragmentManager.fragments.size shouldBe 3
                 val started = shadowOf(activity).nextStartedActivity
@@ -203,7 +209,7 @@ class TabSudokuFragmentTest {
                 viewModel.onNewGame(SudokuSize.FOUR, Difficulty.VERY_EASY)
             }
             idleMainLooper()
-            val generated = runBlocking { getAllSudokus() }.single()
+            val generated = runBlocking { sudokusRepository.observeAllSummaries().first() }.single()
             scenario.onActivity { activity ->
                 shadowOf(activity).nextStartedActivity.component?.className shouldBe SudokuLevelActivity::class.java.name
                 shadowOf(activity).nextStartedActivity shouldBe null
@@ -303,6 +309,27 @@ class TabSudokuFragmentTest {
     }
 
     @Test
+    fun `a failing database read on refresh keeps the buttons of the last good load and throws nothing`() =
+        failOnUncaughtException {
+            runBlocking { saveSudoku(formulaicSudoku()) }
+            launch { fragment ->
+                val view = fragment.requireView()
+                val continueButton = view.findViewById<View>(R.id.continueGameButton)
+                val dailyButton = view.findViewById<View>(R.id.dailyButton)
+                val dailyAvailableButton = view.findViewById<View>(R.id.dailyAvailableButton)
+                listOf(continueButton.isVisible, dailyButton.isVisible, dailyAvailableButton.isVisible) shouldBe
+                    listOf(true, false, true)
+                database.openHelper.writableDatabase.execSQL("DROP TABLE game")
+
+                fragment.onHiddenChanged(false)
+                idleMainLooper()
+
+                listOf(continueButton.isVisible, dailyButton.isVisible, dailyAvailableButton.isVisible) shouldBe
+                    listOf(true, false, true)
+            }
+        }
+
+    @Test
     fun `continue button starts the continuable sudoku`() {
         runBlocking { saveSudoku(formulaicSudoku()) }
         launch { fragment ->
@@ -377,7 +404,7 @@ class TabSudokuFragmentTest {
 
     @Test
     fun `onResume shows the daily button when today's daily sudoku is already completed`() {
-        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily, allCorrect = true)) }
+        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily(LocalDate.now()), allCorrect = true)) }
         launch { fragment ->
             fragment
                 .requireView()
@@ -394,7 +421,7 @@ class TabSudokuFragmentTest {
 
     @Test
     fun `onResume shows the daily-available button when today's daily sudoku is unfinished`() {
-        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily, allCorrect = false)) }
+        runBlocking { saveSudoku(formulaicSudoku(mode = GameMode.Daily(LocalDate.now()), allCorrect = false)) }
         launch { fragment ->
             fragment
                 .requireView()
@@ -415,7 +442,7 @@ class TabSudokuFragmentTest {
             doubleClick(fragment.requireView().findViewById(R.id.newGameButton))
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldNotBeNull()
             shadowOf(fragment.requireActivity()).nextStartedActivity.shouldBe(null)
-            runBlocking { getAllSudokus() }.size shouldBe 1
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.size shouldBe 1
         }
 
     @Test
@@ -457,7 +484,7 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 0
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().info.size shouldBe SudokuSize.FOUR
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.single().info.size shouldBe SudokuSize.FOUR
         }
 
     @Test
@@ -465,6 +492,6 @@ class TabSudokuFragmentTest {
         launch { fragment ->
             fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar).progress = 2
             click(fragment.requireView().findViewById(R.id.newGameButton))
-            runBlocking { getAllSudokus() }.single().info.size shouldBe SudokuSize.SIXTEEN
+            runBlocking { sudokusRepository.observeAllSummaries().first() }.single().info.size shouldBe SudokuSize.SIXTEEN
         }
 }

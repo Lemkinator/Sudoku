@@ -41,7 +41,7 @@ class SudokuViewModelPhaseTest {
 
     private fun playing(sudoku: Sudoku) = rig.playing(sudoku)
 
-    private fun daily(created: LocalDateTime) = testSudoku(mode = GameMode.Daily, created = created)
+    private fun daily(created: LocalDateTime) = testSudoku(mode = GameMode.Daily(created.toLocalDate()), created = created)
 
     private fun Sudoku.withErrors(errors: Int) = copy(info = info.copy(errorsMade = errors))
 
@@ -93,8 +93,22 @@ class SudokuViewModelPhaseTest {
     }
 
     @Test
+    fun `a daily sudoku made for today stays playable when its creation stamp reads as the day before`() {
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 15)), created = today.minusHours(1))
+
+        playing(sudoku).game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 15)), 3, Phase.Playing)
+    }
+
+    @Test
+    fun `a daily sudoku of an earlier date is expired although its creation stamp reads as today`() {
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 14)), created = today.plusHours(1))
+
+        playing(sudoku).game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 14)), 3, Phase.Expired)
+    }
+
+    @Test
     fun `a completed daily sudoku of an earlier date is won`() {
-        val sudoku = testSudoku(mode = GameMode.Daily, created = today.minusDays(1), completed = true)
+        val sudoku = testSudoku(mode = GameMode.Daily(LocalDate.of(2026, 1, 14)), created = today.minusDays(1), completed = true)
 
         playing(sudoku).game.value.shouldBePlaying(SudokuKind.Daily(LocalDate.of(2026, 1, 14)), 3, Phase.Won)
     }
@@ -144,13 +158,11 @@ class SudokuViewModelPhaseTest {
     }
 
     @Test
-    fun `onCompleted keeps a sudoku completed after the start won`() {
+    fun `a sudoku completed after the start stays won`() {
         val solved = testSudoku(completed = true)
         val viewModel = playing(solved.copy(board = solved.board.with(1, solved.board[1].copy(value = null))))
         viewModel.onResumed()
         viewModel.onMove(BoardMove.Enter(1, 2))
-
-        viewModel.onCompleted()
 
         viewModel.game.value.shouldBePlaying(SudokuKind.Normal, 3, Phase.Won)
     }
