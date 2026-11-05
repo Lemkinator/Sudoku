@@ -346,10 +346,6 @@ class SudokuViewModel @Inject constructor(
         updatePlaying { it.copy(sudoku = it.sudoku.withHighlightingUsed(highlighting)) }
     }
 
-    private fun refreshPhase() {
-        updatePlaying { it.refreshed() }
-    }
-
     private fun updatePlaying(transform: (SudokuGame.Playing) -> SudokuGame.Playing) {
         game.update { if (it is SudokuGame.Playing) transform(it) else it }
     }
