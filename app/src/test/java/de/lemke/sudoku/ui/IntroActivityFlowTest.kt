@@ -30,7 +30,6 @@ import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.ui.game.BoardInput
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -60,14 +59,11 @@ class IntroActivityFlowTest {
     @Inject
     lateinit var settings: SettingsRepository
 
-    @Inject
-    lateinit var userSettings: UserSettings
-
     @Before
     fun setup() {
         hiltRule.inject()
+        finishAnimationsAtFirstFrame()
         settings.bypassOobe()
-        userSettings.animationsEnabled = false
     }
 
     private fun launch(

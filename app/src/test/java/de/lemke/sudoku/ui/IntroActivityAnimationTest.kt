@@ -25,7 +25,6 @@ import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
-import de.lemke.sudoku.data.UserSettings
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -60,20 +59,14 @@ class IntroActivityAnimationTest {
     @Inject
     lateinit var settings: SettingsRepository
 
-    @Inject
-    lateinit var userSettings: UserSettings
-
     @Before
     fun setup() {
         hiltRule.inject()
+        finishAnimationsAtFirstFrame()
         settings.bypassOobe()
     }
 
-    private fun launch(
-        animationsEnabled: Boolean = false,
-        block: (IntroActivity) -> Unit,
-    ) {
-        userSettings.animationsEnabled = animationsEnabled
+    private fun launch(block: (IntroActivity) -> Unit) {
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         ActivityScenario.launch<IntroActivity>(Intent(context, IntroActivity::class.java)).use { scenario ->
             scenario.onActivity { activity -> block(activity) }
@@ -175,14 +168,12 @@ class IntroActivityAnimationTest {
         launch { activity ->
             activity.toStep(IntroStep.SELECT_CELL)
             idle(50)
+            val loop = activity.animation.shouldNotBeNull()
 
             activity.tapCell(DEMO_CELL_INDEX_4)
             idle(2100)
 
-            activity.animation
-                .shouldNotBeNull()
-                .isCompleted
-                .shouldBeTrue()
+            loop.isCancelled.shouldBeTrue()
         }
 
     @Test
@@ -190,14 +181,12 @@ class IntroActivityAnimationTest {
         launch { activity ->
             activity.toStep(IntroStep.NUMBER_ENTRY_DEMO)
             idle(1200)
+            val loop = activity.animation.shouldNotBeNull()
 
             activity.next()
             repeat(6) { idle(1200) }
 
-            activity.animation
-                .shouldNotBeNull()
-                .isCompleted
-                .shouldBeTrue()
+            loop.isCancelled.shouldBeTrue()
         }
 
     @Test
@@ -205,31 +194,23 @@ class IntroActivityAnimationTest {
         launch { activity ->
             idle(900)
             activity.highlighted shouldBe BLOCK_0
+            val loop = activity.animation.shouldNotBeNull()
 
             activity.next()
             idle(1800)
 
             activity.highlighted shouldBe emptySet()
-            activity.animation
-                .shouldNotBeNull()
-                .isCompleted
-                .shouldBeTrue()
+            loop.isCancelled.shouldBeTrue()
         }
 
     @Test
-    fun `a lesson pulses its target cell when animations are enabled`() =
-        launch(animationsEnabled = true) { activity ->
+    fun `a lesson pulses its target cell whatever the animation setting says`() =
+        launch { activity ->
             activity.toStep(IntroStep.SELECT_CELL)
 
             activity.binding.board.isAnimating
                 .shouldBeTrue()
-        }
-
-    @Test
-    fun `a lesson does not pulse when animations are disabled`() =
-        launch { activity ->
-            activity.toStep(IntroStep.SELECT_CELL)
-
+            idle(50)
             activity.binding.board.isAnimating
                 .shouldBeFalse()
         }
@@ -237,12 +218,12 @@ class IntroActivityAnimationTest {
     @Test
     fun `a lesson without an animation ends its job at once`() =
         launch { activity ->
-            activity.next()
+            activity.toStep(IntroStep.SELECTION)
+            val job = activity.animation.shouldNotBeNull()
             idle(50)
 
-            activity.animation
-                .shouldNotBeNull()
-                .isCompleted
-                .shouldBeTrue()
+            job.isCompleted.shouldBeTrue()
+            activity.binding.board.isAnimating
+                .shouldBeFalse()
         }
 }

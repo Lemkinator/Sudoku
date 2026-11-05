@@ -29,7 +29,6 @@ import de.lemke.commonutils.ui.utils.setupOnboarding
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
-import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.di.DailyNotificationsModule
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -64,13 +63,10 @@ class IntroActivityLegacyPermissionTest {
 
     private val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
 
-    @Inject
-    lateinit var userSettings: UserSettings
-
     @Before
     fun setup() {
         hiltRule.inject()
-        userSettings.animationsEnabled = false
+        finishAnimationsAtFirstFrame()
         setupOnboarding(listOf(IntroActivity::class.java))
     }
 

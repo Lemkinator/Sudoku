@@ -48,7 +48,6 @@ import de.lemke.commonutils.ui.utils.setCustomBackAnimation
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.sudoku.R
-import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivityIntroBinding
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.tutorialSudoku
@@ -57,7 +56,6 @@ import de.lemke.sudoku.ui.game.BoardInput
 import de.lemke.sudoku.ui.game.InputTap
 import de.lemke.sudoku.ui.game.Selection
 import de.lemke.sudoku.ui.game.boardRenderOf
-import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -89,12 +87,9 @@ class IntroActivity : AppCompatActivity() {
     private var demo = IntroDemo()
     private val tutorial = tutorialSudoku()
     private val tutorialBoard: Board get() = tutorial.board
-    internal val colorPrimary: Int
+    private val colorPrimary: Int
         get() = TypedValue().also { theme.resolveAttribute(androidx.appcompat.R.attr.colorPrimary, it, true) }.data
     internal val viewModel: IntroViewModel by viewModels()
-
-    @Inject
-    lateinit var userSettings: UserSettings
 
     private val sudokuButtons: List<AppCompatButton>
         get() =
@@ -194,7 +189,7 @@ class IntroActivity : AppCompatActivity() {
     }
 
     private fun pulse(cells: Collection<Int>) {
-        if (userSettings.animationsEnabled) binding.board.animateCells(listOf(cells.toList()), CellAnimation.PULSE)
+        binding.board.animateCells(listOf(cells.toList()), CellAnimation.PULSE)
     }
 
     private suspend fun animate(step: IntroStep) {

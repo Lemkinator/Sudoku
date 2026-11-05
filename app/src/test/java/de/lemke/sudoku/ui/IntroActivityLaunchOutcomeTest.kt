@@ -30,7 +30,6 @@ import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.ui.utils.setupOnboarding
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
-import de.lemke.sudoku.data.UserSettings
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -61,13 +60,10 @@ class IntroActivityLaunchOutcomeTest {
 
     private val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
 
-    @Inject
-    lateinit var userSettings: UserSettings
-
     @Before
     fun setup() {
         hiltRule.inject()
-        userSettings.animationsEnabled = false
+        finishAnimationsAtFirstFrame()
         setupOnboarding(listOf(IntroActivity::class.java))
     }
 
