@@ -200,7 +200,7 @@ class SudokuLevelTabListRefreshTest {
         viewModel.confirmSudokuStart(nextLevel.info.id)
         idleMainLooper()
 
-        viewModel.levelStart.value shouldBe LevelStart.Open(nextLevel.info.id)
+        viewModel.levelStart.value shouldBe LevelStart.Idle
 
         runBlocking { getSudoku(nextLevel.info.id) } shouldBe null
         val saved = runBlocking { getSudoku(currentLevelId) }.shouldNotBeNull()

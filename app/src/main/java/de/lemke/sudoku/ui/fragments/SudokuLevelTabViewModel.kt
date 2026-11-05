@@ -171,13 +171,22 @@ class SudokuLevelTabViewModel @Inject constructor(
 
     fun confirmSudokuStart(sudokuId: SudokuId) {
         if (levelStart.value == LevelStart.Running) return
-        val nextLevel = state.value.nextLevel
-        if (nextLevel == null || nextLevel.info.id != sudokuId) {
-            levelStart.value = LevelStart.Open(sudokuId)
-            return
+        val shown = state.value
+        val nextLevel = shown.nextLevel
+        when {
+            nextLevel != null && nextLevel.info.id == sudokuId -> {
+                levelStart.value = LevelStart.Running
+                viewModelScope.launch { levelStart.value = saveNextLevel(nextLevel) }
+            }
+
+            shown.sudokuLevel.any { it is SudokuItem && it.summary.info.id == sudokuId } -> {
+                levelStart.value = LevelStart.Open(sudokuId)
+            }
+
+            else -> {
+                levelStart.value = refuseSavedLevel()
+            }
         }
-        levelStart.value = LevelStart.Running
-        viewModelScope.launch { levelStart.value = saveNextLevel(nextLevel) }
     }
 
     fun onLevelStartHandled(result: LevelStart.Result) {

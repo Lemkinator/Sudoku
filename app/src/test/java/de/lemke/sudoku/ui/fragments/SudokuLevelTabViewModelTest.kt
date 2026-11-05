@@ -487,14 +487,21 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
             }
         }
 
-        should("confirming a row while no next level is offered opens it without saving") {
-            val level = testSudoku(mode = GameMode.Level(1))
+        should("confirming an id that is neither the offered next level nor a saved level is refused and reloads the list") {
+            repository.store(testSudoku(mode = GameMode.Level(1), completed = true))
             val viewModel = newViewModel()
+            val staleNextLevel = testSudoku(mode = GameMode.Level(2))
 
-            viewModel.confirmSudokuStart(level.info.id)
+            viewModel.state.test {
+                expectMostRecentItem().hasNextLevelToStart shouldBe true
 
-            viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
+                viewModel.confirmSudokuStart(staleNextLevel.info.id)
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            viewModel.levelStart.value shouldBe LevelStart.Idle
             repository.saves shouldBe emptyList()
+            repository.observeCalls shouldBe 2
         }
 
         should("confirming the top row without a next level to start opens it without saving") {
@@ -734,26 +741,38 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
 
         should("handling the current result returns to idle and a repeated start opens the level again") {
             val level = testSudoku(mode = GameMode.Level(1))
+            repository.store(level)
             val viewModel = newViewModel()
-            viewModel.confirmSudokuStart(level.info.id)
 
-            viewModel.onLevelStartHandled(LevelStart.Open(level.info.id))
+            viewModel.state.test {
+                expectMostRecentItem()
+                viewModel.confirmSudokuStart(level.info.id)
 
-            viewModel.levelStart.value shouldBe LevelStart.Idle
-            viewModel.confirmSudokuStart(level.info.id)
-            viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
+                viewModel.onLevelStartHandled(LevelStart.Open(level.info.id))
+
+                viewModel.levelStart.value shouldBe LevelStart.Idle
+                viewModel.confirmSudokuStart(level.info.id)
+                viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
         should("handling a stale result keeps the current result") {
             val level = testSudoku(mode = GameMode.Level(1))
             val otherLevel = testSudoku(mode = GameMode.Level(1))
+            repository.store(level)
             val viewModel = newViewModel()
-            viewModel.confirmSudokuStart(level.info.id)
 
-            viewModel.onLevelStartHandled(LevelStart.Open(otherLevel.info.id))
-            viewModel.onLevelStartHandled(LevelStart.Failed)
+            viewModel.state.test {
+                expectMostRecentItem()
+                viewModel.confirmSudokuStart(level.info.id)
 
-            viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
+                viewModel.onLevelStartHandled(LevelStart.Open(otherLevel.info.id))
+                viewModel.onLevelStartHandled(LevelStart.Failed)
+
+                viewModel.levelStart.value shouldBe LevelStart.Open(level.info.id)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
     },
 )
