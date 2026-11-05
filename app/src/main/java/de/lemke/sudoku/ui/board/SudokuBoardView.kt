@@ -147,7 +147,7 @@ class SudokuBoardView @JvmOverloads constructor(
             val previous = field
             if (value == previous) return
             field = value
-            if (previous?.board?.size != value?.board?.size) rebuildGeometry()
+            if (previous == null || value == null || previous.board.size != value.board.size) rebuildGeometry()
             if (previous?.board != value?.board) rebuildCellLayouts()
             invalidate()
             accessibilityHelper.onRenderChanged(previous, value)
