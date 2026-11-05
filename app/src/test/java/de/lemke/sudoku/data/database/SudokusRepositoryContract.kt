@@ -96,6 +96,15 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
+    fun `getSummaryById returns the summary of the matching game`() =
+        runTest {
+            val saved = sudoku()
+            repository.saveSudoku(saved)
+
+            repository.getSummaryById(saved.info.id) shouldBe saved.summary()
+        }
+
+    @Test
     fun `getSudokuById returns the matching sudoku`() =
         runTest {
             val saved = sudoku()
