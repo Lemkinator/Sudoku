@@ -24,6 +24,8 @@ import de.lemke.sudoku.domain.model.GameMode
 import java.time.LocalDate
 import java.time.OffsetDateTime
 
+private val MAY_SECOND = LocalDate.parse("2026-05-02")
+
 private const val SUDOKUS_V2 =
     """{"entries":[
 {"id":"11111111-aaaa","size":4,"difficulty":"MEDIUM","modeLevel":0,"created":"2026-05-02T08:00:00+02:00","updated":"2026-05-02T08:10:00+02:00","seconds":600,"regionalHighlightingUsed":true,"numberHighlightingUsed":false,"eraserUsed":true,"isChecklist":false,"isReverseChecklist":false,"checklistNumber":0,"hintsUsed":1,"notesMade":3,"errorsMade":2,"board":"CAEQBBoIASMjARIwMBIiECECACQAACEAACNEACQAACMqBAIFBAw="},
@@ -34,7 +36,7 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
     override fun sampleEntries(): List<SudokuBackupEntry> =
         listOf(
             backupEntry(id = "normal-game", updated = "2026-05-02T08:10:00+02:00", solvedCells = 3, seconds = 95),
-            backupEntry(id = "daily-game", modeLevel = -1, created = "2026-05-03T07:30:00+02:00"),
+            backupEntry(id = "daily-game", modeLevel = -1, created = "2026-05-03T07:30:00+02:00", dailyDate = MAY_SECOND),
             backupEntry(id = "level-game", modeLevel = 2, created = "2026-01-10T19:00:00+01:00", solvedCells = 10),
         )
 
@@ -64,14 +66,17 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                                 id = "22222222-bbbb",
                                 modeLevel = -1,
                                 created = "2026-05-03T07:30:00+02:00",
-                            ).copy(dailyDate = LocalDate.parse("2026-05-03")),
+                                dailyDate = LocalDate.parse("2026-05-03"),
+                            ),
                         ),
                 ),
         )
 
     override fun brokenEntryJson(): String = """{"id":"broken","size":5}"""
 
-    override fun clashCases(): List<ClashCase<SudokuBackupEntry>> =
+    override fun clashCases(): List<ClashCase<SudokuBackupEntry>> = levelClashCases() + dailyClashCases() + normalClashCases()
+
+    private fun levelClashCases(): List<ClashCase<SudokuBackupEntry>> =
         listOf(
             ClashCase(
                 name = "level 1: completed in May beats 0 % today",
@@ -79,30 +84,44 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                 incoming = backupEntry(id = "today", modeLevel = 1, created = "2026-10-30T09:00:00+01:00", solvedCells = 0),
                 expected = backupEntry(id = "may", modeLevel = 1, created = "2026-05-02T08:00:00+02:00", solvedCells = 10),
             ),
+        )
+
+    private fun dailyClashCases(): List<ClashCase<SudokuBackupEntry>> =
+        listOf(
             ClashCase(
                 name = "daily: 70 % beats 40 % although older",
-                local = backupEntry(id = "seventy", modeLevel = -1, updated = "2026-05-02T09:00:00+02:00", solvedCells = 7),
-                incoming = backupEntry(id = "forty", modeLevel = -1, updated = "2026-05-02T18:00:00+02:00", solvedCells = 4),
-                expected = backupEntry(id = "seventy", modeLevel = -1, updated = "2026-05-02T09:00:00+02:00", solvedCells = 7),
+                local = dailyEntry(id = "seventy", updated = "2026-05-02T09:00:00+02:00", solvedCells = 7),
+                incoming = dailyEntry(id = "forty", updated = "2026-05-02T18:00:00+02:00", solvedCells = 4),
+                expected = dailyEntry(id = "seventy", updated = "2026-05-02T09:00:00+02:00", solvedCells = 7),
+            ),
+            ClashCase(
+                name = "daily: an entry without a day and one made for that day clash, the higher progress wins",
+                local = backupEntry(id = "old", modeLevel = -1, created = "2026-05-02T08:00:00+02:00", solvedCells = 3),
+                incoming = dailyEntry(id = "new", created = "2026-05-03T00:30:00+02:00", solvedCells = 6),
+                expected = dailyEntry(id = "new", created = "2026-05-03T00:30:00+02:00", solvedCells = 6),
             ),
             ClashCase(
                 name = "daily: equal progress, the newer updated wins",
-                local = backupEntry(id = "older", modeLevel = -1, updated = "2026-05-02T09:00:00+02:00", solvedCells = 4),
-                incoming = backupEntry(id = "newer", modeLevel = -1, updated = "2026-05-02T18:00:00+02:00", solvedCells = 4),
-                expected = backupEntry(id = "newer", modeLevel = -1, updated = "2026-05-02T18:00:00+02:00", solvedCells = 4),
+                local = dailyEntry(id = "older", updated = "2026-05-02T09:00:00+02:00", solvedCells = 4),
+                incoming = dailyEntry(id = "newer", updated = "2026-05-02T18:00:00+02:00", solvedCells = 4),
+                expected = dailyEntry(id = "newer", updated = "2026-05-02T18:00:00+02:00", solvedCells = 4),
             ),
             ClashCase(
                 name = "daily: two completed, the newer updated wins",
-                local = backupEntry(id = "first", modeLevel = -1, updated = "2026-05-02T09:00:00+02:00", solvedCells = 10),
-                incoming = backupEntry(id = "second", modeLevel = -1, updated = "2026-05-02T10:00:00+02:00", solvedCells = 10),
-                expected = backupEntry(id = "second", modeLevel = -1, updated = "2026-05-02T10:00:00+02:00", solvedCells = 10),
+                local = dailyEntry(id = "first", updated = "2026-05-02T09:00:00+02:00", solvedCells = 10),
+                incoming = dailyEntry(id = "second", updated = "2026-05-02T10:00:00+02:00", solvedCells = 10),
+                expected = dailyEntry(id = "second", updated = "2026-05-02T10:00:00+02:00", solvedCells = 10),
             ),
             ClashCase(
                 name = "daily: equal progress and equal updated, the entry greater by encodedOrder wins",
-                local = backupEntry(id = "a", modeLevel = -1, solvedCells = 4),
-                incoming = backupEntry(id = "b", modeLevel = -1, solvedCells = 4),
-                expected = backupEntry(id = "b", modeLevel = -1, solvedCells = 4),
+                local = dailyEntry(id = "a", solvedCells = 4),
+                incoming = dailyEntry(id = "b", solvedCells = 4),
+                expected = dailyEntry(id = "b", solvedCells = 4),
             ),
+        )
+
+    private fun normalClashCases(): List<ClashCase<SudokuBackupEntry>> =
+        listOf(
             ClashCase(
                 name = "normal: same id, the newer updated wins",
                 local = backupEntry(id = "same", updated = "2026-05-02T09:00:00+02:00", solvedCells = 8),
@@ -122,4 +141,11 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
                 expected = backupEntry(id = "same", seconds = 7),
             ),
         )
+
+    private fun dailyEntry(
+        id: String,
+        created: String = "2026-05-02T08:00:00+02:00",
+        updated: String = created,
+        solvedCells: Int,
+    ) = backupEntry(id = id, modeLevel = -1, created = created, updated = updated, solvedCells = solvedCells, dailyDate = MAY_SECOND)
 }

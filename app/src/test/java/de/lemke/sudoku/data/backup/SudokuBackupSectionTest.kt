@@ -185,8 +185,8 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     @Test
     fun `replace swaps the local game for the merged one`(): Unit =
         runBlocking {
-            val local = backupEntry(id = "local", modeLevel = -1, solvedCells = 2)
-            val merged = backupEntry(id = "merged", modeLevel = -1, solvedCells = 6)
+            val local = backupEntry(id = "local", modeLevel = -1, solvedCells = 2, dailyDate = LocalDate.parse("2026-05-02"))
+            val merged = backupEntry(id = "merged", modeLevel = -1, solvedCells = 6, dailyDate = LocalDate.parse("2026-05-02"))
             section.insert(listOf(local))
 
             section.replace(local, merged)

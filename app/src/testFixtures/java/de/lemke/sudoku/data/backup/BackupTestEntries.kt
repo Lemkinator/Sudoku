@@ -17,11 +17,11 @@
 package de.lemke.sudoku.data.backup
 
 import de.lemke.sudoku.data.codec.BoardCodec
-import de.lemke.sudoku.data.database.legacyGameModeOrNull
 import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.Base64
 
@@ -40,6 +40,7 @@ fun backupEntry(
     updated: String = created,
     solvedCells: Int = 0,
     seconds: Int = 0,
+    dailyDate: LocalDate? = null,
 ): SudokuBackupEntry {
     val open = FOUR_SOLUTION.indices.filterNot { it in FOUR_GIVENS }
     val filled = FOUR_GIVENS + open.take(solvedCells)
@@ -47,16 +48,15 @@ fun backupEntry(
         Board.of(SudokuSize.FOUR, FOUR_SOLUTION.map { it - '0' }, FOUR_GIVENS.toSet()).let { fresh ->
             Board(fresh.size, fresh.cells.mapIndexed { index, cell -> if (index in filled) cell.copy(value = cell.solution) else cell })
         }
-    val createdAt = OffsetDateTime.parse(created)
     return SudokuBackupEntry(
         id = id,
         size = 4,
         difficulty = "EASY",
         modeLevel = modeLevel,
-        created = createdAt,
+        created = OffsetDateTime.parse(created),
         updated = OffsetDateTime.parse(updated),
         seconds = seconds,
-        dailyDate = (legacyGameModeOrNull(modeLevel, createdAt.toLocalDate()) as? GameMode.Daily)?.date,
+        dailyDate = dailyDate,
         board = Base64.getEncoder().encodeToString(BoardCodec.encode(board)),
     )
 }

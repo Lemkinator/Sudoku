@@ -22,6 +22,8 @@ import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -103,20 +105,20 @@ class BoardCodecTest : ShouldSpec(
         should("leave out the unknown fields that would push a saved board beyond the size limit, so it stays readable") {
             val size = SudokuSize.SIXTEEN
             val crowded = fresh(size)
-            val loaded =
-                BoardCodec
-                    .decode(
-                        ProtoWriter()
-                            .apply {
-                                raw(BoardCodec.encode(crowded))
-                                bytes(6, ByteArray(BoardCodec.MAX_BYTES - BoardCodec.encode(crowded).size - 4))
-                            }.toByteArray(),
-                    ).shouldNotBeNull()
+            val blob =
+                ProtoWriter()
+                    .apply {
+                        raw(BoardCodec.encode(crowded))
+                        bytes(6, ByteArray(BoardCodec.MAX_BYTES - BoardCodec.encode(crowded).size - 4))
+                    }.toByteArray()
+            blob.size shouldBe BoardCodec.MAX_BYTES
+            val loaded = BoardCodec.decode(blob).shouldNotBeNull()
+            loaded.preserved.bytes.shouldNotBeEmpty()
             val noted = Board(size, loaded.cells.map { it.copy(notes = NoteMask((1 shl size.value) - 1)) }, loaded.preserved)
 
             val saved = BoardCodec.encode(noted)
 
-            (saved.size <= BoardCodec.MAX_BYTES) shouldBe true
+            saved.size shouldBeLessThanOrEqual BoardCodec.MAX_BYTES
             BoardCodec.decode(saved) shouldBe Board(size, noted.cells)
         }
 
