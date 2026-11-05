@@ -218,7 +218,8 @@ class SudokuActivityLifecycleTest {
 
             scenario.onActivity { activity ->
                 activity.playing.running.shouldBeTrue()
-                activity.binding.board.isVisible.shouldBeTrue()
+                activity.binding.board.isVisible
+                    .shouldBeTrue()
                 activity.sudoku.info.seconds shouldBe 3
             }
         }
@@ -232,8 +233,10 @@ class SudokuActivityLifecycleTest {
 
             scenario.onActivity { activity ->
                 activity.playing.running.shouldBeFalse()
-                activity.binding.board.isVisible.shouldBeFalse()
-                activity.binding.resumeButton.isVisible.shouldBeTrue()
+                activity.binding.board.isVisible
+                    .shouldBeFalse()
+                activity.binding.resumeButton.isVisible
+                    .shouldBeTrue()
                 activity.sudoku.info.seconds shouldBe 0
 
                 activity.binding.resumeButton.performClick()
@@ -242,7 +245,8 @@ class SudokuActivityLifecycleTest {
 
             scenario.onActivity { activity ->
                 activity.playing.running.shouldBeTrue()
-                activity.binding.board.isVisible.shouldBeTrue()
+                activity.binding.board.isVisible
+                    .shouldBeTrue()
             }
         }
 
@@ -255,8 +259,10 @@ class SudokuActivityLifecycleTest {
             scenario.recreate()
 
             scenario.onActivity { activity ->
-                activity.binding.board.isVisible.shouldBeTrue()
-                activity.binding.resumeButton.isVisible.shouldBeFalse()
+                activity.binding.board.isVisible
+                    .shouldBeTrue()
+                activity.binding.resumeButton.isVisible
+                    .shouldBeFalse()
             }
         }
 
