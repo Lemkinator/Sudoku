@@ -164,7 +164,6 @@ class SudokuBoardView @JvmOverloads constructor(
 
     init {
         ViewCompat.setAccessibilityDelegate(this, accessibilityHelper)
-        isFocusable = true
         clipToOutline = true
         outlineProvider =
             object : ViewOutlineProvider() {
@@ -253,8 +252,7 @@ class SudokuBoardView @JvmOverloads constructor(
         style: CellAnimation,
         onEnd: () -> Unit = {},
     ) {
-        val render = render ?: return
-        val board = render.board
+        val board = render?.board ?: return
         if (steps.isEmpty()) {
             onEnd()
             return
@@ -286,8 +284,7 @@ class SudokuBoardView @JvmOverloads constructor(
     }
 
     private fun updatePeaks() {
-        val geometry = geometry ?: return
-        val blockSize = geometry.size.blockSize
+        val blockSize = geometry?.size?.blockSize ?: return
         cellPeaks.fill(0f)
         for (running in animations) {
             val elapsed = running.animator.animatedValue as Float

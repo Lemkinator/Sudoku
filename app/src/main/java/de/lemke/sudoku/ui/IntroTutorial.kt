@@ -54,74 +54,51 @@ internal const val DEMO_CELL_INDEX_49 = 49
 internal const val DEMO_ENTER_DIGIT = 5
 internal const val DEMO_SELECT_DIGIT = 2
 
-fun IntroState.next(): IntroState = if (step == IntroStep.entries.last()) this else copy(step = IntroStep.entries[step.ordinal + 1])
+fun IntroState.next(): IntroState = copy(step = IntroStep.entries.getOrElse(step.ordinal + 1) { step })
 
-fun IntroState.board(base: Board): Board = entries.entries.fold(base) { board, (index, digit) -> board.withEntered(index, digit) }
+fun IntroState.board(base: Board): Board =
+    entries.entries.fold(base) { board, (index, digit) -> board.apply(BoardMove.Enter(index, digit))?.board ?: board }
 
 fun IntroState.tap(tap: InputTap): IntroState =
-    if (tap == InputTap.Clear) {
-        copy(input = input.copy(selection = null))
-    } else {
-        when (step) {
-            IntroStep.SELECT_CELL -> selectCell(tap)
-
-            IntroStep.ENTER_NUMBER -> enterNumber(tap)
-
-            IntroStep.SELECT_NUMBER -> selectNumber(tap)
-
-            IntroStep.ENTER_ROW_COLUMN -> enterSelectedDigit(tap, DEMO_CELL_INDEX_49)
-
-            IntroStep.ENTER_BLOCK -> enterSelectedDigit(tap, DEMO_CELL_INDEX_24)
-
-            IntroStep.BLOCKS,
-            IntroStep.SELECTION,
-            IntroStep.NUMBER_ENTRY,
-            IntroStep.NUMBER_ENTRY_DEMO,
-            IntroStep.TOOLS,
-            IntroStep.NOTES,
-            -> this
+    when {
+        tap == InputTap.Clear -> {
+            copy(input = input.copy(selection = null))
         }
-    }
 
-private fun Board.withEntered(
-    index: Int,
-    digit: Int,
-): Board {
-    val result = apply(BoardMove.Enter(index, digit))
-    return if (result == null) this else result.board
-}
+        step == IntroStep.SELECT_CELL && input.selection == null && tap == InputTap.Cell(DEMO_CELL_INDEX_4) -> {
+            next().copy(input = input.copy(selection = Selection.Cell(DEMO_CELL_INDEX_4)))
+        }
 
-private fun IntroState.selectCell(tap: InputTap): IntroState =
-    if (input.selection == null && tap == InputTap.Cell(DEMO_CELL_INDEX_4)) {
-        next().copy(input = input.copy(selection = Selection.Cell(DEMO_CELL_INDEX_4)))
-    } else {
-        this
-    }
+        step == IntroStep.ENTER_NUMBER && input.selection ==
+            Selection.Cell(
+                DEMO_CELL_INDEX_4,
+            ) && tap == InputTap.Digit(DEMO_ENTER_DIGIT) -> {
+            next().copy(input = input.copy(selection = null), entries = entries + (DEMO_CELL_INDEX_4 to DEMO_ENTER_DIGIT))
+        }
 
-private fun IntroState.enterNumber(tap: InputTap): IntroState =
-    if (input.selection == Selection.Cell(DEMO_CELL_INDEX_4) && tap == InputTap.Digit(DEMO_ENTER_DIGIT)) {
-        next().copy(input = input.copy(selection = null), entries = entries + (DEMO_CELL_INDEX_4 to DEMO_ENTER_DIGIT))
-    } else {
-        this
-    }
+        step == IntroStep.SELECT_NUMBER && input.selection == null && tap == InputTap.Digit(DEMO_SELECT_DIGIT) -> {
+            next().copy(input = input.copy(selection = Selection.Digit(DEMO_SELECT_DIGIT)))
+        }
 
-private fun IntroState.selectNumber(tap: InputTap): IntroState =
-    if (input.selection == null && tap == InputTap.Digit(DEMO_SELECT_DIGIT)) {
-        next().copy(input = input.copy(selection = Selection.Digit(DEMO_SELECT_DIGIT)))
-    } else {
-        this
+        step == IntroStep.ENTER_ROW_COLUMN -> {
+            enterSelectedDigit(tap, DEMO_CELL_INDEX_49)
+        }
+
+        step == IntroStep.ENTER_BLOCK -> {
+            enterSelectedDigit(tap, DEMO_CELL_INDEX_24)
+        }
+
+        else -> {
+            this
+        }
     }
 
 private fun IntroState.enterSelectedDigit(
     tap: InputTap,
     index: Int,
 ): IntroState {
-    val selection = input.selection
-    return if (selection is Selection.Digit && tap == InputTap.Cell(index)) {
-        next().copy(entries = entries + (index to selection.digit))
-    } else {
-        this
-    }
+    val digit = (input.selection as? Selection.Digit)?.digit ?: return this
+    return if (tap == InputTap.Cell(index)) next().copy(entries = entries + (index to digit)) else this
 }
 
 fun IntroState.toggleNotes(): IntroState = if (step == IntroStep.NOTES) copy(input = input.copy(notesMode = !input.notesMode)) else this
