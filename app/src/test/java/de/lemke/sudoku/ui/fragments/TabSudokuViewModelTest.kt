@@ -33,6 +33,7 @@ import de.lemke.sudoku.testSudoku
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -159,23 +160,23 @@ class TabSudokuViewModelTest : ShouldSpec(
             viewModel.newGame.value shouldBe NewGame.Created(savedIds().single())
         }
 
-        should("loadStartTab returns null when getRecentSudoku finds nothing") {
-            viewModel.loadStartTab()?.continuable shouldBe null
+        should("loadStartTab offers no continuable sudoku when getRecentSudoku finds nothing") {
+            viewModel.loadStartTab().shouldNotBeNull().continuable shouldBe null
         }
 
-        should("loadStartTab returns null when the recent sudoku is already completed") {
+        should("loadStartTab offers no continuable sudoku when the recent sudoku is already completed") {
             repository.store(testSudoku(completed = true))
 
-            viewModel.loadStartTab()?.continuable shouldBe null
+            viewModel.loadStartTab().shouldNotBeNull().continuable shouldBe null
         }
 
-        should("loadStartTab returns null when the recent sudoku's error limit is reached") {
+        should("loadStartTab offers no continuable sudoku when the recent sudoku's error limit is reached") {
             val fresh = testSudoku()
             val sudoku = fresh.copy(info = fresh.info.copy(errorsMade = userSettings.errorLimit))
             repository.store(sudoku)
 
             sudoku.info.errorLimitReached(userSettings.errorLimit).shouldBeTrue()
-            viewModel.loadStartTab()?.continuable shouldBe null
+            viewModel.loadStartTab().shouldNotBeNull().continuable shouldBe null
         }
 
         should("loadStartTab returns the sudoku when it is neither completed nor error-limit-reached") {
