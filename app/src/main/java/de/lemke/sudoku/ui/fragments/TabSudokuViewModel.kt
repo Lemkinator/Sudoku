@@ -46,7 +46,7 @@ sealed interface NewGame {
     data class Created(val sudokuId: SudokuId) : Result
 }
 
-/** What the start tab offers besides a new game: the sudoku to [continuable], and whether today's daily is done. */
+/** What the start tab offers besides a new game: the sudoku the player can continue as [continuable], and whether today's daily is done. */
 data class StartTab(
     val continuable: GameSummary?,
     val dailyCompleted: Boolean,
