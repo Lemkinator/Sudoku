@@ -42,6 +42,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
+private const val IDLE_STEP_MILLIS = 50L
+private const val IDLE_STEPS = 90
+
 private val BLOCK_0 = setOf(0, 1, 2, 9, 10, 11, 18, 19, 20)
 private val ROW_1 = (9..17).toSet()
 private val COLUMN_5 = (0..8).map { it * 9 + 5 }.toSet()
@@ -219,7 +222,7 @@ class IntroActivityAnimationTest {
     }
 
     @Test
-    fun `a stopped activity pauses the lesson loop and a restart resumes it`() {
+    fun `a stopped activity pauses the lesson loop and a restart starts the lesson over from the first region`() {
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
         ActivityScenario.launch<IntroActivity>(Intent(context, IntroActivity::class.java)).use { scenario ->
             lateinit var shown: () -> Set<Int>
@@ -243,10 +246,17 @@ class IntroActivityAnimationTest {
     fun `a lesson without an animation leaves the board still`() =
         launch { activity ->
             activity.toStep(IntroStep.SELECTION)
-            idle(5000)
+            idle(IDLE_STEP_MILLIS)
+            val board = activity.binding.board
+            shadowOf(board).clearWasInvalidated()
+
+            repeat(IDLE_STEPS) {
+                idle(IDLE_STEP_MILLIS)
+
+                board.isAnimating.shouldBeFalse()
+                shadowOf(board).wasInvalidated().shouldBeFalse()
+            }
 
             activity.highlighted shouldBe emptySet()
-            activity.binding.board.isAnimating
-                .shouldBeFalse()
         }
 }
