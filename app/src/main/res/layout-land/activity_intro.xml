@@ -31,7 +31,8 @@
         android:layout_height="match_parent"
         android:layout_marginHorizontal="10dp"
         android:layout_marginBottom="10dp"
-        app:controlsPosition="end">
+        app:controlsPosition="end"
+        app:controlsScroll="true">
 
         <de.lemke.sudoku.ui.board.SudokuBoardView
             android:id="@+id/board"

@@ -37,6 +37,10 @@ class GameLayout @JvmOverloads constructor(
         context.obtainStyledAttributes(attrs, R.styleable.GameLayout).use {
             it.getInt(R.styleable.GameLayout_controlsPosition, POSITION_BOTTOM) == POSITION_END
         }
+    private val controlsScroll =
+        context.obtainStyledAttributes(attrs, R.styleable.GameLayout).use {
+            it.getBoolean(R.styleable.GameLayout_controlsScroll, false)
+        }
 
     private val board: View get() = getChildAt(0)
     private val controls: View get() = getChildAt(1)
@@ -48,7 +52,7 @@ class GameLayout @JvmOverloads constructor(
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val height = MeasureSpec.getSize(heightMeasureSpec)
         val params = controls.layoutParams
-        val boardReserve = min(width, height) / 2
+        val boardReserve = if (controlsScroll) min(width, height) / 2 else 0
         if (controlsAtEnd) {
             val limit = makeMeasureSpec(width - boardReserve, AT_MOST)
             controls.measure(getChildMeasureSpec(limit, 0, params.width), makeMeasureSpec(height, EXACTLY))

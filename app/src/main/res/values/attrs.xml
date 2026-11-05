@@ -21,6 +21,7 @@
             <enum name="bottom" value="0" />
             <enum name="end" value="1" />
         </attr>
+        <attr name="controlsScroll" format="boolean" />
     </declare-styleable>
 
 </resources>

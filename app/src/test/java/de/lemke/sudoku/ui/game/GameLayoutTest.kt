@@ -77,20 +77,20 @@ class GameLayoutTest {
         controls.bounds() shouldBe listOf(640, 0, 960, 600)
     }
 
-    private class TallView(context: Context) : View(context) {
+    private class TallView(
+        context: Context,
+        private val desired: Int = 5000,
+    ) : View(context) {
         override fun onMeasure(
             widthMeasureSpec: Int,
             heightMeasureSpec: Int,
-        ) = setMeasuredDimension(resolveSize(DESIRED, widthMeasureSpec), resolveSize(DESIRED, heightMeasureSpec))
-
-        private companion object {
-            const val DESIRED = 5000
-        }
+        ) = setMeasuredDimension(resolveSize(desired, widthMeasureSpec), resolveSize(desired, heightMeasureSpec))
     }
 
     @Test
     fun `scrolling controls below the board leave half the board side`() {
-        val layout = GameLayout(context)
+        val attributes = Robolectric.buildAttributeSet().addAttribute(R.attr.controlsScroll, "true").build()
+        val layout = GameLayout(context, attributes)
         val board = View(context)
         val controls = TallView(context)
         layout.addView(board, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
@@ -104,7 +104,12 @@ class GameLayoutTest {
 
     @Test
     fun `scrolling controls at the end leave half the board side`() {
-        val attributes = Robolectric.buildAttributeSet().addAttribute(R.attr.controlsPosition, "end").build()
+        val attributes =
+            Robolectric
+                .buildAttributeSet()
+                .addAttribute(R.attr.controlsPosition, "end")
+                .addAttribute(R.attr.controlsScroll, "true")
+                .build()
         val layout = GameLayout(context, attributes)
         val board = View(context)
         val controls = TallView(context)
@@ -115,5 +120,34 @@ class GameLayoutTest {
 
         board.bounds() shouldBe listOf(0, 150, 300, 450)
         controls.bounds() shouldBe listOf(300, 0, 1000, 600)
+    }
+
+    @Test
+    fun `fixed controls below the board stay whole and the board shrinks`() {
+        val layout = GameLayout(context)
+        val board = View(context)
+        val controls = TallView(context, desired = 800)
+        layout.addView(board, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        layout.addView(controls, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+
+        layout(layout, 500, 1000)
+
+        board.bounds() shouldBe listOf(150, 0, 350, 200)
+        controls.bounds() shouldBe listOf(0, 200, 500, 1000)
+    }
+
+    @Test
+    fun `fixed controls at the end stay whole and the board shrinks`() {
+        val attributes = Robolectric.buildAttributeSet().addAttribute(R.attr.controlsPosition, "end").build()
+        val layout = GameLayout(context, attributes)
+        val board = View(context)
+        val controls = TallView(context, desired = 800)
+        layout.addView(board, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT))
+        layout.addView(controls, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT))
+
+        layout(layout, 1000, 600)
+
+        board.bounds() shouldBe listOf(0, 200, 200, 400)
+        controls.bounds() shouldBe listOf(200, 0, 1000, 600)
     }
 }
