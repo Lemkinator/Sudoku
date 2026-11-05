@@ -272,14 +272,35 @@ class SudokuActivityLifecycleTest {
     fun `a key press enters a digit into the selected cell`() =
         launch(formulaicSudoku()) { activity ->
             activity.tapCell(1)
-            activity.binding.board.isFocusableInTouchMode = true
             activity.binding.board
-                .requestFocus()
+                .requestFocusFromTouch()
                 .shouldBeTrue()
 
             pressKey(activity, KeyEvent.KEYCODE_2)
 
             activity.sudoku.board[1].value shouldBe 2
+        }
+
+    @Test
+    fun `an arrow key on the focused board neither selects a cell nor is consumed`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.tapCell(1)
+            activity.binding.board
+                .requestFocusFromTouch()
+                .shouldBeTrue()
+            val before = activity.sudoku.board
+
+            listOf(KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_CENTER).forEach { keyCode ->
+                activity.binding.board
+                    .dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+                    .shouldBeFalse()
+                activity.binding.board
+                    .dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+                    .shouldBeFalse()
+            }
+
+            activity.selection shouldBe Selection.Cell(1)
+            activity.sudoku.board shouldBe before
         }
 
     @Test

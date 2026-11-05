@@ -78,9 +78,9 @@ class SudokuBoardViewTest {
         layout()
     }
 
-    private fun layout() {
-        view.measure(MeasureSpec.makeMeasureSpec(SIDE, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(SIDE, MeasureSpec.EXACTLY))
-        view.layout(0, 0, SIDE, SIDE)
+    private fun layout(target: SudokuBoardView = view) {
+        target.measure(MeasureSpec.makeMeasureSpec(SIDE, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(SIDE, MeasureSpec.EXACTLY))
+        target.layout(0, 0, SIDE, SIDE)
     }
 
     private fun touch(
@@ -112,7 +112,15 @@ class SudokuBoardViewTest {
         touch(MotionEvent.ACTION_UP, x, y)
     }
 
-    private fun draw(): Bitmap = Bitmap.createBitmap(SIDE, SIDE, Bitmap.Config.ARGB_8888).also { view.draw(Canvas(it)) }
+    private fun draw(target: SudokuBoardView = view): Bitmap =
+        Bitmap.createBitmap(SIDE, SIDE, Bitmap.Config.ARGB_8888).also { target.draw(Canvas(it)) }
+
+    private fun drawFresh(render: BoardRender): Bitmap {
+        val fresh = SudokuBoardView(context)
+        fresh.render = render
+        layout(fresh)
+        return draw(fresh)
+    }
 
     private val boardColor: Int
         get() {
@@ -248,14 +256,31 @@ class SudokuBoardViewTest {
     }
 
     @Test
-    fun `a board change redraws the changed cell`() {
+    fun `a board change draws like a fresh view with the same board`() {
         val board = testSudoku(SudokuSize.FOUR).board
         view.render = BoardRender(board)
         val before = draw()
+        val changed = BoardRender(board.with(1, Cell(board[1].solution, value = board[1].solution)))
 
-        view.render = BoardRender(board.with(1, Cell(board[1].solution, value = board[1].solution)))
+        view.render = changed
 
-        draw().sameAs(before).shouldBeFalse()
+        val after = draw()
+        after.sameAs(before).shouldBeFalse()
+        after.sameAs(drawFresh(changed)).shouldBeTrue()
+    }
+
+    @Test
+    fun `a notes-only change draws like a fresh view with the same notes`() {
+        val board = testSudoku(SudokuSize.FOUR).board
+        view.render = BoardRender(board)
+        val before = draw()
+        val noted = BoardRender(board.with(1, Cell(board[1].solution, notes = NoteMask.of(1, 2))))
+
+        view.render = noted
+
+        val after = draw()
+        after.sameAs(before).shouldBeFalse()
+        after.sameAs(drawFresh(noted)).shouldBeTrue()
     }
 
     @Test
@@ -430,17 +455,27 @@ class SudokuBoardViewTest {
     }
 
     @Test
-    fun `a focused view hands the arrow keys to its cells`() {
+    fun `a focused view leaves the arrow keys to the focus search`() {
         val activity = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
         val focusable = SudokuBoardView(activity)
-        focusable.render = BoardRender(testSudoku(SudokuSize.NINE).board)
-        focusable.isFocusableInTouchMode = true
+        val board = testSudoku(SudokuSize.NINE).board
+        focusable.render = BoardRender(board, selected = 4)
+        focusable.onCellClick = { clicked = it }
         activity.setContentView(focusable, ViewGroup.LayoutParams(SIDE, SIDE))
 
-        focusable.requestFocus().shouldBeTrue()
+        focusable.requestFocusFromTouch().shouldBeTrue()
 
-        focusable.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER)).shouldBeTrue()
-        focusable.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)).shouldBeFalse()
+        listOf(
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_CENTER,
+        ).forEach { keyCode ->
+            focusable.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode)).shouldBeFalse()
+        }
+        clicked.shouldBeNull()
+        focusable.render?.selected shouldBe 4
     }
 
     @Test
@@ -460,6 +495,20 @@ class SudokuBoardViewTest {
         view.animateCells(listOf(listOf(0)), CellAnimation.PULSE) { ended++ }
 
         ended shouldBe 0
+    }
+
+    @Test
+    fun `animating a view that was never measured ends without drawing a frame`() {
+        var ended = 0
+        val unmeasured = SudokuBoardView(context)
+        unmeasured.render = BoardRender(testSudoku(SudokuSize.NINE).board)
+
+        unmeasured.animateCells(listOf(listOf(0)), CellAnimation.PULSE) { ended++ }
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+        unmeasured.geometry.shouldBeNull()
+        unmeasured.isAnimating.shouldBeFalse()
+        ended shouldBe 1
     }
 
     @Test

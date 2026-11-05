@@ -26,14 +26,12 @@ import android.graphics.Matrix
 import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewOutlineProvider
@@ -207,17 +205,6 @@ class SudokuBoardView @JvmOverloads constructor(
     override fun dispatchHoverEvent(event: MotionEvent): Boolean =
         accessibilityHelper.dispatchHoverEvent(event) || super.dispatchHoverEvent(event)
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean = accessibilityHelper.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
-
-    override fun onFocusChanged(
-        gainFocus: Boolean,
-        direction: Int,
-        previouslyFocusedRect: Rect?,
-    ) {
-        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
-        accessibilityHelper.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
-    }
-
     override fun onDetachedFromWindow() {
         animations.toList().forEach { it.animator.cancel() }
         super.onDetachedFromWindow()
@@ -255,7 +242,7 @@ class SudokuBoardView @JvmOverloads constructor(
         style: CellAnimation,
         onEnd: () -> Unit = {},
     ) {
-        val board = render?.board ?: return
+        val board = (render ?: return).board
         if (steps.isEmpty()) {
             onEnd()
             return
@@ -287,7 +274,7 @@ class SudokuBoardView @JvmOverloads constructor(
     }
 
     private fun updatePeaks() {
-        val blockSize = geometry?.size?.blockSize ?: return
+        val blockSize = (geometry ?: return).size.blockSize
         cellPeaks.fill(0f)
         for (running in animations) {
             val elapsed = running.animator.animatedValue as Float
