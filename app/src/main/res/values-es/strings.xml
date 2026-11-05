@@ -117,6 +117,12 @@
     <string name="sudokuStatisticsString">Tipo: %1$s \nTamaño: %2$d×%2$d \nDificultad: %3$s \nTiempo: %4$s \nErrores: %5$d \nPistas: %6$d \nNotas: %7$d \nResaltado regional usado: %8$s \nNúmero seleccionado resaltado: %9$s \nCreado: %10$s \nModificado: %11$s</string>
     <string name="note">Notas</string>
     <string name="hint">Pista (%1$d)</string>
+    <string name="cell_description">Fila %1$d, columna %2$d, %3$s</string>
+    <string name="cell_empty">vacía</string>
+    <string name="cell_given">%1$s, dada</string>
+    <string name="cell_hint">%1$s, pista</string>
+    <string name="cell_wrong">%1$s, incorrecta</string>
+    <string name="cell_notes">%1$s, notas %2$s</string>
     <string name="restart">Reiniciar</string>
     <string name="gameover">Fin del juego</string>
     <string name="share_sudoku">Compartir Sudoku</string>

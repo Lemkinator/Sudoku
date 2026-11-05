@@ -117,6 +117,12 @@
     <string name="sudokuStatisticsString">Typ: %1$s \nGröße: %2$d×%2$d \nSchwierigkeit: %3$s \nZeit: %4$s \nFehler: %5$d \nHinweise: %6$d \nNotizen: %7$d \nRegionales Highlight benutzt: %8$s \nGewählte Nummer hervorgehoben: %9$s \nErstellt: %10$s \nGeändert: %11$s</string>
     <string name="note">Notizen</string>
     <string name="hint">Hinweis (%1$d)</string>
+    <string name="cell_description">Zeile %1$d, Spalte %2$d, %3$s</string>
+    <string name="cell_empty">leer</string>
+    <string name="cell_given">%1$s, vorgegeben</string>
+    <string name="cell_hint">%1$s, Hinweis</string>
+    <string name="cell_wrong">%1$s, falsch</string>
+    <string name="cell_notes">%1$s, Notizen %2$s</string>
     <string name="restart">Neustart</string>
     <string name="gameover">Spiel zu Ende</string>
     <string name="share_sudoku">Sudoku teilen</string>

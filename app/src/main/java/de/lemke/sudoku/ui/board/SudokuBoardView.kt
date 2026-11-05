@@ -26,18 +26,21 @@ import android.graphics.Matrix
 import android.graphics.Outline
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewOutlineProvider
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
+import androidx.core.view.ViewCompat
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.toSudokuDigitChar
@@ -147,6 +150,7 @@ class SudokuBoardView @JvmOverloads constructor(
             if (sizeChanged) rebuildGeometry()
             rebuildCellLayouts()
             invalidate()
+            accessibilityHelper.invalidateRoot()
         }
 
     internal val transform = Matrix()
@@ -154,7 +158,10 @@ class SudokuBoardView @JvmOverloads constructor(
     internal var geometry: BoardGeometry? = null
         private set
 
+    private val accessibilityHelper = BoardAccessibilityHelper(this)
+
     init {
+        ViewCompat.setAccessibilityDelegate(this, accessibilityHelper)
         clipToOutline = true
         outlineProvider =
             object : ViewOutlineProvider() {
@@ -189,6 +196,20 @@ class SudokuBoardView @JvmOverloads constructor(
         rebuildGeometry()
         rebuildCellLayouts()
         invalidateOutline()
+    }
+
+    override fun dispatchHoverEvent(event: MotionEvent): Boolean =
+        accessibilityHelper.dispatchHoverEvent(event) || super.dispatchHoverEvent(event)
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean = accessibilityHelper.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
+
+    override fun onFocusChanged(
+        gainFocus: Boolean,
+        direction: Int,
+        previouslyFocusedRect: Rect?,
+    ) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
+        accessibilityHelper.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
     }
 
     override fun onDetachedFromWindow() {
@@ -412,7 +433,7 @@ class SudokuBoardView @JvmOverloads constructor(
         return null
     }
 
-    private fun cellAt(
+    internal fun cellAt(
         x: Float,
         y: Float,
     ): Int {
