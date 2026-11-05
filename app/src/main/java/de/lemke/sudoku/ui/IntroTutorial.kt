@@ -54,7 +54,7 @@ internal const val DEMO_CELL_INDEX_49 = 49
 internal const val DEMO_ENTER_DIGIT = 5
 internal const val DEMO_SELECT_DIGIT = 2
 
-fun IntroState.next(): IntroState = copy(step = IntroStep.entries.getOrElse(step.ordinal + 1) { step })
+fun IntroState.next(): IntroState = if (step == IntroStep.entries.last()) this else copy(step = IntroStep.entries[step.ordinal + 1])
 
 fun IntroState.board(base: Board): Board =
     entries.entries.fold(base) { board, (index, digit) -> board.apply(BoardMove.Enter(index, digit))?.board ?: board }
