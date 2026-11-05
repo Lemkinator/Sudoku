@@ -57,6 +57,8 @@ data class BoardRender(
         val position = board.position(index)
         val blockSize = board.size.blockSize
         val period = blockSize * 2
-        return (position.row % period >= blockSize) != (position.column % period >= blockSize)
+        val rowInOddBand = position.row % period >= blockSize
+        val columnInOddBand = position.column % period >= blockSize
+        return rowInOddBand != columnInOddBand
     }
 }

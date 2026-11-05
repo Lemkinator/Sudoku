@@ -100,7 +100,9 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
         }
         val changed =
             (0 until new.board.size.cellCount).filter { index ->
-                val selectionChanged = (index == old.selected) != (index == new.selected)
+                val wasSelected = index == old.selected
+                val isSelected = index == new.selected
+                val selectionChanged = wasSelected != isSelected
                 selectionChanged || old.board[index] != new.board[index]
             }
         if (changed.size > MAX_CELL_EVENTS) invalidateRoot() else changed.forEach(::invalidateVirtualView)
