@@ -28,6 +28,7 @@ import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.toSudokuDigitChar
 
 private const val NO_VIEW = ExploreByTouchHelper.INVALID_ID
+private const val MAX_CELL_EVENTS = 8
 
 class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTouchHelper(view) {
     override fun getVirtualViewAt(
@@ -97,10 +98,12 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
             invalidateRoot()
             return
         }
-        for (index in 0 until new.board.size.cellCount) {
-            val selectionChanged = (index == old.selected) != (index == new.selected)
-            if (selectionChanged || old.board[index] != new.board[index]) invalidateVirtualView(index)
-        }
+        val changed =
+            (0 until new.board.size.cellCount).filter { index ->
+                val selectionChanged = (index == old.selected) != (index == new.selected)
+                selectionChanged || old.board[index] != new.board[index]
+            }
+        if (changed.size > MAX_CELL_EVENTS) invalidateRoot() else changed.forEach(::invalidateVirtualView)
     }
 
     private fun describe(

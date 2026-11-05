@@ -48,6 +48,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 private const val SIDE = 400
+private const val CELLS_PER_EVENT_LIMIT = 8
 private val SOLUTION_4 = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 3, 4, 1, 4, 1, 2, 3)
 
 private class RecordingParent(context: Context) : FrameLayout(context) {
@@ -287,6 +288,28 @@ class BoardAccessibilityHelperTest {
         parent.sourceViews shouldBe listOf(ExploreByTouchHelper.HOST_ID)
         parent.contentChanges shouldBe listOf(AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE)
     }
+
+    @Test
+    fun `changing a handful of cells invalidates each of them`() {
+        val parent = watchParent()
+
+        view.render = BoardRender(changedCells(CELLS_PER_EVENT_LIMIT))
+
+        parent.sourceViews shouldBe listOf(1, 2, 4, 5, 7, 8, 10, 11)
+    }
+
+    @Test
+    fun `changing more cells than the limit invalidates the whole tree once`() {
+        val parent = watchParent()
+
+        view.render = BoardRender(changedCells(CELLS_PER_EVENT_LIMIT + 1))
+
+        parent.sourceViews shouldBe listOf(ExploreByTouchHelper.HOST_ID)
+        parent.contentChanges shouldBe listOf(AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE)
+    }
+
+    private fun changedCells(count: Int): Board =
+        listOf(1, 2, 4, 5, 7, 8, 10, 11, 13).take(count).fold(golden4()) { board, index -> board.with(index, Cell(1, value = 1)) }
 
     @Test
     fun `removing the board invalidates the whole tree`() {
