@@ -21,6 +21,9 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 private const val CELL_PADDING = 0.06f
+private const val THIN_LINE_DP = 1f
+private const val BOX_LINE_DP = 2f
+private const val BORDER_DP = 2f
 private val NO_INSET = Box(0f, 0f, 0f, 0f)
 private val CORNER_CELL_FACTOR = 1f - 1f / sqrt(2f)
 
@@ -30,13 +33,29 @@ data class BoardMetrics(
     val thinLine: Float,
     val boxLine: Float,
     val border: Float,
-)
+) {
+    companion object {
+        fun of(
+            side: Float,
+            cornerRadius: Float,
+            density: Float,
+        ) = BoardMetrics(
+            side = side,
+            cornerRadius = cornerRadius,
+            thinLine = wholePixels(THIN_LINE_DP * density),
+            boxLine = wholePixels(BOX_LINE_DP * density),
+            border = wholePixels(BORDER_DP * density),
+        )
+
+        private fun wholePixels(value: Float): Float = value.roundToInt().coerceAtLeast(1).toFloat()
+    }
+}
 
 class BoardGeometry(
     val size: SudokuSize,
     val metrics: BoardMetrics,
 ) {
-    private val radius = minOf(metrics.cornerRadius, metrics.side / 2)
+    val cornerRadius = minOf(metrics.cornerRadius, metrics.side / 2)
 
     val cornerCells: List<Int> = (0 until size.cellCount).filter { cornerInsets(it) != NO_INSET }
 
@@ -74,20 +93,27 @@ class BoardGeometry(
     ): Int? {
         val side = metrics.side
         if (x < 0f || y < 0f || x >= side || y >= side) return null
-        val dx = x - x.coerceIn(radius, side - radius)
-        val dy = y - y.coerceIn(radius, side - radius)
-        if (dx * dx + dy * dy > radius * radius) return null
+        val dx = x - x.coerceIn(cornerRadius, side - cornerRadius)
+        val dy = y - y.coerceIn(cornerRadius, side - cornerRadius)
+        if (dx * dx + dy * dy > cornerRadius * cornerRadius) return null
         val col = (0 until size.value).first { x < edge(it + 1) }
         val row = (0 until size.value).first { y < edge(it + 1) }
         return row * size.value + col
     }
 
-    private fun arcInset(distanceFromCorner: Float): Float = when {
-        distanceFromCorner <= 0f -> radius * CORNER_CELL_FACTOR
-        distanceFromCorner < radius -> {
-            val remaining = radius - distanceFromCorner
-            radius - sqrt(radius * radius - remaining * remaining)
+    private fun arcInset(distanceFromCorner: Float): Float =
+        when {
+            distanceFromCorner <= 0f -> {
+                cornerRadius * CORNER_CELL_FACTOR
+            }
+
+            distanceFromCorner < cornerRadius -> {
+                val remaining = cornerRadius - distanceFromCorner
+                cornerRadius - sqrt(cornerRadius * cornerRadius - remaining * remaining)
+            }
+
+            else -> {
+                0f
+            }
         }
-        else -> 0f
-    }
 }

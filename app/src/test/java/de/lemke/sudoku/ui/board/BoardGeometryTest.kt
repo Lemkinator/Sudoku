@@ -124,5 +124,13 @@ class BoardGeometryTest : ShouldSpec(
         }
 
         should("a tap on the corner of a square board hits the corner cell") { square4.indexAt(0f, 0f) shouldBe 0 }
+
+        should("round line weights to whole pixels") {
+            BoardMetrics.of(900f, 78f, density = 2.625f) shouldBe BoardMetrics(900f, 78f, thinLine = 3f, boxLine = 5f, border = 5f)
+        }
+
+        should("keep every line at least one pixel") {
+            BoardMetrics.of(300f, 26f, density = 0.3f) shouldBe BoardMetrics(300f, 26f, thinLine = 1f, boxLine = 1f, border = 1f)
+        }
     },
 )
