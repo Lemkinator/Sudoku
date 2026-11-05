@@ -272,6 +272,7 @@ class SudokuActivityLifecycleTest {
     fun `a key press enters a digit into the selected cell`() =
         launch(formulaicSudoku()) { activity ->
             activity.tapCell(1)
+            activity.binding.board.isFocusableInTouchMode = true
             activity.binding.board
                 .requestFocus()
                 .shouldBeTrue()
