@@ -90,6 +90,13 @@ because sign-in needs the Activity. It signs in through `GamesSignIn` and fetche
 (VERY_EASY…EXPERT, stored by `code`). Moves are pure: `Board.apply(BoardMove)` returns a `MoveResult`, and `Sudoku.play(move)` adds the
 counters and returns a new `Sudoku`. The domain holds no timer and no listener; `SudokuViewModel` owns the ticker and every move.
 
+**Board UI:** `ui/board/` draws the whole board in one `SudokuBoardView` (a Canvas view): `BoardGeometry` holds the cell edges and the
+corner insets that the 26 dp board arc forces, `NoteLayout` the adaptive note grid (1, 2x2, 3x3, 4x4 by note count), `BoardRender` the
+tone of each cell, and `BoardAccessibilityHelper` one TalkBack entry per cell. These classes import no `android.*` except the view and
+the helper. The view keeps its geometry under one `transform` matrix for a later pinch zoom. `GameLayout` (`ui/game/`) places the board
+and the controls through the pure `arrangeGame`: below each other in `layout/`, side by side in `layout-land/`; the board is the
+largest square the controls leave. `SudokuActivity` has no orientation lock, so a rotation recreates it.
+
 **Sudoku modes:** `GameMode`: `Normal`, `Daily(date)`, `Level(number)`. A daily game keeps the day it was made for as `date`, stored in
 the `dailyDate` column, whatever zone the device is in later.
 

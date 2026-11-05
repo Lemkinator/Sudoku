@@ -28,8 +28,11 @@ import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
+import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.tutorialSudoku
+import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -38,6 +41,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -67,9 +71,13 @@ class SudokuActivityScreenshotTest {
         runBlocking { saveSudoku(tutorialSudoku(sudokuId = SUDOKU_ID)) }
     }
 
-    private fun captureSudokuScreenshot(fileName: String) {
+    private fun captureSudokuScreenshot(
+        fileName: String,
+        sudoku: Sudoku? = null,
+    ) {
+        sudoku?.let { runBlocking { saveSudoku(it) } }
         val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
-        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, SUDOKU_ID.value)
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, (sudoku?.info?.id ?: SUDOKU_ID).value)
         ActivityScenario.launch<SudokuActivity>(intent).use {
             onView(isRoot()).captureRoboImage(fileName)
         }
@@ -86,7 +94,47 @@ class SudokuActivityScreenshotTest {
         captureSudokuScreenshot("src/test/screenshots/sudoku_default_dark.png")
     }
 
+    @Test
+    fun sudokuActivity_16x16() {
+        captureSudokuScreenshot("src/test/screenshots/sudoku_16x16.png", testSudoku(SudokuSize.SIXTEEN, sudokuId = SudokuId("sixteen")))
+    }
+
+    @Test
+    @Config(qualifiers = "+land")
+    fun sudokuActivity_landscape() {
+        captureSudokuScreenshot("src/test/screenshots/sudoku_landscape.png")
+    }
+
+    @Test
+    @Config(qualifiers = "+land")
+    fun sudokuActivity_landscape_16x16() {
+        captureSudokuScreenshot(
+            "src/test/screenshots/sudoku_landscape_16x16.png",
+            testSudoku(SudokuSize.SIXTEEN, sudokuId = SudokuId("sixteen")),
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "de-w923dp-h411dp-land-420dpi")
+    fun sudokuActivity_landscape_de() {
+        RuntimeEnvironment.setFontScale(LARGE_FONT_SCALE)
+        captureSudokuScreenshot("src/test/screenshots/sudoku_landscape_de.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w1280dp-h800dp-xlarge-land-mdpi")
+    fun sudokuActivity_tablet_landscape() {
+        captureSudokuScreenshot("src/test/screenshots/sudoku_tablet_landscape.png")
+    }
+
+    @Test
+    @Config(qualifiers = "w800dp-h1280dp-xlarge-port-mdpi")
+    fun sudokuActivity_tablet_portrait() {
+        captureSudokuScreenshot("src/test/screenshots/sudoku_tablet_portrait.png")
+    }
+
     companion object {
+        private const val LARGE_FONT_SCALE = 1.3f
         private val SUDOKU_ID = SudokuId("test-sudoku-id")
     }
 }

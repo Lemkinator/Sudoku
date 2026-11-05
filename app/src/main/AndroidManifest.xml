@@ -58,11 +58,7 @@
             android:name=".ui.SudokuLevelActivity"
             android:configChanges="orientation|screenLayout|screenSize"
             android:parentActivityName=".ui.MainActivity" />
-        <activity
-            android:name=".ui.SudokuActivity"
-            android:configChanges="orientation|screenLayout|screenSize"
-            android:screenOrientation="portrait"
-            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
+        <activity android:name=".ui.SudokuActivity" />
         <activity
             android:name=".ui.IntroActivity"
             android:configChanges="orientation|screenLayout|screenSize"
