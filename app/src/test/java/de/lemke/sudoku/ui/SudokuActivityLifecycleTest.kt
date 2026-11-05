@@ -260,6 +260,27 @@ class SudokuActivityLifecycleTest {
         keyCode: Int,
     ): Boolean = activity.onKeyUp(keyCode, KeyEvent(KeyEvent.ACTION_UP, keyCode))
 
+    private fun pressKey(
+        activity: SudokuActivity,
+        keyCode: Int,
+    ) {
+        activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode)).shouldBeFalse()
+        activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode)).shouldBeTrue()
+    }
+
+    @Test
+    fun `a key press enters a digit into the selected cell`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.tapCell(1)
+            activity.binding.board
+                .requestFocus()
+                .shouldBeTrue()
+
+            pressKey(activity, KeyEvent.KEYCODE_2)
+
+            activity.sudoku.board[1].value shouldBe 2
+        }
+
     @Test
     fun `a digit key enabled for the board size selects the matching number button`() =
         launch(formulaicSudoku()) { activity ->

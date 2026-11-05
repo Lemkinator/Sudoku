@@ -164,6 +164,7 @@ class SudokuBoardView @JvmOverloads constructor(
 
     init {
         ViewCompat.setAccessibilityDelegate(this, accessibilityHelper)
+        isFocusable = true
         clipToOutline = true
         outlineProvider =
             object : ViewOutlineProvider() {
