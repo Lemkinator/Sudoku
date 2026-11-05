@@ -62,6 +62,10 @@ interface GameDao {
     fun observeLevelHeaders(size: Int): Flow<List<GameHeader>>
 
     @RewriteQueriesToDropUnusedColumns
+    @Query("SELECT * FROM game WHERE id = :id")
+    suspend fun getHeaderById(id: String): GameHeader?
+
+    @RewriteQueriesToDropUnusedColumns
     @Query("SELECT * FROM game WHERE completed = 1")
     suspend fun getCompletedHeaders(): List<GameHeader>
 

@@ -62,7 +62,7 @@ class ImportSudokuUseCaseTest {
     private val useCase =
         ImportSudokuUseCase(
             DefaultSudokuDocuments(context),
-            GetSudokuUseCase(sudokusRepository, dispatcher),
+            GetSudokuSummaryUseCase(sudokusRepository, dispatcher),
             SaveSudokuUseCase(sudokusRepository, dispatcher),
             clock,
             dispatcher,
@@ -111,6 +111,19 @@ class ImportSudokuUseCaseTest {
             val replacedId = SudokuId("stored-game")
             val created = LocalDateTime.of(2026, 11, 3, 12, 0, 5)
             sudokusRepository.store(testSudoku(sudokuId = replacedId, created = created, completed = true))
+            val uri = uriFor(fileOf(testSudoku(sudokuId = replacedId, created = created, completed = true)))
+
+            useCase(uri).shouldNotBeNull().info.source shouldBe GameSource.OWN
+
+            sudokusRepository.saves.map { it.info.source } shouldBe listOf(GameSource.OWN)
+        }
+
+    @Test
+    fun `a solved file replacing an own win with an unreadable board keeps the game own`() =
+        runTest {
+            val replacedId = SudokuId("stored-game")
+            val created = LocalDateTime.of(2026, 11, 3, 12, 0, 5)
+            sudokusRepository.storeUnreadable(testSudoku(sudokuId = replacedId, created = created, completed = true))
             val uri = uriFor(fileOf(testSudoku(sudokuId = replacedId, created = created, completed = true)))
 
             useCase(uri).shouldNotBeNull().info.source shouldBe GameSource.OWN

@@ -28,7 +28,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.GetSudokuUseCase
+import de.lemke.sudoku.domain.GetSudokuSummaryUseCase
 import de.lemke.sudoku.domain.ImportSudokuUseCase
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
@@ -70,7 +70,7 @@ class MainViewModelTest {
             userSettings,
             ImportSudokuUseCase(
                 sudokuDocuments,
-                GetSudokuUseCase(sudokusRepository, dispatcher),
+                GetSudokuSummaryUseCase(sudokusRepository, dispatcher),
                 SaveSudokuUseCase(sudokusRepository, dispatcher),
                 clock,
                 dispatcher,

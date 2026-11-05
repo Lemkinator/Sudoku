@@ -119,6 +119,8 @@ class FakeSudokusRepository : SudokusRepository {
             ?.summary()
     }
 
+    override suspend fun getSummaryById(sudokuId: SudokuId): GameSummary? = games.firstOrNull { it.id == sudokuId }?.sudoku?.summary()
+
     override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = games.firstOrNull { it.id == sudokuId && it.readable }?.sudoku
 
     override suspend fun deleteSudokus(ids: List<SudokuId>) {

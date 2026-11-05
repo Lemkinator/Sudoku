@@ -48,6 +48,9 @@ interface SudokusRepository {
 
     suspend fun getRecentlyUpdatedNormalSummary(): GameSummary?
 
+    /** The summary of the game with [sudokuId], or null if there is none or its header cannot be read. The board is never read. */
+    suspend fun getSummaryById(sudokuId: SudokuId): GameSummary?
+
     /** The game with [sudokuId], or null if there is none or its board cannot be read. */
     suspend fun getSudokuById(sudokuId: SudokuId): Sudoku?
 
@@ -80,6 +83,8 @@ class DefaultSudokusRepository @Inject constructor(
     override suspend fun getLevelNumbers(size: SudokuSize): Set<Int> = gameDao.getLevelNumbers(size.value).toSet()
 
     override suspend fun getRecentlyUpdatedNormalSummary(): GameSummary? = gameDao.getRecentlyUpdatedNormalHeader()?.toSummary(clock.zone)
+
+    override suspend fun getSummaryById(sudokuId: SudokuId): GameSummary? = gameDao.getHeaderById(sudokuId.value)?.toSummary(clock.zone)
 
     override suspend fun getSudokuById(sudokuId: SudokuId): Sudoku? = gameDao.getById(sudokuId.value)?.toSudoku(clock.zone)
 

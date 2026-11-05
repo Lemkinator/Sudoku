@@ -81,6 +81,21 @@ abstract class SudokusRepositoryContract {
         }
 
     @Test
+    fun `getSummaryById returns null for an unknown id`() =
+        runTest {
+            repository.getSummaryById(sudoku().info.id).shouldBeNull()
+        }
+
+    @Test
+    fun `getSummaryById returns the summary of a game whose board is unreadable`() =
+        runTest {
+            val unreadable = sudoku()
+            storeUnreadable(unreadable)
+
+            repository.getSummaryById(unreadable.info.id) shouldBe unreadable.summary()
+        }
+
+    @Test
     fun `getSudokuById returns the matching sudoku`() =
         runTest {
             val saved = sudoku()

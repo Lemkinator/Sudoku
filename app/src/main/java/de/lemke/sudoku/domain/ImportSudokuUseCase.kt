@@ -22,6 +22,7 @@ import de.lemke.commonutils.di.IoDispatcher
 import de.lemke.sudoku.data.SudokuDocuments
 import de.lemke.sudoku.data.codec.SudokuFileCodec
 import de.lemke.sudoku.domain.model.GameSource
+import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.Sudoku
 import java.time.Clock
 import javax.inject.Inject
@@ -33,7 +34,7 @@ private const val TAG = "ImportSudokuUseCase"
 
 class ImportSudokuUseCase @Inject constructor(
     private val sudokuDocuments: SudokuDocuments,
-    private val getSudoku: GetSudokuUseCase,
+    private val getSummary: GetSudokuSummaryUseCase,
     private val saveSudoku: SaveSudokuUseCase,
     private val clock: Clock,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
@@ -55,7 +56,7 @@ class ImportSudokuUseCase @Inject constructor(
 
     /** A game that arrives solved is nobody's played win here, unless it replaces the player's own win. */
     private suspend fun Sudoku.markedImported(): Sudoku =
-        if (!completed || getSudoku(info.id)?.isOwnWin == true) this else copy(info = info.copy(source = GameSource.IMPORTED))
+        if (!completed || getSummary(info.id)?.isOwnWin == true) this else copy(info = info.copy(source = GameSource.IMPORTED))
 }
 
-private val Sudoku.isOwnWin: Boolean get() = completed && info.source == GameSource.OWN
+private val GameSummary.isOwnWin: Boolean get() = completed && info.source == GameSource.OWN
