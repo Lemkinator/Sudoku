@@ -29,7 +29,6 @@ import de.lemke.sudoku.domain.model.toSudokuDigitChar
 
 private const val NO_VIEW = ExploreByTouchHelper.INVALID_ID
 
-/** Gives TalkBack one entry per cell of [view], each reading its row, column, value and notes. */
 class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTouchHelper(view) {
     override fun getVirtualViewAt(
         x: Float,

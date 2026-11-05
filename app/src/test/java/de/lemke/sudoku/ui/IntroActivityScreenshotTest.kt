@@ -66,4 +66,12 @@ class IntroActivityScreenshotTest {
             onView(isRoot()).captureRoboImage("src/test/screenshots/intro_default_dark.png")
         }
     }
+
+    @Test
+    @Config(qualifiers = "+land")
+    fun introActivity_landscape() {
+        ActivityScenario.launch(IntroActivity::class.java).use {
+            onView(isRoot()).captureRoboImage("src/test/screenshots/intro_landscape.png")
+        }
+    }
 }

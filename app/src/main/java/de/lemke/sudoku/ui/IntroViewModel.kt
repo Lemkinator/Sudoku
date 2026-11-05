@@ -22,9 +22,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import de.lemke.sudoku.ui.game.InputTap
 import java.io.Serializable
 import javax.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -42,6 +44,7 @@ sealed interface NotificationChoice : Serializable {
 }
 
 private const val KEY_NOTIFICATION_CHOICE = "notification_choice"
+private const val KEY_STATE = "intro_state"
 
 @HiltViewModel
 class IntroViewModel @Inject constructor(
@@ -53,6 +56,17 @@ class IntroViewModel @Inject constructor(
 
     val notificationChoice: StateFlow<NotificationChoice>
         field = savedStateHandle.getMutableStateFlow<NotificationChoice>(KEY_NOTIFICATION_CHOICE, NotificationChoice.Pending)
+
+    val state: StateFlow<IntroState>
+        field = savedStateHandle.getMutableStateFlow(KEY_STATE, IntroState())
+
+    fun onNext() = state.update { it.next() }
+
+    fun onTap(tap: InputTap) = state.update { it.tap(tap) }
+
+    fun onNotesToggled() = state.update { it.toggleNotes() }
+
+    fun onErased(index: Int) = state.update { it.erase(index) }
 
     fun onNotificationsDeclined() = setNotificationsEnabledAndAdvance(false)
 

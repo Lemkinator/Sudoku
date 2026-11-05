@@ -21,7 +21,6 @@ import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.apply
 import java.io.Serializable
 
-/** What the player holds in hand: a cell to fill, or a number, the eraser or the hint to apply to the next cell. */
 sealed interface Selection : Serializable {
     data class Cell(val index: Int) : Selection
 
@@ -41,7 +40,6 @@ data class BoardInput(
     }
 }
 
-/** A tap on the board or on a control. [Clear] drops the selection. */
 sealed interface InputTap {
     data class Cell(val index: Int) : InputTap
 

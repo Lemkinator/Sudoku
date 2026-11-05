@@ -332,6 +332,22 @@ class SudokuBoardViewTest {
     }
 
     @Test
+    fun `a pulse grows the whole cell and ends at rest`() {
+        val rest = draw()
+        var ended = 0
+
+        view.animateCells(listOf(listOf(40)), CellAnimation.PULSE) { ended++ }
+        repeat(FRAMES_INTO_ANIMATION) { shadowOf(Looper.getMainLooper()).runOneTask() }
+        val moving = draw()
+        ended shouldBe 0
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+        moving.sameAs(rest).shouldBeFalse()
+        draw().sameAs(rest).shouldBeTrue()
+        ended shouldBe 1
+    }
+
+    @Test
     fun `an animation without steps ends at once`() {
         var ended = 0
 

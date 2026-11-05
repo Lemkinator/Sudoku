@@ -23,25 +23,23 @@ private const val WAVE_DURATION_MILLIS = 250L
 private const val WAVE_STAGGER_MILLIS = 120L
 private const val BOARD_WAVE_DURATION_MILLIS = 200L
 private const val BOARD_WAVE_STAGGER_MILLIS = 60L
-private const val PULSE_SCALE = 2f
-private const val PULSE_DURATION_MILLIS = 450L
-private const val PULSE_STAGGER_MILLIS = 180L
+private const val PULSE_SCALE = 1.5f
+private const val PULSE_DURATION_MILLIS = 600L
 private const val LEGS = 2
 
-/** How the value of a cell moves while its step runs: out to the peak and back, each leg taking [legMillis]. */
 enum class CellAnimation(
     val legMillis: Long,
     private val staggerMillis: Long,
     val scale: Float,
     val alpha: Float,
     val rotationDegrees: Float,
+    val scalesCell: Boolean = false,
 ) {
     WAVE(WAVE_DURATION_MILLIS, WAVE_STAGGER_MILLIS, WAVE_SCALE, FADE_ALPHA, WAVE_ROTATION_DEGREES),
     BOARD_WAVE(BOARD_WAVE_DURATION_MILLIS, BOARD_WAVE_STAGGER_MILLIS, WAVE_SCALE, FADE_ALPHA, WAVE_ROTATION_DEGREES),
-    PULSE(PULSE_DURATION_MILLIS, PULSE_STAGGER_MILLIS, PULSE_SCALE, alpha = 1f, rotationDegrees = 0f),
+    PULSE(PULSE_DURATION_MILLIS, 0L, PULSE_SCALE, 1f, 0f, scalesCell = true),
     ;
 
-    /** The time between the starts of two consecutive steps on a board whose blocks have [blockSize] cells per side. */
     fun stepMillis(blockSize: Int): Long =
         when (this) {
             WAVE -> staggerMillis / blockSize
@@ -54,7 +52,6 @@ enum class CellAnimation(
         blockSize: Int,
     ): Long = (steps - 1).coerceAtLeast(0) * stepMillis(blockSize) + LEGS * legMillis
 
-    /** How far a step that started [elapsedMillis] ago is from rest: 0 before, at and after the animation, 1 at the peak. */
     fun peakAt(elapsedMillis: Float): Float {
         val leg = elapsedMillis / legMillis
         return when {

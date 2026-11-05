@@ -20,17 +20,11 @@ import de.lemke.sudoku.ui.board.Box
 import kotlin.math.max
 import kotlin.math.min
 
-/** Where the board and the controls sit inside a game window; the board is the largest square the controls leave. */
 data class GameArrangement(
     val board: Box,
     val controls: Box,
 )
 
-/**
- * Places a square board and a [controlsExtent] thick controls strip in a [width] x [height] window. The strip sits below the board,
- * or at its end when [controlsAtEnd]. Both are centered as one group along the main axis, the board is centered across it, and
- * the strip spans the full cross axis. The board shrinks to nothing before the strip loses any of its extent.
- */
 fun arrangeGame(
     width: Int,
     height: Int,

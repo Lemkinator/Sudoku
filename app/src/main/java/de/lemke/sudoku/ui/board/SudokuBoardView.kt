@@ -51,7 +51,6 @@ private const val HALF = 0.5f
 private const val NO_CELL = -1
 private const val MAX_ALPHA = 255
 
-/** Draws a whole sudoku board on one canvas: tones, lines, values and notes inside one rounded board path. */
 class SudokuBoardView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -59,7 +58,6 @@ class SudokuBoardView @JvmOverloads constructor(
     private class RunningAnimation(
         val style: CellAnimation,
         val stepOfCell: IntArray,
-        val stepCount: Int,
         val animator: ValueAnimator,
     )
 
@@ -156,6 +154,8 @@ class SudokuBoardView @JvmOverloads constructor(
 
     internal val transform = Matrix()
 
+    val isAnimating: Boolean get() = animations.isNotEmpty()
+
     internal var geometry: BoardGeometry? = null
         private set
 
@@ -238,6 +238,7 @@ class SudokuBoardView @JvmOverloads constructor(
             drawValue(canvas, geometry, render, index)
             drawNotes(canvas, render, index)
         }
+        for (index in 0 until render.board.size.cellCount) drawPulsedCell(canvas, geometry, render, index)
         canvas.restore()
         borderPaint.color = dividerColor
         borderPaint.strokeWidth = metrics.border
@@ -245,7 +246,6 @@ class SudokuBoardView @JvmOverloads constructor(
         canvas.drawRoundRect(borderRect, borderRadius, borderRadius, borderPaint)
     }
 
-    /** Pulses the values of the cells in each step of [steps] in turn, then calls [onEnd] once the last value is at rest. */
     fun animateCells(
         steps: List<List<Int>>,
         style: CellAnimation,
@@ -261,7 +261,7 @@ class SudokuBoardView @JvmOverloads constructor(
         val blockSize = board.size.blockSize
         val animator = ValueAnimator.ofFloat(0f, style.totalMillis(steps.size, blockSize).toFloat())
         animator.duration = style.totalMillis(steps.size, blockSize)
-        val running = RunningAnimation(style, stepOfCell, steps.size, animator)
+        val running = RunningAnimation(style, stepOfCell, animator)
         animations += running
         animator.addUpdateListener { updatePeaks() }
         animator.addListener(
@@ -382,7 +382,7 @@ class SudokuBoardView @JvmOverloads constructor(
         val value = cell.value ?: return
         val content = geometry.contentBox(index)
         val peak = cellPeaks[index]
-        val style = animationStyleOf(index)
+        val style = animationStyleOf(index)?.takeUnless { it.scalesCell }
         valuePaint.textSize = valueSizes[index]
         valuePaint.color =
             when (cell.origin) {
@@ -399,6 +399,28 @@ class SudokuBoardView @JvmOverloads constructor(
         }
         valueChar[0] = value.toSudokuDigitChar()
         drawCentered(canvas, valueChar, 0, valuePaint, content.centerX, content.centerY)
+        canvas.restore()
+    }
+
+    private fun drawPulsedCell(
+        canvas: Canvas,
+        geometry: BoardGeometry,
+        render: BoardRender,
+        index: Int,
+    ) {
+        val style = animationStyleOf(index)?.takeIf { it.scalesCell } ?: return
+        val peak = cellPeaks[index]
+        if (peak <= 0f) return
+        val box = geometry.cellBox(index)
+        val scale = 1f + (style.scale - 1f) * peak
+        canvas.save()
+        canvas.scale(scale, scale, box.centerX, box.centerY)
+        cellRect.set(box.left, box.top, box.right, box.bottom)
+        fillPaint.color = boardColor
+        canvas.drawRect(cellRect, fillPaint)
+        drawTone(canvas, geometry, render.toneOf(index), index)
+        drawValue(canvas, geometry, render, index)
+        drawNotes(canvas, render, index)
         canvas.restore()
     }
 

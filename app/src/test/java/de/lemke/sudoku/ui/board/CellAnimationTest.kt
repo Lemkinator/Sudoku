@@ -25,13 +25,17 @@ class CellAnimationTest : ShouldSpec(
 
         should("start steps of a board wave 6 ms apart on a 9x9 board") { CellAnimation.BOARD_WAVE.stepMillis(3) shouldBe 6L }
 
-        should("start steps of a pulse 180 ms apart") { CellAnimation.PULSE.stepMillis(3) shouldBe 180L }
+        should("start every step of a pulse together") { CellAnimation.PULSE.stepMillis(3) shouldBe 0L }
 
         should("last two legs after the last step starts") { CellAnimation.WAVE.totalMillis(steps = 5, blockSize = 3) shouldBe 660L }
 
-        should("last two legs for a single step") { CellAnimation.PULSE.totalMillis(steps = 1, blockSize = 3) shouldBe 900L }
+        should("last two legs for a single step") { CellAnimation.PULSE.totalMillis(steps = 1, blockSize = 3) shouldBe 1200L }
 
-        should("last two legs for no step") { CellAnimation.PULSE.totalMillis(steps = 0, blockSize = 3) shouldBe 900L }
+        should("last two legs for no step") { CellAnimation.PULSE.totalMillis(steps = 0, blockSize = 3) shouldBe 1200L }
+
+        should("scale the whole cell only in a pulse") {
+            CellAnimation.entries.map { it.scalesCell } shouldBe listOf(false, false, true)
+        }
 
         should("rest before the start, peak after one leg and rest after two") {
             listOf(-5f, 0f, 125f, 250f, 375f, 500f, 600f).map(CellAnimation.WAVE::peakAt) shouldBe

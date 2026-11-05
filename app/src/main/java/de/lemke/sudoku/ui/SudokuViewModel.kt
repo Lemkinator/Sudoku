@@ -208,7 +208,6 @@ class SudokuViewModel @Inject constructor(
     val playGamesSync: StateFlow<PlayGamesSync?>
         field = MutableStateFlow<PlayGamesSync?>(null)
 
-    /** The selection and the notes mode of the player, kept in the saved state so a recreated screen continues the input. */
     val input: StateFlow<BoardInput>
         field = savedStateHandle.getMutableStateFlow(KEY_INPUT, BoardInput())
 
@@ -322,7 +321,6 @@ class SudokuViewModel @Inject constructor(
         updatePlaying { if (it.lastMove == result) it.copy(lastMove = null) else it }
     }
 
-    /** Applies [tap] to the input of a running sudoku and plays the move it completes. */
     fun onTap(tap: InputTap) {
         val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing } ?: return
         val step = reduceInput(input.value, tap, playing.sudoku)

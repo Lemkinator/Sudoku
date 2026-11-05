@@ -32,9 +32,10 @@ data class BoardRender(
     val selected: Int? = null,
     val highlightedDigit: Int? = null,
     val showPeers: Boolean = false,
+    val highlighted: Set<Int> = emptySet(),
 ) {
     private val peers: Set<Int> =
-        selected?.takeIf { showPeers && !board[it].locked }?.let(board::peers).orEmpty()
+        selected?.takeIf { showPeers && !board[it].locked }?.let(board::peers).orEmpty() + highlighted
 
     fun toneOf(index: Int): CellTone {
         val cell = board[index]

@@ -209,7 +209,6 @@ dependencies {
     implementation(libs.common.utils)
     implementation(libs.coroutines.core)
     runtimeOnly(libs.coroutines.android)
-    implementation(libs.async.layout.inflater)
     implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)

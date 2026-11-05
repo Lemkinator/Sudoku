@@ -24,7 +24,6 @@ private const val VALUE_TEXT_RATIO = 0.62f
 private const val NOTE_SLOT_RATIO = 0.7f
 private const val NOTE_VALUE_RATIO = 0.6f
 
-/** Side length of the square note grid for [count] notes: 0, 1, 2 (2-4), 3 (5-9), 4 (10-16). */
 fun noteGridSide(count: Int): Int = ceil(sqrt(count.toDouble())).toInt()
 
 fun valueTextSize(cellSide: Float): Float = VALUE_TEXT_RATIO * cellSide
@@ -39,7 +38,6 @@ fun noteTextSize(
     return min(NOTE_SLOT_RATIO * slotSide(content, side), NOTE_VALUE_RATIO * valueTextSize)
 }
 
-/** The first [count] slots of the centered square grid, in reading order. */
 fun noteSlots(
     content: Box,
     count: Int,

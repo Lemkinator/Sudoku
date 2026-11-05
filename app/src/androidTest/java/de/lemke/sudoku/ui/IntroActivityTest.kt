@@ -58,4 +58,16 @@ class IntroActivityTest {
                 scenario.state shouldBe Lifecycle.State.RESUMED
             }
     }
+
+    @Test
+    fun activityRecreatesWithoutCrash() {
+        ActivityScenario
+            .launch<IntroActivity>(
+                Intent(ApplicationProvider.getApplicationContext(), IntroActivity::class.java),
+            ).use { scenario ->
+                scenario.recreate()
+
+                scenario.state shouldBe Lifecycle.State.RESUMED
+            }
+    }
 }

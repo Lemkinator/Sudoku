@@ -68,6 +68,18 @@ class SudokuActivityTest {
         }
     }
 
+    @Test
+    fun activityRecreatesWithoutCrash() {
+        val intent =
+            Intent(ApplicationProvider.getApplicationContext(), SudokuActivity::class.java)
+                .putExtra(KEY_SUDOKU_ID, SUDOKU_ID.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.recreate()
+
+            scenario.state shouldBe Lifecycle.State.RESUMED
+        }
+    }
+
     companion object {
         private val SUDOKU_ID = SudokuId("instrumented-test-sudoku-id")
     }

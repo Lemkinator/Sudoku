@@ -24,6 +24,9 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
+import de.lemke.sudoku.ui.game.BoardInput
+import de.lemke.sudoku.ui.game.InputTap
+import de.lemke.sudoku.ui.game.Selection
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -152,6 +155,56 @@ class IntroViewModelTest : ShouldSpec(
             viewModel.onNotificationChoiceHandled(NotificationChoice.Saved)
 
             viewModel.notificationChoice.value shouldBe NotificationChoice.RequestPermission
+        }
+
+        should("state starts at the blocks lesson") {
+            newViewModel().state.value shouldBe IntroState()
+        }
+
+        should("onNext moves to the next lesson") {
+            val viewModel = newViewModel()
+
+            viewModel.onNext()
+
+            viewModel.state.value.step shouldBe IntroStep.SELECTION
+        }
+
+        should("onTap applies the tap of the lesson") {
+            val viewModel = newViewModel()
+            viewModel.onNext()
+            viewModel.onNext()
+
+            viewModel.onTap(InputTap.Cell(DEMO_CELL_INDEX_4))
+
+            viewModel.state.value shouldBe IntroState(IntroStep.ENTER_NUMBER, BoardInput(Selection.Cell(DEMO_CELL_INDEX_4)))
+        }
+
+        should("onNotesToggled toggles the notes mode in the last lesson only") {
+            val viewModel = newViewModel(SavedStateHandle(mapOf("intro_state" to IntroState(IntroStep.NOTES))))
+
+            viewModel.onNotesToggled()
+
+            viewModel.state.value.input.notesMode
+                .shouldBeTrue()
+        }
+
+        should("onErased removes an entered number") {
+            val viewModel = newViewModel(SavedStateHandle(mapOf("intro_state" to IntroState(IntroStep.NOTES, entries = mapOf(4 to 5)))))
+
+            viewModel.onErased(4)
+
+            viewModel.state.value.entries shouldBe emptyMap()
+        }
+
+        should("state survives a new view model over the same saved state") {
+            val handle = SavedStateHandle()
+            newViewModel(handle).also {
+                it.onNext()
+                it.onNext()
+                it.onTap(InputTap.Cell(DEMO_CELL_INDEX_4))
+            }
+
+            newViewModel(handle).state.value.step shouldBe IntroStep.ENTER_NUMBER
         }
     },
 )

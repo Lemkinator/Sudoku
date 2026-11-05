@@ -63,6 +63,12 @@ class BoardRenderTest : ShouldSpec(
             listOf(render.toneOf(36), render.toneOf(37)) shouldBe listOf(CellTone.SAME_DIGIT, CellTone.PEER)
         }
 
+        should("show the highlighted cells as peers without any selection") {
+            val render = BoardRender(board9, highlighted = setOf(0, 1))
+
+            listOf(render.toneOf(0), render.toneOf(1), render.toneOf(2)) shouldBe listOf(CellTone.PEER, CellTone.PEER, CellTone.NONE)
+        }
+
         should("show no same digit without a highlighted digit") {
             BoardRender(board9.filled(8), selected = 40).toneOf(8) shouldBe CellTone.NONE
         }

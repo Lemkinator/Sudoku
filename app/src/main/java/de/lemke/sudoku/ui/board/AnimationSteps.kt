@@ -20,10 +20,6 @@ import de.lemke.sudoku.domain.model.CompletedRegions
 import de.lemke.sudoku.domain.model.Position
 import de.lemke.sudoku.domain.model.SudokuSize
 
-/**
- * Cells of the completed [regions] around [from], grouped into steps that pulse together. The cells reached are ordered by
- * index; step n holds the n-th cell at or before [from], counted backward, and the n-th cell after it, counted forward.
- */
 fun animationSteps(
     size: SudokuSize,
     from: Int,

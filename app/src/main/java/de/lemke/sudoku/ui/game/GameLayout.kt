@@ -27,10 +27,6 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.ui.board.Box
 import kotlin.math.roundToInt
 
-/**
- * Holds the board as its first child and the controls as its second. [arrangeGame] places them: the controls sit below the board,
- * or at its end when `controlsPosition` is `end`.
- */
 class GameLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -52,10 +48,11 @@ class GameLayout @JvmOverloads constructor(
     ) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val height = MeasureSpec.getSize(heightMeasureSpec)
+        val params = controls.layoutParams
         if (controlsAtEnd) {
-            controls.measure(makeMeasureSpec(width, AT_MOST), makeMeasureSpec(height, EXACTLY))
+            controls.measure(getChildMeasureSpec(makeMeasureSpec(width, AT_MOST), 0, params.width), makeMeasureSpec(height, EXACTLY))
         } else {
-            controls.measure(makeMeasureSpec(width, EXACTLY), makeMeasureSpec(height, AT_MOST))
+            controls.measure(makeMeasureSpec(width, EXACTLY), getChildMeasureSpec(makeMeasureSpec(height, AT_MOST), 0, params.height))
         }
         val arrangement = arrangement(width, height)
         val side = arrangement.board.width.roundToInt()
