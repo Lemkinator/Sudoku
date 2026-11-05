@@ -122,7 +122,7 @@ object ProtoReader {
             var result = 0L
             for (index in 0 until MAX_VARINT_BYTES) {
                 val byte = bytes.getOrNull(position++)?.toInt() ?: break
-                result = result or ((byte and VARINT_PAYLOAD_MASK).toLong() shl (index * VARINT_PAYLOAD_BITS))
+                result = result or ((byte and VARINT_PAYLOAD_MASK).toLong() shl index * VARINT_PAYLOAD_BITS)
                 if (byte and VARINT_CONTINUATION == 0) return result
             }
             return null
