@@ -29,6 +29,17 @@
         errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
+            file="src/main/res/layout-land/activity_intro.xml"
+            line="23"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `?roundedCornerColor` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
+        errorLine1="    android:background=&quot;?roundedCornerColor&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
             file="src/main/res/layout/activity_settings.xml"
             line="22"
             column="5"/>
@@ -52,17 +63,6 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/activity_sudoku_level.xml"
-            line="21"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="Overdraw"
-        message="Possible overdraw: Root element paints background `?selectableItemBackground` with a theme that also paints a background (inferred theme is `@style/CommonUtils.AppTheme`)"
-        errorLine1="    android:background=&quot;?selectableItemBackground&quot;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/field_view.xml"
             line="21"
             column="5"/>
     </issue>
