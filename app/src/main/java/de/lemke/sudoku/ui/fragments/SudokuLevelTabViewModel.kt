@@ -179,7 +179,7 @@ class SudokuLevelTabViewModel @Inject constructor(
                 viewModelScope.launch { levelStart.value = saveNextLevel(nextLevel) }
             }
 
-            shown.sudokuLevel.any { it is SudokuItem && it.summary.info.id == sudokuId } -> {
+            shown.sudokuLevel.any { (it as SudokuItem).summary.info.id == sudokuId } -> {
                 levelStart.value = LevelStart.Open(sudokuId)
             }
 
