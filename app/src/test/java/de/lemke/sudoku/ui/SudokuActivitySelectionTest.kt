@@ -121,14 +121,14 @@ class SudokuActivitySelectionTest {
         launch { activity ->
             activity.tapDigit(1)
             activity.binding.numberButton1.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary.defaultColor
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
 
             activity.tapDigit(2)
 
             activity.binding.numberButton1.backgroundTintList
                 ?.defaultColor shouldBe activity.transparent.defaultColor
             activity.binding.numberButton2.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary.defaultColor
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
         }
 
     @Test
@@ -136,7 +136,7 @@ class SudokuActivitySelectionTest {
         launch { activity ->
             activity.tapDelete()
             activity.binding.deleteButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary.defaultColor
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
 
             activity.tapDigit(1)
 
@@ -149,7 +149,7 @@ class SudokuActivitySelectionTest {
         launch { activity ->
             activity.tapHint()
             activity.binding.hintButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary.defaultColor
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
 
             activity.tapDigit(1)
 
@@ -166,7 +166,7 @@ class SudokuActivitySelectionTest {
             activity.binding.noteButton.performClick()
 
             activity.binding.noteButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary.defaultColor
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
         }
 
     // region cell selected
