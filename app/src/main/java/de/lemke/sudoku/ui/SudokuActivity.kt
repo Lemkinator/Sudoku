@@ -175,7 +175,7 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        if (initialized) pauseGame()
+        if (initialized && !isChangingConfigurations) pauseGame()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.sudoku_menu, menu).let { true }
@@ -273,7 +273,7 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             is SudokuGame.Playing -> {
-                if (!initialized) initSudoku(game.sudoku)
+                if (!initialized) initSudoku(game.sudoku, paused = !game.running && !game.ended)
                 setSubtitle(game)
                 renderGame()
                 if (renderedMenuState != game.running to game.phase) {
@@ -285,12 +285,15 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private fun initSudoku(sudoku: Sudoku) {
+    private fun initSudoku(
+        sudoku: Sudoku,
+        paused: Boolean = false,
+    ) {
         initialized = true
         setTitle(sudoku.info)
         initSudokuButtons(sudoku)
         renderGame()
-        resumeGame()
+        if (paused) animateGameButtonsVisibility(false) else resumeGame()
     }
 
     private fun initSudokuButtons(sudoku: Sudoku) {

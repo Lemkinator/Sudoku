@@ -20,6 +20,7 @@ import android.content.Intent
 import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -195,6 +196,69 @@ class SudokuActivityLifecycleTest {
             scenario.onActivity { activity -> activity.playing.running.shouldBeFalse() }
         }
     }
+
+    private fun launchScenario(
+        sudoku: Sudoku,
+        block: (ActivityScenario<SudokuActivity>) -> Unit,
+    ) {
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity { it.userSettings.animationsEnabled = false }
+            block(scenario)
+        }
+    }
+
+    @Test
+    fun `rotating a running game keeps the timer running and the board visible`() =
+        launchScenario(formulaicSudoku()) { scenario ->
+            scenario.recreate()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeTrue()
+                activity.binding.board.isVisible.shouldBeTrue()
+                activity.sudoku.info.seconds shouldBe 3
+            }
+        }
+
+    @Test
+    fun `rotating an explicitly paused game keeps it paused until Resume`() =
+        launchScenario(formulaicSudoku()) { scenario ->
+            scenario.onActivity { it.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)) }
+            scenario.recreate()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeFalse()
+                activity.binding.board.isVisible.shouldBeFalse()
+                activity.binding.resumeButton.isVisible.shouldBeTrue()
+                activity.sudoku.info.seconds shouldBe 0
+
+                activity.binding.resumeButton.performClick()
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
+
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeTrue()
+                activity.binding.board.isVisible.shouldBeTrue()
+            }
+        }
+
+    @Test
+    fun `recreating a finished game that stopped running shows the board`() =
+        launchScenario(formulaicSudoku(allCorrect = true)) { scenario ->
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.onActivity { it.playing.running.shouldBeFalse() }
+
+            scenario.recreate()
+
+            scenario.onActivity { activity ->
+                activity.binding.board.isVisible.shouldBeTrue()
+                activity.binding.resumeButton.isVisible.shouldBeFalse()
+            }
+        }
 
     @Test
     fun `pausing does not clear the keep-screen-on flag when the setting is disabled`() {
