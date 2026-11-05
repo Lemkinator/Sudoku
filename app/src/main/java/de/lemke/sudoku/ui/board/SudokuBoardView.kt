@@ -40,6 +40,9 @@ import android.view.ViewOutlineProvider
 import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
+import androidx.core.graphics.withClip
+import androidx.core.graphics.withSave
+import androidx.core.graphics.withScale
 import androidx.core.view.ViewCompat
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.CellOrigin
@@ -230,18 +233,17 @@ class SudokuBoardView @JvmOverloads constructor(
         val geometry = geometry ?: return
         val metrics = geometry.metrics
         canvas.concat(transform)
-        canvas.save()
-        canvas.clipPath(boardPath)
-        fillPaint.color = boardColor
-        canvas.drawPath(boardPath, fillPaint)
-        for (index in 0 until render.board.size.cellCount) drawTone(canvas, geometry, render.toneOf(index), index)
-        drawLines(canvas, geometry, render.board.size.blockSize)
-        for (index in 0 until render.board.size.cellCount) {
-            drawValue(canvas, geometry, render, index)
-            drawNotes(canvas, render, index)
+        canvas.withClip(boardPath) {
+            fillPaint.color = boardColor
+            drawPath(boardPath, fillPaint)
+            for (index in 0 until render.board.size.cellCount) drawTone(this, geometry, render.toneOf(index), index)
+            drawLines(this, geometry, render.board.size.blockSize)
+            for (index in 0 until render.board.size.cellCount) {
+                drawValue(this, geometry, render, index)
+                drawNotes(this, render, index)
+            }
+            for (index in 0 until render.board.size.cellCount) drawPulsedCell(this, geometry, render, index)
         }
-        for (index in 0 until render.board.size.cellCount) drawPulsedCell(canvas, geometry, render, index)
-        canvas.restore()
         borderPaint.color = dividerColor
         borderPaint.strokeWidth = metrics.border
         val borderRadius = geometry.cornerRadius - metrics.border * HALF
@@ -392,16 +394,16 @@ class SudokuBoardView @JvmOverloads constructor(
                 CellOrigin.HINT -> hintColor
                 CellOrigin.PLAYER -> playerColor
             }
-        canvas.save()
-        if (style != null && peak > 0f) {
-            val scale = 1f + (style.scale - 1f) * peak
-            canvas.rotate(style.rotationDegrees * peak, content.centerX, content.centerY)
-            canvas.scale(scale, scale, content.centerX, content.centerY)
-            valuePaint.alpha = (MAX_ALPHA * (1f - (1f - style.alpha) * peak)).toInt()
+        canvas.withSave {
+            if (style != null && peak > 0f) {
+                val scale = 1f + (style.scale - 1f) * peak
+                rotate(style.rotationDegrees * peak, content.centerX, content.centerY)
+                scale(scale, scale, content.centerX, content.centerY)
+                valuePaint.alpha = (MAX_ALPHA * (1f - (1f - style.alpha) * peak)).toInt()
+            }
+            valueChar[0] = value.toSudokuDigitChar()
+            drawCentered(this, valueChar, 0, valuePaint, content.centerX, content.centerY)
         }
-        valueChar[0] = value.toSudokuDigitChar()
-        drawCentered(canvas, valueChar, 0, valuePaint, content.centerX, content.centerY)
-        canvas.restore()
     }
 
     private fun drawPulsedCell(
@@ -415,15 +417,14 @@ class SudokuBoardView @JvmOverloads constructor(
         if (peak <= 0f) return
         val box = geometry.cellBox(index)
         val scale = 1f + (style.scale - 1f) * peak
-        canvas.save()
-        canvas.scale(scale, scale, box.centerX, box.centerY)
-        cellRect.set(box.left, box.top, box.right, box.bottom)
-        fillPaint.color = boardColor
-        canvas.drawRect(cellRect, fillPaint)
-        drawTone(canvas, geometry, render.toneOf(index), index)
-        drawValue(canvas, geometry, render, index)
-        drawNotes(canvas, render, index)
-        canvas.restore()
+        canvas.withScale(scale, scale, box.centerX, box.centerY) {
+            cellRect.set(box.left, box.top, box.right, box.bottom)
+            fillPaint.color = boardColor
+            drawRect(cellRect, fillPaint)
+            drawTone(this, geometry, render.toneOf(index), index)
+            drawValue(this, geometry, render, index)
+            drawNotes(this, render, index)
+        }
     }
 
     private fun drawNotes(

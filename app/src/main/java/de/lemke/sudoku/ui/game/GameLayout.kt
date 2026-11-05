@@ -23,6 +23,7 @@ import android.view.View.MeasureSpec.AT_MOST
 import android.view.View.MeasureSpec.EXACTLY
 import android.view.View.MeasureSpec.makeMeasureSpec
 import android.view.ViewGroup
+import androidx.core.content.withStyledAttributes
 import de.lemke.sudoku.R
 import de.lemke.sudoku.ui.board.Box
 import kotlin.math.roundToInt
@@ -31,12 +32,12 @@ class GameLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : ViewGroup(context, attrs) {
-    private val controlsAtEnd: Boolean
+    private var controlsAtEnd = false
 
     init {
-        val attributes = context.obtainStyledAttributes(attrs, R.styleable.GameLayout)
-        controlsAtEnd = attributes.getInt(R.styleable.GameLayout_controlsPosition, POSITION_BOTTOM) == POSITION_END
-        attributes.recycle()
+        context.withStyledAttributes(attrs, R.styleable.GameLayout) {
+            controlsAtEnd = getInt(R.styleable.GameLayout_controlsPosition, POSITION_BOTTOM) == POSITION_END
+        }
     }
 
     private val board: View get() = getChildAt(0)
