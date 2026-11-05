@@ -48,17 +48,32 @@ class BoardAccessibilityHelper(private val view: SudokuBoardView) : ExploreByTou
         val geometry = view.geometry
         if (render == null || geometry == null) {
             node.contentDescription = view.resources.getString(R.string.cell_empty)
-            node.setBoundsInParent(Rect())
+            setBoundsInScreenFromBoundsInParent(node, Rect())
             return
         }
         val board = render.board
         val position = board.position(virtualViewId)
         val box = geometry.cellBox(virtualViewId)
         node.contentDescription = describe(board[virtualViewId], position.row + 1, position.column + 1)
-        node.setBoundsInParent(Rect(box.left.toInt(), box.top.toInt(), box.right.toInt(), box.bottom.toInt()))
+        setBoundsInScreenFromBoundsInParent(node, Rect(box.left.toInt(), box.top.toInt(), box.right.toInt(), box.bottom.toInt()))
+        node.isSelected = virtualViewId == render.selected
         node.addAction(AccessibilityActionCompat.ACTION_CLICK)
         node.addAction(AccessibilityActionCompat.ACTION_LONG_CLICK)
         node.setCollectionItemInfo(AccessibilityNodeInfoCompat.CollectionItemInfoCompat.obtain(position.row, 1, position.column, 1, false))
+    }
+
+    fun onRenderChanged(
+        old: BoardRender?,
+        new: BoardRender?,
+    ) {
+        if (old == null || new == null || old.board.size != new.board.size) {
+            invalidateRoot()
+            return
+        }
+        for (index in 0 until new.board.size.cellCount) {
+            val selectionChanged = (index == old.selected) != (index == new.selected)
+            if (selectionChanged || old.board[index] != new.board[index]) invalidateVirtualView(index)
+        }
     }
 
     override fun onPopulateNodeForHost(node: AccessibilityNodeInfoCompat) {

@@ -44,6 +44,7 @@ import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import java.time.Duration
 import org.junit.Before
 import org.junit.Test
@@ -224,6 +225,37 @@ class SudokuBoardViewTest {
         view.render = BoardRender(testSudoku(SudokuSize.FOUR).board)
 
         view.geometry?.size shouldBe SudokuSize.FOUR
+    }
+
+    @Test
+    fun `an equal render keeps the geometry`() {
+        val geometry = view.geometry
+
+        view.render = BoardRender(testSudoku(SudokuSize.NINE).board)
+
+        view.geometry shouldBeSameInstanceAs geometry
+    }
+
+    @Test
+    fun `a new selection or board of the same size keeps the geometry`() {
+        val board = testSudoku(SudokuSize.NINE).board
+        val geometry = view.geometry
+
+        view.render = BoardRender(board, selected = 3)
+        view.render = BoardRender(board.with(0, Cell(board[0].solution, value = board[0].solution)), selected = 3)
+
+        view.geometry shouldBeSameInstanceAs geometry
+    }
+
+    @Test
+    fun `a board change redraws the changed cell`() {
+        val board = testSudoku(SudokuSize.FOUR).board
+        view.render = BoardRender(board)
+        val before = draw()
+
+        view.render = BoardRender(board.with(1, Cell(board[1].solution, value = board[1].solution)))
+
+        draw().sameAs(before).shouldBeFalse()
     }
 
     @Test

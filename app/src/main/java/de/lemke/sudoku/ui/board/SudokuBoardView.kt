@@ -144,11 +144,13 @@ class SudokuBoardView @JvmOverloads constructor(
 
     var render: BoardRender? = null
         set(value) {
+            val previous = field
+            if (value == previous) return
             field = value
-            rebuildGeometry()
-            rebuildCellLayouts()
+            if (previous?.board?.size != value?.board?.size) rebuildGeometry()
+            if (previous?.board != value?.board) rebuildCellLayouts()
             invalidate()
-            accessibilityHelper.invalidateRoot()
+            accessibilityHelper.onRenderChanged(previous, value)
         }
 
     internal val transform = Matrix()

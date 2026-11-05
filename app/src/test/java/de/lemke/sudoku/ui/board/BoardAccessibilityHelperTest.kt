@@ -17,12 +17,17 @@
 package de.lemke.sudoku.ui.board
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Rect
 import android.view.InputDevice
 import android.view.MotionEvent
+import android.view.View
 import android.view.View.MeasureSpec
+import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityRecord
+import android.widget.FrameLayout
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.customview.widget.ExploreByTouchHelper
 import androidx.test.core.app.ApplicationProvider
@@ -33,6 +38,7 @@ import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import org.junit.Before
 import org.junit.Test
@@ -43,6 +49,21 @@ import org.robolectric.annotation.Config
 
 private const val SIDE = 400
 private val SOLUTION_4 = listOf(1, 2, 3, 4, 3, 4, 1, 2, 2, 3, 4, 1, 4, 1, 2, 3)
+
+private class RecordingParent(context: Context) : FrameLayout(context) {
+    val sourceViews = mutableListOf<Int>()
+    val contentChanges = mutableListOf<Int>()
+
+    override fun requestSendAccessibilityEvent(
+        child: View,
+        event: AccessibilityEvent,
+    ): Boolean {
+        val sourceId = AccessibilityRecord::class.java.getMethod("getSourceNodeId").invoke(event) as Long
+        sourceViews += AccessibilityNodeInfo::class.java.getMethod("getVirtualDescendantId", Long::class.java).invoke(null, sourceId) as Int
+        contentChanges += event.contentChangeTypes
+        return true
+    }
+}
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
@@ -211,6 +232,69 @@ class BoardAccessibilityHelperTest {
     @Test
     fun `every cell is a child of the host`() {
         node(ExploreByTouchHelper.HOST_ID).childCount shouldBe 16
+    }
+
+    private fun watchParent(): RecordingParent {
+        val parent = RecordingParent(context)
+        parent.addView(view)
+        shadowOf(context.getSystemService(AccessibilityManager::class.java)).setEnabled(true)
+        return parent
+    }
+
+    @Test
+    fun `the selected cell reports selected and the others do not`() {
+        view.render = BoardRender(golden4(), selected = 5)
+
+        node(5).isSelected.shouldBeTrue()
+        node(6).isSelected.shouldBeFalse()
+    }
+
+    @Test
+    fun `an equal render sends no event`() {
+        val parent = watchParent()
+
+        view.render = BoardRender(golden4())
+
+        parent.sourceViews.shouldBeEmpty()
+    }
+
+    @Test
+    fun `changing one cell invalidates only that cell`() {
+        val parent = watchParent()
+
+        view.render = BoardRender(golden4().with(8, Cell(1, value = 1)))
+
+        parent.sourceViews shouldBe listOf(8)
+        parent.contentChanges shouldBe listOf(AccessibilityEvent.CONTENT_CHANGE_TYPE_UNDEFINED)
+    }
+
+    @Test
+    fun `moving the selection invalidates the old and the new cell`() {
+        view.render = BoardRender(golden4(), selected = 5)
+        val parent = watchParent()
+
+        view.render = BoardRender(golden4(), selected = 9)
+
+        parent.sourceViews shouldBe listOf(5, 9)
+    }
+
+    @Test
+    fun `changing the board size invalidates the whole tree`() {
+        val parent = watchParent()
+
+        view.render = BoardRender(Board.of(SudokuSize.NINE, List(81) { it % 9 + 1 }, emptySet()))
+
+        parent.sourceViews shouldBe listOf(ExploreByTouchHelper.HOST_ID)
+        parent.contentChanges shouldBe listOf(AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE)
+    }
+
+    @Test
+    fun `removing the board invalidates the whole tree`() {
+        val parent = watchParent()
+
+        view.render = null
+
+        parent.sourceViews shouldBe listOf(ExploreByTouchHelper.HOST_ID)
     }
 
     private fun hover(
