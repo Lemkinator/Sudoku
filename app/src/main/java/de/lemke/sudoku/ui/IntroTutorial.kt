@@ -57,7 +57,12 @@ internal const val DEMO_SELECT_DIGIT = 2
 fun IntroState.next(): IntroState = if (step == IntroStep.entries.last()) this else copy(step = IntroStep.entries[step.ordinal + 1])
 
 fun IntroState.board(base: Board): Board =
-    entries.entries.fold(base) { board, (index, digit) -> board.apply(BoardMove.Enter(index, digit))?.board ?: board }
+    entries.entries.fold(base) { board, (index, digit) ->
+        when (val result = board.apply(BoardMove.Enter(index, digit))) {
+            null -> board
+            else -> result.board
+        }
+    }
 
 fun IntroState.tap(tap: InputTap): IntroState =
     when {

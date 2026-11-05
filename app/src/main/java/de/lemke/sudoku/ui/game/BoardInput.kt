@@ -107,7 +107,11 @@ private fun fromDigit(
 
         tap is InputTap.Cell -> {
             val move = input.enter(tap.index, digit.digit)
-            val completed = (sudoku.board.apply(move)?.board ?: sudoku.board).completedDigits
+            val completed =
+                when (val result = sudoku.board.apply(move)) {
+                    null -> sudoku.board
+                    else -> result.board
+                }.completedDigits
             InputStep(input.copy(selection = nextOpenDigit(digit.digit, completed, sudoku.board.size.value)), move)
         }
 
@@ -138,7 +142,11 @@ private fun fromHint(
 
         tap is InputTap.Cell -> {
             val move = BoardMove.RevealHint(tap.index)
-            val hintLeft = (sudoku.play(move)?.sudoku ?: sudoku).info.isHintAvailable
+            val hintLeft =
+                when (val result = sudoku.play(move)) {
+                    null -> sudoku.info.isHintAvailable
+                    else -> result.sudoku.info.isHintAvailable
+                }
             InputStep(input.copy(selection = Selection.Hint.takeIf { hintLeft }), move)
         }
 
