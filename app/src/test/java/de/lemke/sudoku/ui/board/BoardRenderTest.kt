@@ -90,6 +90,16 @@ class BoardRenderTest : ShouldSpec(
                 listOf(CellTone.SELECTED, CellTone.NONE, CellTone.BOX_TINT)
         }
 
+        should("report peers shown only for a selected player cell with showPeers") {
+            val given = BoardRender(boardOf(SudokuSize.NINE, givens = setOf(40)), selected = 40, showPeers = true)
+            listOf(
+                BoardRender(board9, selected = 40, showPeers = true).showsPeers,
+                BoardRender(board9, selected = 40).showsPeers,
+                BoardRender(board9, showPeers = true).showsPeers,
+                given.showsPeers,
+            ) shouldBe listOf(true, false, false, false)
+        }
+
         should("show no peers without a selection") {
             BoardRender(board9, showPeers = true).toneOf(41) shouldBe CellTone.NONE
         }

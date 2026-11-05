@@ -651,6 +651,17 @@ class SudokuViewModelTest : ShouldSpec(
                 .sudoku.info.numberHighlightingUsed shouldBe false
         }
 
+        should("selecting a given cell shows no regional highlighting, so it is not marked as used") {
+            val viewModel = playing(testSudoku())
+            viewModel.onResumed()
+
+            viewModel.onTap(InputTap.Cell(0))
+
+            viewModel
+                .playingGame()
+                .sudoku.info.regionalHighlightingUsed shouldBe false
+        }
+
         should("selecting a digit marks the number highlighting as used") {
             val viewModel = playing(testSudoku())
             viewModel.onResumed()
