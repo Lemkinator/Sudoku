@@ -19,8 +19,10 @@ package de.lemke.sudoku.ui.game
 import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.view.ContextThemeWrapper
 import android.view.View.MeasureSpec
+import android.view.ViewGroup
 import androidx.test.core.app.ApplicationProvider
 import io.kotest.matchers.shouldBe
 import org.junit.Test
@@ -58,5 +60,55 @@ class StackedIconButtonTest {
         val (top, slack) = drawnIconTop(height = 1)
         (slack <= 0) shouldBe true
         top shouldBe 0
+    }
+
+    private fun drawOnBitmap(button: StackedIconButton) = button.draw(Canvas(Bitmap.createBitmap(300, 600, Bitmap.Config.ARGB_8888)))
+
+    private fun layOut(button: StackedIconButton) {
+        button.measure(MeasureSpec.makeMeasureSpec(300, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(600, MeasureSpec.EXACTLY))
+        button.layout(0, 0, 300, 600)
+    }
+
+    @Test
+    fun `draws without a text layout and leaves the icon bounds alone`() {
+        val button = StackedIconButton(context)
+        button.setCompoundDrawablesWithIntrinsicBounds(0, android.R.drawable.ic_menu_add, 0, 0)
+        button.text = "Note"
+        val icon = button.compoundDrawables[1]
+        val before = Rect(icon.bounds)
+        (button.layout == null) shouldBe true
+
+        drawOnBitmap(button)
+
+        icon.bounds shouldBe before
+    }
+
+    @Test
+    fun `draws after setText without a new layout pass`() {
+        val button = StackedIconButton(context)
+        button.setCompoundDrawablesWithIntrinsicBounds(0, android.R.drawable.ic_menu_add, 0, 0)
+        button.text = "Note"
+        button.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        layOut(button)
+        (button.layout != null) shouldBe true
+        val icon = button.compoundDrawables[1]
+        val before = Rect(icon.bounds)
+
+        button.text = "A different label"
+        (button.layout == null) shouldBe true
+        drawOnBitmap(button)
+
+        icon.bounds shouldBe before
+    }
+
+    @Test
+    fun `draws without a top icon`() {
+        val button = StackedIconButton(context)
+        button.text = "Note"
+        layOut(button)
+
+        drawOnBitmap(button)
+
+        (button.compoundDrawables[1] == null) shouldBe true
     }
 }

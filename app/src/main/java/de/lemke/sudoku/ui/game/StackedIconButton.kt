@@ -34,8 +34,11 @@ class StackedIconButton
     ) : AppCompatButton(context, attrs, defStyleAttr) {
         // TextView draws the top icon at the top padding edge, so the icon bounds carry the offset.
         override fun onDraw(canvas: Canvas) {
+            // getLayout() is null until the first layout pass and after setText, also when a transition draws the view.
+            val textLayout = layout
             val icon = compoundDrawables[1]
-            val slack = height - paddingTop - paddingBottom - icon.bounds.height() - compoundDrawablePadding - layout.height
+            if (textLayout == null || icon == null) return super.onDraw(canvas)
+            val slack = height - paddingTop - paddingBottom - icon.bounds.height() - compoundDrawablePadding - textLayout.height
             val top = maxOf(slack, 0) / 2
             icon.setBounds(icon.bounds.left, top, icon.bounds.right, top + icon.bounds.height())
             super.onDraw(canvas)
