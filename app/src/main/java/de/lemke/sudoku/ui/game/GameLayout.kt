@@ -54,11 +54,9 @@ class GameLayout @JvmOverloads constructor(
         val params = controls.layoutParams
         val boardReserve = if (controlsScroll) min(width, height) / 2 else 0
         if (controlsAtEnd) {
-            val limit = makeMeasureSpec(width - boardReserve, AT_MOST)
-            controls.measure(getChildMeasureSpec(limit, 0, params.width), makeMeasureSpec(height, EXACTLY))
+            controls.measure(controlsSpec(width - boardReserve, params.width), makeMeasureSpec(height, EXACTLY))
         } else {
-            val limit = makeMeasureSpec(height - boardReserve, AT_MOST)
-            controls.measure(makeMeasureSpec(width, EXACTLY), getChildMeasureSpec(limit, 0, params.height))
+            controls.measure(makeMeasureSpec(width, EXACTLY), controlsSpec(height - boardReserve, params.height))
         }
         val arrangement = arrangement(width, height)
         val side = arrangement.board.width.roundToInt()
@@ -78,6 +76,14 @@ class GameLayout @JvmOverloads constructor(
         val mirrored = controlsAtEnd && layoutDirection == LAYOUT_DIRECTION_RTL
         place(board, arrangement.board, width, mirrored)
         place(controls, arrangement.controls, width, mirrored)
+    }
+
+    private fun controlsSpec(
+        available: Int,
+        dimension: Int,
+    ): Int {
+        val spec = getChildMeasureSpec(makeMeasureSpec(available, AT_MOST), 0, dimension)
+        return if (controlsScroll) makeMeasureSpec(min(MeasureSpec.getSize(spec), available), MeasureSpec.getMode(spec)) else spec
     }
 
     private fun arrangement(

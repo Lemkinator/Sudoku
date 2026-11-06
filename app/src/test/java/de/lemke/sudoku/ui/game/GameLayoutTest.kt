@@ -123,6 +123,23 @@ class GameLayoutTest {
     }
 
     @Test
+    fun `scrolling controls of a fixed width shrink to leave half the board side`() {
+        val attributes =
+            Robolectric
+                .buildAttributeSet()
+                .addAttribute(R.attr.controlsPosition, "end")
+                .addAttribute(R.attr.controlsScroll, "true")
+                .build()
+        val layout = GameLayout(context, attributes)
+        val (board, controls) = layout.with(LayoutParams(320, LayoutParams.MATCH_PARENT))
+
+        layout(layout, 500, 400)
+
+        board.bounds() shouldBe listOf(0, 100, 200, 300)
+        controls.bounds() shouldBe listOf(200, 0, 500, 400)
+    }
+
+    @Test
     fun `fixed controls below the board stay whole and the board shrinks`() {
         val layout = GameLayout(context)
         val board = View(context)
