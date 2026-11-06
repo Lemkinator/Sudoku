@@ -31,6 +31,17 @@ class StackedIconButton
         attrs: AttributeSet? = null,
         defStyleAttr: Int = R.attr.buttonStyle,
     ) : AppCompatButton(context, attrs, defStyleAttr) {
+        // With a fixed size, TextView.checkForRelayout rebuilds the layout in place and only invalidates, so onLayout needs this request.
+        override fun onTextChanged(
+            text: CharSequence?,
+            start: Int,
+            lengthBefore: Int,
+            lengthAfter: Int,
+        ) {
+            super.onTextChanged(text, start, lengthBefore, lengthAfter)
+            requestLayout()
+        }
+
         // TextView draws the top icon at the top padding edge, so the icon bounds carry the offset.
         override fun onLayout(
             changed: Boolean,

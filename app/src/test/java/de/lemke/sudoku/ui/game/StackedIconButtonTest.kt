@@ -66,7 +66,6 @@ class StackedIconButtonTest {
         val button = stackedButton()
 
         layOut(button)
-        drawOnBitmap(button)
 
         val icon = button.compoundDrawables[1]
         icon.bounds.top shouldBe 205
@@ -79,7 +78,6 @@ class StackedIconButtonTest {
         val button = stackedButton()
 
         layOut(button, height = 1)
-        drawOnBitmap(button, height = 1)
 
         button.compoundDrawables[1].bounds.top shouldBe 0
     }
@@ -121,8 +119,24 @@ class StackedIconButtonTest {
         drawOnBitmap(button)
 
         layOut(button)
-        drawOnBitmap(button)
         button.layout shouldNotBe null
+        icon.bounds.top shouldBe 182
+        button.paddingTop + icon.bounds.bottom + button.compoundDrawablePadding shouldBe textTop(button)
+    }
+
+    @Test
+    fun `setText under a fixed size requests a layout and recenters the icon`() {
+        val button = stackedButton()
+        button.layoutParams = ViewGroup.LayoutParams(300, 600)
+        layOut(button)
+        val icon = button.compoundDrawables[1]
+        icon.bounds.top shouldBe 205
+
+        button.text = "A much longer label that wraps over several lines in this narrow button"
+        button.isLayoutRequested shouldBe true
+        layOut(button)
+
+        button.layout.lineCount shouldBeGreaterThan 1
         icon.bounds.top shouldBe 182
         button.paddingTop + icon.bounds.bottom + button.compoundDrawablePadding shouldBe textTop(button)
     }
