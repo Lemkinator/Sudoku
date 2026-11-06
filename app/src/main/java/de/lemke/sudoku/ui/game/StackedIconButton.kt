@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui.game
 
 import android.content.Context
-import android.graphics.Canvas
 import android.util.AttributeSet
 import androidx.appcompat.R
 import androidx.appcompat.widget.AppCompatButton
@@ -33,14 +32,19 @@ class StackedIconButton
         defStyleAttr: Int = R.attr.buttonStyle,
     ) : AppCompatButton(context, attrs, defStyleAttr) {
         // TextView draws the top icon at the top padding edge, so the icon bounds carry the offset.
-        override fun onDraw(canvas: Canvas) {
-            // getLayout() is null until the first layout pass and after setText, also when a transition draws the view.
+        override fun onLayout(
+            changed: Boolean,
+            left: Int,
+            top: Int,
+            right: Int,
+            bottom: Int,
+        ) {
+            super.onLayout(changed, left, top, right, bottom)
             val textLayout = layout
             val icon = compoundDrawables[1]
-            if (textLayout == null || icon == null) return super.onDraw(canvas)
-            val slack = height - paddingTop - paddingBottom - icon.bounds.height() - compoundDrawablePadding - textLayout.height
-            val top = maxOf(slack, 0) / 2
-            icon.setBounds(icon.bounds.left, top, icon.bounds.right, top + icon.bounds.height())
-            super.onDraw(canvas)
+            if (textLayout == null || icon == null) return
+            val slack = measuredHeight - paddingTop - paddingBottom - icon.bounds.height() - compoundDrawablePadding - textLayout.height
+            val iconTop = maxOf(slack, 0) / 2
+            icon.setBounds(icon.bounds.left, iconTop, icon.bounds.right, iconTop + icon.bounds.height())
         }
     }

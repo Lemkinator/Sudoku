@@ -24,7 +24,9 @@ import android.view.ContextThemeWrapper
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import androidx.test.core.app.ApplicationProvider
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,47 +38,70 @@ class StackedIconButtonTest {
     private val context =
         ContextThemeWrapper(ApplicationProvider.getApplicationContext<Application>(), androidx.appcompat.R.style.Theme_AppCompat_Light)
 
-    private fun drawnIconTop(height: Int): Pair<Int, Int> {
+    private fun stackedButton(): StackedIconButton {
         val button = StackedIconButton(context)
         button.setCompoundDrawablesWithIntrinsicBounds(0, android.R.drawable.ic_menu_add, 0, 0)
+        button.compoundDrawablePadding = 10
         button.text = "Note"
-        button.measure(MeasureSpec.makeMeasureSpec(300, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
-        button.layout(0, 0, 300, height)
-        button.draw(Canvas(Bitmap.createBitmap(300, height, Bitmap.Config.ARGB_8888)))
-        val icon = button.compoundDrawables[1]
-        val slack = height - button.paddingTop - button.paddingBottom - icon.bounds.height() - button.layout.height
-        return icon.bounds.top to slack
+        return button
     }
 
+    private fun layOut(
+        button: StackedIconButton,
+        height: Int = 600,
+    ) {
+        button.measure(MeasureSpec.makeMeasureSpec(300, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
+        button.layout(0, 0, 300, height)
+    }
+
+    private fun drawOnBitmap(
+        button: StackedIconButton,
+        height: Int = 600,
+    ) = button.draw(Canvas(Bitmap.createBitmap(300, height, Bitmap.Config.ARGB_8888)))
+
+    private fun textTop(button: StackedIconButton) = button.totalPaddingTop + button.layout.getLineTop(0)
+
     @Test
-    fun `icon moves down by half the slack in a stretched button`() {
-        val (top, slack) = drawnIconTop(height = 600)
-        (slack > 0) shouldBe true
-        top shouldBe slack / 2
+    fun `icon sits directly above the label and the pair is centered in a stretched button`() {
+        val button = stackedButton()
+
+        layOut(button)
+        drawOnBitmap(button)
+
+        val icon = button.compoundDrawables[1]
+        icon.bounds.top shouldBe 205
+        button.layout.height shouldBeGreaterThan 0
+        button.paddingTop + icon.bounds.bottom + button.compoundDrawablePadding shouldBe textTop(button)
     }
 
     @Test
     fun `icon stays at the top edge when the button has no slack`() {
-        val (top, slack) = drawnIconTop(height = 1)
-        (slack <= 0) shouldBe true
-        top shouldBe 0
+        val button = stackedButton()
+
+        layOut(button, height = 1)
+        drawOnBitmap(button, height = 1)
+
+        button.compoundDrawables[1].bounds.top shouldBe 0
     }
 
-    private fun drawOnBitmap(button: StackedIconButton) = button.draw(Canvas(Bitmap.createBitmap(300, 600, Bitmap.Config.ARGB_8888)))
+    @Test
+    fun `layout without a measure pass leaves the icon bounds alone`() {
+        val button = stackedButton()
+        val icon = button.compoundDrawables[1]
+        val before = Rect(icon.bounds)
+        button.layout shouldBe null
 
-    private fun layOut(button: StackedIconButton) {
-        button.measure(MeasureSpec.makeMeasureSpec(300, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(600, MeasureSpec.EXACTLY))
         button.layout(0, 0, 300, 600)
+
+        icon.bounds shouldBe before
     }
 
     @Test
     fun `draws without a text layout and leaves the icon bounds alone`() {
-        val button = StackedIconButton(context)
-        button.setCompoundDrawablesWithIntrinsicBounds(0, android.R.drawable.ic_menu_add, 0, 0)
-        button.text = "Note"
+        val button = stackedButton()
         val icon = button.compoundDrawables[1]
         val before = Rect(icon.bounds)
-        (button.layout == null) shouldBe true
+        button.layout shouldBe null
 
         drawOnBitmap(button)
 
@@ -84,31 +109,33 @@ class StackedIconButtonTest {
     }
 
     @Test
-    fun `draws after setText without a new layout pass`() {
-        val button = StackedIconButton(context)
-        button.setCompoundDrawablesWithIntrinsicBounds(0, android.R.drawable.ic_menu_add, 0, 0)
-        button.text = "Note"
+    fun `draws after setText without a new layout pass and recenters on the next one`() {
+        val button = stackedButton()
         button.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         layOut(button)
-        (button.layout != null) shouldBe true
+        button.layout shouldNotBe null
         val icon = button.compoundDrawables[1]
-        val before = Rect(icon.bounds)
 
         button.text = "A different label"
-        (button.layout == null) shouldBe true
+        button.layout shouldBe null
         drawOnBitmap(button)
 
-        icon.bounds shouldBe before
+        layOut(button)
+        drawOnBitmap(button)
+        button.layout shouldNotBe null
+        icon.bounds.top shouldBe 182
+        button.paddingTop + icon.bounds.bottom + button.compoundDrawablePadding shouldBe textTop(button)
     }
 
     @Test
-    fun `draws without a top icon`() {
+    fun `lays out and draws a button without a top icon`() {
         val button = StackedIconButton(context)
         button.text = "Note"
-        layOut(button)
 
+        layOut(button)
         drawOnBitmap(button)
 
-        (button.compoundDrawables[1] == null) shouldBe true
+        button.layout shouldNotBe null
+        button.compoundDrawables[1] shouldBe null
     }
 }
