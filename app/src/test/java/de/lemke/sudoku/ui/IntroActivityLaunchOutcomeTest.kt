@@ -37,6 +37,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Duration
 import java.util.Calendar
+import javax.inject.Inject
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -62,6 +63,7 @@ class IntroActivityLaunchOutcomeTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        finishAnimationsAtFirstFrame()
         setupOnboarding(listOf(IntroActivity::class.java))
     }
 

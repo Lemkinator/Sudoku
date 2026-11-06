@@ -90,6 +90,15 @@ because sign-in needs the Activity. It signs in through `GamesSignIn` and fetche
 (VERY_EASY…EXPERT, stored by `code`). Moves are pure: `Board.apply(BoardMove)` returns a `MoveResult`, and `Sudoku.play(move)` adds the
 counters and returns a new `Sudoku`. The domain holds no timer and no listener; `SudokuViewModel` owns the ticker and every move.
 
+**Board UI:** `ui/board/` draws the whole board in one `SudokuBoardView` (a Canvas view): `BoardGeometry` holds the cell edges and the
+corner insets that the 26 dp board arc forces, `NoteLayout` the adaptive note grid (2x2, 3x3, 4x4 by note count), `BoardRender` the
+tone of each cell, and `BoardAccessibilityHelper` one TalkBack entry per cell. These classes import no `android.*` except the view and
+the helper. The view keeps its geometry under one `transform` matrix for a later pinch zoom. `GameLayout` (`ui/game/`) places the board
+and the controls through the pure `arrangeGame`: below each other in `layout/`, side by side in `layout-land/`; the controls stick to the bottom or end edge and the board is the
+largest square the controls leave, centered in the rest. `SudokuActivity` and `IntroActivity` have no orientation lock, so a rotation recreates them. The tutorial runs on the same view and
+layout; `IntroViewModel.state` (`IntroState`: the `IntroStep` lesson, the `BoardInput` and the numbers entered, which the tutorial board
+replays) sits in the saved state, and the activity only draws it and runs the lesson animations.
+
 **Sudoku modes:** `GameMode`: `Normal`, `Daily(date)`, `Level(number)`. A daily game keeps the day it was made for as `date`, stored in
 the `dailyDate` column, whatever zone the device is in later.
 
@@ -127,8 +136,9 @@ timeout, so Room queries run only while the screen collects. The upstream restar
 steps (`initDailySudokus`, `initSudokuLevel`) therefore run once, eagerly, in a `viewModelScope.async` that the upstream awaits. A
 `catch` ahead of `stateInViewModel` sets the screen's `loadFailed` state once per failed run; the next return retries.
 A refused next-level start (its level is already saved) also restarts the level list query.
-`SudokuViewModel` owns the played sudoku (`SudokuGame`), its moves (`onMove`) and its one ticker job, and keeps its id in the
-`SavedStateHandle`, so a restart or a follow-up game survives recreation. Every write of the played sudoku goes through
+`SudokuViewModel` owns the played sudoku (`SudokuGame`), its moves (`onMove`), the player's input (`BoardInput`: selection and notes mode,
+reduced from taps by `reduceInput`) and its one ticker job, and keeps its id and input in the
+`SavedStateHandle`, so a restart, a rotation or a follow-up game survives recreation. Every write of the played sudoku goes through
 `QueueSudokuSaveUseCase`: it queues the immutable value and runs the writes one after another in `@ApplicationScope`, so a closing screen
 cannot cancel a save. A queued save that has not started takes the newer snapshot of its game, so a burst of moves writes once. Pause and move saves go through its `launch`, which nobody awaits, so it logs a failed save.
 The winning move starts the wrap-up in the

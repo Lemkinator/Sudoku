@@ -41,7 +41,6 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle.State.CREATED
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.gms.games.PlayGames
 import dagger.hilt.android.AndroidEntryPoint
 import de.lemke.commonutils.ui.utils.InAppReview
@@ -59,21 +58,21 @@ import de.lemke.commonutils.ui.utils.transformTo
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
-import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.BoardMove
+import de.lemke.sudoku.domain.model.CompletedRegions
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.MoveResult
 import de.lemke.sudoku.domain.model.PlayGamesSync
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.dateFormatShort
-import de.lemke.sudoku.ui.utils.FieldRegion
+import de.lemke.sudoku.ui.board.CellAnimation
+import de.lemke.sudoku.ui.board.animationSteps
+import de.lemke.sudoku.ui.game.BoardInput
+import de.lemke.sudoku.ui.game.InputTap
+import de.lemke.sudoku.ui.game.Selection
+import de.lemke.sudoku.ui.game.boardRenderOf
 import de.lemke.sudoku.ui.utils.PlayGamesSyncer
-import de.lemke.sudoku.ui.utils.SelectionIndices
-import de.lemke.sudoku.ui.utils.SelectionTarget
-import de.lemke.sudoku.ui.utils.SudokuViewAdapter
-import de.lemke.sudoku.ui.utils.animateFields
-import de.lemke.sudoku.ui.utils.fieldRegions
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.dialog.ProgressDialog.ProgressStyle.CIRCLE
 import dev.oneuiproject.oneui.ktx.setOnClickListenerWithProgress
@@ -94,8 +93,7 @@ class SudokuActivity : AppCompatActivity() {
     private var winAnimating = false
     private var gameOverDialog: AlertDialog? = null
     private val playing get() = viewModel.game.value as? SudokuGame.Playing
-    private val SudokuGame.Playing.selectionIndices get() = SelectionIndices(sudoku.info.size)
-    lateinit var gameAdapter: SudokuViewAdapter
+    private var initialized = false
     internal val sudokuButtons: MutableList<AppCompatButton> = mutableListOf()
     private val allNumberButtons: List<AppCompatButton>
         get() =
@@ -119,8 +117,6 @@ class SudokuActivity : AppCompatActivity() {
                     numberButtonG,
                 )
             }
-    internal var notesEnabled = false
-    internal var selected: Int? = null
     private val gameEnded get() = playing?.ended == true
     private var renderedMenuState: Pair<Boolean, Phase>? = null
     private val accelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
@@ -149,10 +145,13 @@ class SudokuActivity : AppCompatActivity() {
         loadingDialog = ProgressDialog(this)
         loadingDialog.setProgressStyle(CIRCLE)
         loadingDialog.setCancelable(false)
-        binding.noteButton.setOnClickListener { toggleOrSetNoteButton() }
+        binding.noteButton.setOnClickListener { viewModel.onNotesToggled() }
+        binding.board.onCellClick = { viewModel.onTap(InputTap.Cell(it)) }
+        binding.board.onCellLongClick = { viewModel.onMove(BoardMove.Erase(it)) }
         collectState(viewModel.game, minActiveState = CREATED) { if (it == SudokuGame.NotFound) onSudokuNotFound() }
         collectState(viewModel.game) { renderLoadingDialog(it) }
         collectState(viewModel.game, minActiveState = RESUMED) { onGame(it) }
+        collectState(viewModel.input) { renderGame() }
         collectState(viewModel.share, minActiveState = RESUMED) { if (it is SudokuShare.Result) onShareResult(it) }
         collectState(viewModel.completion) { invalidateOptionsMenu() }
         collectState(viewModel.completion, minActiveState = RESUMED) {
@@ -176,7 +175,7 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        if (this::gameAdapter.isInitialized) pauseGame()
+        if (initialized && !isChangingConfigurations) pauseGame()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.sudoku_menu, menu).let { true }
@@ -224,28 +223,26 @@ class SudokuActivity : AppCompatActivity() {
         playing: SudokuGame.Playing,
     ): Boolean =
         when (keyCode) {
-            in digitKeyButtonIndex -> {
-                val buttonIndex = digitKeyButtonIndex.getValue(keyCode)
-                (buttonIndex < playing.sudoku.info.size.value).also {
-                    if (it) select(playing, playing.selectionIndices.numberButton(buttonIndex))
-                }
+            in digitKeyDigit -> {
+                val digit = digitKeyDigit.getValue(keyCode)
+                (digit <= playing.sudoku.info.size.value).also { if (it) viewModel.onTap(InputTap.Digit(digit)) }
             }
 
             KeyEvent.KEYCODE_DEL -> {
-                true.also { select(playing, playing.selectionIndices.deleteButton) }
+                true.also { viewModel.onTap(InputTap.Delete) }
             }
 
             KeyEvent.KEYCODE_H -> {
                 playing.sudoku.info.isHintAvailable
-                    .also { if (it) select(playing, playing.selectionIndices.hintButton) }
+                    .also { if (it) viewModel.onTap(InputTap.Hint) }
             }
 
             KeyEvent.KEYCODE_N -> {
-                true.also { toggleOrSetNoteButton() }
+                true.also { viewModel.onNotesToggled() }
             }
 
             KeyEvent.KEYCODE_ESCAPE -> {
-                true.also { select(playing, null) }
+                true.also { viewModel.onTap(InputTap.Clear) }
             }
 
             else -> {
@@ -276,8 +273,9 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             is SudokuGame.Playing -> {
-                if (!this::gameAdapter.isInitialized) initSudoku(game.sudoku)
+                if (!initialized) initSudoku(game.sudoku, paused = !game.running && !game.ended)
                 setSubtitle(game)
+                renderGame()
                 if (renderedMenuState != game.running to game.phase) {
                     renderedMenuState = game.running to game.phase
                     invalidateOptionsMenu()
@@ -287,20 +285,15 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
-    private fun initSudoku(sudoku: Sudoku) {
+    private fun initSudoku(
+        sudoku: Sudoku,
+        paused: Boolean = false,
+    ) {
+        initialized = true
         setTitle(sudoku.info)
-        binding.gameRecycler.layoutManager = GridLayoutManager(this@SudokuActivity, sudoku.info.size.value)
-        gameAdapter =
-            SudokuViewAdapter(
-                this@SudokuActivity,
-                sudoku.board,
-                onFieldClicked = { select(it) },
-                onFieldLongClicked = { viewModel.onMove(BoardMove.Erase(it)) != null },
-                onHighlightingUsed = viewModel::onHighlightingUsed,
-            )
-        binding.gameRecycler.adapter = gameAdapter
         initSudokuButtons(sudoku)
-        resumeGame()
+        renderGame()
+        if (paused) animateGameButtonsVisibility(false) else resumeGame()
     }
 
     private fun initSudokuButtons(sudoku: Sudoku) {
@@ -308,19 +301,16 @@ class SudokuActivity : AppCompatActivity() {
         sudokuButtons.addAll(allNumberButtons.take(sudoku.info.size.value))
         for (index in sudokuButtons.indices) {
             sudokuButtons[index].isVisible = true
-            sudokuButtons[index].setOnClickListener { selectControl { numberButton(index) } }
+            sudokuButtons[index].setOnClickListener { viewModel.onTap(InputTap.Digit(index + 1)) }
         }
-        binding.deleteButton.setOnClickListener { selectControl { deleteButton } }
-        binding.hintButton.setOnClickListener { selectControl { hintButton } }
+        binding.deleteButton.setOnClickListener { viewModel.onTap(InputTap.Delete) }
+        binding.hintButton.setOnClickListener { viewModel.onTap(InputTap.Hint) }
         binding.resumeButton.setOnClickListener { resumeGame() }
-        selectButton(null, false, SelectionIndices(sudoku.info.size))
-        checkAnyNumberCompleted(sudoku.board)
-        refreshHintButton(sudoku.info)
     }
 
     fun resumeGame() {
-        if (!this::gameAdapter.isInitialized) return
-        binding.resumeButton.transformTo(binding.gameLayout)
+        if (!initialized) return
+        binding.resumeButton.transformTo(binding.board)
         viewModel.onResumed()
         animateGameButtonsVisibility(!gameEnded)
         invalidateOptionsMenu()
@@ -336,7 +326,7 @@ class SudokuActivity : AppCompatActivity() {
         viewModel.onPaused()
         if (userSettings.keepScreenOn) window.clearFlags(FLAG_KEEP_SCREEN_ON)
         if (gameEnded) return
-        if (binding.gameLayout.isVisible) binding.gameLayout.transformTo(binding.resumeButton)
+        if (binding.board.isVisible) binding.board.transformTo(binding.resumeButton)
         animateGameButtonsVisibility(false)
         invalidateOptionsMenu()
     }
@@ -419,196 +409,22 @@ class SudokuActivity : AppCompatActivity() {
             ?.let { gameOverDialog = it }
     }
 
-    internal fun select(newSelected: Int?) = withPlaying { select(it, newSelected) }
-
-    private fun selectControl(control: SelectionIndices.() -> Int) = withPlaying { select(it, it.selectionIndices.control()) }
-
-    private fun select(
-        playing: SudokuGame.Playing,
-        newSelected: Int?,
-    ) {
-        if (playing.phase == Phase.Lost) return
-        if (binding.sudokuToolbarLayout.isExpanded) binding.sudokuToolbarLayout.setExpanded(expanded = false, animate = true)
-        val current = selected
-        if (current == null) {
-            selectFromNothing(playing, newSelected)
-            return
-        }
-        when (playing.selectionIndices.targetOf(current)) {
-            SelectionTarget.FIELD -> selectFromField(playing, newSelected)
-            SelectionTarget.NUMBER_BUTTON -> selectFromNumberButton(playing, newSelected)
-            SelectionTarget.DELETE_BUTTON -> selectFromDeleteButton(playing, newSelected)
-            SelectionTarget.HINT_BUTTON -> selectFromHintButton(playing, newSelected)
-        }
-    }
-
-    private fun selectFromNothing(
-        playing: SudokuGame.Playing,
-        newSelected: Int?,
-    ) {
-        val indices = playing.selectionIndices
-        when (newSelected) {
-            null -> {}
-
-            in indices.fields -> {
-                gameAdapter.selectFieldView(newSelected, userSettings.highlightRegional, userSettings.highlightNumber)
-                selected = newSelected
-            }
-
-            in indices.buttons -> {
-                selectButton(newSelected - indices.size.cellCount, userSettings.highlightNumber, indices)
-            }
-
-            else -> {}
-        }
-    }
-
-    private fun selectFromField(
-        playing: SudokuGame.Playing,
-        newSelected: Int?,
-    ) {
-        val indices = playing.selectionIndices
-        val selectedField = selected!!
-        when (newSelected) {
-            null, selectedField -> {
-                selected = null
-            }
-
-            in indices.fields -> {
-                selected = newSelected
-            }
-
-            in indices.numberButtons -> {
-                enterOrToggleNote(playing.sudoku, selectedField, newSelected - indices.size.cellCount + 1)
-                selected = null
-            }
-
-            indices.deleteButton -> {
-                eraseOrClearNotes(playing.sudoku, selectedField)
-                selected = null
-            }
-
-            indices.hintButton -> {
-                move(playing.sudoku, BoardMove.RevealHint(selectedField))
-                selected = null
-            }
-        }
-        gameAdapter.selectFieldView(selected, userSettings.highlightRegional, userSettings.highlightNumber)
-    }
-
-    private fun selectFromNumberButton(
-        playing: SudokuGame.Playing,
-        newSelected: Int?,
-    ) {
-        val indices = playing.selectionIndices
-        val selectedButton = selected!!
-        when (newSelected) {
-            null, selectedButton -> {
-                selectButton(null, userSettings.highlightNumber, indices)
-            }
-
-            in indices.fields -> {
-                val number = selectedButton - indices.size.cellCount + 1
-                val moved = enterOrToggleNote(playing.sudoku, newSelected, number)
-                selectNextButton(number, moved.board.completedDigits, indices)
-            }
-
-            in indices.buttons -> {
-                gameAdapter.selectFieldView(null, userSettings.highlightRegional, userSettings.highlightNumber)
-                selectButton(newSelected - indices.size.cellCount, userSettings.highlightNumber, indices)
-            }
-
-            else -> {
-                selectButton(null, userSettings.highlightNumber, indices)
-            }
-        }
-    }
-
-    private fun selectFromDeleteButton(
-        playing: SudokuGame.Playing,
-        newSelected: Int?,
-    ) {
-        val indices = playing.selectionIndices
-        val selectedButton = selected!!
-        when (newSelected) {
-            null, selectedButton -> {
-                selectButton(null, userSettings.highlightNumber, indices)
-            }
-
-            in indices.fields -> {
-                eraseOrClearNotes(playing.sudoku, newSelected)
-            }
-
-            in indices.buttons -> {
-                selectButton(newSelected - indices.size.cellCount, userSettings.highlightNumber, indices)
-            }
-
-            else -> {
-                selectButton(null, userSettings.highlightNumber, indices)
-            }
-        }
-    }
-
-    private fun selectFromHintButton(
-        playing: SudokuGame.Playing,
-        newSelected: Int?,
-    ) {
-        val indices = playing.selectionIndices
-        val selectedButton = selected!!
-        when (newSelected) {
-            null, selectedButton -> {
-                selectButton(null, userSettings.highlightNumber, indices)
-            }
-
-            in indices.fields -> {
-                val moved = move(playing.sudoku, BoardMove.RevealHint(newSelected))
-                if (!moved.info.isHintAvailable) selected = null
-            }
-
-            in indices.buttons -> {
-                selectButton(newSelected - indices.size.cellCount, userSettings.highlightNumber, indices)
-            }
-
-            else -> {
-                selectButton(null, userSettings.highlightNumber, indices)
-            }
-        }
-    }
-
-    private fun enterOrToggleNote(
-        sudoku: Sudoku,
-        index: Int,
-        digit: Int,
-    ) = move(sudoku, if (notesEnabled) BoardMove.ToggleNote(index, digit) else BoardMove.Enter(index, digit))
-
-    private fun eraseOrClearNotes(
-        sudoku: Sudoku,
-        index: Int,
-    ) = move(sudoku, if (notesEnabled) BoardMove.ClearNotes(index) else BoardMove.Erase(index))
-
-    private fun move(
-        sudoku: Sudoku,
-        move: BoardMove,
-    ): Sudoku = viewModel.onMove(move) ?: sudoku
-
     private fun showMove(
         playing: SudokuGame.Playing,
         result: MoveResult,
     ) {
         viewModel.onMoveShown(result)
-        gameAdapter.render(playing.sudoku.board)
-        checkAnyNumberCompleted(playing.sudoku.board)
-        refreshHintButton(playing.sudoku.info)
-        val position = result.board.position(result.move.index)
+        val size = playing.sudoku.info.size
+        val index = result.move.index
         if (userSettings.animationsEnabled) {
-            lifecycleScope.animateFields(gameAdapter.fieldViews, position, result.completed.fieldRegions())
+            val regions = result.completed.copy(board = false)
+            if (regions != CompletedRegions.NONE) binding.board.animateCells(animationSteps(size, index, regions), CellAnimation.WAVE)
         }
         if (result.completed.board) {
             if (userSettings.animationsEnabled) {
                 winAnimating = true
-                lifecycleScope
-                    .animateFields(gameAdapter.fieldViews, position, setOf(FieldRegion.BOARD))
-                    .invokeOnCompletion { cause -> if (cause == null) onWinAnimationEnded() }
+                val steps = animationSteps(size, index, CompletedRegions.NONE.copy(board = true))
+                binding.board.animateCells(steps, CellAnimation.BOARD_WAVE) { onWinAnimationEnded() }
             } else {
                 showWon()
             }
@@ -616,70 +432,40 @@ class SudokuActivity : AppCompatActivity() {
         if (playing.phase == Phase.Lost) onErrorLimitReached(playing)
     }
 
-    private fun selectButton(
-        i: Int?,
-        highlightSelectedNumber: Boolean,
-        indices: SelectionIndices,
-    ) {
-        for (button in sudokuButtons) button.backgroundTintList = transparent
-        binding.deleteButton.backgroundTintList = transparent
-        binding.hintButton.backgroundTintList = transparent
-        if (i != null) {
-            when (i) {
-                indices.size.value -> {
-                    binding.deleteButton.backgroundTintList = colorPrimary
-                }
-
-                indices.size.value + 1 -> {
-                    binding.hintButton.backgroundTintList = colorPrimary
-                }
-
-                else -> {
-                    sudokuButtons[i].backgroundTintList = colorPrimary
-                    if (highlightSelectedNumber) gameAdapter.highlightNumber(i + 1)
-                }
-            }
-            selected = indices.numberButton(i)
-        } else {
-            selected = null
-            if (highlightSelectedNumber) gameAdapter.highlightNumber(null)
-        }
+    private fun renderGame() {
+        val playing = playing ?: return
+        if (!initialized) return
+        val input = viewModel.input.value
+        val board = playing.sudoku.board
+        binding.board.render = boardRenderOf(board, input, userSettings.highlightRegional, userSettings.highlightNumber)
+        renderControls(input, board.completedDigits)
+        refreshHintButton(playing.sudoku.info)
     }
 
-    private fun selectNextButton(
-        currentNumber: Int,
+    private fun renderControls(
+        input: BoardInput,
         completedDigits: Set<Int>,
-        indices: SelectionIndices,
     ) {
-        var number = currentNumber
-        while (number in completedDigits) {
-            number++
-            if (number > indices.size.value) number = 1
-            if (number == currentNumber) {
-                selectButton(null, userSettings.highlightNumber, indices)
-                return
-            }
-        }
-        selectButton(number - 1, userSettings.highlightNumber, indices)
-    }
-
-    private fun checkAnyNumberCompleted(board: Board) {
-        val completedDigits = board.completedDigits
         sudokuButtons.forEachIndexed { index, button ->
-            if (index + 1 in completedDigits) {
-                button.isEnabled = false
-                button.setTextColor(getColor(commonutilsR.color.commonutils_secondary_text_icon_color))
-            } else {
-                button.isEnabled = true
-                button.setTextColor(getColor(commonutilsR.color.commonutils_primary_text_icon_color))
-            }
+            val digit = index + 1
+            button.backgroundTintList = tintOf(input.selection == Selection.Digit(digit))
+            button.isEnabled = digit !in completedDigits
+            button.setTextColor(
+                getColor(
+                    if (digit in completedDigits) {
+                        commonutilsR.color.commonutils_secondary_text_icon_color
+                    } else {
+                        commonutilsR.color.commonutils_primary_text_icon_color
+                    },
+                ),
+            )
         }
+        binding.deleteButton.backgroundTintList = tintOf(input.selection == Selection.Delete)
+        binding.hintButton.backgroundTintList = tintOf(input.selection == Selection.Hint)
+        binding.noteButton.backgroundTintList = tintOf(input.notesMode)
     }
 
-    private fun toggleOrSetNoteButton() {
-        notesEnabled = !notesEnabled
-        binding.noteButton.backgroundTintList = if (notesEnabled) colorPrimary else transparent
-    }
+    private fun tintOf(selected: Boolean) = if (selected) colorPrimary else transparent
 
     private fun refreshHintButton(info: GameInfo) {
         binding.hintButton.isVisible = info.isHintAvailable
@@ -772,7 +558,7 @@ class SudokuActivity : AppCompatActivity() {
         private const val SHARE_DIALOG_TAG = "share"
         private const val MIME_TYPE_SUDOKU = "application/sudoku"
 
-        private val digitKeyButtonIndex: Map<Int, Int> =
+        private val digitKeyDigit: Map<Int, Int> =
             listOf(
                 KeyEvent.KEYCODE_1,
                 KeyEvent.KEYCODE_2,
@@ -790,7 +576,7 @@ class SudokuActivity : AppCompatActivity() {
                 KeyEvent.KEYCODE_E,
                 KeyEvent.KEYCODE_F,
                 KeyEvent.KEYCODE_G,
-            ).withIndex().associate { (index, keyCode) -> keyCode to index }
+            ).withIndex().associate { (index, keyCode) -> keyCode to index + 1 }
     }
 }
 

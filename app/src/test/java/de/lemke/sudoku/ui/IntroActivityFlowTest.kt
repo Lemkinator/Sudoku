@@ -30,7 +30,7 @@ import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
-import de.lemke.sudoku.domain.model.CellOrigin
+import de.lemke.sudoku.ui.game.BoardInput
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldBeNull
@@ -62,6 +62,7 @@ class IntroActivityFlowTest {
     @Before
     fun setup() {
         hiltRule.inject()
+        finishAnimationsAtFirstFrame()
         settings.bypassOobe()
     }
 
@@ -82,375 +83,293 @@ class IntroActivityFlowTest {
     @Test
     fun `onCreate does not override the activity transition below API 34`() =
         launch { activity ->
-            activity.introStep shouldBe 0
+            activity.viewModel.state.value.step shouldBe IntroStep.BLOCKS
         }
 
-    // region step 0
+    private fun IntroActivity.tapCell(index: Int) = checkNotNull(binding.board.onCellClick)(index)
 
-    @Test
-    fun `onCreate starts the tutorial at step 0 showing the row-column-block explanation`() =
-        launch { activity ->
-            activity.introStep shouldBe 0
-            activity.binding.introTextText.text
-                .toString() shouldBe activity.getString(R.string.intro_text0)
+    private fun IntroActivity.longPressCell(index: Int) = checkNotNull(binding.board.onCellLongClick)(index)
+
+    private fun IntroActivity.tapDigit(digit: Int) =
+        with(binding) {
+            listOf(
+                numberButton1,
+                numberButton2,
+                numberButton3,
+                numberButton4,
+                numberButton5,
+                numberButton6,
+                numberButton7,
+                numberButton8,
+                numberButton9,
+            )
+        }[digit - 1].performClick()
+
+    private val IntroActivity.state get() = viewModel.state.value
+
+    private fun IntroActivity.advanceTo(target: IntroStep) {
+        while (state.step != target) {
+            when (state.step) {
+                IntroStep.SELECT_CELL -> tapCell(DEMO_CELL_INDEX_4)
+
+                IntroStep.ENTER_NUMBER -> tapDigit(DEMO_ENTER_DIGIT)
+
+                IntroStep.SELECT_NUMBER -> tapDigit(DEMO_SELECT_DIGIT)
+
+                IntroStep.ENTER_ROW_COLUMN -> tapCell(DEMO_CELL_INDEX_49)
+
+                IntroStep.ENTER_BLOCK -> tapCell(DEMO_CELL_INDEX_24)
+
+                IntroStep.BLOCKS,
+                IntroStep.SELECTION,
+                IntroStep.NUMBER_ENTRY,
+                IntroStep.NUMBER_ENTRY_DEMO,
+                IntroStep.TOOLS,
+                IntroStep.NOTES,
+                -> binding.introNextButton.performClick()
+            }
         }
-
-    @Test
-    fun `selecting nothing while nothing is selected and no step condition matches is a no-op`() =
-        launch { activity ->
-            activity.select(null)
-            activity.introStep shouldBe 0
-            activity.selected.shouldBeNull()
-        }
-
-    @Test
-    fun `tapping an unrelated field at step 0 does not advance the tutorial`() =
-        launch { activity ->
-            activity.select(0)
-            activity.introStep shouldBe 0
-            activity.selected.shouldBeNull()
-        }
-
-    @Test
-    fun `nextIntroStep advances from 0 to 1 and stops the row-column-block animation`() =
-        launch { activity ->
-            activity.nextIntroStep()
-            activity.introStep shouldBe 1
-            activity.binding.introTextText.text
-                .toString() shouldBe activity.getString(R.string.intro_text1)
-        }
-
-    // endregion
-
-    // region step 2 -> 3: select the highlighted field
-
-    private fun toStep2(activity: IntroActivity) {
-        activity.nextIntroStep()
-        activity.nextIntroStep()
     }
 
     @Test
-    fun `nextIntroStep advances from 1 to 2 and hides the title while starting the field animation`() =
+    fun `the tutorial starts with the rules`() =
         launch { activity ->
-            toStep2(activity)
-            activity.introStep shouldBe 2
+            activity.state.step shouldBe IntroStep.BLOCKS
+            activity.binding.introTitleText.text
+                .toString() shouldBe "Rules"
+            activity.binding.introTextText.text
+                .toString() shouldBe
+                "A Sudoku grid consists of 4×4, 9×9 or 16×16 squares. Depending on the size, only the numbers from 1 to 4, " +
+                "9 or 16 can be used. No numbers may be missing or duplicated in each block, row or column."
+            activity.binding.gameButtons.isVisible
+                .shouldBeFalse()
+        }
+
+    @Test
+    fun `a tap on an unrelated cell in the first lesson changes nothing`() =
+        launch { activity ->
+            activity.tapCell(0)
+
+            activity.state shouldBe IntroState()
+        }
+
+    @Test
+    fun `the next button moves through the text lessons and hides the title for the first task`() =
+        launch { activity ->
+            activity.binding.introNextButton.performClick()
+            activity.state.step shouldBe IntroStep.SELECTION
+            activity.binding.introTextText.text
+                .toString() shouldBe
+                "The game is finished when all numbers have been correctly entered into the Sudoku grid. \nThe amount of given " +
+                "numbers depends on the difficulty of the Sudoku. \nFor more difficult Sudokus, fewer numbers are given and often " +
+                "more complex strategies must be used."
+
+            activity.binding.introNextButton.performClick()
+
+            activity.state.step shouldBe IntroStep.SELECT_CELL
             activity.binding.introTitle.isVisible
                 .shouldBeFalse()
             activity.binding.introTextText.text
-                .toString() shouldBe activity.getString(R.string.intro_text2)
+                .toString() shouldBe
+                "In the first row the last number missing is 5. Tap on the empty field to select it."
         }
 
     @Test
-    fun `tapping the wrong field at step 2 does not advance`() =
+    fun `tapping the highlighted cell selects it, shows the number buttons and moves on`() =
         launch { activity ->
-            toStep2(activity)
-            activity.select(0)
-            activity.introStep shouldBe 2
-            activity.selected.shouldBeNull()
-        }
+            activity.advanceTo(IntroStep.SELECT_CELL)
 
-    @Test
-    fun `tapping the highlighted field at step 2 selects it and advances to step 3`() =
-        launch { activity ->
-            toStep2(activity)
-            activity.select(DEMO_CELL_INDEX_4)
-            activity.introStep shouldBe 3
-            activity.selected shouldBe DEMO_CELL_INDEX_4
+            activity.tapCell(DEMO_CELL_INDEX_4)
+
+            activity.state.step shouldBe IntroStep.ENTER_NUMBER
+            activity.binding.board.render
+                ?.selected shouldBe DEMO_CELL_INDEX_4
             activity.binding.gameButtons.isVisible
+                .shouldBeTrue()
+            activity.binding.numberButtons.isVisible
                 .shouldBeTrue()
             activity.binding.otherButtons.isVisible
                 .shouldBeFalse()
         }
 
-    // endregion
+    @Test
+    fun `tapping another cell in the select-cell lesson selects nothing`() =
+        launch { activity ->
+            activity.advanceTo(IntroStep.SELECT_CELL)
 
-    // region step 3 -> 4: enter the number
+            activity.tapCell(0)
 
-    private fun toStep3(activity: IntroActivity) {
-        toStep2(activity)
-        activity.select(DEMO_CELL_INDEX_4)
-    }
+            activity.state.step shouldBe IntroStep.SELECT_CELL
+            activity.state.input shouldBe BoardInput()
+        }
 
     @Test
-    fun `tapping the wrong number at step 3 does not place a value`() =
+    fun `entering 5 into the selected cell places it and moves on`() =
         launch { activity ->
-            toStep3(activity)
-            activity.select(activity.sudoku.info.size.cellCount)
-            activity.introStep shouldBe 3
-            activity.sudoku.board[DEMO_CELL_INDEX_4]
-                .value
+            activity.advanceTo(IntroStep.ENTER_NUMBER)
+
+            activity.tapDigit(DEMO_ENTER_DIGIT)
+
+            activity.state.step shouldBe IntroStep.SELECT_NUMBER
+            activity.binding.board.render
+                ?.board
+                ?.get(DEMO_CELL_INDEX_4)
+                ?.value shouldBe DEMO_ENTER_DIGIT
+            activity.binding.board.render
+                ?.selected
                 .shouldBeNull()
         }
 
     @Test
-    fun `tapping the correct number at step 3 places it and advances to step 4`() =
+    fun `tapping another number in the enter-number lesson places nothing`() =
         launch { activity ->
-            toStep3(activity)
-            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.introStep shouldBe 4
-            activity.sudoku.board[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
-            activity.selected.shouldBeNull()
-        }
+            activity.advanceTo(IntroStep.ENTER_NUMBER)
 
-    // endregion
+            activity.tapDigit(1)
 
-    // region step 4 -> 5: select a number first
-
-    private fun toStep4(activity: IntroActivity) {
-        toStep3(activity)
-        activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
-    }
-
-    @Test
-    fun `tapping the wrong number button at step 4 does not select it`() =
-        launch { activity ->
-            toStep4(activity)
-            activity.select(activity.sudoku.info.size.cellCount)
-            activity.introStep shouldBe 4
-            activity.selected.shouldBeNull()
+            activity.state.step shouldBe IntroStep.ENTER_NUMBER
+            activity.binding.board.render
+                ?.board
+                ?.get(DEMO_CELL_INDEX_4)
+                ?.value
+                .shouldBeNull()
         }
 
     @Test
-    fun `tapping number 2 at step 4 selects the button and advances to step 5`() =
+    fun `selecting number 2 shows it selected and moves on`() =
         launch { activity ->
-            toStep4(activity)
-            activity.select(activity.sudoku.info.size.cellCount + 1)
-            activity.introStep shouldBe 5
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
+            activity.advanceTo(IntroStep.SELECT_NUMBER)
+
+            activity.tapDigit(DEMO_SELECT_DIGIT)
+
+            activity.state.step shouldBe IntroStep.ENTER_ROW_COLUMN
+            activity.binding.numberButton2.backgroundTintList
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
+            activity.binding.board.render
+                ?.highlightedDigit shouldBe DEMO_SELECT_DIGIT
         }
 
     @Test
-    fun `a real tap on number button 2 at step 4 routes through its click listener`() =
+    fun `entering the selected number into the two highlighted cells finishes the tasks`() =
         launch { activity ->
-            toStep4(activity)
-            activity.sudokuButtons[1].performClick()
-            idleMainLooper()
-            activity.introStep shouldBe 5
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
+            activity.advanceTo(IntroStep.ENTER_ROW_COLUMN)
+
+            activity.tapCell(DEMO_CELL_INDEX_49)
+            activity.state.step shouldBe IntroStep.ENTER_BLOCK
+            activity.tapCell(DEMO_CELL_INDEX_24)
+
+            activity.state.step shouldBe IntroStep.NUMBER_ENTRY
+            val board = checkNotNull(activity.binding.board.render).board
+            listOf(board[DEMO_CELL_INDEX_49].value, board[DEMO_CELL_INDEX_24].value) shouldBe listOf(DEMO_SELECT_DIGIT, DEMO_SELECT_DIGIT)
         }
 
     @Test
-    fun `a real tap on the delete button routes through its click listener`() =
+    fun `the delete and hint buttons select nothing during the tutorial`() =
         launch { activity ->
+            activity.advanceTo(IntroStep.SELECT_NUMBER)
+            val before = activity.state
+
             activity.binding.deleteButton.performClick()
-            idleMainLooper()
-            activity.introStep shouldBe 0
-        }
-
-    @Test
-    fun `a real tap on the hint button routes through its click listener`() =
-        launch { activity ->
             activity.binding.hintButton.performClick()
-            idleMainLooper()
-            activity.introStep shouldBe 0
-        }
 
-    // endregion
-
-    // region step 5 -> 6: place the selected number in the middle block
-
-    private fun toStep5(activity: IntroActivity) {
-        toStep4(activity)
-        activity.select(activity.sudoku.info.size.cellCount + 1)
-    }
-
-    @Test
-    fun `tapping the wrong field at step 5 does not place a value`() =
-        launch { activity ->
-            toStep5(activity)
-            activity.select(1)
-            activity.introStep shouldBe 5
-            activity.sudoku.board[DEMO_CELL_INDEX_49]
-                .value
-                .shouldBeNull()
+            activity.state shouldBe before
         }
 
     @Test
-    fun `tapping another button at step 5 keeps the selected number button`() =
+    fun `the tools lesson shows the tools and hides the numbers`() =
         launch { activity ->
-            toStep5(activity)
-            activity.select(activity.sudoku.info.size.cellCount)
-            activity.introStep shouldBe 5
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
-        }
+            activity.advanceTo(IntroStep.TOOLS)
 
-    @Test
-    fun `tapping the correct field at step 5 places the number and advances to step 6`() =
-        launch { activity ->
-            toStep5(activity)
-            activity.select(DEMO_CELL_INDEX_49)
-            activity.introStep shouldBe 6
-            activity.sudoku.board[DEMO_CELL_INDEX_49].value shouldBe 2
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + 1
-        }
-
-    // endregion
-
-    // region step 6 -> 7: place the same number in the top-right block
-
-    private fun toStep6(activity: IntroActivity) {
-        toStep5(activity)
-        activity.select(DEMO_CELL_INDEX_49)
-    }
-
-    @Test
-    fun `tapping the wrong field at step 6 does not place a value`() =
-        launch { activity ->
-            toStep6(activity)
-            activity.select(1)
-            activity.introStep shouldBe 6
-            activity.sudoku.board[DEMO_CELL_INDEX_24]
-                .value
-                .shouldBeNull()
-        }
-
-    @Test
-    fun `tapping the correct field at step 6 places the number and advances to step 7`() =
-        launch { activity ->
-            toStep6(activity)
-            activity.select(DEMO_CELL_INDEX_24)
-            activity.introStep shouldBe 7
-            activity.sudoku.board[DEMO_CELL_INDEX_24].value shouldBe 2
-            activity.binding.introTitle.isVisible
-                .shouldBeTrue()
-            activity.binding.introTitleText.text
-                .toString() shouldBe activity.getString(R.string.intro_title7)
-        }
-
-    // endregion
-
-    // region steps 7 -> 10: summary, caution, delete/hints, final step
-
-    private fun toStep7(activity: IntroActivity) {
-        toStep6(activity)
-        activity.select(DEMO_CELL_INDEX_24)
-    }
-
-    @Test
-    fun `nextIntroStep advances from 7 to 8 and starts the number-entry animation`() =
-        launch { activity ->
-            toStep7(activity)
-            activity.nextIntroStep()
-            activity.introStep shouldBe 8
-            activity.binding.introTitleText.text
-                .toString() shouldBe activity.getString(R.string.intro_title8)
-        }
-
-    @Test
-    fun `nextIntroStep advances from 8 to 9 and stops the number-entry animation`() =
-        launch { activity ->
-            toStep7(activity)
-            activity.nextIntroStep()
-            activity.nextIntroStep()
-            activity.introStep shouldBe 9
-            activity.binding.introTitleText.text
-                .toString() shouldBe activity.getString(R.string.intro_title9)
             activity.binding.otherButtons.isVisible
                 .shouldBeTrue()
             activity.binding.numberButtons.isVisible
                 .shouldBeFalse()
+            activity.binding.introTitleText.text
+                .toString() shouldBe "Delete and hints"
+            activity.binding.hintButton.text
+                .toString() shouldBe "Hint (3)"
         }
 
     @Test
-    fun `nextIntroStep advances from 9 to 10 and shows the continue button`() =
+    fun `the notes lesson shows the continue button and lets the notes button toggle the mode`() =
         launch { activity ->
-            toStep7(activity)
-            activity.nextIntroStep()
-            activity.nextIntroStep()
-            activity.nextIntroStep()
-            activity.introStep shouldBe 10
-            activity.binding.introTitle.isVisible
-                .shouldBeFalse()
+            activity.advanceTo(IntroStep.NOTES)
+
             activity.binding.introContinueLayout.isVisible
                 .shouldBeTrue()
-        }
-
-    // endregion
-
-    // region note button
-
-    private fun toStep10(activity: IntroActivity) {
-        toStep7(activity)
-        repeat(3) { activity.nextIntroStep() }
-    }
-
-    @Test
-    fun `toggling the note button before the final step is a no-op`() =
-        launch { activity ->
-            activity.toggleOrSetNoteButton()
-            activity.notesEnabled.shouldBeFalse()
-        }
-
-    @Test
-    fun `toggling the note button at the final step enables and disables note mode`() =
-        launch { activity ->
-            toStep10(activity)
-            activity.toggleOrSetNoteButton()
-            activity.notesEnabled.shouldBeTrue()
+            activity.binding.introTitle.isVisible
+                .shouldBeFalse()
+            activity.binding.noteButton.performClick()
+            activity.state.input.notesMode shouldBe true
             activity.binding.noteButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
-
-            activity.toggleOrSetNoteButton()
-            activity.notesEnabled.shouldBeFalse()
-        }
-
-    // endregion
-
-    // region selectButton
-
-    @Test
-    fun `selectButton highlights the delete button`() =
-        launch { activity ->
-            activity.selectButton(activity.sudoku.info.size.value)
-            activity.binding.deleteButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value
+                ?.defaultColor shouldBe INTRO_PRIMARY_COLOR
+            activity.binding.noteButton.performClick()
+            activity.state.input.notesMode shouldBe false
         }
 
     @Test
-    fun `selectButton highlights the hint button`() =
+    fun `the notes button does nothing before the notes lesson`() =
         launch { activity ->
-            activity.selectButton(activity.sudoku.info.size.value + 1)
-            activity.binding.hintButton.backgroundTintList
-                ?.defaultColor shouldBe activity.colorPrimary
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value + 1
-        }
+            activity.binding.noteButton.performClick()
 
-    // endregion
-
-    // region board callbacks
-
-    @Test
-    fun `onFieldClicked routes through select the same way a tap on the board would`() =
-        launch { activity ->
-            toStep2(activity)
-            activity.gameAdapter.onFieldClicked(DEMO_CELL_INDEX_4)
-            activity.introStep shouldBe 3
+            activity.state.input.notesMode shouldBe false
         }
 
     @Test
-    fun `a long click on a given field of the onboarding board is not consumed`() =
+    fun `a long press on a number the player entered erases it`() =
         launch { activity ->
-            activity.gameAdapter.onFieldLongClicked(0).shouldBeFalse()
-            activity.sudoku.board[0].value shouldBe activity.sudoku.board[0].solution
-        }
+            activity.advanceTo(IntroStep.SELECT_NUMBER)
 
-    @Test
-    fun `a long click on a value the player entered erases it`() =
-        launch { activity ->
-            toStep3(activity)
-            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
+            activity.longPressCell(DEMO_CELL_INDEX_4)
 
-            activity.gameAdapter.onFieldLongClicked(DEMO_CELL_INDEX_4).shouldBeTrue()
-
-            activity.sudoku.board[DEMO_CELL_INDEX_4]
-                .value
+            activity.binding.board.render
+                ?.board
+                ?.get(DEMO_CELL_INDEX_4)
+                ?.value
                 .shouldBeNull()
-            activity.sudoku.info.eraserUsed
-                .shouldBeTrue()
         }
 
-    // endregion
+    @Test
+    fun `a long press on a given number keeps it`() =
+        launch { activity ->
+            activity.longPressCell(0)
+
+            checkNotNull(activity.binding.board.render).board[0].value shouldBe 3
+        }
+
+    @Test
+    fun `a tap collapses an expanded toolbar`() =
+        launch { activity ->
+            activity.binding.sudokuToolbarLayout.setExpanded(expanded = true, animate = false)
+            idleMainLooper()
+            activity.binding.sudokuToolbarLayout.isExpanded
+                .shouldBeTrue()
+
+            activity.tapCell(0)
+            idleMainLooper()
+
+            activity.binding.sudokuToolbarLayout.isExpanded
+                .shouldBeFalse()
+        }
+
+    @Test
+    fun `recreation keeps the lesson and the entered numbers`() {
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        ActivityScenario.launch<IntroActivity>(Intent(context, IntroActivity::class.java)).use { scenario ->
+            scenario.onActivity { it.advanceTo(IntroStep.ENTER_ROW_COLUMN) }
+
+            scenario.recreate()
+
+            scenario.onActivity { activity ->
+                activity.state.step shouldBe IntroStep.ENTER_ROW_COLUMN
+                activity.binding.introTextText.text
+                    .toString() shouldBe
+                    "In the middle block, the 2 is missing. Due to the fact that the 2 is already present in row 4 and 5, only the " +
+                    "empty field in the bottom row of the middle block remains. To enter the 2 tap on this field."
+                checkNotNull(activity.binding.board.render).board[DEMO_CELL_INDEX_4].value shouldBe DEMO_ENTER_DIGIT
+            }
+        }
+    }
 
     // region menu
 
@@ -574,137 +493,4 @@ class IntroActivityFlowTest {
         }
 
     // endregion
-
-    @Test
-    fun `advancing the step dispatch past the final step is a no-op`() =
-        launch { activity ->
-            toStep10(activity)
-            activity.nextIntroStep()
-            activity.introStep shouldBe 11
-        }
-
-    @Test
-    fun `select collapses the toolbar when it is currently expanded`() =
-        launch { activity ->
-            activity.binding.sudokuToolbarLayout.setExpanded(expanded = true, animate = false)
-            idleMainLooper()
-            activity.binding.sudokuToolbarLayout.isExpanded
-                .shouldBeTrue()
-
-            activity.select(0)
-            idleMainLooper()
-            activity.binding.sudokuToolbarLayout.isExpanded
-                .shouldBeFalse()
-        }
-
-    @Test
-    fun `select is a no-op when the delete button is currently selected`() =
-        launch { activity ->
-            activity.selectButton(activity.sudoku.info.size.value)
-            val selectedBefore = activity.selected
-            activity.select(0)
-            activity.selected shouldBe selectedBefore
-            activity.introStep shouldBe 0
-        }
-
-    @Test
-    fun `tapping the step-2 target field before reaching step 2 does not advance`() =
-        launch { activity ->
-            activity.select(DEMO_CELL_INDEX_4)
-            activity.introStep shouldBe 0
-            activity.selected.shouldBeNull()
-        }
-
-    @Test
-    fun `selecting the step-4 target button outside step 4 does not advance`() =
-        launch { activity ->
-            activity.select(activity.sudoku.info.size.cellCount + 1)
-            activity.introStep shouldBe 0
-            activity.selected.shouldBeNull()
-        }
-
-    @Test
-    fun `deselecting a field at step 3 clears the selection without advancing`() =
-        launch { activity ->
-            toStep3(activity)
-            activity.select(null)
-            activity.selected.shouldBeNull()
-            activity.introStep shouldBe 3
-        }
-
-    @Test
-    fun `tapping another field while a field is selected keeps the selection`() =
-        launch { activity ->
-            toStep3(activity)
-            activity.select(0)
-            activity.selected shouldBe DEMO_CELL_INDEX_4
-            activity.introStep shouldBe 3
-        }
-
-    @Test
-    fun `tapping the delete button while a field is selected is a no-op`() =
-        launch { activity ->
-            toStep3(activity)
-            activity.select(activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value)
-            activity.selected shouldBe DEMO_CELL_INDEX_4
-            activity.introStep shouldBe 3
-            activity.sudoku.board[DEMO_CELL_INDEX_4]
-                .value
-                .shouldBeNull()
-        }
-
-    @Test
-    fun `tapping the hint button while a field is selected is a no-op`() =
-        launch { activity ->
-            toStep3(activity)
-            activity.select(activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value + 1)
-            activity.selected shouldBe DEMO_CELL_INDEX_4
-            activity.introStep shouldBe 3
-            activity.sudoku.board[DEMO_CELL_INDEX_4]
-                .value
-                .shouldBeNull()
-            activity.sudoku.board[DEMO_CELL_INDEX_4].origin shouldBe CellOrigin.PLAYER
-            activity.sudoku.info.hintsUsed shouldBe 0
-        }
-
-    @Test
-    fun `selecting the step-3 target number outside step 3 does not place a value`() =
-        launch { activity ->
-            toStep3(activity)
-            activity.introStep = 99
-            activity.select(activity.sudoku.info.size.cellCount + DEMO_NUMBER_BUTTON_INDEX_4)
-            activity.introStep shouldBe 99
-            activity.sudoku.board[DEMO_CELL_INDEX_4]
-                .value
-                .shouldBeNull()
-        }
-
-    @Test
-    fun `deselecting a number button at step 5 clears the selection without advancing`() =
-        launch { activity ->
-            toStep5(activity)
-            activity.select(null)
-            activity.selected.shouldBeNull()
-            activity.introStep shouldBe 5
-        }
-
-    @Test
-    fun `selecting a different number button while one is already selected is a no-op`() =
-        launch { activity ->
-            toStep5(activity)
-            val selectedBefore = activity.selected
-            activity.select(activity.sudoku.info.size.cellCount + 2)
-            activity.selected shouldBe selectedBefore
-            activity.introStep shouldBe 5
-        }
-
-    @Test
-    fun `selecting a field while a number button is selected outside steps 5 and 6 does not place a value`() =
-        launch { activity ->
-            toStep5(activity)
-            activity.introStep = 99
-            activity.select(DEMO_CELL_INDEX_4)
-            activity.introStep shouldBe 99
-            activity.sudoku.board[DEMO_CELL_INDEX_4].value shouldBe DEMO_NUMBER_BUTTON_INDEX_4 + 1
-        }
 }

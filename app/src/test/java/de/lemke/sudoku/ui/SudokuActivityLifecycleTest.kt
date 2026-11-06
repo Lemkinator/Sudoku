@@ -19,6 +19,8 @@ package de.lemke.sudoku.ui
 import android.content.Intent
 import android.os.Looper
 import android.view.KeyEvent
+import android.view.View
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -31,6 +33,7 @@ import de.lemke.sudoku.R
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.domain.model.CellOrigin
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
@@ -38,6 +41,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
+import de.lemke.sudoku.ui.game.Selection
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -193,6 +197,75 @@ class SudokuActivityLifecycleTest {
         }
     }
 
+    private fun launchScenario(
+        sudoku: Sudoku,
+        block: (ActivityScenario<SudokuActivity>) -> Unit,
+    ) {
+        runBlocking { saveSudoku(sudoku) }
+        val context = ApplicationProvider.getApplicationContext<HiltTestApplication>()
+        val intent = Intent(context, SudokuActivity::class.java).putExtra(KEY_SUDOKU_ID, sudoku.info.id.value)
+        ActivityScenario.launch<SudokuActivity>(intent).use { scenario ->
+            scenario.onActivity { it.userSettings.animationsEnabled = false }
+            block(scenario)
+        }
+    }
+
+    @Test
+    fun `rotating a running game keeps the timer running and the board visible`() =
+        launchScenario(formulaicSudoku()) { scenario ->
+            scenario.recreate()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeTrue()
+                activity.binding.board.isVisible
+                    .shouldBeTrue()
+                activity.sudoku.info.seconds shouldBe 3
+            }
+        }
+
+    @Test
+    fun `rotating an explicitly paused game keeps it paused until Resume`() =
+        launchScenario(formulaicSudoku()) { scenario ->
+            scenario.onActivity { it.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)) }
+            scenario.recreate()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(3))
+
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeFalse()
+                activity.binding.board.isVisible
+                    .shouldBeFalse()
+                activity.binding.resumeButton.isVisible
+                    .shouldBeTrue()
+                activity.sudoku.info.seconds shouldBe 0
+
+                activity.binding.resumeButton.performClick()
+            }
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(2))
+
+            scenario.onActivity { activity ->
+                activity.playing.running.shouldBeTrue()
+                activity.binding.board.isVisible
+                    .shouldBeTrue()
+            }
+        }
+
+    @Test
+    fun `recreating a finished game that stopped running shows the board`() =
+        launchScenario(formulaicSudoku(allCorrect = true)) { scenario ->
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.onActivity { it.playing.running.shouldBeFalse() }
+
+            scenario.recreate()
+
+            scenario.onActivity { activity ->
+                activity.binding.board.isVisible
+                    .shouldBeTrue()
+                activity.binding.resumeButton.isVisible
+                    .shouldBeFalse()
+            }
+        }
+
     @Test
     fun `pausing does not clear the keep-screen-on flag when the setting is disabled`() {
         val sudoku = formulaicSudoku()
@@ -222,8 +295,8 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `placing a value saves it`() =
         launch(formulaicSudoku()) { activity ->
-            activity.select(1)
-            activity.select(activity.sudoku.info.size.cellCount)
+            activity.tapCell(1)
+            activity.tapDigit(1)
 
             runBlocking { sudokusRepository.getSudokuById(activity.sudoku.info.id) }.shouldNotBeNull().board[1].value shouldBe 1
         }
@@ -258,55 +331,103 @@ class SudokuActivityLifecycleTest {
         keyCode: Int,
     ): Boolean = activity.onKeyUp(keyCode, KeyEvent(KeyEvent.ACTION_UP, keyCode))
 
+    private fun pressKey(
+        activity: SudokuActivity,
+        keyCode: Int,
+    ) {
+        activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode)).shouldBeFalse()
+        activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode)).shouldBeTrue()
+    }
+
+    @Test
+    fun `a key press enters a digit into the selected cell`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.tapCell(1)
+            activity.binding.board
+                .requestFocusFromTouch()
+                .shouldBeTrue()
+
+            pressKey(activity, KeyEvent.KEYCODE_2)
+
+            activity.sudoku.board[1].value shouldBe 2
+        }
+
+    @Test
+    fun `an arrow key on the focused board neither selects a cell nor is consumed`() =
+        launch(formulaicSudoku()) { activity ->
+            activity.tapCell(1)
+            activity.binding.board
+                .requestFocusFromTouch()
+                .shouldBeTrue()
+            val before = activity.sudoku.board
+
+            listOf(KeyEvent.KEYCODE_DPAD_RIGHT, KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_CENTER).forEach { keyCode ->
+                activity.binding.board
+                    .dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+                    .shouldBeFalse()
+                activity.binding.board
+                    .dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+                    .shouldBeFalse()
+            }
+
+            activity.selection shouldBe Selection.Cell(1)
+            activity.sudoku.board shouldBe before
+            listOf(View.FOCUS_DOWN, View.FOCUS_RIGHT).forEach { direction ->
+                val next = checkNotNull(activity.binding.board.focusSearch(direction))
+                next shouldNotBe activity.binding.board
+                next.rootView shouldBe activity.window.decorView.rootView
+            }
+        }
+
     @Test
     fun `a digit key enabled for the board size selects the matching number button`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_1).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.info.size.cellCount
+            activity.selection shouldBe Selection.Digit(1)
         }
 
     @Test
     fun `a digit key above the board size is ignored`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_5).shouldBeFalse()
-            activity.selected.shouldBeNull()
+            activity.selection.shouldBeNull()
         }
 
     @Test
     fun `KEYCODE_9 selects the last number button on a 9x9 board`() =
         launch(formulaicSudoku(size = SudokuSize.NINE)) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_9).shouldBeTrue()
-            activity.selected shouldBe 89
+            activity.selection shouldBe Selection.Digit(9)
         }
 
     @Test
     fun `KEYCODE_A is ignored on a 9x9 board`() =
         launch(formulaicSudoku(size = SudokuSize.NINE)) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_A).shouldBeFalse()
-            activity.selected.shouldBeNull()
+            activity.selection.shouldBeNull()
         }
 
     @Test
     fun `KEYCODE_G selects the last number button on a 16x16 board`() =
         launch(formulaicSudoku(size = SudokuSize.SIXTEEN)) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_G).shouldBeTrue()
-            activity.selected shouldBe 271
+            activity.selection shouldBe Selection.Digit(16)
         }
 
     @Test
     fun `KEYCODE_DEL selects the delete button`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_DEL).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value
+            activity.selection shouldBe Selection.Delete
         }
 
     @Test
     fun `KEYCODE_H selects the hint button while a hint is available and is ignored once exhausted`() =
         launch(formulaicSudoku()) { activity ->
             keyUp(activity, KeyEvent.KEYCODE_H).shouldBeTrue()
-            activity.selected shouldBe activity.sudoku.info.size.cellCount + activity.sudoku.info.size.value + 1
+            activity.selection shouldBe Selection.Hint
 
-            activity.select(4)
+            activity.tapCell(4)
             activity.sudoku.info.isHintAvailable
                 .shouldBeFalse()
 
@@ -316,19 +437,22 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `KEYCODE_N toggles note mode`() =
         launch(formulaicSudoku()) { activity ->
-            activity.notesEnabled.shouldBeFalse()
+            activity.viewModel.input.value.notesMode
+                .shouldBeFalse()
             keyUp(activity, KeyEvent.KEYCODE_N).shouldBeTrue()
-            activity.notesEnabled.shouldBeTrue()
+            activity.viewModel.input.value.notesMode
+                .shouldBeTrue()
             keyUp(activity, KeyEvent.KEYCODE_N).shouldBeTrue()
-            activity.notesEnabled.shouldBeFalse()
+            activity.viewModel.input.value.notesMode
+                .shouldBeFalse()
         }
 
     @Test
     fun `KEYCODE_ESCAPE deselects`() =
         launch(formulaicSudoku()) { activity ->
-            activity.select(1)
+            activity.tapCell(1)
             keyUp(activity, KeyEvent.KEYCODE_ESCAPE).shouldBeTrue()
-            activity.selected.shouldBeNull()
+            activity.selection.shouldBeNull()
         }
 
     @Test
@@ -376,8 +500,8 @@ class SudokuActivityLifecycleTest {
     fun `menu_reset restarts the game and clears progress`() =
         launch(formulaicSudoku()) { activity ->
             activity.userSettings.errorLimit = 1
-            activity.select(1)
-            activity.select(activity.sudoku.info.size.cellCount)
+            activity.tapCell(1)
+            activity.tapDigit(1)
             activity.sudoku.info.errorsMade shouldBe 1
 
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
@@ -409,8 +533,8 @@ class SudokuActivityLifecycleTest {
 
     private fun placeThreeWrongMoves(activity: SudokuActivity) {
         listOf(1, 2, 4).forEach { fieldIndex ->
-            activity.select(fieldIndex)
-            activity.select(activity.sudoku.info.size.cellCount)
+            activity.tapCell(fieldIndex)
+            activity.tapDigit(1)
         }
     }
 
@@ -420,8 +544,8 @@ class SudokuActivityLifecycleTest {
             placeThreeWrongMoves(activity)
             activity.sudoku.info.errorsMade shouldBe 3
 
-            activity.select(activity.sudoku.info.size.cellCount + 1)
-            activity.selected.shouldBeNull()
+            activity.tapDigit(2)
+            activity.selection.shouldBeNull()
         }
 
     @Test
@@ -430,8 +554,8 @@ class SudokuActivityLifecycleTest {
             placeThreeWrongMoves(activity)
             activity.sudoku.info.errorsMade shouldBe 3
 
-            activity.select(activity.sudoku.info.size.cellCount + 1)
-            activity.selected.shouldBeNull()
+            activity.tapDigit(2)
+            activity.selection.shouldBeNull()
         }
 
     // region not-found / not-yet-initialized
@@ -473,18 +597,18 @@ class SudokuActivityLifecycleTest {
     @Test
     fun `a click on a field routes through select the same way a tap on the board would`() =
         launch(formulaicSudoku()) { activity ->
-            activity.gameAdapter.onFieldClicked(1)
-            activity.selected shouldBe 1
+            activity.tapCell(1)
+            activity.selection shouldBe Selection.Cell(1)
         }
 
     @Test
     fun `a long click on a player field erases it`() =
         launch(formulaicSudoku()) { activity ->
-            activity.select(1)
-            activity.select(activity.sudoku.info.size.cellCount + 1)
+            activity.tapCell(1)
+            activity.tapDigit(2)
             activity.sudoku.board[1].value shouldBe 2
 
-            activity.gameAdapter.onFieldLongClicked(1).shouldBeTrue()
+            activity.longPressCell(1)
 
             activity.sudoku.board[1]
                 .value
@@ -494,9 +618,11 @@ class SudokuActivityLifecycleTest {
         }
 
     @Test
-    fun `a long click on a given field is not consumed`() =
+    fun `a long click on a given field changes nothing`() =
         launch(formulaicSudoku()) { activity ->
-            activity.gameAdapter.onFieldLongClicked(0).shouldBeFalse()
+            activity.longPressCell(0)
+
+            activity.sudoku.board[0].origin shouldBe CellOrigin.GIVEN
 
             activity.sudoku.info.eraserUsed
                 .shouldBeFalse()

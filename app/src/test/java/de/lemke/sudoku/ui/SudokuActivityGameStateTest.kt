@@ -126,7 +126,7 @@ class SudokuActivityGameStateTest {
             scenario.state shouldBe Lifecycle.State.RESUMED
             scenario.onActivity { activity ->
                 activity.viewModel.game.value shouldBe SudokuGame.Loading
-                activity.binding.gameRecycler.adapter
+                activity.binding.board.render
                     .shouldBeNull()
             }
 
@@ -134,7 +134,7 @@ class SudokuActivityGameStateTest {
             awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
             scenario.onActivity { activity ->
                 activity.sudoku.info.id shouldBe sudoku.info.id
-                activity.binding.gameRecycler.adapter
+                activity.binding.board.render
                     .shouldNotBeNull()
             }
         }
@@ -161,8 +161,8 @@ class SudokuActivityGameStateTest {
         launch(sudoku) { scenario ->
             scenario.onActivity { activity ->
                 activity.userSettings.errorLimit = 1
-                activity.select(1)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(1)
+                activity.tapDigit(1)
                 activity.sudoku.info.errorsMade shouldBe 1
                 pausableDefaultDispatcher.pause()
 
@@ -192,8 +192,8 @@ class SudokuActivityGameStateTest {
         launch(formulaicSudoku(solved = false)) { scenario ->
             scenario.onActivity { activity ->
                 activity.userSettings.errorLimit = 1
-                activity.select(1)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(1)
+                activity.tapDigit(1)
                 pausableDefaultDispatcher.pause()
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
             }
@@ -201,7 +201,7 @@ class SudokuActivityGameStateTest {
 
             scenario.onActivity { activity ->
                 val shownDialogs = ShadowDialog.getShownDialogs().size
-                activity.gameAdapter.onFieldClicked(1)
+                activity.tapCell(1)
                 activity.viewModel.onMove(BoardMove.Enter(1, 4)).shouldBeNull()
                 activity.onKeyUp(KeyEvent.KEYCODE_1, KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_1)).shouldBeFalse()
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_pause_play)).shouldBeTrue()
@@ -212,7 +212,7 @@ class SudokuActivityGameStateTest {
                 idleMainLooper()
 
                 activity.viewModel.game.value shouldBe SudokuGame.Restarting
-                activity.selected.shouldBeNull()
+                activity.selection.shouldBeNull()
                 ShadowDialog.getShownDialogs().size shouldBe shownDialogs
             }
             pausableDefaultDispatcher.resume()
@@ -225,8 +225,8 @@ class SudokuActivityGameStateTest {
         launch(formulaicSudoku(solved = false)) { scenario ->
             scenario.onActivity { activity ->
                 activity.userSettings.errorLimit = 1
-                activity.select(1)
-                activity.select(activity.sudoku.info.size.cellCount)
+                activity.tapCell(1)
+                activity.tapDigit(1)
                 activity.visibleMenuItems() shouldBe setOf(R.id.menu_reset, R.id.menu_share)
                 pausableDefaultDispatcher.pause()
                 activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
