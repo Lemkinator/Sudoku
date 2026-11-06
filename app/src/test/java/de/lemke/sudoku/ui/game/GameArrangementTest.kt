@@ -22,14 +22,14 @@ import io.kotest.matchers.shouldBe
 
 class GameArrangementTest : ShouldSpec(
     {
-        should("stack the board above the controls on a portrait phone and center the group") {
+        should("stack the board above the controls on a portrait phone and keep the controls on the bottom edge") {
             arrangeGame(1080, 2000, 450, controlsAtEnd = false) shouldBe
-                GameArrangement(Box(0f, 235f, 1080f, 1315f), Box(0f, 1315f, 1080f, 1765f))
+                GameArrangement(Box(0f, 235f, 1080f, 1315f), Box(0f, 1550f, 1080f, 2000f))
         }
 
-        should("put the controls beside the board in landscape and center the group") {
+        should("put the controls beside the board in landscape and keep the controls on the end edge") {
             arrangeGame(2000, 1000, 300, controlsAtEnd = true) shouldBe
-                GameArrangement(Box(350f, 0f, 1350f, 1000f), Box(1350f, 0f, 1650f, 1000f))
+                GameArrangement(Box(350f, 0f, 1350f, 1000f), Box(1700f, 0f, 2000f, 1000f))
         }
 
         should("shrink the board to nothing before the controls lose any extent") {
@@ -39,7 +39,7 @@ class GameArrangementTest : ShouldSpec(
 
         should("center a board that is narrower than the cross axis") {
             arrangeGame(1000, 400, 300, controlsAtEnd = true) shouldBe
-                GameArrangement(Box(150f, 0f, 550f, 400f), Box(550f, 0f, 850f, 400f))
+                GameArrangement(Box(150f, 0f, 550f, 400f), Box(700f, 0f, 1000f, 400f))
         }
 
         should("center a portrait board that leaves room on the sides") {

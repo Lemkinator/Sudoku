@@ -34,19 +34,20 @@ fun arrangeGame(
     val main = if (controlsAtEnd) width else height
     val cross = if (controlsAtEnd) height else width
     val side = max(0, min(cross, main - controlsExtent))
-    val start = max(0, (main - side - controlsExtent) / 2).toFloat()
+    val boardStart = max(0, main - controlsExtent - side) / 2f
+    val boardEnd = boardStart + side
+    val controlsStart = max(0, main - controlsExtent).toFloat()
+    val controlsEnd = controlsStart + controlsExtent
     val boardCross = (cross - side) / 2f
-    val boardEnd = start + side
-    val controlsEnd = boardEnd + controlsExtent
     return if (controlsAtEnd) {
         GameArrangement(
-            board = Box(start, boardCross, boardEnd, boardCross + side),
-            controls = Box(boardEnd, 0f, controlsEnd, cross.toFloat()),
+            board = Box(boardStart, boardCross, boardEnd, boardCross + side),
+            controls = Box(controlsStart, 0f, controlsEnd, cross.toFloat()),
         )
     } else {
         GameArrangement(
-            board = Box(boardCross, start, boardCross + side, boardEnd),
-            controls = Box(0f, boardEnd, cross.toFloat(), controlsEnd),
+            board = Box(boardCross, boardStart, boardCross + side, boardEnd),
+            controls = Box(0f, controlsStart, cross.toFloat(), controlsEnd),
         )
     }
 }

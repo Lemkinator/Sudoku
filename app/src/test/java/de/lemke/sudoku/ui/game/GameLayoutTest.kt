@@ -55,18 +55,18 @@ class GameLayoutTest {
     private fun View.bounds() = listOf(left, top, right, bottom)
 
     @Test
-    fun `controls sit below the board by default`() {
+    fun `controls sit on the bottom edge by default`() {
         val layout = GameLayout(context)
         val (board, controls) = layout.with(LayoutParams(LayoutParams.MATCH_PARENT, 200))
 
         layout(layout, 500, 1000)
 
         board.bounds() shouldBe listOf(0, 150, 500, 650)
-        controls.bounds() shouldBe listOf(0, 650, 500, 850)
+        controls.bounds() shouldBe listOf(0, 800, 500, 1000)
     }
 
     @Test
-    fun `controls of a fixed width sit at the end of the board`() {
+    fun `controls of a fixed width sit on the end edge`() {
         val attributes = Robolectric.buildAttributeSet().addAttribute(R.attr.controlsPosition, "end").build()
         val layout = GameLayout(context, attributes)
         val (board, controls) = layout.with(LayoutParams(320, LayoutParams.MATCH_PARENT))
@@ -74,7 +74,7 @@ class GameLayoutTest {
         layout(layout, 1000, 600)
 
         board.bounds() shouldBe listOf(40, 0, 640, 600)
-        controls.bounds() shouldBe listOf(640, 0, 960, 600)
+        controls.bounds() shouldBe listOf(680, 0, 1000, 600)
     }
 
     private class TallView(
@@ -153,7 +153,7 @@ class GameLayoutTest {
         layout(layout, 1000, 600)
 
         board.bounds() shouldBe listOf(40, 0, 640, 600)
-        controls.bounds() shouldBe listOf(640, 0, 960, 600)
+        controls.bounds() shouldBe listOf(680, 0, 1000, 600)
     }
 
     @Test
