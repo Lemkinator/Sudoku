@@ -26,7 +26,7 @@
     <style name="ButtonStyle.NumberButton" parent="ButtonStyle.SudokuButton">
         <item name="android:padding">0dp</item>
         <item name="android:autoSizeStepGranularity">1sp</item>
-        <item name="android:autoSizeMaxTextSize">25sp</item>
+        <item name="android:autoSizeMaxTextSize">@dimen/number_button_text_max</item>
         <item name="android:autoSizeMinTextSize">10sp</item>
         <item name="android:autoSizeTextType">uniform</item>
         <item name="android:ellipsize">none</item>
@@ -35,11 +35,11 @@
 
     <style name="ButtonStyle.NumberButton.Portrait" parent="ButtonStyle.NumberButton">
         <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">50dp</item>
+        <item name="android:layout_height">@dimen/number_button_size</item>
     </style>
 
     <style name="ButtonStyle.NumberButton.Landscape" parent="ButtonStyle.NumberButton">
-        <item name="android:layout_width">50dp</item>
+        <item name="android:layout_width">@dimen/number_button_size</item>
         <item name="android:layout_height">0dp</item>
     </style>
 
