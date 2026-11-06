@@ -95,7 +95,7 @@ corner insets that the 26 dp board arc forces, `NoteLayout` the adaptive note gr
 tone of each cell, and `BoardAccessibilityHelper` one TalkBack entry per cell. These classes import no `android.*` except the view and
 the helper. The view keeps its geometry under one `transform` matrix for a later pinch zoom. `GameLayout` (`ui/game/`) places the board
 and the controls through the pure `arrangeGame`: below each other in `layout/`, side by side in `layout-land/`; the controls stick to the bottom or end edge and the board is the
-largest square the controls leave. `SudokuActivity` and `IntroActivity` have no orientation lock, so a rotation recreates them. The tutorial runs on the same view and
+largest square the controls leave, centered in the rest. `SudokuActivity` and `IntroActivity` have no orientation lock, so a rotation recreates them. The tutorial runs on the same view and
 layout; `IntroViewModel.state` (`IntroState`: the `IntroStep` lesson, the `BoardInput` and the numbers entered, which the tutorial board
 replays) sits in the saved state, and the activity only draws it and runs the lesson animations.
 

@@ -77,6 +77,19 @@ class GameLayoutTest {
         controls.bounds() shouldBe listOf(680, 0, 1000, 600)
     }
 
+    @Test
+    fun `controls of a fixed width sit on the left edge in a right to left layout`() {
+        val attributes = Robolectric.buildAttributeSet().addAttribute(R.attr.controlsPosition, "end").build()
+        val layout = GameLayout(context, attributes)
+        layout.layoutDirection = View.LAYOUT_DIRECTION_RTL
+        val (board, controls) = layout.with(LayoutParams(320, LayoutParams.MATCH_PARENT))
+
+        layout(layout, 1000, 600)
+
+        board.bounds() shouldBe listOf(360, 0, 960, 600)
+        controls.bounds() shouldBe listOf(0, 0, 320, 600)
+    }
+
     private class TallView(
         context: Context,
         private val desired: Int = 5000,
