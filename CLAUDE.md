@@ -91,7 +91,7 @@ because sign-in needs the Activity. It signs in through `GamesSignIn` and fetche
 counters and returns a new `Sudoku`. The domain holds no timer and no listener; `SudokuViewModel` owns the ticker and every move.
 
 **Board UI:** `ui/board/` draws the whole board in one `SudokuBoardView` (a Canvas view): `BoardGeometry` holds the cell edges and the
-corner insets that the 26 dp board arc forces, `NoteLayout` the adaptive note grid (1, 2x2, 3x3, 4x4 by note count), `BoardRender` the
+corner insets that the 26 dp board arc forces, `NoteLayout` the adaptive note grid (2x2, 3x3, 4x4 by note count), `BoardRender` the
 tone of each cell, and `BoardAccessibilityHelper` one TalkBack entry per cell. These classes import no `android.*` except the view and
 the helper. The view keeps its geometry under one `transform` matrix for a later pinch zoom. `GameLayout` (`ui/game/`) places the board
 and the controls through the pure `arrangeGame`: below each other in `layout/`, side by side in `layout-land/`; the controls stick to the bottom or end edge and the board is the

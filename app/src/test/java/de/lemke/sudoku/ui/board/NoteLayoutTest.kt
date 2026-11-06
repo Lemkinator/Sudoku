@@ -37,12 +37,16 @@ private fun Box.shouldBeNear(expected: Box) {
 class NoteLayoutTest : ShouldSpec(
     {
         should("pick the grid side by count") {
-            listOf(0, 1, 2, 4, 5, 9, 10, 16).map(::noteGridSide) shouldBe listOf(0, 1, 2, 2, 3, 3, 4, 4)
+            listOf(0, 1, 2, 4, 5, 9, 10, 16).map(::noteGridSide) shouldBe listOf(0, 2, 2, 2, 3, 3, 4, 4)
         }
 
         should("size the value text at 0.62 of the cell") { valueTextSize(100f).shouldBeNear(62f) }
 
-        should("cap one note below the value") { noteTextSize(content, 1, 62f).shouldBeNear(37.2f) }
+        should("size one note by the 2x2 slot") { noteTextSize(content, 1, 62f).shouldBeNear(30.8f) }
+
+        should("put a single note in the top left slot of the 2x2 grid") {
+            noteSlots(content, 1) shouldBe listOf(Box(6f, 6f, 50f, 50f))
+        }
 
         should("size four notes by their slot") {
             noteTextSize(content, 4, 62f).shouldBeNear(30.8f)
@@ -66,8 +70,8 @@ class NoteLayoutTest : ShouldSpec(
             noteTextSize(Box(0f, 0f, 63.36f, 63.36f), 16, 44.64f).shouldBeNear(11.088f)
         }
 
-        should("keep a single note on 4x4 below the value") {
-            noteTextSize(Box(13.5f, 13.5f, 211.5f, 211.5f), 1, 139.5f).shouldBeNear(83.7f)
+        should("size a single note on 4x4 by the 2x2 slot") {
+            noteTextSize(Box(13.5f, 13.5f, 211.5f, 211.5f), 1, 139.5f).shouldBeNear(69.3f)
         }
 
         should("center the grid in a content box that is wider than tall") {

@@ -23,8 +23,10 @@ import kotlin.math.sqrt
 private const val VALUE_TEXT_RATIO = 0.62f
 private const val NOTE_SLOT_RATIO = 0.7f
 private const val NOTE_VALUE_RATIO = 0.6f
+private const val MIN_NOTE_GRID_SIDE = 2
 
-fun noteGridSide(count: Int): Int = ceil(sqrt(count.toDouble())).toInt()
+fun noteGridSide(count: Int): Int =
+    if (count == 0) 0 else ceil(sqrt(count.toDouble())).toInt().coerceAtLeast(MIN_NOTE_GRID_SIDE)
 
 fun valueTextSize(cellSide: Float): Float = VALUE_TEXT_RATIO * cellSide
 
