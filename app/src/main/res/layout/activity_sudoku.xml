@@ -169,7 +169,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <de.lemke.sudoku.ui.game.StackedIconButton
                         android:id="@+id/delete_button"
                         style="@style/ButtonStyle.SudokuButton"
                         android:layout_width="wrap_content"
@@ -178,7 +178,7 @@
                         android:drawableTop="@drawable/ic_oui_pen_eraser_outline"
                         android:text="@string/commonutils_delete" />
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <de.lemke.sudoku.ui.game.StackedIconButton
                         android:id="@+id/hint_button"
                         style="@style/ButtonStyle.SudokuButton"
                         android:layout_width="wrap_content"
@@ -188,7 +188,7 @@
                         android:text="@string/hints"
                         android:visibility="gone" />
 
-                    <androidx.appcompat.widget.AppCompatButton
+                    <de.lemke.sudoku.ui.game.StackedIconButton
                         android:id="@+id/note_button"
                         style="@style/ButtonStyle.SudokuButton"
                         android:layout_width="wrap_content"
