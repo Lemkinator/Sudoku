@@ -323,8 +323,34 @@ class MainActivityMenuTest {
 
     @Test
     @Config(qualifiers = "sw599dp")
+    fun `about_app_dest keeps the container transform on a One UI phone`() {
+        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw599dp")
+    fun `about_me_dest keeps the container transform on a One UI phone`() {
+        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutMeActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw599dp")
     fun `settings_dest keeps the container transform on a One UI phone`() {
         navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBeContainerTransform(SettingsActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `tapping settings_dest twice on a One UI tablet pops over once`() {
+        mockkStatic(DeviceInfo::class)
+        every { DeviceInfo.isOneUI() } returns true
+        launch { activity ->
+            clickNavItem(activity, R.id.settings_dest)
+            clickNavItem(activity, R.id.settings_dest)
+            val first = shadowOf(activity).nextStartedActivityForResult.shouldNotBeNull()
+            first.shouldBePopOver(SettingsActivity::class.java.name)
+            shadowOf(activity).nextStartedActivityForResult shouldBe null
+        }
     }
 
     @Test
