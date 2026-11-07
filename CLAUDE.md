@@ -190,7 +190,8 @@ Four tools run as part of `./gradlew build`, and dependency analysis runs separa
     `assertHiltTestRuleConventions(requireCloseRuleOnPlainHiltApplicationTests = true)`.
   - The launch latch rule bans raw activity launches and result registration by name, and a `show`/`showNow` call
     whose receiver is not `Snackbar`, `Toast`, `PopupMenu`, `TipPopup` or a `FragmentTransaction` named
-    `*transaction`. Launch through `singleLaunchActivity`, `transformToActivity` or `registerForSingleLaunchResult`;
+    `*transaction`. Launch through `singleLaunchActivity`, `transformToActivity`, `launchDrawerPage` or
+    `registerForSingleLaunchResult`;
     wrap taps in the input helpers (`onSingleLaunchClick`, `singleLaunchMenuItem`, `onSingleLaunchItemSelected`,
     `singleLaunchSuspending`); show dialogs with `showOnce(tag)`.
   - Every `@HiltAndroidTest` declares exactly one `@get:Rule(order = 0) val hiltRule = HiltTestRule(this)`, ordered
@@ -230,7 +231,7 @@ saves and deletions, suspend hooks to gate reads and writes), `FakeSudokuDocumen
 `FakeDailyNotifications`, `FakeGamesSignIn`, `FakePlayGamesIntentProvider` and `FakePlayGamesSyncApplier`; the in-app review is common-utils' `InAppReview`, bound by the `CommonUtilsInAppReviewModule` that
 `di/InAppReviewModule.kt` includes, and replaced by its `FakeInAppReview`.
 `SudokusRepositoryContract` runs the same behavior tests over Room and the fake. Each `Default*` boundary has its own
-Robolectric or `mockkStatic(PlayGames::class)` test. MockK stays for `Uri` values and the Play Games statics.
+Robolectric or `mockkStatic(PlayGames::class)` test. MockK stays for `Uri` values, the Play Games statics and the `mockkStatic(DeviceInfo::class)` One UI check.
 
 ## Settings in Tests
 

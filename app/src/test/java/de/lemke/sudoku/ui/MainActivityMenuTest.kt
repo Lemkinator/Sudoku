@@ -22,6 +22,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatCheckBox
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.reflect.DeviceInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -57,6 +58,10 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import java.io.File
 import java.time.ZoneId
 import javax.inject.Inject
@@ -72,7 +77,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
+import org.robolectric.shadows.ShadowActivity.IntentForResult
 import org.robolectric.shadows.ShadowDialog
+
+private const val TRANSITION_NAME_KEY = "commonUtilsTransitionNameKey"
+private const val ANIM_TYPE_KEY = "android:activity.animType"
+private const val ANIM_SCENE_TRANSITION = 5
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltAndroidTest
@@ -105,6 +115,11 @@ class MainActivityMenuTest {
     @After
     fun resetDispatchers() {
         testDispatchers.reset()
+    }
+
+    @After
+    fun unmockDeviceInfo() {
+        unmockkStatic(DeviceInfo::class)
     }
 
     private fun launch(
@@ -253,6 +268,90 @@ class MainActivityMenuTest {
             started.shouldNotBeNull()
             started.component?.className shouldBe SettingsActivity::class.java.name
         }
+
+    private fun navigateFromDrawer(
+        itemId: Int,
+        isOneUi: Boolean,
+    ): IntentForResult {
+        mockkStatic(DeviceInfo::class)
+        every { DeviceInfo.isOneUI() } returns isOneUi
+        var started: IntentForResult? = null
+        launch { activity ->
+            clickNavItem(activity, itemId)
+            started = shadowOf(activity).nextStartedActivityForResult
+        }
+        return started.shouldNotBeNull()
+    }
+
+    private fun IntentForResult.shouldBePopOver(className: String) {
+        intent.component?.className shouldBe className
+        (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.hasExtra(TRANSITION_NAME_KEY) shouldBe false
+        options.shouldNotBeNull().getInt(ANIM_TYPE_KEY) shouldNotBe ANIM_SCENE_TRANSITION
+    }
+
+    private fun IntentForResult.shouldBeContainerTransform(className: String) {
+        intent.component?.className shouldBe className
+        (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe 0
+        intent.getStringExtra(TRANSITION_NAME_KEY) shouldBe "commonUtilsActivityTransitionName"
+        options.shouldNotBeNull().getInt(ANIM_TYPE_KEY) shouldBe ANIM_SCENE_TRANSITION
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `about_app_dest pops over on a One UI tablet`() {
+        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBePopOver(CommonUtilsAboutActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `about_me_dest pops over on a One UI tablet`() {
+        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBePopOver(CommonUtilsAboutMeActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `settings_dest pops over on a One UI tablet`() {
+        navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBePopOver(SettingsActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `settings_dest keeps the container transform on a non-One UI tablet`() {
+        navigateFromDrawer(R.id.settings_dest, isOneUi = false).shouldBeContainerTransform(SettingsActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw599dp")
+    fun `about_app_dest keeps the container transform on a One UI phone`() {
+        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw599dp")
+    fun `about_me_dest keeps the container transform on a One UI phone`() {
+        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutMeActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw599dp")
+    fun `settings_dest keeps the container transform on a One UI phone`() {
+        navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBeContainerTransform(SettingsActivity::class.java.name)
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `tapping settings_dest twice on a One UI tablet pops over once`() {
+        mockkStatic(DeviceInfo::class)
+        every { DeviceInfo.isOneUI() } returns true
+        launch { activity ->
+            clickNavItem(activity, R.id.settings_dest)
+            clickNavItem(activity, R.id.settings_dest)
+            val first = shadowOf(activity).nextStartedActivityForResult.shouldNotBeNull()
+            first.shouldBePopOver(SettingsActivity::class.java.name)
+            shadowOf(activity).nextStartedActivityForResult shouldBe null
+        }
+    }
 
     @Test
     fun `tapping settings_dest twice opens one settings activity`() =

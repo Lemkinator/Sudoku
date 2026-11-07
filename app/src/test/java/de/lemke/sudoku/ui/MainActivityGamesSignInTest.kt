@@ -18,6 +18,7 @@ package de.lemke.sudoku.ui
 
 import android.content.Intent
 import android.os.Looper
+import androidx.reflect.DeviceInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
@@ -44,9 +45,13 @@ import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -162,6 +167,26 @@ class MainActivityGamesSignInTest {
             fakeIntentProvider.requests shouldBe listOf(PlayGamesScreen.ACHIEVEMENTS)
             shadowOf(activity).nextStartedActivityForResult.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
         }
+
+    @After
+    fun unmockDeviceInfo() {
+        unmockkStatic(DeviceInfo::class)
+    }
+
+    @Test
+    @Config(qualifiers = "sw600dp")
+    fun `achievements_dest stays a normal launch on a One UI tablet`() {
+        mockkStatic(DeviceInfo::class)
+        every { DeviceInfo.isOneUI() } returns true
+        launch { activity ->
+            fakeGamesSignIn.authenticationCheck = Tasks.forResult(true)
+            clickAchievements(activity)
+            idleMainLooper()
+            val started = shadowOf(activity).nextStartedActivityForResult
+            started.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
+            (started.intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe 0
+        }
+    }
 
     @Test
     fun `achievements_dest signs in then opens achievements when not yet authenticated and sign-in succeeds`() =
