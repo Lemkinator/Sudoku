@@ -33,8 +33,11 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,13 +50,19 @@ import org.robolectric.annotation.Config
 class UserSettingsTest {
     private lateinit var prefs: SharedPreferences
     private lateinit var settings: UserSettings
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
 
-    private fun reload() = UserSettings(prefs, CoroutineScope(UnconfinedTestDispatcher()))
+    private fun reload() = UserSettings(prefs, settingsScope)
 
     @Before
     fun setUp() {
         prefs = freshTestPreferences()
         settings = reload()
+    }
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
     }
 
     @Test
@@ -98,13 +107,14 @@ class UserSettingsTest {
     }
 
     @Test
-    fun `difficultySliderValue is always clamped into 0 until Difficulty max for any written value`() =
-        runTest {
+    fun `difficultySliderValue is always clamped into 0 until Difficulty max for any written value`() {
+        runBlocking {
             checkAll(Arb.int()) { value ->
                 settings.difficultySliderValue = value
                 settings.difficultySliderValue.shouldBeInRange(0..Difficulty.max)
             }
         }
+    }
 
     @Test
     fun `keepScreenOn round-trips false`() {
@@ -137,13 +147,14 @@ class UserSettingsTest {
     }
 
     @Test
-    fun `errorLimit is always at least 0 for any written value`() =
-        runTest {
+    fun `errorLimit is always at least 0 for any written value`() {
+        runBlocking {
             checkAll(Arb.int()) { value ->
                 settings.errorLimit = value
                 settings.errorLimit.shouldBeGreaterThanOrEqual(0)
             }
         }
+    }
 
     @Test
     fun `filterFlags round-trips`() {
