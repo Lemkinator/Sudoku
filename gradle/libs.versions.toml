@@ -46,7 +46,7 @@ room = "2.8.5"
 spotless = "8.11.0"
 sudoku = "5.3.1"
 turbine = "1.2.1"
-uiautomator = "2.4.0"
+uiautomator = "2.4.1"
 
 [libraries]
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
