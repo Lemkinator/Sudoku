@@ -56,10 +56,10 @@ import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.configureCommonUtilsSplashScreen
-import de.lemke.commonutils.ui.utils.launchDrawerPage
 import de.lemke.commonutils.ui.utils.onSingleLaunchItemSelected
 import de.lemke.commonutils.ui.utils.onboardIfNeeded
 import de.lemke.commonutils.ui.utils.openURL
+import de.lemke.commonutils.ui.utils.popOverOrTransformToActivity
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationFrom
 import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
 import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutActivity
@@ -276,9 +276,9 @@ class MainActivity : AppCompatActivity() {
         when (item.itemId) {
             R.id.achievements_dest -> openPlayGamesScreen(PlayGamesScreen.ACHIEVEMENTS)
             R.id.leaderboards_dest -> openPlayGamesScreen(PlayGamesScreen.LEADERBOARDS)
-            R.id.about_app_dest -> launchDrawerPage<CommonUtilsAboutActivity>(R.id.about_app_dest)
-            R.id.about_me_dest -> launchDrawerPage<CommonUtilsAboutMeActivity>(R.id.about_me_dest)
-            R.id.settings_dest -> launchDrawerPage<SettingsActivity>(R.id.settings_dest)
+            R.id.about_app_dest -> popOverOrTransformToActivity<CommonUtilsAboutActivity>(R.id.about_app_dest)
+            R.id.about_me_dest -> popOverOrTransformToActivity<CommonUtilsAboutMeActivity>(R.id.about_me_dest)
+            R.id.settings_dest -> popOverOrTransformToActivity<SettingsActivity>(R.id.settings_dest)
             R.id.leaks_dest -> openLeakCanary()
             else -> return false
         }
