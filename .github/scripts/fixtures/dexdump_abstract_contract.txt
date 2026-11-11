@@ -1,0 +1,51 @@
+Processing 'classes.dex'...
+Opened 'classes.dex', DEX version '038'
+Class #910 annotations:
+Annotations on method #4856 'aBrokenEntryIsSkippedAndCounted'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4868 'everyClashCaseKeepsTheExpectedEntry'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4869 'everySymmetricClashCaseKeepsTheSameEntryWithSidesSwapped'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4870 'everyVersionFromMinReadableToCurrentHasAFixtureThatImports'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4871 'exportThenReplaceRestoresTheSameEntries'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4875 'mergeKeepsLocalOnlyEntries'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4876 'mergeTwiceChangesNothingTheSecondTime'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4879 'replaceRemovesLocalOnlyEntries'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+Annotations on method #4880 'replaceTwiceGivesTheSameEntries'
+  VISIBILITY_RUNTIME Lorg/junit/Test;
+
+Class #910            -
+  Class descriptor  : 'Lde/lemke/commonutils/backup/BackupSectionContract;'
+  Access flags      : 0x0401 (PUBLIC ABSTRACT)
+  Superclass        : 'Ljava/lang/Object;'
+
+Processing 'classes12.dex'...
+Opened 'classes12.dex', DEX version '038'
+Class #0 annotations:
+Annotations on class
+  VISIBILITY_RUNTIME Landroidx/test/filters/LargeTest;
+  VISIBILITY_RUNTIME Lorg/junit/runner/RunWith; value=Landroidx/test/ext/junit/runners/AndroidJUnit4;
+Annotations on method #7 'closeDatabaseAndRestoreZone'
+  VISIBILITY_RUNTIME Lorg/junit/After;
+Annotations on method #10 'useBerlinZone'
+  VISIBILITY_RUNTIME Lorg/junit/Before;
+
+Class #0            -
+  Class descriptor  : 'Lde/lemke/sudoku/data/backup/SudokuBackupSectionInstrumentedTest;'
+  Access flags      : 0x0011 (PUBLIC FINAL)
+  Superclass        : 'Lde/lemke/sudoku/data/backup/SudokuBackupSectionContract;'
+
+Processing 'classes4.dex'...
+Opened 'classes4.dex', DEX version '038'
+Class #1 annotations:
+
+Class #1            -
+  Class descriptor  : 'Lde/lemke/sudoku/data/backup/SudokuBackupSectionContract;'
+  Access flags      : 0x0401 (PUBLIC ABSTRACT)
+  Superclass        : 'Lde/lemke/commonutils/backup/BackupSectionContract;'
