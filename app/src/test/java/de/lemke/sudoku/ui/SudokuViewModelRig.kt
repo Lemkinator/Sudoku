@@ -54,7 +54,12 @@ class SudokuViewModelRig : ExternalResource() {
     private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
     val userSettings = UserSettings(freshTestPreferences(), settingsScope)
 
-    override fun after() = settingsScope.cancel()
+    private val saveScope = CoroutineScope(SupervisorJob())
+
+    override fun after() {
+        settingsScope.cancel()
+        saveScope.cancel()
+    }
 
     fun playing(sudoku: Sudoku): SudokuViewModel = ready(sudoku).also { it.onGameStarted(SudokuGame.Ready(sudoku)) }
 
@@ -68,7 +73,7 @@ class SudokuViewModelRig : ExternalResource() {
             GenerateSudokuUseCase(generateFields, dispatcher),
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
-            QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
+            QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), clock, dispatcher),
             CalculatePlayGamesSyncUseCase(repository, dispatcher),
             userSettings,

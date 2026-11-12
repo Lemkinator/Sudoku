@@ -58,6 +58,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.serialization.json.JsonObject
@@ -78,6 +79,8 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     private lateinit var section: SudokuBackupSection
     private val transaction = DirectBackupTransaction()
     private lateinit var defaultZone: TimeZone
+    private val queueDispatcher = UnconfinedTestDispatcher()
+    private val queueScope = CoroutineScope(SupervisorJob() + queueDispatcher)
 
     @Before
     fun setUp() {
@@ -98,6 +101,7 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     fun tearDown() {
         TimeZone.setDefault(defaultZone)
         database.close()
+        queueScope.cancel()
     }
 
     override fun section(): BackupSection<SudokuBackupEntry> = section
@@ -218,12 +222,11 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
             store(*kept.toTypedArray())
             val before = section.exportEntries()
             val dao = database.gameDao()
-            val dispatcher = UnconfinedTestDispatcher()
             val queue =
                 QueueSudokuSaveUseCase(
                     DefaultSudokusRepository(dao, Clock.systemDefaultZone()),
-                    CoroutineScope(SupervisorJob() + dispatcher),
-                    dispatcher,
+                    queueScope,
+                    queueDispatcher,
                 )
             var inserts = 0
             val failingDao =

@@ -109,6 +109,7 @@ class SudokuViewModelTest : ShouldSpec(
         val clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
         lateinit var repository: FakeSudokusRepository
         lateinit var settingsScope: CoroutineScope
+        lateinit var saveScope: CoroutineScope
         lateinit var userSettings: UserSettings
         var maxLevelReads = 0
         var syncCalculations = 0
@@ -118,6 +119,7 @@ class SudokuViewModelTest : ShouldSpec(
         beforeEach {
             repository = FakeSudokusRepository()
             settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            saveScope = CoroutineScope(SupervisorJob())
             userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             maxLevelReads = 0
             syncCalculations = 0
@@ -125,7 +127,10 @@ class SudokuViewModelTest : ShouldSpec(
             repository.beforeGetCompletedSummaries = { syncCalculations++ }
         }
 
-        afterEach { settingsScope.cancel() }
+        afterEach {
+            settingsScope.cancel()
+            saveScope.cancel()
+        }
 
         fun viewModel(
             savedStateHandle: SavedStateHandle = SavedStateHandle(),
@@ -142,7 +147,7 @@ class SudokuViewModelTest : ShouldSpec(
                 GenerateSudokuUseCase(generateFields, generateDispatcher),
                 GenerateSudokuLevelUseCase(generateFields, generateDispatcher),
                 GetMaxSudokuLevelUseCase(repository, dispatcher),
-                QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
+                QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
                 ShareSudokuUseCase(shareFiles, clock, shareDispatcher),
                 CalculatePlayGamesSyncUseCase(repository, dispatcher),
                 userSettings,

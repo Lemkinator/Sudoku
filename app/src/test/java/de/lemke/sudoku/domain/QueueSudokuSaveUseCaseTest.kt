@@ -32,10 +32,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,6 +50,7 @@ import org.robolectric.shadows.ShadowLog
 @Config(application = Application::class, sdk = [36])
 class QueueSudokuSaveUseCaseTest {
     private val sudokusRepository = FakeSudokusRepository()
+    private val queueScopes = mutableListOf<CoroutineScope>()
 
     private val saved: List<Int?>
         get() = sudokusRepository.saves.map { it.board[1].value }
@@ -56,7 +59,8 @@ class QueueSudokuSaveUseCaseTest {
 
     private fun queue(): QueueSudokuSaveUseCase {
         val dispatcher = UnconfinedTestDispatcher()
-        return QueueSudokuSaveUseCase(sudokusRepository, CoroutineScope(SupervisorJob() + dispatcher), dispatcher)
+        val scope = CoroutineScope(SupervisorJob() + dispatcher).also { queueScopes += it }
+        return QueueSudokuSaveUseCase(sudokusRepository, scope, dispatcher)
     }
 
     private fun gateSaves(gate: CompletableDeferred<Unit>) {
@@ -68,6 +72,11 @@ class QueueSudokuSaveUseCaseTest {
     @Before
     fun setUp() {
         ShadowLog.reset()
+    }
+
+    @After
+    fun cancelQueueScopes() {
+        queueScopes.forEach { it.cancel() }
     }
 
     @Test

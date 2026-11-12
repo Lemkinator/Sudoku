@@ -60,6 +60,7 @@ class SudokuViewModelSavedStateTest {
     private val repository = FakeSudokusRepository()
     private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
     private val userSettings = UserSettings(freshTestPreferences(), settingsScope)
+    private val saveScope = CoroutineScope(SupervisorJob())
 
     private fun viewModel(savedStateHandle: SavedStateHandle): SudokuViewModel {
         val dispatcher = Dispatchers.Main
@@ -70,7 +71,7 @@ class SudokuViewModelSavedStateTest {
             GenerateSudokuUseCase(generateFields, dispatcher),
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
-            QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
+            QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), Clock.systemDefaultZone(), dispatcher),
             CalculatePlayGamesSyncUseCase(repository, dispatcher),
             userSettings,
@@ -93,6 +94,7 @@ class SudokuViewModelSavedStateTest {
     @After
     fun tearDown() {
         settingsScope.cancel()
+        saveScope.cancel()
     }
 
     @Test
