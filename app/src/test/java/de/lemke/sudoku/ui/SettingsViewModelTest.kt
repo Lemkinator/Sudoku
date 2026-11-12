@@ -42,6 +42,8 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Test
@@ -53,7 +55,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class SettingsViewModelTest {
-    private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+    private val userSettings = UserSettings(freshTestPreferences(), settingsScope)
     private val dailyNotifications = FakeDailyNotifications()
     private val database =
         Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), AppDatabase::class.java).allowMainThreadQueries().build()
@@ -80,7 +83,10 @@ class SettingsViewModelTest {
     }
 
     @After
-    fun closeDatabase() = database.close()
+    fun tearDown() {
+        settingsScope.cancel()
+        database.close()
+    }
 
     @Test
     fun `dailySudokuNotificationHour reads through to userSettings`() {

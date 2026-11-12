@@ -22,18 +22,24 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SudokuLevelViewModelTest : ShouldSpec(
     {
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var viewModel: SudokuLevelViewModel
 
         beforeEach {
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             viewModel = SudokuLevelViewModel(userSettings)
         }
+
+        afterEach { settingsScope.cancel() }
 
         should("currentLevelTab round-trips through the real UserSettings") {
             viewModel.currentLevelTab = 3

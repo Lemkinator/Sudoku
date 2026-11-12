@@ -25,6 +25,7 @@ import io.kotest.matchers.shouldBe
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,7 +34,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class SudokuViewModelRestartTest {
-    private val rig = SudokuViewModelRig()
+    @get:Rule
+    val rig = SudokuViewModelRig()
     private val today = LocalDateTime.of(2026, 1, 15, 0, 0)
 
     private fun Sudoku.withErrors(errors: Int) = copy(info = info.copy(errorsMade = errors))

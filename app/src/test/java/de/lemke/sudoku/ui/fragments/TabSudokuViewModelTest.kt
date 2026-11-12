@@ -45,6 +45,8 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 private const val GENERATE = "generate"
@@ -54,13 +56,15 @@ private const val SAVE = "save"
 class TabSudokuViewModelTest : ShouldSpec(
     {
         val clock = Clock.fixed(Instant.parse("2026-01-15T12:00:00Z"), ZoneOffset.UTC)
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var repository: FakeSudokusRepository
         lateinit var events: MutableList<String>
         lateinit var viewModel: TabSudokuViewModel
 
         beforeEach {
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             repository = FakeSudokusRepository()
             events = mutableListOf()
             repository.beforeSave = { events += SAVE }
@@ -79,6 +83,8 @@ class TabSudokuViewModelTest : ShouldSpec(
                     IsDailySudokuCompletedUseCase(repository, clock, dispatcher),
                 )
         }
+
+        afterEach { settingsScope.cancel() }
 
         fun savedIds() = repository.saves.map { it.info.id }
 

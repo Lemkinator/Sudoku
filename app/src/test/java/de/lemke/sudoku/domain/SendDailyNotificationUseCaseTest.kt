@@ -25,20 +25,26 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SendDailyNotificationUseCaseTest : ShouldSpec(
     {
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var dailyNotifications: FakeDailyNotifications
         lateinit var sendDailyNotification: SendDailyNotificationUseCase
 
         beforeEach {
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             dailyNotifications = FakeDailyNotifications()
             sendDailyNotification = SendDailyNotificationUseCase(dailyNotifications, userSettings)
         }
+
+        afterEach { settingsScope.cancel() }
 
         should("post the daily notification") {
             sendDailyNotification()

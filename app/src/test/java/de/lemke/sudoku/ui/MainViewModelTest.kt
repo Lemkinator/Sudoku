@@ -42,8 +42,11 @@ import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -53,7 +56,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class MainViewModelTest {
-    private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+    private val userSettings = UserSettings(freshTestPreferences(), settingsScope)
     private val dailyNotifications = FakeDailyNotifications()
     private val sudokusRepository = FakeSudokusRepository()
     private val sudokuDocuments = FakeSudokuDocuments()
@@ -85,6 +89,11 @@ class MainViewModelTest {
 
     private fun gateSaves(gate: CompletableDeferred<Unit>) {
         sudokusRepository.beforeSave = { gate.await() }
+    }
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
     }
 
     @Test

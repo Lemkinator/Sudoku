@@ -43,8 +43,11 @@ import java.io.File
 import java.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -55,7 +58,8 @@ import org.robolectric.annotation.Config
 class SudokuViewModelSavedStateTest {
     private val completed = testSudoku(completed = true)
     private val repository = FakeSudokusRepository()
-    private val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+    private val userSettings = UserSettings(freshTestPreferences(), settingsScope)
 
     private fun viewModel(savedStateHandle: SavedStateHandle): SudokuViewModel {
         val dispatcher = Dispatchers.Main
@@ -84,6 +88,11 @@ class SudokuViewModelSavedStateTest {
         } finally {
             parcel.recycle()
         }
+    }
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
     }
 
     @Test

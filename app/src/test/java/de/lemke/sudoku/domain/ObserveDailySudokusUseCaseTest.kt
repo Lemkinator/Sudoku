@@ -33,6 +33,8 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =
@@ -47,6 +49,7 @@ private fun List<SudokuListItem>.shape(): List<Pair<String, String>> =
 class ObserveDailySudokusUseCaseTest : ShouldSpec(
     {
         lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var useCase: ObserveDailySudokusUseCase
 
@@ -77,7 +80,8 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
 
         beforeEach {
             sudokusRepository = FakeSudokusRepository()
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             useCase =
                 ObserveDailySudokusUseCase(
                     sudokusRepository,
@@ -87,6 +91,8 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
                 )
             listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth).forEach { sudokusRepository.saveSudoku(it) }
         }
+
+        afterEach { settingsScope.cancel() }
 
         should("show every daily sudoku, including old uncompleted ones, when dailyShowUncompleted is on") {
             userSettings.dailyShowUncompleted = true

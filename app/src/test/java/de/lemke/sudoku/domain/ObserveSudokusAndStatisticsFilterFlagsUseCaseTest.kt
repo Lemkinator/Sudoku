@@ -29,21 +29,27 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ObserveSudokusAndStatisticsFilterFlagsUseCaseTest : ShouldSpec(
     {
         lateinit var sudokusRepository: FakeSudokusRepository
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var useCase: ObserveSudokusAndStatisticsFilterFlagsUseCase
 
         beforeEach {
             sudokusRepository = FakeSudokusRepository()
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             useCase =
                 ObserveSudokusAndStatisticsFilterFlagsUseCase(sudokusRepository, userSettings, UnconfinedTestDispatcher())
         }
+
+        afterEach { settingsScope.cancel() }
 
         should("re-filters the repository's sudokus when userSettings.filterFlags changes") {
             val normal4x4 = testSudoku(size = SudokuSize.FOUR, difficulty = Difficulty.EASY, mode = GameMode.Normal)
