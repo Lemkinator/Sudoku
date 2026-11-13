@@ -100,8 +100,8 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     @After
     fun tearDown() {
         TimeZone.setDefault(defaultZone)
-        database.close()
         queueScope.cancel()
+        database.close()
     }
 
     override fun section(): BackupSection<SudokuBackupEntry> = section

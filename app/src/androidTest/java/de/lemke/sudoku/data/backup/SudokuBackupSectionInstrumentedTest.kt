@@ -67,8 +67,8 @@ class SudokuBackupSectionInstrumentedTest : SudokuBackupSectionContract() {
 
     @After
     fun closeDatabaseAndRestoreZone() {
-        database.close()
         queueScope.cancel()
+        database.close()
         TimeZone.setDefault(originalZone)
     }
 
