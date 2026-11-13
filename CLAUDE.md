@@ -226,6 +226,12 @@ JUnit 5 (Kotest runs on the JUnit 5 platform — see `ArchitectureTest.kt`); JUn
 `junit-vintage-engine` is used only for tests that need Robolectric (screenshot tests, Hilt
 activities, Context-backed settings/use cases).
 
+Gradle resolves the `android-all-instrumented` jars (catalog entries `robolectric-android-all-<api>`, one per SDK level the
+tests use: 32, 33 and 36) into `app/build/robolectric-jars` through `syncRobolectricJars`, and the unit-test tasks pass that
+directory as `robolectric.dependency.dir`. Unit tests run without network access. After a Robolectric bump or a new
+`@Config(sdk)`, update the catalog coordinates to the jar names Robolectric's `DefaultSdkProvider` lists; a stale entry fails the
+test with `Path is not a file` naming the missing jar.
+
 ## Test Doubles
 
 Tests run real use cases over fakes in `src/test`: `FakeSudokusRepository` (in-memory rows with the DAO orderings, recorded
