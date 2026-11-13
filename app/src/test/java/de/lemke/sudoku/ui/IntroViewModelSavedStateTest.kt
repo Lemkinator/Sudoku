@@ -32,6 +32,9 @@ import de.lemke.sudoku.ui.game.Selection
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -41,7 +44,8 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class, sdk = [36])
 class IntroViewModelSavedStateTest {
     private val dailyNotifications = FakeDailyNotifications()
-    private val userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(Dispatchers.Main))
+    private val settingsScope = CoroutineScope(Job() + Dispatchers.Main)
+    private val userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
 
     private fun viewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
         IntroViewModel(
@@ -61,6 +65,11 @@ class IntroViewModelSavedStateTest {
         } finally {
             parcel.recycle()
         }
+    }
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
     }
 
     @Test

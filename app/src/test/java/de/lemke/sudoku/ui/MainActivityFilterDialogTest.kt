@@ -35,7 +35,10 @@ import de.lemke.sudoku.domain.model.SudokuFilterFlags.TYPE_NORMAL
 import de.lemke.sudoku.domain.model.SudokuSize
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,14 +69,20 @@ private val ALL_FLAGS =
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class MainActivityFilterDialogTest {
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
     private lateinit var settings: UserSettings
     private lateinit var dialogBinding: DialogStatisticsFilterBinding
 
     @Before
     fun setUp() {
         val context = Robolectric.buildActivity(AppCompatActivity::class.java).setup().get()
-        settings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+        settings = UserSettings(FakeSharedPreferences(), settingsScope)
         dialogBinding = DialogStatisticsFilterBinding.inflate(context.layoutInflater)
+    }
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
     }
 
     @Test

@@ -33,8 +33,11 @@ import io.kotest.matchers.shouldBe
 import java.time.Clock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -47,14 +50,20 @@ import org.robolectric.shadows.ShadowLog
 class TabSudokuViewModelLoadFailureTest {
     private val repository = FakeSudokusRepository()
     private val dispatcher = UnconfinedTestDispatcher()
+    private val settingsScope = CoroutineScope(Job() + dispatcher)
     private val viewModel =
         TabSudokuViewModel(
-            UserSettings(freshTestPreferences(), CoroutineScope(dispatcher)),
+            UserSettings(freshTestPreferences(), settingsScope),
             GenerateSudokuUseCase(GenerateFieldsUseCase(dispatcher, PatternSolvedBoardGenerator()), dispatcher),
             SaveSudokuUseCase(repository, dispatcher),
             GetRecentlyUpdatedNormalSudokuUseCase(repository, dispatcher),
             IsDailySudokuCompletedUseCase(repository, Clock.systemUTC(), dispatcher),
         )
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
+    }
 
     @Test
     fun `returns null and logs the error when the database read fails`() =

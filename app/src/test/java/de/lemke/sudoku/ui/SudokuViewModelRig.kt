@@ -40,15 +40,26 @@ import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import org.junit.rules.ExternalResource
 
 /** Builds view-models over a fake repository, the real settings and a clock a test advances. Needs Robolectric. */
 @OptIn(ExperimentalCoroutinesApi::class)
-class SudokuViewModelRig {
+class SudokuViewModelRig : ExternalResource() {
     val clock = AdjustableClock(Instant.parse("2026-01-15T12:00:00Z"))
     val repository = FakeSudokusRepository()
-    val userSettings = UserSettings(freshTestPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+    val userSettings = UserSettings(freshTestPreferences(), settingsScope)
+
+    private val saveScope = CoroutineScope(SupervisorJob())
+
+    override fun after() {
+        settingsScope.cancel()
+        saveScope.cancel()
+    }
 
     fun playing(sudoku: Sudoku): SudokuViewModel = ready(sudoku).also { it.onGameStarted(SudokuGame.Ready(sudoku)) }
 
@@ -62,7 +73,7 @@ class SudokuViewModelRig {
             GenerateSudokuUseCase(generateFields, dispatcher),
             GenerateSudokuLevelUseCase(generateFields, dispatcher),
             GetMaxSudokuLevelUseCase(repository, dispatcher),
-            QueueSudokuSaveUseCase(repository, CoroutineScope(SupervisorJob()), dispatcher),
+            QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), clock, dispatcher),
             CalculatePlayGamesSyncUseCase(repository, dispatcher),
             userSettings,

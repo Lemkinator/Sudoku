@@ -36,7 +36,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
@@ -154,13 +156,17 @@ private object FailingDispatcher : CoroutineDispatcher() {
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabStatisticsViewModelTest : ShouldSpec(
     {
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var repository: FakeSudokusRepository
 
         beforeEach {
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             repository = FakeSudokusRepository()
         }
+
+        afterEach { settingsScope.cancel() }
 
         fun newViewModel(
             calculateDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),

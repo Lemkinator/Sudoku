@@ -20,6 +20,9 @@ import de.lemke.commonutils.data.assertPreferenceXmlBoundToSettings
 import de.lemke.sudoku.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -33,6 +36,13 @@ import de.lemke.commonutils.R as commonutilsR
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class PreferenceXmlParityTest {
+    private val settingsScope = CoroutineScope(Job() + Dispatchers.Unconfined)
+
+    @After
+    fun tearDown() {
+        settingsScope.cancel()
+    }
+
     @Test
     fun `composed preference XMLs are bound to UserSettings`() {
         assertPreferenceXmlBoundToSettings(
@@ -40,7 +50,7 @@ class PreferenceXmlParityTest {
             R.xml.preferences,
             commonutilsR.xml.preferences_backup,
             commonutilsR.xml.preferences_more_info,
-            factory = { prefs -> UserSettings(prefs, CoroutineScope(Dispatchers.Unconfined)) },
+            factory = { prefs -> UserSettings(prefs, settingsScope) },
         )
     }
 }

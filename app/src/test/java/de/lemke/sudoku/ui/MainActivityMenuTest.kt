@@ -38,6 +38,8 @@ import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.read
 import de.lemke.commonutils.returnFromLaunchedScreen
+import de.lemke.commonutils.shouldBeContainerTransformTo
+import de.lemke.commonutils.shouldHaveNoContainerTransform
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
@@ -80,7 +82,6 @@ import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowActivity.IntentForResult
 import org.robolectric.shadows.ShadowDialog
 
-private const val TRANSITION_NAME_KEY = "commonUtilsTransitionNameKey"
 private const val ANIM_TYPE_KEY = "android:activity.animType"
 private const val ANIM_SCENE_TRANSITION = 5
 
@@ -286,14 +287,14 @@ class MainActivityMenuTest {
     private fun IntentForResult.shouldBePopOver(className: String) {
         intent.component?.className shouldBe className
         (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.hasExtra(TRANSITION_NAME_KEY) shouldBe false
+        intent.shouldHaveNoContainerTransform()
         options.shouldNotBeNull().getInt(ANIM_TYPE_KEY) shouldNotBe ANIM_SCENE_TRANSITION
     }
 
     private fun IntentForResult.shouldBeContainerTransform(className: String) {
         intent.component?.className shouldBe className
         (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe 0
-        intent.getStringExtra(TRANSITION_NAME_KEY) shouldBe "commonUtilsActivityTransitionName"
+        intent.shouldBeContainerTransformTo("commonUtilsActivityTransitionName")
         options.shouldNotBeNull().getInt(ANIM_TYPE_KEY) shouldBe ANIM_SCENE_TRANSITION
     }
 

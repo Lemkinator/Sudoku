@@ -32,6 +32,7 @@ import java.util.TimeZone
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
@@ -46,17 +47,17 @@ class SudokuBackupSectionInstrumentedTest : SudokuBackupSectionContract() {
             .inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, AppDatabase::class.java)
             .build()
     private val section = SudokuBackupSection(database.gameDao())
+    private val queueDispatcher = UnconfinedTestDispatcher()
+    private val queueScope = CoroutineScope(SupervisorJob() + queueDispatcher)
     private val transaction =
-        UnconfinedTestDispatcher().let { dispatcher ->
-            BackupModule.provideBackupTransaction(
-                database,
-                QueueSudokuSaveUseCase(
-                    DefaultSudokusRepository(database.gameDao(), Clock.system(ZoneId.of("Europe/Berlin"))),
-                    CoroutineScope(SupervisorJob() + dispatcher),
-                    dispatcher,
-                ),
-            )
-        }
+        BackupModule.provideBackupTransaction(
+            database,
+            QueueSudokuSaveUseCase(
+                DefaultSudokusRepository(database.gameDao(), Clock.system(ZoneId.of("Europe/Berlin"))),
+                queueScope,
+                queueDispatcher,
+            ),
+        )
     private val originalZone = TimeZone.getDefault()
 
     @Before
@@ -66,6 +67,7 @@ class SudokuBackupSectionInstrumentedTest : SudokuBackupSectionContract() {
 
     @After
     fun closeDatabaseAndRestoreZone() {
+        queueScope.cancel()
         database.close()
         TimeZone.setDefault(originalZone)
     }

@@ -36,6 +36,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
@@ -50,13 +52,17 @@ private fun List<SudokuListItem>.shape(): List<String> = map { item -> if (item 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TabHistoryViewModelTest : ShouldSpec(
     {
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var repository: FakeSudokusRepository
 
         beforeEach {
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             repository = FakeSudokusRepository()
         }
+
+        afterEach { settingsScope.cancel() }
 
         fun newViewModel(): TabHistoryViewModel {
             val dispatcher = UnconfinedTestDispatcher()

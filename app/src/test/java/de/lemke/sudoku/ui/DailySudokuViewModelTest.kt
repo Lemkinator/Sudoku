@@ -42,6 +42,8 @@ import java.time.ZonedDateTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -66,14 +68,18 @@ private fun DailySudokuUiState.shown() =
 @OptIn(ExperimentalCoroutinesApi::class)
 class DailySudokuViewModelTest : ShouldSpec(
     {
+        lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var repository: FakeSudokusRepository
         val clock = Clock.fixed(ZonedDateTime.of(2026, 1, 15, 12, 0, 0, 0, ZoneId.of("UTC")).toInstant(), ZoneId.of("UTC"))
 
         beforeEach {
-            userSettings = UserSettings(FakeSharedPreferences(), CoroutineScope(UnconfinedTestDispatcher()))
+            settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
+            userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             repository = FakeSudokusRepository()
         }
+
+        afterEach { settingsScope.cancel() }
 
         fun newViewModel(): DailySudokuViewModel {
             val dispatcher = UnconfinedTestDispatcher()

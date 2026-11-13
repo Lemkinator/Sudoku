@@ -195,7 +195,7 @@ Four tools run as part of `./gradlew build`, and dependency analysis runs separa
     wrap taps in the input helpers (`onSingleLaunchClick`, `singleLaunchMenuItem`, `onSingleLaunchItemSelected`,
     `singleLaunchSuspending`); show dialogs with `showOnce(tag)`.
     `popOverOrTransformToActivity` opens a One UI pop-over on a One UI device whose launching activity has a smallest
-    width of at least 600dp, and a container transform on every other device.
+    width of at least 600dp, and a container transform otherwise.
   - Every `@HiltAndroidTest` declares exactly one `@get:Rule(order = 0) val hiltRule = HiltTestRule(this)`, ordered
     before every other rule, and no raw `HiltAndroidRule`. `HiltTestRule` (common-utils testFixtures) runs
     `HiltAndroidRule`, exposes `inject()` and closes every resource registered with `HiltTestRule.closeAfterTest`, such
