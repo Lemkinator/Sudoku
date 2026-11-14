@@ -231,7 +231,7 @@ Gradle resolves the `android-all-instrumented` jars (catalog entries `robolectri
 tests use: 32, 33 and 36, plus 37 for `Robolectric.buildAttributeSet()`, which reads the target SDK's resources) into `app/build/robolectric-jars` through `syncRobolectricJars`, and the unit-test tasks pass that
 directory as `robolectric.dependency.dir`. Unit tests run without network access. After a Robolectric bump or a new
 `@Config(sdk)`, update the catalog coordinates to the jar names Robolectric's `DefaultSdkProvider` lists; a stale entry fails the
-test with `Path is not a file` naming the missing jar.
+test with `Path is not a file` naming the missing jar. The `local-tests` CI step has a 12-minute timeout, so a hang fails the step and the failure uploads still run (a job-level cancel skips them).
 
 ## Test Doubles
 
