@@ -204,10 +204,11 @@ Four tools run as part of `./gradlew build`, and dependency analysis runs separa
     `@get:Rule val closeTestResources = HiltTestRule.closeResourcesRule()` instead.
   - Runs as part of `./gradlew test`.
 - **Dependency analysis** — `./gradlew buildHealth` runs in the `check-formatting` CI job. It fails on unused
-  dependencies, incorrect configurations and unused annotation processors; other advice warns. The `dependencyAnalysis {}`
-  block in the root `build.gradle.kts` holds the facade bundles and the narrow guava exclude. Each bundle names its
-  primary and only the transitive internals the report lists, so it never masks a declared artifact. The `leakcanary`
-  bundle also folds the `testDebug` leakcanary advice. Report: `build/reports/dependency-analysis/build-health-report.txt`.
+  dependencies, incorrect configurations and unused annotation processors; other advice warns, except "used transitive
+  dependencies" (ignored: a version-less declaration of a transitive artifact protects nothing, so the catalog has none).
+  The `dependencyAnalysis {}` block in the root `build.gradle.kts` holds one bundle, `leakcanary`: it names the primary and
+  the two transitive internals the report lists, and it silences the "debugRuntimeOnly" advice for the `debugImplementation`
+  leakcanary line. Report: `build/reports/dependency-analysis/build-health-report.txt`.
 
 **ktlint rule overrides** — two rules disabled in `.editorconfig` to match
 community practice (NowInAndroid, Pokedex both use the inline form):
@@ -225,6 +226,12 @@ See the shared Robolectric/JUnit 5 policy in `A:\repo\android\CLAUDE.md`. This r
 JUnit 5 (Kotest runs on the JUnit 5 platform — see `ArchitectureTest.kt`); JUnit 4 +
 `junit-vintage-engine` is used only for tests that need Robolectric (screenshot tests, Hilt
 activities, Context-backed settings/use cases).
+
+Gradle resolves the `android-all-instrumented` jars (catalog entries `robolectric-android-all-<api>`, one per SDK level the
+tests use, and the newest SDK Robolectric supports, which `Robolectric.buildAttributeSet()` reads) into `app/build/robolectric-jars` through `syncRobolectricJars`, and the unit-test tasks pass that
+directory as `robolectric.dependency.dir`. Unit tests run without network access. After a Robolectric bump or a new
+`@Config(sdk)`, update the catalog coordinates to the jar names Robolectric's `DefaultSdkProvider` lists; a stale entry fails the
+test with `Path is not a file` naming the missing jar. The `local-tests` CI step has a 12-minute timeout, so a hang fails the step and the failure uploads still run (a job-level cancel skips them).
 
 ## Test Doubles
 
