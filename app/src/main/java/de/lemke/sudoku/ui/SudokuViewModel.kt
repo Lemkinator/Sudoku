@@ -285,9 +285,9 @@ class SudokuViewModel @Inject constructor(
 
     /** Applies [move] to a running sudoku and queues one save; returns the sudoku after the move, or null when it was refused. */
     fun onMove(move: BoardMove): Sudoku? {
-        val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing }
-        val played = playing?.sudoku?.play(move)
-        if (playing != null && played != null) {
+        val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing } ?: return null
+        val played = playing.sudoku.play(move)
+        if (played != null) {
             game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
             updateTicker()
             if (played.sudoku.completed) {

@@ -127,7 +127,10 @@ fun entryOf(
 fun progressOf(
     entry: SudokuBackupEntry,
     zone: ZoneId,
-): Int = gameFromBackup(entry, zone)?.header?.progress ?: 0
+): Int {
+    val game = gameFromBackup(entry, zone) ?: return 0
+    return game.header.progress
+}
 
 private fun boardBytesOrNull(text: String): ByteArray? =
     try {

@@ -137,11 +137,11 @@ class TabStatistics : Fragment() {
                 add(getString(R.string.most_notes) to stats.mostNotes.toString())
                 add(getString(R.string.average_notes) to stats.averageNotes.toString())
                 add(getString(R.string.difficulty) to null)
-                add(getString(R.string.most_games_started) to (stats.mostGamesStartedDifficulty?.getLocalString(resources) ?: "-"))
-                add(getString(R.string.most_games_won) to (stats.mostGamesWonDifficulty?.getLocalString(resources) ?: "-"))
+                add(getString(R.string.most_games_started) to stats.mostGamesStartedDifficulty.orDash { it.getLocalString(resources) })
+                add(getString(R.string.most_games_won) to stats.mostGamesWonDifficulty.orDash { it.getLocalString(resources) })
                 add(getString(R.string.size) to null)
-                add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.getLocalString(resources) ?: "-"))
-                add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.getLocalString(resources) ?: "-"))
+                add(getString(R.string.most_games_started) to stats.mostGamesStartedSize.orDash { it.getLocalString(resources) })
+                add(getString(R.string.most_games_won) to stats.mostGamesWonSize.orDash { it.getLocalString(resources) })
                 add(getString(R.string.feature_usage) to null)
                 add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * PERCENT_SCALE).roundToInt()}%")
                 add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * PERCENT_SCALE).roundToInt()}%")
@@ -149,6 +149,8 @@ class TabStatistics : Fragment() {
                 add(getString(R.string.perfect_games) to stats.perfectGames.toString())
             }
     }
+
+    private inline fun <T> T?.orDash(describe: (T) -> String): String = if (this == null) "-" else describe(this)
 
     internal fun totalSecondsToString(seconds: Long): String {
         if (seconds == 0L) return "-"
