@@ -45,13 +45,13 @@ import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SeparatorItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
-import de.lemke.sudoku.domain.model.formatFull
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode
 import dev.oneuiproject.oneui.widget.Separator
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import java.time.LocalDateTime
 import org.junit.Before
 import org.junit.Rule
@@ -234,15 +234,14 @@ class SudokuListAdapterTest {
     fun `onCreateViewHolder for a sudoku item view type builds a non-separator holder`() {
         val holder = buildAdapter().onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
 
-        holder.isSeparator shouldBe false
-        holder.selectableLayout.shouldNotBeNull()
+        holder.shouldBeInstanceOf<SudokuListAdapter.SudokuViewHolder>().selectableLayout.id shouldBe R.id.item_selectable_layout
     }
 
     @Test
     fun `onCreateViewHolder for a separator view type builds a separator holder`() {
         val holder = buildAdapter().onCreateViewHolder(FrameLayout(context), SeparatorItem.VIEW_TYPE)
 
-        holder.isSeparator shouldBe true
+        holder.shouldBeInstanceOf<SudokuListAdapter.SeparatorViewHolder>()
         (holder.itemView is Separator) shouldBe true
         val layoutParams = holder.itemView.layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.width shouldBe ViewGroup.LayoutParams.MATCH_PARENT
@@ -343,14 +342,15 @@ class SudokuListAdapterTest {
         adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
         // MultiSelectorDelegate's lateinit `adapter` is set only by configureWith().
         adapter.configureWith(layoutRecyclerViewWith(adapter))
-        val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
+        val holder =
+            adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE).shouldBeInstanceOf<SudokuListAdapter.SudokuViewHolder>()
         holder.textView.text = "sentinel"
         adapter.toggleActionMode(true)
 
         adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
 
         holder.textView.text shouldBe "sentinel"
-        holder.selectableLayout?.isSelectionMode shouldBe true
+        holder.selectableLayout.isSelectionMode shouldBe true
     }
 
     @Test
@@ -494,6 +494,5 @@ class SudokuListAdapterTest {
         adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
 
         holder.textView.text shouldBe "sentinel"
-        holder.selectableLayout shouldBe null
     }
 }

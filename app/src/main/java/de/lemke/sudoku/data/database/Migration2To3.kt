@@ -84,8 +84,7 @@ private class LegacyField(
     val index: Int,
     val solution: Int?,
     val value: Int?,
-    val given: Boolean,
-    val hint: Boolean,
+    val origin: CellOrigin,
     val notes: String,
 )
 
@@ -178,8 +177,12 @@ private fun Cursor.legacyField(): LegacyField =
         index = int("index"),
         solution = intOrNull("solution"),
         value = intOrNull("value"),
-        given = int("given") != 0,
-        hint = int("hint") != 0,
+        origin =
+            when {
+                int("given") != 0 -> CellOrigin.GIVEN
+                int("hint") != 0 -> CellOrigin.HINT
+                else -> CellOrigin.PLAYER
+            },
         notes = string("notes"),
     )
 
@@ -198,18 +201,13 @@ private fun legacyBoardOrNull(
  */
 private fun LegacyField.cellOrNull(size: SudokuSize): Cell? {
     val digits = 1..size.value
-    val readable = solution in digits && (value == null || value in digits) && (!given || value == solution)
+    val readable = solution in digits && (value == null || value in digits) && (origin != CellOrigin.GIVEN || value == solution)
     return if (solution == null || !readable) {
         null
     } else {
-        val origin =
-            when {
-                given -> CellOrigin.GIVEN
-                hint && value == solution -> CellOrigin.HINT
-                else -> CellOrigin.PLAYER
-            }
+        val cellOrigin = if (origin == CellOrigin.HINT && value != solution) CellOrigin.PLAYER else origin
         val noteDigits = notes.mapNotNull { it.toSudokuInt() }.filter { it <= size.value }
-        Cell(solution, value, origin, NoteMask.of(*noteDigits.toIntArray()))
+        Cell(solution, value, cellOrigin, NoteMask.of(noteDigits))
     }
 }
 

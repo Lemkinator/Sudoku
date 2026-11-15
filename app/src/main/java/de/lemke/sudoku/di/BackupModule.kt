@@ -37,10 +37,10 @@ import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 
 @Module(includes = [CommonUtilsBackupModule::class])
 @InstallIn(SingletonComponent::class)
-abstract class BackupModule {
+interface BackupModule {
     @Binds
     @IntoSet
-    abstract fun bindSudokusSection(section: SudokuBackupSection): BackupSection<*>
+    fun bindSudokusSection(section: SudokuBackupSection): BackupSection<*>
 
     companion object {
         @Provides

@@ -50,7 +50,7 @@ private const val SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE
 @AndroidEntryPoint
 class TabStatistics : Fragment() {
     internal lateinit var binding: FragmentTabStatisticsBinding
-    internal var statisticsList: MutableList<Pair<String, String?>> = mutableListOf()
+    internal var statisticsList: List<Pair<String, String?>> = emptyList()
     private val viewModel: TabStatisticsViewModel by viewModels()
 
     override fun onCreateView(
@@ -97,55 +97,57 @@ class TabStatistics : Fragment() {
     }
 
     private fun updateStatistics(stats: SudokuStatistics) {
-        statisticsList = mutableListOf()
-        statisticsList.add(getString(R.string.games) to null)
-        statisticsList.add(getString(R.string.games_started) to stats.gamesStarted.toString())
-        statisticsList.add(getString(R.string.games_completed) to stats.gamesCompleted.toString())
-        statisticsList.add(getString(R.string.win_rate) to getString(R.string.win_rate_value, stats.winRate))
-        statisticsList.add(getString(R.string.time) to null)
-        statisticsList.add(
-            getString(R.string.best_time) to
-                if (stats.bestTime != null) {
-                    getString(
-                        R.string.best_time_value,
-                        secondsToTimeString(stats.bestTime.info.seconds),
-                        stats.bestTime.info.size
-                            .getLocalString(resources),
-                        stats.bestTime.info.difficulty
-                            .getLocalString(resources),
-                    )
-                } else {
-                    secondsToTimeString(-1)
-                },
-        )
-        statisticsList.add(getString(R.string.average_time) to secondsToTimeString(stats.averageTime))
-        statisticsList.add(getString(R.string.total_time_played) to totalSecondsToString(stats.totalSecondsPlayed))
-        statisticsList.add(getString(R.string.streaks) to null)
-        statisticsList.add(getString(R.string.current_win_streak) to stats.currentGameStreak.toString())
-        statisticsList.add(getString(R.string.best_win_streak) to stats.bestGameStreak.toString())
-        statisticsList.add(getString(R.string.errors) to null)
-        statisticsList.add(getString(R.string.wins_without_error) to stats.winsWithoutErrors.toString())
-        statisticsList.add(getString(R.string.most_errors) to stats.mostErrors.toString())
-        statisticsList.add(getString(R.string.average_errors) to stats.averageErrors.toString())
-        statisticsList.add(getString(R.string.hints) to null)
-        statisticsList.add(getString(R.string.wins_without_hint) to stats.winsWithoutHints.toString())
-        statisticsList.add(getString(R.string.most_hints) to stats.mostHints.toString())
-        statisticsList.add(getString(R.string.average_hints) to stats.averageHints.toString())
-        statisticsList.add(getString(R.string.notes) to null)
-        statisticsList.add(getString(R.string.wins_without_notes) to stats.winsWithoutNotes.toString())
-        statisticsList.add(getString(R.string.most_notes) to stats.mostNotes.toString())
-        statisticsList.add(getString(R.string.average_notes) to stats.averageNotes.toString())
-        statisticsList.add(getString(R.string.difficulty) to null)
-        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedDifficulty?.getLocalString(resources) ?: "-"))
-        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonDifficulty?.getLocalString(resources) ?: "-"))
-        statisticsList.add(getString(R.string.size) to null)
-        statisticsList.add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.getLocalString(resources) ?: "-"))
-        statisticsList.add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.getLocalString(resources) ?: "-"))
-        statisticsList.add(getString(R.string.feature_usage) to null)
-        statisticsList.add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * PERCENT_SCALE).roundToInt()}%")
-        statisticsList.add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * PERCENT_SCALE).roundToInt()}%")
-        statisticsList.add(getString(R.string.eraser_usage_rate) to "${(stats.eraserUsageRate * PERCENT_SCALE).roundToInt()}%")
-        statisticsList.add(getString(R.string.perfect_games) to stats.perfectGames.toString())
+        statisticsList =
+            buildList {
+                add(getString(R.string.games) to null)
+                add(getString(R.string.games_started) to stats.gamesStarted.toString())
+                add(getString(R.string.games_completed) to stats.gamesCompleted.toString())
+                add(getString(R.string.win_rate) to getString(R.string.win_rate_value, stats.winRate))
+                add(getString(R.string.time) to null)
+                add(
+                    getString(R.string.best_time) to
+                        if (stats.bestTime != null) {
+                            getString(
+                                R.string.best_time_value,
+                                secondsToTimeString(stats.bestTime.info.seconds),
+                                stats.bestTime.info.size
+                                    .getLocalString(resources),
+                                stats.bestTime.info.difficulty
+                                    .getLocalString(resources),
+                            )
+                        } else {
+                            secondsToTimeString(-1)
+                        },
+                )
+                add(getString(R.string.average_time) to secondsToTimeString(stats.averageTime))
+                add(getString(R.string.total_time_played) to totalSecondsToString(stats.totalSecondsPlayed))
+                add(getString(R.string.streaks) to null)
+                add(getString(R.string.current_win_streak) to stats.currentGameStreak.toString())
+                add(getString(R.string.best_win_streak) to stats.bestGameStreak.toString())
+                add(getString(R.string.errors) to null)
+                add(getString(R.string.wins_without_error) to stats.winsWithoutErrors.toString())
+                add(getString(R.string.most_errors) to stats.mostErrors.toString())
+                add(getString(R.string.average_errors) to stats.averageErrors.toString())
+                add(getString(R.string.hints) to null)
+                add(getString(R.string.wins_without_hint) to stats.winsWithoutHints.toString())
+                add(getString(R.string.most_hints) to stats.mostHints.toString())
+                add(getString(R.string.average_hints) to stats.averageHints.toString())
+                add(getString(R.string.notes) to null)
+                add(getString(R.string.wins_without_notes) to stats.winsWithoutNotes.toString())
+                add(getString(R.string.most_notes) to stats.mostNotes.toString())
+                add(getString(R.string.average_notes) to stats.averageNotes.toString())
+                add(getString(R.string.difficulty) to null)
+                add(getString(R.string.most_games_started) to (stats.mostGamesStartedDifficulty?.getLocalString(resources) ?: "-"))
+                add(getString(R.string.most_games_won) to (stats.mostGamesWonDifficulty?.getLocalString(resources) ?: "-"))
+                add(getString(R.string.size) to null)
+                add(getString(R.string.most_games_started) to (stats.mostGamesStartedSize?.getLocalString(resources) ?: "-"))
+                add(getString(R.string.most_games_won) to (stats.mostGamesWonSize?.getLocalString(resources) ?: "-"))
+                add(getString(R.string.feature_usage) to null)
+                add(getString(R.string.hint_usage_rate) to "${(stats.hintUsageRate * PERCENT_SCALE).roundToInt()}%")
+                add(getString(R.string.notes_usage_rate) to "${(stats.notesUsageRate * PERCENT_SCALE).roundToInt()}%")
+                add(getString(R.string.eraser_usage_rate) to "${(stats.eraserUsageRate * PERCENT_SCALE).roundToInt()}%")
+                add(getString(R.string.perfect_games) to stats.perfectGames.toString())
+            }
     }
 
     internal fun totalSecondsToString(seconds: Long): String {

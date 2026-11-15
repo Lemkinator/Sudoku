@@ -32,7 +32,6 @@ import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.backup.SudokuBackupSection
 import de.lemke.sudoku.data.database.AppDatabase
-import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -69,7 +68,6 @@ class SettingsViewModelTest {
             userSettings,
             dailyNotifications,
             SetDailyNotificationEnabledUseCase(userSettings, sendDailyNotification),
-            IsNotificationPermissionGrantedUseCase(dailyNotifications),
             sectionLabels,
             BackupEngine(
                 setOf(SudokuBackupSection(database.gameDao())),

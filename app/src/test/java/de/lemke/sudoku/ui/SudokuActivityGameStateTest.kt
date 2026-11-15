@@ -37,6 +37,7 @@ import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.FollowUp
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku

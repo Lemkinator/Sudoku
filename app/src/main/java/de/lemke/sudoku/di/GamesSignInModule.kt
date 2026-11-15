@@ -29,13 +29,13 @@ import de.lemke.sudoku.ui.utils.PlayGamesSyncApplier
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class GamesSignInModule {
+interface GamesSignInModule {
     @Binds
-    abstract fun bindGamesSignIn(impl: DefaultGamesSignIn): GamesSignIn
+    fun bindGamesSignIn(impl: DefaultGamesSignIn): GamesSignIn
 
     @Binds
-    abstract fun bindPlayGamesIntentProvider(impl: DefaultPlayGamesIntentProvider): PlayGamesIntentProvider
+    fun bindPlayGamesIntentProvider(impl: DefaultPlayGamesIntentProvider): PlayGamesIntentProvider
 
     @Binds
-    abstract fun bindPlayGamesSyncApplier(impl: DefaultPlayGamesSyncApplier): PlayGamesSyncApplier
+    fun bindPlayGamesSyncApplier(impl: DefaultPlayGamesSyncApplier): PlayGamesSyncApplier
 }

@@ -37,8 +37,8 @@ data class TabStatisticsUiState(
 
 @HiltViewModel
 class TabStatisticsViewModel @Inject constructor(
-    private val observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase,
-    private val calculateStatistics: CalculateStatisticsUseCase,
+    observeSudokusAndStatisticsFilterFlags: ObserveSudokusAndStatisticsFilterFlagsUseCase,
+    calculateStatistics: CalculateStatisticsUseCase,
 ) : ViewModel() {
     /** True after a load failed until the screen reports the error shown. */
     val loadFailed: StateFlow<Boolean>

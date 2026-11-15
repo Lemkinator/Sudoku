@@ -26,6 +26,7 @@ import de.lemke.sudoku.data.SudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.GameTime
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -34,9 +35,11 @@ import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.WinAftermath
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.Cell
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.FollowUp
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.NoteMask
 import de.lemke.sudoku.domain.model.PlayGamesSync
@@ -144,15 +147,16 @@ class SudokuViewModelTest : ShouldSpec(
             return SudokuViewModel(
                 savedStateHandle,
                 GetSudokuUseCase(repository, dispatcher),
-                GenerateSudokuUseCase(generateFields, generateDispatcher),
-                GenerateSudokuLevelUseCase(generateFields, generateDispatcher),
-                GetMaxSudokuLevelUseCase(repository, dispatcher),
                 QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
                 ShareSudokuUseCase(shareFiles, clock, shareDispatcher),
-                CalculatePlayGamesSyncUseCase(repository, dispatcher),
+                WinAftermath(
+                    GetMaxSudokuLevelUseCase(repository, dispatcher),
+                    GenerateSudokuUseCase(generateFields, generateDispatcher),
+                    GenerateSudokuLevelUseCase(generateFields, generateDispatcher),
+                    CalculatePlayGamesSyncUseCase(repository, dispatcher),
+                ),
                 userSettings,
-                clock,
-                timeSource,
+                GameTime(clock, timeSource),
             )
         }
 

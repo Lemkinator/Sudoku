@@ -18,7 +18,6 @@ package de.lemke.sudoku.ui
 
 import android.annotation.SuppressLint
 import android.content.DialogInterface.BUTTON_POSITIVE
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
@@ -51,7 +50,6 @@ import de.lemke.commonutils.ui.utils.share
 import de.lemke.commonutils.ui.utils.shareText
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunch
-import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.commonutils.ui.utils.toast
 import de.lemke.commonutils.ui.utils.transformTo
@@ -60,6 +58,7 @@ import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.databinding.ActivitySudokuBinding
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.CompletedRegions
+import de.lemke.sudoku.domain.model.FollowUp
 import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.MoveResult
@@ -178,7 +177,10 @@ class SudokuActivity : AppCompatActivity() {
         if (initialized && !isChangingConfigurations) pauseGame()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.sudoku_menu, menu).let { true }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.sudoku_menu, menu)
+        return true
+    }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         val playing = playing
@@ -203,10 +205,22 @@ class SudokuActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
         when (item.itemId) {
-            R.id.menu_pause_play -> withPlaying { if (it.running) pauseGame() else resumeGame() }.let { true }
-            R.id.menu_reset -> singleLaunchMenuItem { viewModel.onRestart() }
-            R.id.menu_share -> singleLaunchMenuItem { withPlaying(::shareDialog) }
-            else -> super.onOptionsItemSelected(item)
+            R.id.menu_pause_play -> {
+                withPlaying { if (it.running) pauseGame() else resumeGame() }
+                true
+            }
+
+            R.id.menu_reset -> {
+                singleLaunchMenuItem { viewModel.onRestart() }
+            }
+
+            R.id.menu_share -> {
+                singleLaunchMenuItem { withPlaying(::shareDialog) }
+            }
+
+            else -> {
+                super.onOptionsItemSelected(item)
+            }
         }
 
     override fun onKeyUp(

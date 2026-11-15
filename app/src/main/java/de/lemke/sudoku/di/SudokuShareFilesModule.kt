@@ -25,7 +25,7 @@ import de.lemke.sudoku.data.SudokuShareFiles
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class SudokuShareFilesModule {
+interface SudokuShareFilesModule {
     @Binds
-    abstract fun bindSudokuShareFiles(shareFiles: DefaultSudokuShareFiles): SudokuShareFiles
+    fun bindSudokuShareFiles(shareFiles: DefaultSudokuShareFiles): SudokuShareFiles
 }

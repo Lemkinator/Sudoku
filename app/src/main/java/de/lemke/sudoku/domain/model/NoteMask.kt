@@ -34,7 +34,9 @@ value class NoteMask(val bits: Int) {
     companion object {
         val EMPTY = NoteMask(0)
 
-        fun of(vararg digits: Int): NoteMask = NoteMask(digits.fold(0) { bits, digit -> bits or bitOf(digit) })
+        fun of(vararg digits: Int): NoteMask = of(digits.asIterable())
+
+        fun of(digits: Iterable<Int>): NoteMask = NoteMask(digits.fold(0) { bits, digit -> bits or bitOf(digit) })
 
         private fun bitOf(digit: Int): Int {
             val shift = digit - 1

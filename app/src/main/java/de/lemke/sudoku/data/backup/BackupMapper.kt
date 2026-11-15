@@ -127,7 +127,7 @@ fun entryOf(
 fun progressOf(
     entry: SudokuBackupEntry,
     zone: ZoneId,
-): Int = gameFromBackup(entry, zone)?.let { it.header.progress } ?: 0
+): Int = gameFromBackup(entry, zone)?.header?.progress ?: 0
 
 private fun boardBytesOrNull(text: String): ByteArray? =
     try {

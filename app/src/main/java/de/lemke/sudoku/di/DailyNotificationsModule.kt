@@ -25,7 +25,7 @@ import de.lemke.sudoku.data.DefaultDailyNotifications
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class DailyNotificationsModule {
+interface DailyNotificationsModule {
     @Binds
-    abstract fun bindDailyNotifications(notifications: DefaultDailyNotifications): DailyNotifications
+    fun bindDailyNotifications(notifications: DefaultDailyNotifications): DailyNotifications
 }

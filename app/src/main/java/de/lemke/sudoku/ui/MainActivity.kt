@@ -66,7 +66,6 @@ import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutActivity
 import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.setupHeaderAndNavRail
 import de.lemke.commonutils.ui.utils.showOnce
-import de.lemke.commonutils.ui.utils.singleLaunchActivity
 import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
 import de.lemke.commonutils.ui.utils.singleLaunchSuspending
 import de.lemke.commonutils.ui.utils.toast
@@ -151,7 +150,10 @@ class MainActivity : AppCompatActivity() {
         dismissImportProgress()
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.menu_filter, menu).let { true }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_filter, menu)
+        return true
+    }
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         menu?.setGroupVisible(R.id.menu_group_filter, selectedPosition == 2)

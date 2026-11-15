@@ -45,8 +45,8 @@ data class DailySudokuUiState(
 @HiltViewModel
 class DailySudokuViewModel @Inject constructor(
     private val userSettings: UserSettings,
-    private val initDailySudokus: InitDailySudokusUseCase,
-    private val observeDailySudokus: ObserveDailySudokusUseCase,
+    initDailySudokus: InitDailySudokusUseCase,
+    observeDailySudokus: ObserveDailySudokusUseCase,
     private val clock: Clock,
 ) : ViewModel() {
     /** True after a load failed until the screen reports the error shown. */

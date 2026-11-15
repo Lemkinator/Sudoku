@@ -25,7 +25,7 @@ import de.lemke.sudoku.data.database.SudokusRepository
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class SudokusRepositoryModule {
+interface SudokusRepositoryModule {
     @Binds
-    abstract fun bindSudokusRepository(repository: DefaultSudokusRepository): SudokusRepository
+    fun bindSudokusRepository(repository: DefaultSudokusRepository): SudokusRepository
 }

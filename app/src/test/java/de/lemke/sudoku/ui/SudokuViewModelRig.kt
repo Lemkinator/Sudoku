@@ -25,6 +25,7 @@ import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.GameTime
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -33,6 +34,7 @@ import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.WinAftermath
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import java.io.File
@@ -70,15 +72,16 @@ class SudokuViewModelRig : ExternalResource() {
         return SudokuViewModel(
             SavedStateHandle(mapOf(KEY_SUDOKU_ID to sudoku.info.id.value)),
             GetSudokuUseCase(repository, dispatcher),
-            GenerateSudokuUseCase(generateFields, dispatcher),
-            GenerateSudokuLevelUseCase(generateFields, dispatcher),
-            GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), clock, dispatcher),
-            CalculatePlayGamesSyncUseCase(repository, dispatcher),
+            WinAftermath(
+                GetMaxSudokuLevelUseCase(repository, dispatcher),
+                GenerateSudokuUseCase(generateFields, dispatcher),
+                GenerateSudokuLevelUseCase(generateFields, dispatcher),
+                CalculatePlayGamesSyncUseCase(repository, dispatcher),
+            ),
             userSettings,
-            clock,
-            LooperTimeSource,
+            GameTime(clock, LooperTimeSource),
         ).also { idleMainLooper() }
     }
 }

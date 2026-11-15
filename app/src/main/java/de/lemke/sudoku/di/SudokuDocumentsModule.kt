@@ -25,7 +25,7 @@ import de.lemke.sudoku.data.SudokuDocuments
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class SudokuDocumentsModule {
+interface SudokuDocumentsModule {
     @Binds
-    abstract fun bindSudokuDocuments(documents: DefaultSudokuDocuments): SudokuDocuments
+    fun bindSudokuDocuments(documents: DefaultSudokuDocuments): SudokuDocuments
 }
