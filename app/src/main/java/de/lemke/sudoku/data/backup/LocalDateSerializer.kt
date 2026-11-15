@@ -17,7 +17,9 @@
 package de.lemke.sudoku.data.backup
 
 import java.time.LocalDate
+import java.time.format.DateTimeParseException
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -33,5 +35,12 @@ object LocalDateSerializer : KSerializer<LocalDate> {
         value: LocalDate,
     ) = encoder.encodeString(value.toString())
 
-    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): LocalDate {
+        val text = decoder.decodeString()
+        return try {
+            LocalDate.parse(text)
+        } catch (e: DateTimeParseException) {
+            throw SerializationException("Invalid ISO-8601 date: $text", e)
+        }
+    }
 }
