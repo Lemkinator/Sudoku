@@ -39,7 +39,7 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.commonutils.read
 import de.lemke.commonutils.returnFromLaunchedScreen
 import de.lemke.commonutils.shouldBeContainerTransformTo
-import de.lemke.commonutils.shouldHaveNoContainerTransform
+import de.lemke.commonutils.shouldBePopOverTo
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutActivity
 import de.lemke.commonutils.ui.activity.CommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.singleLaunchActivity
@@ -60,7 +60,6 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
@@ -81,9 +80,6 @@ import org.robolectric.annotation.Config
 import org.robolectric.fakes.RoboMenuItem
 import org.robolectric.shadows.ShadowActivity.IntentForResult
 import org.robolectric.shadows.ShadowDialog
-
-private const val ANIM_TYPE_KEY = "android:activity.animType"
-private const val ANIM_SCENE_TRANSITION = 5
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltAndroidTest
@@ -284,60 +280,53 @@ class MainActivityMenuTest {
         return started.shouldNotBeNull()
     }
 
-    private fun IntentForResult.shouldBePopOver(className: String) {
-        intent.component?.className shouldBe className
-        (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe Intent.FLAG_ACTIVITY_SINGLE_TOP
-        intent.shouldHaveNoContainerTransform()
-        options.shouldNotBeNull().getInt(ANIM_TYPE_KEY) shouldNotBe ANIM_SCENE_TRANSITION
-    }
+    private fun IntentForResult.shouldBePopOver(cls: Class<*>) = intent.shouldBePopOverTo(cls, options)
 
-    private fun IntentForResult.shouldBeContainerTransform(className: String) {
-        intent.component?.className shouldBe className
+    private fun IntentForResult.shouldBeContainerTransform(cls: Class<*>) {
+        intent.shouldBeContainerTransformTo(cls, options)
         (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe 0
-        intent.shouldBeContainerTransformTo("commonUtilsActivityTransitionName")
-        options.shouldNotBeNull().getInt(ANIM_TYPE_KEY) shouldBe ANIM_SCENE_TRANSITION
     }
 
     @Test
     @Config(qualifiers = "sw600dp")
     fun `about_app_dest pops over on a One UI tablet`() {
-        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBePopOver(CommonUtilsAboutActivity::class.java.name)
+        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBePopOver(CommonUtilsAboutActivity::class.java)
     }
 
     @Test
     @Config(qualifiers = "sw600dp")
     fun `about_me_dest pops over on a One UI tablet`() {
-        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBePopOver(CommonUtilsAboutMeActivity::class.java.name)
+        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBePopOver(CommonUtilsAboutMeActivity::class.java)
     }
 
     @Test
     @Config(qualifiers = "sw600dp")
     fun `settings_dest pops over on a One UI tablet`() {
-        navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBePopOver(SettingsActivity::class.java.name)
+        navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBePopOver(SettingsActivity::class.java)
     }
 
     @Test
     @Config(qualifiers = "sw600dp")
     fun `settings_dest keeps the container transform on a non-One UI tablet`() {
-        navigateFromDrawer(R.id.settings_dest, isOneUi = false).shouldBeContainerTransform(SettingsActivity::class.java.name)
+        navigateFromDrawer(R.id.settings_dest, isOneUi = false).shouldBeContainerTransform(SettingsActivity::class.java)
     }
 
     @Test
     @Config(qualifiers = "sw599dp")
     fun `about_app_dest keeps the container transform on a One UI phone`() {
-        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutActivity::class.java.name)
+        navigateFromDrawer(R.id.about_app_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutActivity::class.java)
     }
 
     @Test
     @Config(qualifiers = "sw599dp")
     fun `about_me_dest keeps the container transform on a One UI phone`() {
-        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutMeActivity::class.java.name)
+        navigateFromDrawer(R.id.about_me_dest, isOneUi = true).shouldBeContainerTransform(CommonUtilsAboutMeActivity::class.java)
     }
 
     @Test
     @Config(qualifiers = "sw599dp")
     fun `settings_dest keeps the container transform on a One UI phone`() {
-        navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBeContainerTransform(SettingsActivity::class.java.name)
+        navigateFromDrawer(R.id.settings_dest, isOneUi = true).shouldBeContainerTransform(SettingsActivity::class.java)
     }
 
     @Test
@@ -349,7 +338,7 @@ class MainActivityMenuTest {
             clickNavItem(activity, R.id.settings_dest)
             clickNavItem(activity, R.id.settings_dest)
             val first = shadowOf(activity).nextStartedActivityForResult.shouldNotBeNull()
-            first.shouldBePopOver(SettingsActivity::class.java.name)
+            first.shouldBePopOver(SettingsActivity::class.java)
             shadowOf(activity).nextStartedActivityForResult shouldBe null
         }
     }
