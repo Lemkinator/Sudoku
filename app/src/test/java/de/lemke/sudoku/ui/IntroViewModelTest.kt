@@ -21,7 +21,6 @@ import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.FakeDailyNotifications
 import de.lemke.sudoku.data.FakeDailyNotifications.AlarmTime
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SendDailyNotificationUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import de.lemke.sudoku.ui.game.BoardInput
@@ -56,7 +55,7 @@ class IntroViewModelTest : ShouldSpec(
         fun newViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
             IntroViewModel(
                 SetDailyNotificationEnabledUseCase(userSettings, SendDailyNotificationUseCase(dailyNotifications, userSettings)),
-                IsNotificationPermissionGrantedUseCase(dailyNotifications),
+                dailyNotifications,
                 savedStateHandle,
             )
 
