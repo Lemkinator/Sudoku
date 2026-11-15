@@ -38,10 +38,13 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
 import java.util.Base64
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
@@ -269,6 +272,38 @@ class BackupMapperTest : ShouldSpec(
                     ).replace("2026-05-02T08:00:00+02:00", "2026-05-02T08:00:00")
 
             shouldThrow<SerializationException> { Json.decodeFromString(SudokuBackupEntry.serializer(), json) }
+        }
+
+        should("report the parse failure as the cause of a refused stamp") {
+            val error = shouldThrow<SerializationException> { Json.decodeFromString(OffsetDateTimeSerializer, "\"2026-05-02T08:00:00\"") }
+
+            error.message.shouldNotBeNull() shouldContain "2026-05-02T08:00:00"
+            error.cause.shouldBeInstanceOf<DateTimeParseException>()
+        }
+
+        should("refuse a malformed day when decoding") {
+            val error = shouldThrow<SerializationException> { Json.decodeFromString(LocalDateSerializer, "\"2026-13-45\"") }
+
+            error.message.shouldNotBeNull() shouldContain "2026-13-45"
+            error.cause.shouldBeInstanceOf<DateTimeParseException>()
+        }
+
+        should("refuse an entry with a malformed day when decoding") {
+            val json =
+                Json
+                    .encodeToString(
+                        SudokuBackupEntry.serializer(),
+                        backupEntry().copy(dailyDate = LocalDate.of(2026, 5, 2)),
+                    ).replace("2026-05-02\"", "2026-13-45\"")
+
+            json shouldContain "2026-13-45"
+            shouldThrow<SerializationException> { Json.decodeFromString(SudokuBackupEntry.serializer(), json) }
+        }
+
+        should("decode a valid stamp and day") {
+            Json.decodeFromString(OffsetDateTimeSerializer, "\"2026-05-02T08:00:00+02:00\"") shouldBe
+                OffsetDateTime.of(2026, 5, 2, 8, 0, 0, 0, ZoneOffset.ofHours(2))
+            Json.decodeFromString(LocalDateSerializer, "\"2026-05-02\"") shouldBe LocalDate.of(2026, 5, 2)
         }
 
         should("refuse an entry without a board when decoding") {

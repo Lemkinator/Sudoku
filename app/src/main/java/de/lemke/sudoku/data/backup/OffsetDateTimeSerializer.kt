@@ -18,7 +18,9 @@ package de.lemke.sudoku.data.backup
 
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME
+import java.time.format.DateTimeParseException
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -34,5 +36,12 @@ object OffsetDateTimeSerializer : KSerializer<OffsetDateTime> {
         value: OffsetDateTime,
     ) = encoder.encodeString(ISO_OFFSET_DATE_TIME.format(value))
 
-    override fun deserialize(decoder: Decoder): OffsetDateTime = OffsetDateTime.parse(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): OffsetDateTime {
+        val text = decoder.decodeString()
+        return try {
+            OffsetDateTime.parse(text)
+        } catch (e: DateTimeParseException) {
+            throw SerializationException("Invalid ISO-8601 offset date-time: $text", e)
+        }
+    }
 }
