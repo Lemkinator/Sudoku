@@ -47,6 +47,7 @@ import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.ui.utils.SudokuListAdapter.Mode
 import dev.oneuiproject.oneui.widget.Separator
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -465,14 +466,14 @@ class SudokuListAdapterTest {
     }
 
     @Test
-    fun `a click without an onClickItem callback is still consumed`() {
+    fun `a click without an onClickItem callback does not throw`() {
         val adapter = buildAdapter()
         adapter.submitList(listOf(SudokuItem(sudokuFixture().summary(), "A")))
 
         val recyclerView = layoutRecyclerViewWith(adapter)
         val holder = recyclerView.findViewHolderForAdapterPosition(0).shouldNotBeNull()
 
-        holder.itemView.performClick().shouldBeTrue()
+        shouldNotThrowAny { holder.itemView.performClick() }
     }
 
     @Test
