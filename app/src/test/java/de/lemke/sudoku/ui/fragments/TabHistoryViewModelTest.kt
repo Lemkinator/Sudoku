@@ -20,15 +20,14 @@ import app.cash.turbine.test
 import de.lemke.commonutils.data.FakeSharedPreferences
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.DeleteSudokusUseCase
 import de.lemke.sudoku.domain.ObserveAllNormalSudokusUseCase
 import de.lemke.sudoku.domain.ObserveSudokuHistoryUseCase
-import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.testSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -38,10 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -84,8 +80,7 @@ class TabHistoryViewModelTest : ShouldSpec(
         ) = testSudoku(
             sudokuId = sudokuId,
             created = NINE_O_CLOCK,
-            updated = updated,
-        ).let { it.copy(info = it.info.copy(seconds = seconds)) }
+        ).updatedAt(updated).let { it.copy(info = it.info.copy(seconds = seconds)) }
 
         should("errorLimit reflects the real UserSettings.errorLimitFlow") {
             val viewModel = newViewModel()

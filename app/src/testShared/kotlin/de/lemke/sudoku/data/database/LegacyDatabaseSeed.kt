@@ -34,6 +34,16 @@ data class SeedField(
     val gameSize: Int? = null,
 )
 
+/** One row of the version 2 `sudoku` table; [created] and [updated] are stored as given. */
+data class SeedGame(
+    val id: String,
+    val size: Int,
+    val modeLevel: Int,
+    val created: String,
+    val updated: String,
+    val difficulty: Int = 1,
+)
+
 /** The solution digit of cell [index] on a valid pattern board of [size]. */
 fun patternSolution(
     size: SudokuSize,
@@ -69,7 +79,11 @@ class LegacyDatabaseSeed(private val connection: SQLiteConnection) {
         created: String,
         updated: String,
         fields: List<SeedField>,
-        difficulty: Int = 1,
+    ) = game(SeedGame(id, size, modeLevel, created, updated), fields)
+
+    fun game(
+        game: SeedGame,
+        fields: List<SeedField>,
     ) {
         connection
             .prepare(
@@ -77,7 +91,7 @@ class LegacyDatabaseSeed(private val connection: SQLiteConnection) {
                     "isChecklist, isReverseChecklist, checklistNumber, hintsUsed, notesMade, errorsMade, created, updated, seconds) " +
                     "VALUES (?, ?, ?, ?, 1, 0, 1, 0, 0, 0, 2, 3, 4, ?, ?, 95)",
             ).use { statement ->
-                statement.bindAll(id, size, difficulty, modeLevel, created, updated)
+                statement.bindAll(game.id, game.size, game.difficulty, game.modeLevel, game.created, game.updated)
                 statement.step()
             }
         connection
@@ -86,8 +100,8 @@ class LegacyDatabaseSeed(private val connection: SQLiteConnection) {
             ).use { statement ->
                 fields.forEach { field ->
                     statement.bindAll(
-                        id,
-                        field.gameSize ?: size,
+                        game.id,
+                        field.gameSize ?: game.size,
                         field.index,
                         field.solution,
                         field.value,

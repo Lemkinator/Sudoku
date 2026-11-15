@@ -34,7 +34,6 @@ import de.lemke.sudoku.data.database.DefaultSudokusRepository
 import de.lemke.sudoku.data.database.GameDao
 import de.lemke.sudoku.data.database.GameEntity
 import de.lemke.sudoku.data.database.toEntity
-import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.di.BackupModule
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.model.GameMode
@@ -48,7 +47,6 @@ import io.kotest.matchers.shouldBe
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Base64
@@ -189,8 +187,8 @@ class SudokuBackupSectionTest : SudokuBackupSectionContract() {
     @Test
     fun `replace swaps the local game for the merged one`(): Unit =
         runBlocking {
-            val local = backupEntry(id = "local", modeLevel = -1, solvedCells = 2, dailyDate = LocalDate.parse("2026-05-02"))
-            val merged = backupEntry(id = "merged", modeLevel = -1, solvedCells = 6, dailyDate = LocalDate.parse("2026-05-02"))
+            val local = backupEntry(id = "local", modeLevel = -1, solvedCells = 2).copy(dailyDate = LocalDate.parse("2026-05-02"))
+            val merged = backupEntry(id = "merged", modeLevel = -1, solvedCells = 6).copy(dailyDate = LocalDate.parse("2026-05-02"))
             section.insert(listOf(local))
 
             section.replace(local, merged)

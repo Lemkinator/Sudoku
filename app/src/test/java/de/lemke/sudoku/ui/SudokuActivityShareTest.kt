@@ -56,9 +56,10 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.concurrent.Executors
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -79,7 +80,8 @@ class SudokuActivityShareTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO, WhileResumed.RunInPlace)
+    private val workerThreads = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    private val pausableIoDispatcher = PausableDispatcher(workerThreads, WhileResumed.RunInPlace)
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -104,6 +106,7 @@ class SudokuActivityShareTest {
     @After
     fun resetDispatchers() {
         testDispatchers.reset()
+        workerThreads.close()
     }
 
     private fun formulaicSudoku(

@@ -50,6 +50,7 @@ import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import de.lemke.sudoku.ui.game.BoardInput
 import de.lemke.sudoku.ui.game.InputTap
 import de.lemke.sudoku.ui.game.Selection
+import de.lemke.sudoku.updatedAt
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -869,7 +870,7 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("onResumed starts the timer of a sudoku in progress") {
-            val sudoku = testSudoku(updated = LocalDateTime.of(2026, 1, 15, 11, 0))
+            val sudoku = testSudoku().updatedAt(LocalDateTime.of(2026, 1, 15, 11, 0))
             val viewModel = playing(sudoku)
 
             viewModel.onResumed()
@@ -1043,8 +1044,7 @@ class SudokuViewModelTest : ShouldSpec(
                 testSudoku(
                     mode = GameMode.Daily(LocalDate.of(2026, 1, 15)),
                     created = LocalDateTime.of(2026, 1, 15, 0, 0),
-                    updated = LocalDateTime.of(2026, 1, 15, 0, 0),
-                )
+                ).updatedAt(LocalDateTime.of(2026, 1, 15, 0, 0))
             val viewModel = playing(sudoku)
 
             viewModel.onResumed()
@@ -1062,8 +1062,7 @@ class SudokuViewModelTest : ShouldSpec(
                 testSudoku(
                     mode = GameMode.Daily(LocalDate.of(2026, 1, 14)),
                     created = LocalDateTime.of(2026, 1, 14, 23, 59),
-                    updated = LocalDateTime.of(2026, 1, 14, 23, 59),
-                )
+                ).updatedAt(LocalDateTime.of(2026, 1, 14, 23, 59))
             val viewModel = playing(sudoku)
 
             viewModel.onResumed()
@@ -1080,7 +1079,7 @@ class SudokuViewModelTest : ShouldSpec(
         }
 
         should("onResumed ends a completed sudoku without a timer") {
-            val sudoku = testSudoku(completed = true, updated = LocalDateTime.of(2026, 1, 15, 11, 0))
+            val sudoku = testSudoku(completed = true).updatedAt(LocalDateTime.of(2026, 1, 15, 11, 0))
             val viewModel = playing(sudoku)
 
             viewModel.onResumed()
@@ -1141,7 +1140,7 @@ class SudokuViewModelTest : ShouldSpec(
             val viewModel = playingToWin(completed)
             repository.saveFailure = IllegalStateException("disk full")
 
-            val won = viewModel.win(completed)
+            viewModel.win(completed)
 
             viewModel.completion.value shouldBe SudokuCompletion.Failed
             viewModel.playGamesSync.value shouldBe null
@@ -1215,7 +1214,7 @@ class SudokuViewModelTest : ShouldSpec(
             val completed = testSudoku(completed = true)
             val viewModel = playingToWin(completed)
             repository.saveFailure = IllegalStateException("disk full")
-            val won = viewModel.win(completed)
+            viewModel.win(completed)
 
             viewModel.onCompletionHandled(SudokuCompletion.Failed)
 
@@ -1276,7 +1275,7 @@ class SudokuViewModelTest : ShouldSpec(
             val savedStateHandle = SavedStateHandle(mapOf(KEY_SUDOKU_ID to completed.info.id.value))
             repository.beforeSave = { CompletableDeferred<Unit>().await() }
             val viewModel = playingToWin(completed, savedStateHandle)
-            val won = viewModel.win(completed)
+            viewModel.win(completed)
             viewModel.completion.value shouldBe SudokuCompletion.Running
 
             val restored = viewModel(savedStateHandle.restoredAfterProcessDeath())

@@ -24,6 +24,7 @@ import de.lemke.sudoku.domain.model.Difficulty.EXPERT
 import de.lemke.sudoku.domain.model.Difficulty.HARD
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
 import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
+import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.PlayGamesSync
@@ -130,26 +131,8 @@ private fun wonSudoku(
     difficulty: Difficulty = VERY_EASY,
     size: SudokuSize = SudokuSize.FOUR,
     mode: GameMode = GameMode.Normal,
-    seconds: Int = 0,
-    eraserUsed: Boolean = false,
-    hintsUsed: Int = 0,
-    notesMade: Int = 0,
-    isChecklist: Boolean = false,
-    isReverseChecklist: Boolean = false,
-): Sudoku =
-    testSudoku(size = size, mode = mode, difficulty = difficulty, completed = true).let {
-        it.copy(
-            info =
-                it.info.copy(
-                    seconds = seconds,
-                    eraserUsed = eraserUsed,
-                    hintsUsed = hintsUsed,
-                    notesMade = notesMade,
-                    isChecklist = isChecklist,
-                    isReverseChecklist = isReverseChecklist,
-                ),
-        )
-    }
+    info: GameInfo.() -> GameInfo = { this },
+): Sudoku = testSudoku(size = size, mode = mode, difficulty = difficulty, completed = true).let { it.copy(info = it.info.info()) }
 
 private fun repositoryOver(vararg sudokus: Sudoku): FakeSudokusRepository = FakeSudokusRepository().also { it.store(*sudokus) }
 
@@ -160,20 +143,18 @@ private fun calculatePlayGamesSyncOver(sudokusRepository: FakeSudokusRepository)
 private fun calculatePlayGamesSyncOver(vararg sudokus: Sudoku): CalculatePlayGamesSyncUseCase =
     calculatePlayGamesSyncOver(repositoryOver(*sudokus))
 
-private val fastFour = wonSudoku(seconds = 5, eraserUsed = true, hintsUsed = 0)
-private val slowFourLevel = wonSudoku(mode = GameMode.Level(1), seconds = 40, hintsUsed = 2, notesMade = 3)
+private val fastFour = wonSudoku { copy(seconds = 5, eraserUsed = true, hintsUsed = 0) }
+private val slowFourLevel = wonSudoku(mode = GameMode.Level(1)) { copy(seconds = 40, hintsUsed = 2, notesMade = 3) }
 private val nineDaily =
     wonSudoku(
         size = SudokuSize.NINE,
         difficulty = HARD,
         mode = GameMode.Daily(LocalDate.of(2026, 1, 1)),
-        seconds = 200,
-        hintsUsed = 1,
-        isChecklist = true,
-    )
-private val nineNormal = wonSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 100, hintsUsed = 1, isReverseChecklist = true)
+    ) { copy(seconds = 200, hintsUsed = 1, isChecklist = true) }
+private val nineNormal =
+    wonSudoku(size = SudokuSize.NINE, difficulty = HARD) { copy(seconds = 100, hintsUsed = 1, isReverseChecklist = true) }
 private val sixteenLevel =
-    wonSudoku(size = SudokuSize.SIXTEEN, difficulty = EXPERT, mode = GameMode.Level(1), seconds = 500, hintsUsed = 3)
+    wonSudoku(size = SudokuSize.SIXTEEN, difficulty = EXPERT, mode = GameMode.Level(1)) { copy(seconds = 500, hintsUsed = 3) }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
@@ -233,10 +214,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("count an imported one-second win in the win totals but not in times, unlocks or steps") {
             val imported =
-                wonSudoku(size = SudokuSize.NINE, difficulty = HARD, seconds = 1, hintsUsed = 3).let {
-                    it.copy(info = it.info.copy(source = GameSource.IMPORTED))
-                }
-            val useCase = calculatePlayGamesSyncOver(wonSudoku(seconds = 100, hintsUsed = 1), imported)
+                wonSudoku(size = SudokuSize.NINE, difficulty = HARD) { copy(seconds = 1, hintsUsed = 3, source = GameSource.IMPORTED) }
+            val useCase = calculatePlayGamesSyncOver(wonSudoku { copy(seconds = 100, hintsUsed = 1) }, imported)
 
             useCase() shouldBe
                 PlayGamesSync(
@@ -267,10 +246,7 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("submit only the win totals when every stored win is imported") {
             val imported =
-                wonSudoku(
-                    mode = GameMode.Level(2),
-                    seconds = 1,
-                ).let { it.copy(info = it.info.copy(source = GameSource.IMPORTED)) }
+                wonSudoku(mode = GameMode.Level(2)) { copy(seconds = 1, source = GameSource.IMPORTED) }
 
             calculatePlayGamesSyncOver(imported)() shouldBe
                 PlayGamesSync(
@@ -383,7 +359,7 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         }
 
         should("unlock the no-hints and eraser achievements but not the notes and checklist ones for a plain win") {
-            val unlocks = calculatePlayGamesSyncOver(wonSudoku(eraserUsed = true, hintsUsed = 0))().achievementUnlocks
+            val unlocks = calculatePlayGamesSyncOver(wonSudoku { copy(eraserUsed = true, hintsUsed = 0) })().achievementUnlocks
 
             unlocks shouldContain R.string.achievement_first_win
             unlocks shouldContain R.string.achievement_eraser
@@ -393,18 +369,20 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
         }
 
         should("unlock the speed achievement only under its 10-second threshold") {
-            calculatePlayGamesSyncOver(wonSudoku(seconds = 9))().achievementUnlocks shouldContain R.string.achievement_i_am_speed
-            calculatePlayGamesSyncOver(wonSudoku(seconds = 10))().achievementUnlocks shouldNotContain R.string.achievement_i_am_speed
+            calculatePlayGamesSyncOver(wonSudoku { copy(seconds = 9) })().achievementUnlocks shouldContain R.string.achievement_i_am_speed
+            calculatePlayGamesSyncOver(wonSudoku { copy(seconds = 10) })().achievementUnlocks shouldNotContain
+                R.string.achievement_i_am_speed
         }
 
         should("not unlock the no-hints achievement when every win used a hint") {
-            calculatePlayGamesSyncOver(wonSudoku(hintsUsed = 1))().achievementUnlocks shouldNotContain R.string.achievement_no_hints
+            calculatePlayGamesSyncOver(wonSudoku { copy(hintsUsed = 1) })().achievementUnlocks shouldNotContain
+                R.string.achievement_no_hints
         }
 
         should("submit the time and win-count leaderboards of each size and difficulty pair") {
             sizeDifficultyExpectations.forEach { expected ->
                 val scores =
-                    calculatePlayGamesSyncOver(wonSudoku(size = expected.size, difficulty = expected.difficulty, seconds = 42))()
+                    calculatePlayGamesSyncOver(wonSudoku(size = expected.size, difficulty = expected.difficulty) { copy(seconds = 42) })()
                         .leaderboardScores
 
                 withClue("${expected.size} ${expected.difficulty}") {
@@ -428,8 +406,8 @@ class CalculatePlayGamesSyncUseCaseTest : ShouldSpec(
 
         should("unlock the stopwatch achievement of each size only below its threshold") {
             sizeExpectations.forEach { expected ->
-                val fast = calculatePlayGamesSyncOver(wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds - 1))()
-                val slow = calculatePlayGamesSyncOver(wonSudoku(size = expected.size, seconds = expected.stopwatchSeconds))()
+                val fast = calculatePlayGamesSyncOver(wonSudoku(size = expected.size) { copy(seconds = expected.stopwatchSeconds - 1) })()
+                val slow = calculatePlayGamesSyncOver(wonSudoku(size = expected.size) { copy(seconds = expected.stopwatchSeconds) })()
 
                 withClue(expected.size) {
                     fast.achievementUnlocks shouldContain expected.stopwatchAchievement

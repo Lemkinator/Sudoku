@@ -21,7 +21,6 @@ import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.SudokuSize
-import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.util.Base64
 
@@ -40,7 +39,6 @@ fun backupEntry(
     updated: String = created,
     solvedCells: Int = 0,
     seconds: Int = 0,
-    dailyDate: LocalDate? = null,
 ): SudokuBackupEntry {
     val open = FOUR_SOLUTION.indices.filterNot { it in FOUR_GIVENS }
     val filled = FOUR_GIVENS + open.take(solvedCells)
@@ -56,7 +54,7 @@ fun backupEntry(
         created = OffsetDateTime.parse(created),
         updated = OffsetDateTime.parse(updated),
         seconds = seconds,
-        dailyDate = dailyDate,
+        dailyDate = null,
         board = Base64.getEncoder().encodeToString(BoardCodec.encode(board)),
     )
 }

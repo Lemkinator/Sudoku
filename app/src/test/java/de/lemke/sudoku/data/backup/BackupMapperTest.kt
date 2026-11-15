@@ -19,7 +19,6 @@ package de.lemke.sudoku.data.backup
 import de.lemke.sudoku.data.codec.BoardCodec
 import de.lemke.sudoku.data.database.GameEntity
 import de.lemke.sudoku.data.database.toEntity
-import de.lemke.sudoku.data.database.toLegacyModeLevel
 import de.lemke.sudoku.data.database.toSudoku
 import de.lemke.sudoku.domain.model.Board
 import de.lemke.sudoku.domain.model.Cell
@@ -261,6 +260,11 @@ class BackupMapperTest : ShouldSpec(
             backupEntry(modeLevel = -1, created = "2026-05-02T23:30:00-04:00").key() shouldBe
                 SudokuBackupKey.Daily(LocalDate.of(2026, 5, 2))
             backupEntry(modeLevel = 3).key() shouldBe SudokuBackupKey.Level(SudokuSize.FOUR, 3)
+        }
+
+        should("refuse to key a game whose mode level names no mode") {
+            shouldThrow<IllegalStateException> { backupEntry(id = "broken", modeLevel = -2).key() }.message shouldBe
+                "Backup entry broken has no mode for level -2"
         }
 
         should("refuse a stamp without an offset when decoding") {

@@ -59,14 +59,14 @@ class TabSudokuViewModelTest : ShouldSpec(
         lateinit var settingsScope: CoroutineScope
         lateinit var userSettings: UserSettings
         lateinit var repository: FakeSudokusRepository
-        lateinit var events: MutableList<String>
+        val events = mutableListOf<String>()
         lateinit var viewModel: TabSudokuViewModel
 
         beforeEach {
             settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
             userSettings = UserSettings(FakeSharedPreferences(), settingsScope)
             repository = FakeSudokusRepository()
-            events = mutableListOf()
+            events.clear()
             repository.beforeSave = { events += SAVE }
             val dispatcher = UnconfinedTestDispatcher()
             val solvedBoardGenerator =

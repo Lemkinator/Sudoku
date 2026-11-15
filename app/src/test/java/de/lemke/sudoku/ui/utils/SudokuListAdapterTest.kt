@@ -465,6 +465,17 @@ class SudokuListAdapterTest {
     }
 
     @Test
+    fun `a click without an onClickItem callback is still consumed`() {
+        val adapter = buildAdapter()
+        adapter.submitList(listOf(SudokuItem(sudokuFixture().summary(), "A")))
+
+        val recyclerView = layoutRecyclerViewWith(adapter)
+        val holder = recyclerView.findViewHolderForAdapterPosition(0).shouldNotBeNull()
+
+        holder.itemView.performClick().shouldBeTrue()
+    }
+
+    @Test
     fun `the long-click listener wired in onCreateViewHolder invokes onLongClickItem and consumes the event`() {
         val sudoku = sudokuFixture()
         val item = SudokuItem(sudoku.summary(), "A")

@@ -65,9 +65,10 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import java.io.File
 import java.time.ZoneId
+import java.util.concurrent.Executors
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import leakcanary.AppWatcher
 import org.junit.After
 import org.junit.Before
@@ -89,7 +90,8 @@ class MainActivityMenuTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableIoDispatcher = PausableDispatcher(Dispatchers.IO, WhileResumed.RunInPlace)
+    private val workerThreads = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    private val pausableIoDispatcher = PausableDispatcher(workerThreads, WhileResumed.RunInPlace)
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -112,6 +114,7 @@ class MainActivityMenuTest {
     @After
     fun resetDispatchers() {
         testDispatchers.reset()
+        workerThreads.close()
     }
 
     @After

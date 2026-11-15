@@ -20,7 +20,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
@@ -35,7 +34,7 @@ class TestDispatchers
     @Inject
     constructor() {
         val default = RedirectableDispatcher(UnconfinedTestDispatcher())
-        val io = RedirectableDispatcher(Dispatchers.IO)
+        val io = RedirectableDispatcher(UnconfinedTestDispatcher())
 
         fun reset() {
             default.reset()

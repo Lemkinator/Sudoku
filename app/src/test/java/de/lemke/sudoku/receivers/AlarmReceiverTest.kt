@@ -41,6 +41,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import java.time.LocalDate
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -92,7 +93,8 @@ class AlarmReceiverTest {
                 .map { it.broadcastReceiver }
                 .filterIsInstance<AlarmReceiver>()
                 .single()
-        shadowOf(shadowOf(receiver).originalPendingResult).future.get(10, TimeUnit.SECONDS)
+        val pendingResult = shadowOf(receiver).originalPendingResult
+        shadowOf(pendingResult).future.get(10, TimeUnit.SECONDS) shouldBeSameInstanceAs pendingResult
     }
 
     private fun scheduledHourAndMinute(): Pair<Int, Int> {

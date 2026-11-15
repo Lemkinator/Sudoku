@@ -42,6 +42,7 @@ import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.utils.awaitSmallText
 import de.lemke.sudoku.ui.utils.listSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.matchers.shouldBe
 import java.time.Duration
 import java.time.LocalDateTime
@@ -119,8 +120,7 @@ class TabHistoryListRefreshTest {
             errorsMade = errorsMade,
             seconds = seconds,
             created = LocalDateTime.of(2026, 1, 15, 10, 0),
-            updated = updated,
-        )
+        ).updatedAt(updated)
 
     private fun save(sudoku: Sudoku) = runBlocking { saveSudoku(sudoku) }
 

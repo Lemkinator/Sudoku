@@ -37,6 +37,7 @@ import de.lemke.sudoku.data.database.toEntity
 import de.lemke.sudoku.data.database.toSudoku
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.testSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -144,7 +145,7 @@ class SettingsBackupTest {
     private fun twoGames(): Array<Sudoku> {
         val created = LocalDateTime.of(2026, 3, 14, 9, 30)
         return arrayOf(
-            testSudoku(created = created, updated = created.plusMinutes(12), completed = true),
+            testSudoku(created = created, completed = true).updatedAt(created.plusMinutes(12)),
             testSudoku(created = created.plusDays(1)),
         )
     }

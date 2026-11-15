@@ -41,7 +41,6 @@ internal fun listSudoku(
     errorsMade: Int,
     seconds: Int,
     created: LocalDateTime,
-    updated: LocalDateTime = created,
 ): Sudoku =
     Sudoku(
         info =
@@ -51,7 +50,7 @@ internal fun listSudoku(
                 difficulty = Difficulty.VERY_EASY,
                 mode = mode,
                 created = created,
-                updated = updated,
+                updated = created,
                 seconds = seconds,
                 errorsMade = errorsMade,
             ),

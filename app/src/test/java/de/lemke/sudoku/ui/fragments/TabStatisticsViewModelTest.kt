@@ -150,7 +150,7 @@ private object FailingDispatcher : CoroutineDispatcher() {
     override fun dispatch(
         context: CoroutineContext,
         block: Runnable,
-    ): Unit = throw IllegalStateException("calculate failed")
+    ): Unit = error("calculate failed")
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
