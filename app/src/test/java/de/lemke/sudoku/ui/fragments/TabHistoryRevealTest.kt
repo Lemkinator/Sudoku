@@ -42,6 +42,7 @@ import de.lemke.sudoku.domain.model.SudokuId
 import de.lemke.sudoku.domain.model.SudokuListItem.SudokuItem
 import de.lemke.sudoku.ui.MainActivity
 import de.lemke.sudoku.ui.utils.listSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -225,8 +226,7 @@ class TabHistoryRevealTest {
             errorsMade = 0,
             seconds = seconds,
             created = SEEDED_DAY,
-            updated = updated,
-        )
+        ).updatedAt(updated)
 
     private fun newSudoku(
         seconds: Int,

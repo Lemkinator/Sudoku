@@ -22,6 +22,7 @@ import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.GameSource
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -37,7 +38,7 @@ class GameEntityMapperTest : ShouldSpec(
         val updated = LocalDateTime.of(2026, 10, 1, 9, 30, 15)
 
         fun sudoku(mode: GameMode = GameMode.Normal) =
-            testSudoku(mode = mode, difficulty = Difficulty.HARD, created = created, updated = updated).let {
+            testSudoku(mode = mode, difficulty = Difficulty.HARD, created = created).updatedAt(updated).let {
                 it.copy(
                     info = it.info.copy(seconds = 95, hintsUsed = 2, notesMade = 3, errorsMade = 4, eraserUsed = true, checklistNumber = 5),
                 )

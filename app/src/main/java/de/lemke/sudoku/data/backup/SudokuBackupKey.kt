@@ -36,9 +36,9 @@ sealed interface SudokuBackupKey {
     ) : SudokuBackupKey
 }
 
-/** The entry must be valid, so its size is known. */
+/** The entry must be valid, so its mode and size are known. */
 fun SudokuBackupEntry.key(): SudokuBackupKey =
-    when (val mode = modeOrNull()!!) {
+    when (val mode = checkNotNull(modeOrNull()) { "Backup entry $id has no mode for level $modeLevel" }) {
         is GameMode.Daily -> SudokuBackupKey.Daily(mode.date)
         is GameMode.Level -> SudokuBackupKey.Level(SudokuSize.fromValue(size), mode.number)
         GameMode.Normal -> SudokuBackupKey.Normal(id)

@@ -37,6 +37,7 @@ import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.domain.SaveSudokuUseCase
 import de.lemke.sudoku.domain.model.BoardMove
 import de.lemke.sudoku.domain.model.Difficulty
+import de.lemke.sudoku.domain.model.FollowUp
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
@@ -49,8 +50,9 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import java.util.concurrent.Executors
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -70,7 +72,8 @@ class SudokuActivityGameStateTest {
     @get:Rule(order = 0)
     val hiltRule = HiltTestRule(this)
 
-    private val pausableDefaultDispatcher = PausableDispatcher(Dispatchers.Default, WhileResumed.RunInPlace)
+    private val workerThreads = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    private val pausableDefaultDispatcher = PausableDispatcher(workerThreads, WhileResumed.RunInPlace)
 
     @Inject
     lateinit var testDispatchers: TestDispatchers
@@ -93,6 +96,7 @@ class SudokuActivityGameStateTest {
     @After
     fun resetDispatchers() {
         testDispatchers.reset()
+        workerThreads.close()
     }
 
     private fun formulaicSudoku(solved: Boolean): Sudoku =

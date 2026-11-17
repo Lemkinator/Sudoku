@@ -112,6 +112,17 @@ class TabStatisticsFragmentTest {
         }
 
     @Test
+    fun `an empty history shows a dash for the most started and most won difficulty and size`() =
+        launch { fragment ->
+            listOf(
+                de.lemke.sudoku.R.string.most_games_started,
+                de.lemke.sudoku.R.string.most_games_won,
+            ).forEach { label ->
+                fragment.statisticsList.filter { it.first == fragment.getString(label) }.map { it.second } shouldBe listOf("-", "-")
+            }
+        }
+
+    @Test
     fun `a completed two-hour sudoku populates the best-time and total-time entries`() {
         runBlocking { saveSudoku(completedSudoku(seconds = 7200)) }
         launch { fragment ->

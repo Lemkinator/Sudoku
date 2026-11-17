@@ -19,6 +19,7 @@ package de.lemke.sudoku.domain
 import de.lemke.sudoku.domain.model.Difficulty
 import de.lemke.sudoku.domain.model.Difficulty.EASY
 import de.lemke.sudoku.domain.model.Difficulty.MEDIUM
+import de.lemke.sudoku.domain.model.GameInfo
 import de.lemke.sudoku.domain.model.GameSummary
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.domain.model.SudokuSize.FOUR
@@ -35,26 +36,8 @@ private fun statsSudoku(
     completed: Boolean,
     difficulty: Difficulty = MEDIUM,
     size: SudokuSize = NINE,
-    seconds: Int = 0,
-    errorsMade: Int = 0,
-    hintsUsed: Int = 0,
-    notesMade: Int = 0,
-    eraserUsed: Boolean = false,
-    updated: LocalDateTime = LocalDateTime.now(),
-): GameSummary =
-    testSudoku(size = size, difficulty = difficulty, updated = updated, completed = completed).let {
-        it
-            .copy(
-                info =
-                    it.info.copy(
-                        seconds = seconds,
-                        errorsMade = errorsMade,
-                        hintsUsed = hintsUsed,
-                        notesMade = notesMade,
-                        eraserUsed = eraserUsed,
-                    ),
-            ).summary()
-    }
+    info: GameInfo.() -> GameInfo = { this },
+): GameSummary = testSudoku(size = size, difficulty = difficulty, completed = completed).let { it.copy(info = it.info.info()) }.summary()
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalculateStatisticsUseCaseTest : ShouldSpec(
@@ -86,7 +69,7 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         }
 
         should("report averageTime as 0, not -1, once at least one game is completed") {
-            val sudokus = listOf(statsSudoku(completed = true, seconds = 10), statsSudoku(completed = true, seconds = 20))
+            val sudokus = listOf(statsSudoku(completed = true) { copy(seconds = 10) }, statsSudoku(completed = true) { copy(seconds = 20) })
 
             useCase(sudokus).averageTime shouldBe 15
         }
@@ -94,9 +77,9 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("count the current streak back from the most recently updated game, stopping at the first loss") {
             val sudokus =
                 listOf(
-                    statsSudoku(completed = false, updated = LocalDateTime.now().minusMinutes(3)),
-                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(2)),
-                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(1)),
+                    statsSudoku(completed = false) { copy(updated = LocalDateTime.now().minusMinutes(3)) },
+                    statsSudoku(completed = true) { copy(updated = LocalDateTime.now().minusMinutes(2)) },
+                    statsSudoku(completed = true) { copy(updated = LocalDateTime.now().minusMinutes(1)) },
                 )
 
             useCase(sudokus).currentGameStreak shouldBe 2
@@ -105,10 +88,10 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("track the best streak even when it isn't the current one") {
             val sudokus =
                 listOf(
-                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(4)),
-                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(3)),
-                    statsSudoku(completed = false, updated = LocalDateTime.now().minusMinutes(2)),
-                    statsSudoku(completed = true, updated = LocalDateTime.now().minusMinutes(1)),
+                    statsSudoku(completed = true) { copy(updated = LocalDateTime.now().minusMinutes(4)) },
+                    statsSudoku(completed = true) { copy(updated = LocalDateTime.now().minusMinutes(3)) },
+                    statsSudoku(completed = false) { copy(updated = LocalDateTime.now().minusMinutes(2)) },
+                    statsSudoku(completed = true) { copy(updated = LocalDateTime.now().minusMinutes(1)) },
                 )
 
             val stats = useCase(sudokus)
@@ -131,8 +114,8 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("report the max errors/hints/notes made across all games, not just completed ones") {
             val sudokus =
                 listOf(
-                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 1, notesMade = 2),
-                    statsSudoku(completed = true, errorsMade = 1, hintsUsed = 4, notesMade = 9),
+                    statsSudoku(completed = false) { copy(errorsMade = 5, hintsUsed = 1, notesMade = 2) },
+                    statsSudoku(completed = true) { copy(errorsMade = 1, hintsUsed = 4, notesMade = 9) },
                 )
 
             val stats = useCase(sudokus)
@@ -184,11 +167,11 @@ class CalculateStatisticsUseCaseTest : ShouldSpec(
         should("pick a later, larger group or value over an earlier, smaller one") {
             val sudokus =
                 listOf(
-                    statsSudoku(completed = false, errorsMade = 1, hintsUsed = 1, notesMade = 1, difficulty = EASY, size = FOUR),
-                    statsSudoku(completed = false, errorsMade = 2, hintsUsed = 2, notesMade = 2, difficulty = EASY, size = FOUR),
-                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
-                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
-                    statsSudoku(completed = false, errorsMade = 5, hintsUsed = 5, notesMade = 5, difficulty = MEDIUM, size = NINE),
+                    statsSudoku(completed = false, difficulty = EASY, size = FOUR) { copy(errorsMade = 1, hintsUsed = 1, notesMade = 1) },
+                    statsSudoku(completed = false, difficulty = EASY, size = FOUR) { copy(errorsMade = 2, hintsUsed = 2, notesMade = 2) },
+                    statsSudoku(completed = false, difficulty = MEDIUM, size = NINE) { copy(errorsMade = 5, hintsUsed = 5, notesMade = 5) },
+                    statsSudoku(completed = false, difficulty = MEDIUM, size = NINE) { copy(errorsMade = 5, hintsUsed = 5, notesMade = 5) },
+                    statsSudoku(completed = false, difficulty = MEDIUM, size = NINE) { copy(errorsMade = 5, hintsUsed = 5, notesMade = 5) },
                 )
 
             val stats = useCase(sudokus)

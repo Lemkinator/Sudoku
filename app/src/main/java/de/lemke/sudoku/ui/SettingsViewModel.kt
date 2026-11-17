@@ -26,7 +26,6 @@ import de.lemke.commonutils.backup.core.BackupEngine
 import de.lemke.commonutils.di.DefaultDispatcher
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -45,7 +44,6 @@ class SettingsViewModel @Inject constructor(
     private val userSettings: UserSettings,
     private val dailyNotifications: DailyNotifications,
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
-    private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
     val sectionLabels: Set<BackupSectionLabel>,
     backupEngine: BackupEngine,
     backupDocuments: BackupDocuments,
@@ -66,7 +64,7 @@ class SettingsViewModel @Inject constructor(
                 DailyNotificationToggleResult.Applied
             }
 
-            !isNotificationPermissionGranted() -> {
+            !dailyNotifications.isPermissionGranted() -> {
                 DailyNotificationToggleResult.NeedsPermission
             }
 

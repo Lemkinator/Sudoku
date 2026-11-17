@@ -148,7 +148,7 @@ class BoardCodecTest : ShouldSpec(
                 val board =
                     Board(
                         size,
-                        List(size.cellCount) {
+                        List(size.cellCount) { _ ->
                             val solution = random.nextInt(1, size.value + 1)
                             val origin = CellOrigin.entries[random.nextInt(CellOrigin.entries.size)]
                             val value = if (origin == CellOrigin.PLAYER) random.nextInt(0, size.value + 1).takeIf { it != 0 } else solution

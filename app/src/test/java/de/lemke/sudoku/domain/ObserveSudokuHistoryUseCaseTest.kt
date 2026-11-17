@@ -22,6 +22,7 @@ import de.lemke.sudoku.domain.model.Difficulty.VERY_EASY
 import de.lemke.sudoku.domain.model.SudokuListItem
 import de.lemke.sudoku.domain.model.dateFormatShort
 import de.lemke.sudoku.testSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
@@ -60,7 +61,7 @@ class ObserveSudokuHistoryUseCaseTest : ShouldSpec(
         }
 
         should("insert exactly one separator when every game is on the same day") {
-            repeat(2) { sudokusRepository.saveSudoku(testSudoku(difficulty = VERY_EASY, updated = day1)) }
+            repeat(2) { sudokusRepository.saveSudoku(testSudoku(difficulty = VERY_EASY).updatedAt(day1)) }
 
             useCase().test {
                 awaitItem().shape() shouldBe
@@ -74,7 +75,7 @@ class ObserveSudokuHistoryUseCaseTest : ShouldSpec(
         }
 
         should("insert a new separator when the day changes mid-list") {
-            listOf(day1, day2, day2).forEach { sudokusRepository.saveSudoku(testSudoku(difficulty = VERY_EASY, updated = it)) }
+            listOf(day1, day2, day2).forEach { sudokusRepository.saveSudoku(testSudoku(difficulty = VERY_EASY).updatedAt(it)) }
 
             useCase().test {
                 awaitItem().shape() shouldBe

@@ -19,7 +19,6 @@ package de.lemke.sudoku.ui.fragments
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import de.lemke.sudoku.data.database.FakeSudokusRepository
-import de.lemke.sudoku.data.database.SudokusRepository
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
@@ -43,11 +42,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -587,7 +583,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                     flow {
                         emit(upstream.first())
                         listFailure.await()
-                        throw IllegalStateException("observe failed")
+                        error("observe failed")
                     }
                 }
                 val viewModel = newViewModel()
@@ -629,7 +625,7 @@ class SudokuLevelTabViewModelTest : ShouldSpec(
                     flow {
                         emit(upstream.first())
                         listFailure.await()
-                        throw IllegalStateException("observe failed")
+                        error("observe failed")
                     }
                 }
                 val viewModel = newViewModel()

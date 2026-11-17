@@ -21,14 +21,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.lemke.sudoku.data.UserSettings
-import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
-import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
-import de.lemke.sudoku.domain.GenerateSudokuUseCase
-import de.lemke.sudoku.domain.GetMaxSudokuLevelUseCase
+import de.lemke.sudoku.domain.GameTime
 import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.WinAftermath
 import de.lemke.sudoku.domain.model.BoardMove
+import de.lemke.sudoku.domain.model.FollowUp
 import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Highlighting
 import de.lemke.sudoku.domain.model.MoveResult
@@ -44,14 +43,11 @@ import de.lemke.sudoku.ui.game.Selection
 import de.lemke.sudoku.ui.game.boardRenderOf
 import de.lemke.sudoku.ui.game.reduceInput
 import java.io.Serializable
-import java.time.Clock
 import java.time.LocalDate
-import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeSource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -101,12 +97,6 @@ enum class Phase {
     Won,
     Lost,
     Expired,
-}
-
-/** The sudoku that follows a completed one. */
-enum class FollowUp {
-    NEW_GAME,
-    NEXT_LEVEL,
 }
 
 /** The export of a sudoku file to share. The activity shares a [Result] and then reports it handled. */
@@ -185,15 +175,11 @@ private const val KEY_INPUT = "board_input"
 class SudokuViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val getSudoku: GetSudokuUseCase,
-    private val generateSudoku: GenerateSudokuUseCase,
-    private val generateSudokuLevel: GenerateSudokuLevelUseCase,
-    private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
     private val queueSudokuSave: QueueSudokuSaveUseCase,
     private val shareSudoku: ShareSudokuUseCase,
-    private val calculatePlayGamesSync: CalculatePlayGamesSyncUseCase,
+    private val winAftermath: WinAftermath,
     private val userSettings: UserSettings,
-    private val clock: Clock,
-    private val timeSource: TimeSource.WithComparableMarks,
+    private val gameTime: GameTime,
 ) : ViewModel() {
     val game: StateFlow<SudokuGame>
         field = MutableStateFlow<SudokuGame>(SudokuGame.Loading)
@@ -231,7 +217,7 @@ class SudokuViewModel @Inject constructor(
 
     fun onGameStarted(ready: SudokuGame.Ready) {
         val kind = ready.sudoku.kind()
-        val expired = kind is SudokuKind.Daily && kind.date != LocalDate.now(clock)
+        val expired = kind is SudokuKind.Daily && kind.date != gameTime.today()
         if (game.compareAndSet(ready, playingOf(ready.sudoku, kind, expired))) untilNextTick = 1.seconds
     }
 
@@ -255,11 +241,7 @@ class SudokuViewModel @Inject constructor(
         game.value = SudokuGame.Generating
         updateTicker()
         viewModelScope.launch {
-            val next =
-                when (followUp) {
-                    FollowUp.NEW_GAME -> generateSudoku(completed.info.size, completed.info.difficulty)
-                    FollowUp.NEXT_LEVEL -> generateSudokuLevel(completed.info.size, (completed.info.mode as GameMode.Level).number + 1)
-                }
+            val next = winAftermath.start(completed, followUp)
             queueSudokuSave(next).await()
             savedStateHandle[KEY_SUDOKU_ID] = next.info.id.value
             input.update { it.copy(selection = null) }
@@ -303,9 +285,9 @@ class SudokuViewModel @Inject constructor(
 
     /** Applies [move] to a running sudoku and queues one save; returns the sudoku after the move, or null when it was refused. */
     fun onMove(move: BoardMove): Sudoku? {
-        val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing }
-        val played = playing?.let { it.sudoku.play(move) }
-        if (playing != null && played != null) {
+        val playing = (game.value as? SudokuGame.Playing)?.takeIf { it.running && it.phase == Phase.Playing } ?: return null
+        val played = playing.sudoku.play(move)
+        if (played != null) {
             game.value = playingOf(played.sudoku, playing.kind, expired = false).copy(running = true, lastMove = played.result)
             updateTicker()
             if (played.sudoku.completed) {
@@ -357,7 +339,7 @@ class SudokuViewModel @Inject constructor(
         val playing = game.value as? SudokuGame.Playing
         if (playing?.running == true && playing.phase == Phase.Playing) {
             if (ticker == null) {
-                nextTick = timeSource.markNow() + untilNextTick
+                nextTick = gameTime.markNow() + untilNextTick
                 ticker = viewModelScope.launch { tickEverySecond() }
             }
         } else {
@@ -373,7 +355,7 @@ class SudokuViewModel @Inject constructor(
         while (true) {
             delay(-nextTick.elapsedNow())
             nextTick += 1.seconds
-            updatePlaying { it.copy(sudoku = it.sudoku.tick(LocalDateTime.now(clock))) }
+            updatePlaying { it.copy(sudoku = it.sudoku.tick(gameTime.now())) }
         }
     }
 
@@ -411,7 +393,7 @@ class SudokuViewModel @Inject constructor(
                     is SudokuCompletion.Summary -> {
                         savedStateHandle[KEY_PENDING_SUMMARY] = PendingSummary(result.followUp)
                         completion.value = result
-                        playGamesSync.value = orOnFailure(PlayGamesSync()) { calculatePlayGamesSync() }
+                        playGamesSync.value = orOnFailure(PlayGamesSync()) { winAftermath.playGamesSync() }
                     }
 
                     SudokuCompletion.Failed -> {
@@ -422,8 +404,16 @@ class SudokuViewModel @Inject constructor(
     }
 
     private suspend fun summaryOf(completed: Sudoku): SudokuCompletion.Result {
-        val saved = orOnFailure(false) { queueSudokuSave(completed).await().let { true } }
-        return if (saved) SudokuCompletion.Summary(completed, orOnFailure(null) { followUpOf(completed) }) else SudokuCompletion.Failed
+        val saved =
+            orOnFailure(false) {
+                queueSudokuSave(completed).await()
+                true
+            }
+        return if (saved) {
+            SudokuCompletion.Summary(completed, orOnFailure(null) { winAftermath.followUpOf(completed) })
+        } else {
+            SudokuCompletion.Failed
+        }
     }
 
     private fun restorePendingSummary(sudoku: Sudoku?) {
@@ -442,12 +432,5 @@ class SudokuViewModel @Inject constructor(
         runCatching(block).getOrElse {
             currentCoroutineContext().ensureActive()
             fallback
-        }
-
-    private suspend fun followUpOf(completed: Sudoku): FollowUp? =
-        when (val mode = completed.info.mode) {
-            is GameMode.Level -> FollowUp.NEXT_LEVEL.takeIf { getMaxSudokuLevel(completed.info.size) == mode.number }
-            GameMode.Normal -> FollowUp.NEW_GAME
-            is GameMode.Daily -> null
         }
 }

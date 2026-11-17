@@ -10,20 +10,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew lint                   # Run Android Lint
 ./gradlew test                   # Run unit tests
 ./gradlew connectedAndroidTest   # Run instrumented tests (device required)
-./gradlew spotlessCheck detekt   # Static analysis (formatting + code smells)
+./gradlew spotlessCheck detektMain detektTest   # Static analysis (formatting + code smells)
 ./gradlew buildHealth            # Dependency analysis (unused and misconfigured dependencies)
 ```
 
 Debug builds append `.debug` to the app ID — can be installed alongside release.
 
-One-time per clone, opt into the pre-commit hook (runs Spotless + Detekt before each commit):
+One-time per clone, opt into the pre-commit hook (runs Spotless + plain Detekt before each commit):
 
 ```bash
 git config core.autocrlf input    # Windows only
 git config core.hooksPath .githooks
 ```
 
-Missing this opt-in is a top build-failure cause for new contributors — CI enforces the same checks the hook runs locally.
+Missing this opt-in is a top build-failure cause for new contributors — CI also runs `detektMain detektTest`, which the hook does not.
 
 ## Private Dependencies (Required for Build)
 
@@ -176,7 +176,14 @@ Four tools run as part of `./gradlew build`, and dependency analysis runs separa
   Detekt has no ktlint wrapper). Fix violations with
   `./gradlew spotlessApply`.
 - **Detekt** — static analysis; config at `config/detekt/detekt.yml`.
-  `autoCorrect = false` — fixes are manual.
+  `autoCorrect = false` — fixes are manual. Run `./gradlew detektMain detektTest`: together they analyze every source set
+  once with type resolution. `detekt { ignoredBuildTypes }` drops the variants that only repeat `release`, and the `release`
+  tasks skip the source sets `debug` already analyzes. `app/build.gradle.kts` adds each component's javac output to its
+  task classpath, so generated view binding, `BuildConfig` and Hilt classes resolve. Each report's `number of kt files`
+  line counts the analyzed files. `check` depends on, and CI runs, `detektMain` and `detektTest`, not the plain `detekt` task, which has no
+  type resolution, so rules that need it stay silent. The pre-commit hook runs plain `detekt` only, so type-aware rules run in
+  `check`/CI. The hook does not replace `./gradlew detektMain detektTest`; run it before you push.
+  The androidTest task skips `src/testShared`, which the unit-test task analyzes.
 - **Kover** — coverage floor enforced via `minBound` in `app/build.gradle.kts`'s
   `kover { reports { variant("debug") { verify { rule { ... } } } } }`.
   Verify: `./gradlew koverVerifyDebug`. CI strips zero-instruction `<line>` entries from the

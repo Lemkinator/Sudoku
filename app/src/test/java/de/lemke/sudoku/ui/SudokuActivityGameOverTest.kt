@@ -185,8 +185,7 @@ class SudokuActivityGameOverTest {
             ShadowDialog
                 .getShownDialogs()
                 .filterIsInstance<AlertDialog>()
-                .filter { it.isShowing }
-                .size shouldBe 1
+                .count { it.isShowing } shouldBe 1
         }
 
     @Test

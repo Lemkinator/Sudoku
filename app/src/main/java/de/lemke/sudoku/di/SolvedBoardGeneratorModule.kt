@@ -25,7 +25,7 @@ import de.lemke.sudoku.domain.SolvedBoardGenerator
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class SolvedBoardGeneratorModule {
+interface SolvedBoardGeneratorModule {
     @Binds
-    abstract fun bindSolvedBoardGenerator(impl: CreatorSolvedBoardGenerator): SolvedBoardGenerator
+    fun bindSolvedBoardGenerator(impl: CreatorSolvedBoardGenerator): SolvedBoardGenerator
 }

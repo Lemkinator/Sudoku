@@ -83,11 +83,10 @@ class SudokuListAdapter(
     ): ViewHolder =
         when (viewType) {
             SudokuItem.VIEW_TYPE -> {
-                ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.sudoku_list_item, parent, false), false).apply {
+                SudokuViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.sudoku_list_item, parent, false)).apply {
                     itemView.onSingleLaunchClick {
-                        bindingAdapterPosition.let {
-                            onClickItem?.invoke(it, currentList[it], this@apply)
-                        }
+                        val position = bindingAdapterPosition
+                        onClickItem?.invoke(position, currentList[position], this@apply)
                     }
 
                     if (mode == Mode.NORMAL) {
@@ -100,7 +99,7 @@ class SudokuListAdapter(
             }
 
             SeparatorItem.VIEW_TYPE -> {
-                ViewHolder(Separator(parent.context), true).apply {
+                SeparatorViewHolder(Separator(parent.context)).apply {
                     itemView.layoutParams = MarginLayoutParams(MATCH_PARENT, WRAP_CONTENT)
                 }
             }
@@ -121,12 +120,15 @@ class SudokuListAdapter(
             for (payload in payloads.toSet()) {
                 when (payload) {
                     Payload.SELECTION_MODE -> {
-                        holder.bindActionModeAnimate(getItemId(position))
+                        when (holder) {
+                            is SudokuViewHolder -> holder.bindActionModeAnimate(getItemId(position))
+                            is SeparatorViewHolder -> Unit
+                        }
                     }
 
                     Payload.HIGHLIGHT -> {
                         when (val item = currentList[position]) {
-                            is SudokuItem -> holder.bindSummary(item.summary)
+                            is SudokuItem -> (holder as SudokuViewHolder).bindSummary(item.summary)
                             is SeparatorItem -> Unit
                         }
                     }
@@ -145,8 +147,10 @@ class SudokuListAdapter(
             }
 
             is SudokuItem -> {
-                holder.bindSummary(item.summary)
-                holder.bindActionMode(getItemId(position))
+                (holder as SudokuViewHolder).apply {
+                    bindSummary(item.summary)
+                    bindActionMode(getItemId(position))
+                }
             }
         }
     }
@@ -187,22 +191,17 @@ class SudokuListAdapter(
             }
     }
 
-    inner class ViewHolder(itemView: View, val isSeparator: Boolean) : RecyclerView.ViewHolder(itemView) {
-        var textView: TextView
-        var selectableLayout: SelectableLinearLayout? = null
-        private var textViewSmall: TextView? = null
-        private var imageView: ImageView? = null
+    sealed class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        abstract val textView: TextView
+    }
 
-        init {
-            if (isSeparator) {
-                textView = itemView as TextView
-            } else {
-                selectableLayout = itemView.findViewById(R.id.item_selectable_layout)
-                textView = itemView.findViewById(R.id.item_text)
-                textViewSmall = itemView.findViewById(R.id.item_text_small)
-                imageView = itemView.findViewById(R.id.item_icon)
-            }
-        }
+    class SeparatorViewHolder(override val textView: TextView) : ViewHolder(textView)
+
+    inner class SudokuViewHolder(itemView: View) : ViewHolder(itemView) {
+        val selectableLayout: SelectableLinearLayout = itemView.findViewById(R.id.item_selectable_layout)
+        override val textView: TextView = itemView.findViewById(R.id.item_text)
+        private val textViewSmall: TextView = itemView.findViewById(R.id.item_text_small)
+        private val imageView: ImageView = itemView.findViewById(R.id.item_icon)
 
         fun bindSummary(summary: GameSummary) {
             textView.text =
@@ -237,9 +236,9 @@ class SudokuListAdapter(
                         dev.oneuiproject.oneui.R.drawable.ic_oui_time_outline to R.string.sudoku_state_in_progress
                     }
                 }
-            imageView!!.setImageDrawable(ContextCompat.getDrawable(context, icon))
-            imageView!!.contentDescription = context.getString(stateDescription)
-            textViewSmall!!.text =
+            imageView.setImageDrawable(ContextCompat.getDrawable(context, icon))
+            imageView.contentDescription = context.getString(stateDescription)
+            textViewSmall.text =
                 buildString {
                     append(context.getString(R.string.current_time, summary.info.timeString))
                     if (!summary.completed) {
@@ -259,14 +258,14 @@ class SudokuListAdapter(
         }
 
         fun bindActionMode(itemId: Long) {
-            selectableLayout!!.apply {
+            selectableLayout.apply {
                 isSelectionMode = isActionMode
                 setSelected(isSelected(itemId))
             }
         }
 
         fun bindActionModeAnimate(itemId: Long) {
-            selectableLayout?.apply {
+            selectableLayout.apply {
                 isSelectionMode = isActionMode
                 setSelectedAnimate(isSelected(itemId))
             }

@@ -76,7 +76,7 @@ private val Sudoku.levelNumber: Int get() = (info.mode as GameMode.Level).number
 
 @HiltViewModel
 class SudokuLevelTabViewModel @Inject constructor(
-    private val initSudokuLevel: InitSudokuLevelUseCase,
+    initSudokuLevel: InitSudokuLevelUseCase,
     private val observeSudokuLevel: ObserveSudokuLevelUseCase,
     private val getMaxSudokuLevel: GetMaxSudokuLevelUseCase,
     private val generateSudokuLevel: GenerateSudokuLevelUseCase,

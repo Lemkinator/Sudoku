@@ -34,7 +34,6 @@ fun testSudoku(
     difficulty: Difficulty = Difficulty.EASY,
     sudokuId: SudokuId = SudokuId.generate(),
     created: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS),
-    updated: LocalDateTime = created,
     completed: Boolean = false,
 ): Sudoku {
     val blockSize = size.blockSize
@@ -46,7 +45,7 @@ fun testSudoku(
         }
     val board = Board.of(size, solution, givens = solution.indices.filter { it % 3 == 0 }.toSet())
     return Sudoku(
-        info = GameInfo(id = sudokuId, size = size, difficulty = difficulty, mode = mode, created = created, updated = updated),
+        info = GameInfo(id = sudokuId, size = size, difficulty = difficulty, mode = mode, created = created, updated = created),
         board =
             if (completed) {
                 Board(size, board.cells.map { it.copy(value = it.solution) })
@@ -55,6 +54,8 @@ fun testSudoku(
             },
     )
 }
+
+fun Sudoku.updatedAt(updated: LocalDateTime): Sudoku = copy(info = info.copy(updated = updated))
 
 fun testLevelSudoku(
     size: SudokuSize,

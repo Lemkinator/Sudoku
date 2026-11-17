@@ -20,7 +20,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import de.lemke.sudoku.domain.IsNotificationPermissionGrantedUseCase
+import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import de.lemke.sudoku.ui.game.InputTap
 import java.io.Serializable
@@ -49,7 +49,7 @@ private const val KEY_STATE = "intro_state"
 @HiltViewModel
 class IntroViewModel @Inject constructor(
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
-    private val isNotificationPermissionGranted: IsNotificationPermissionGrantedUseCase,
+    private val dailyNotifications: DailyNotifications,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val openedFromSettings: Boolean = savedStateHandle[IntroActivity.KEY_OPENED_FROM_SETTINGS] ?: false
@@ -71,7 +71,7 @@ class IntroViewModel @Inject constructor(
     fun onNotificationsDeclined() = setNotificationsEnabledAndAdvance(false)
 
     fun onNotificationsAccepted() {
-        if (isNotificationPermissionGranted()) {
+        if (dailyNotifications.isPermissionGranted()) {
             setNotificationsEnabledAndAdvance(true)
         } else {
             notificationChoice.value = NotificationChoice.RequestPermission

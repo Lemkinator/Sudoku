@@ -16,11 +16,21 @@
 
 package de.lemke.sudoku.domain
 
-import de.lemke.sudoku.data.DailyNotifications
+import java.time.Clock
+import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
+import kotlin.time.ComparableTimeMark
+import kotlin.time.TimeSource
 
-class IsNotificationPermissionGrantedUseCase @Inject constructor(
-    private val dailyNotifications: DailyNotifications,
+/** The wall clock that dates a game and the monotonic clock that times its ticks. */
+class GameTime @Inject constructor(
+    private val clock: Clock,
+    private val timeSource: TimeSource.WithComparableMarks,
 ) {
-    operator fun invoke(): Boolean = dailyNotifications.isPermissionGranted()
+    fun today(): LocalDate = LocalDate.now(clock)
+
+    fun now(): LocalDateTime = LocalDateTime.now(clock)
+
+    fun markNow(): ComparableTimeMark = timeSource.markNow()
 }

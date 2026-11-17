@@ -518,9 +518,11 @@ class SudokuActivityLifecycleTest {
         launch(formulaicSudoku()) { activity ->
             activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_share)).shouldBeTrue()
             activity.playing.running.shouldBeFalse()
-            val dialog = ShadowDialog.getLatestDialog()
-            dialog.shouldNotBeNull()
-            dialog!!.isShowing.shouldBeTrue()
+            ShadowDialog
+                .getLatestDialog()
+                .shouldNotBeNull()
+                .isShowing
+                .shouldBeTrue()
         }
 
     @Test

@@ -89,7 +89,7 @@ class ObserveDailySudokusUseCaseTest : ShouldSpec(
                     Clock.fixed(today.toInstant(ZoneOffset.UTC), ZoneOffset.UTC),
                     UnconfinedTestDispatcher(),
                 )
-            listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth).forEach { sudokusRepository.saveSudoku(it) }
+            listOf(completedThisMonth, uncompletedToday, uncompletedLastMonth).forEach { sudoku -> sudokusRepository.saveSudoku(sudoku) }
         }
 
         afterEach { settingsScope.cancel() }

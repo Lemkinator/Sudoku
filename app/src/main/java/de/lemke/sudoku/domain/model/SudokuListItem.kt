@@ -16,11 +16,11 @@
 
 package de.lemke.sudoku.domain.model
 
-sealed class SudokuListItem {
-    abstract val label: String
-    abstract val stableId: Long
+sealed interface SudokuListItem {
+    val label: String
+    val stableId: Long
 
-    data class SudokuItem(val summary: GameSummary, override val label: String) : SudokuListItem() {
+    data class SudokuItem(val summary: GameSummary, override val label: String) : SudokuListItem {
         override val stableId: Long get() =
             summary.info.id
                 .hashCode()
@@ -31,7 +31,7 @@ sealed class SudokuListItem {
         }
     }
 
-    data class SeparatorItem(val indexText: String) : SudokuListItem() {
+    data class SeparatorItem(val indexText: String) : SudokuListItem {
         override val label = indexText
         override val stableId: Long get() = indexText.hashCode().toLong()
 

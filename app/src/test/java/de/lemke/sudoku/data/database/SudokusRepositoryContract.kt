@@ -21,6 +21,7 @@ import de.lemke.sudoku.domain.model.GameMode
 import de.lemke.sudoku.domain.model.Sudoku
 import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
+import de.lemke.sudoku.updatedAt
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -49,7 +50,7 @@ abstract class SudokusRepositoryContract {
         mode: GameMode = GameMode.Normal,
         created: LocalDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
         updated: LocalDateTime = created,
-    ): Sudoku = testSudoku(size = size, mode = mode, created = created, updated = updated)
+    ): Sudoku = testSudoku(size = size, mode = mode, created = created).updatedAt(updated)
 
     private fun daily(
         size: SudokuSize = SudokuSize.FOUR,

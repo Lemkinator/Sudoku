@@ -27,6 +27,7 @@ import de.lemke.sudoku.data.FakeSudokuShareFiles
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.data.database.FakeSudokusRepository
 import de.lemke.sudoku.domain.CalculatePlayGamesSyncUseCase
+import de.lemke.sudoku.domain.GameTime
 import de.lemke.sudoku.domain.GenerateFieldsUseCase
 import de.lemke.sudoku.domain.GenerateSudokuLevelUseCase
 import de.lemke.sudoku.domain.GenerateSudokuUseCase
@@ -35,7 +36,9 @@ import de.lemke.sudoku.domain.GetSudokuUseCase
 import de.lemke.sudoku.domain.PatternSolvedBoardGenerator
 import de.lemke.sudoku.domain.QueueSudokuSaveUseCase
 import de.lemke.sudoku.domain.ShareSudokuUseCase
+import de.lemke.sudoku.domain.WinAftermath
 import de.lemke.sudoku.domain.model.BoardMove
+import de.lemke.sudoku.domain.model.FollowUp
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import io.kotest.matchers.shouldBe
@@ -68,15 +71,16 @@ class SudokuViewModelSavedStateTest {
         return SudokuViewModel(
             savedStateHandle,
             GetSudokuUseCase(repository, dispatcher),
-            GenerateSudokuUseCase(generateFields, dispatcher),
-            GenerateSudokuLevelUseCase(generateFields, dispatcher),
-            GetMaxSudokuLevelUseCase(repository, dispatcher),
             QueueSudokuSaveUseCase(repository, saveScope, dispatcher),
             ShareSudokuUseCase(FakeSudokuShareFiles(File("game.sudoku")), Clock.systemDefaultZone(), dispatcher),
-            CalculatePlayGamesSyncUseCase(repository, dispatcher),
+            WinAftermath(
+                GetMaxSudokuLevelUseCase(repository, dispatcher),
+                GenerateSudokuUseCase(generateFields, dispatcher),
+                GenerateSudokuLevelUseCase(generateFields, dispatcher),
+                CalculatePlayGamesSyncUseCase(repository, dispatcher),
+            ),
             userSettings,
-            Clock.systemDefaultZone(),
-            LooperTimeSource,
+            GameTime(Clock.systemDefaultZone(), LooperTimeSource),
         ).also { idleMainLooper() }
     }
 

@@ -45,8 +45,9 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -65,6 +66,7 @@ class SudokuLevelTabGenerationTest {
     val hiltRule = HiltTestRule(this)
 
     private var generationGate = CountDownLatch(0)
+    private val generationThread = Executors.newCachedThreadPool()
 
     @BindValue
     @JvmField
@@ -91,7 +93,7 @@ class SudokuLevelTabGenerationTest {
     @Before
     fun setup() {
         hiltRule.inject()
-        testDispatchers.default.redirectTo(Dispatchers.Default)
+        testDispatchers.default.redirectTo(generationThread.asCoroutineDispatcher())
         settings.bypassOobe()
         userSettings.currentLevelTab = 0
     }
@@ -99,6 +101,7 @@ class SudokuLevelTabGenerationTest {
     @After
     fun resetDispatchers() {
         testDispatchers.reset()
+        generationThread.shutdownNow()
     }
 
     @Test

@@ -141,7 +141,10 @@ class IntroActivity : AppCompatActivity() {
         collectState(viewModel.state) { render(it) }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?) = menuInflater.inflate(R.menu.intro_menu, menu).let { true }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.intro_menu, menu)
+        return true
+    }
 
     override fun onOptionsItemSelected(item: MenuItem) =
         when (item.itemId) {

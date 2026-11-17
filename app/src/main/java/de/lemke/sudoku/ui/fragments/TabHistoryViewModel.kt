@@ -49,7 +49,7 @@ sealed interface HistoryDeletion {
 @HiltViewModel
 class TabHistoryViewModel @Inject constructor(
     userSettings: UserSettings,
-    private val observeSudokuHistory: ObserveSudokuHistoryUseCase,
+    observeSudokuHistory: ObserveSudokuHistoryUseCase,
     private val deleteSudoku: DeleteSudokusUseCase,
 ) : ViewModel() {
     val errorLimit: StateFlow<Int> = userSettings.errorLimitFlow

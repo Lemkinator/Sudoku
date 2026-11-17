@@ -336,7 +336,7 @@ class AppDatabaseMigrationTest {
         val valid = patternFields(SudokuSize.FOUR)
         LegacyDatabaseSeed(connection).apply {
             game("control", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", valid)
-            game("unknown-difficulty", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", valid, difficulty = 9)
+            game(SeedGame("unknown-difficulty", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", difficulty = 9), valid)
             unreadableGames(valid)
         }
 

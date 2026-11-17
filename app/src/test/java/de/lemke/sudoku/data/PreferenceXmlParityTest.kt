@@ -19,9 +19,9 @@ package de.lemke.sudoku.data
 import de.lemke.commonutils.data.assertPreferenceXmlBoundToSettings
 import de.lemke.sudoku.R
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,7 +36,7 @@ import de.lemke.commonutils.R as commonutilsR
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [36])
 class PreferenceXmlParityTest {
-    private val settingsScope = CoroutineScope(Job() + Dispatchers.Unconfined)
+    private val settingsScope = CoroutineScope(Job() + UnconfinedTestDispatcher())
 
     @After
     fun tearDown() {
