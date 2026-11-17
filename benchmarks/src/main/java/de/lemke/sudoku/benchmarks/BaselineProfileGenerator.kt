@@ -77,11 +77,11 @@ private fun MacrobenchmarkScope.navigateToLevelsAndBack() {
     device.waitForIdle()
 }
 
-// Covers actual gameplay (domain model, game_recycler adapter, number input) — the code path
+// Covers actual gameplay (domain model, board rendering, number input) — the code path
 // levelsButton alone never touches.
 private fun MacrobenchmarkScope.navigateToNewGameAndBack() {
     device.waitAndFindObject(By.res(PACKAGE_NAME, "newGameButton"), TIMEOUT_MS).click()
-    device.waitAndFindObject(By.res(PACKAGE_NAME, "game_recycler"), GENERATION_TIMEOUT_MS)
+    device.waitAndFindObject(By.res(PACKAGE_NAME, "board"), GENERATION_TIMEOUT_MS)
     device.pressBack()
     device.waitForIdle()
 }

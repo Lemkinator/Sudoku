@@ -58,7 +58,7 @@ class ScrollBenchmark {
                 startActivityAndSkipOnboarding()
                 repeat(HISTORY_SEED_COUNT) {
                     device.waitAndFindObject(By.res(PACKAGE_NAME, "newGameButton"), TIMEOUT_MS).click()
-                    device.waitAndFindObject(By.res(PACKAGE_NAME, "game_recycler"), GENERATION_TIMEOUT_MS)
+                    device.waitAndFindObject(By.res(PACKAGE_NAME, "board"), GENERATION_TIMEOUT_MS)
                     device.pressBack()
                     device.waitForIdle()
                 }
