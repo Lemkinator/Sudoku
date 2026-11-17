@@ -50,3 +50,13 @@ fun UiDevice.waitAndFindObject(
     checkNotNull(wait(Until.findObject(selector), timeout)) {
         "Element not found on screen in ${timeout}ms (selector=$selector)"
     }
+
+// A click that MainActivity's launch latch drops opens no window; failing here names the click, not a later wait.
+fun UiDevice.clickAndWaitForNewWindow(
+    selector: BySelector,
+    timeout: Long,
+) {
+    waitForIdle()
+    val opened = waitAndFindObject(selector, TIMEOUT_MS).clickAndWait(Until.newWindow(), timeout)
+    check(opened) { "Click opened no window in ${timeout}ms (selector=$selector)" }
+}

@@ -71,7 +71,7 @@ class BaselineProfileGenerator {
 }
 
 private fun MacrobenchmarkScope.navigateToLevelsAndBack() {
-    device.waitAndFindObject(By.res(PACKAGE_NAME, "levelsButton"), TIMEOUT_MS).click()
+    device.clickAndWaitForNewWindow(By.res(PACKAGE_NAME, "levelsButton"), TIMEOUT_MS)
     device.waitAndFindObject(By.res(PACKAGE_NAME, "viewPagerLevel"), TIMEOUT_MS)
     device.pressBack()
     device.waitForIdle()
@@ -79,7 +79,7 @@ private fun MacrobenchmarkScope.navigateToLevelsAndBack() {
 
 // Covers game generation and board rendering, which levelsButton alone never touches.
 private fun MacrobenchmarkScope.navigateToNewGameAndBack() {
-    device.waitAndFindObject(By.res(PACKAGE_NAME, "newGameButton"), TIMEOUT_MS).click()
+    device.clickAndWaitForNewWindow(By.res(PACKAGE_NAME, "newGameButton"), GENERATION_TIMEOUT_MS)
     device.waitAndFindObject(By.res(PACKAGE_NAME, "board"), GENERATION_TIMEOUT_MS)
     device.pressBack()
     device.waitForIdle()
