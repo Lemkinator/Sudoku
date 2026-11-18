@@ -389,7 +389,7 @@ class SudokuBoardView @JvmOverloads constructor(
                 valuePaint.alpha = (MAX_ALPHA * (1f - (1f - style.alpha) * peak)).toInt()
             }
             valueChar[0] = value.toSudokuDigitChar()
-            drawCentered(this, valueChar, 0, valuePaint, content.centerX, content.centerY)
+            drawCentered(this, valueChar, 0, valuePaint, content)
         }
     }
 
@@ -425,7 +425,7 @@ class SudokuBoardView @JvmOverloads constructor(
             val emphasized = render.isEmphasizedNote(layout.digits[slot])
             notePaint.typeface = if (emphasized) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
             notePaint.color = if (emphasized) accentColor else playerColor
-            drawCentered(canvas, layout.chars, slot, notePaint, box.centerX, box.centerY)
+            drawCentered(canvas, layout.chars, slot, notePaint, box)
         }
     }
 
@@ -434,11 +434,10 @@ class SudokuBoardView @JvmOverloads constructor(
         chars: CharArray,
         at: Int,
         paint: Paint,
-        centerX: Float,
-        centerY: Float,
+        box: Box,
     ) {
         paint.getFontMetrics(fontMetrics)
-        canvas.drawText(chars, at, 1, centerX, centerY - (fontMetrics.ascent + fontMetrics.descent) * HALF, paint)
+        canvas.drawText(chars, at, 1, box.centerX, box.centerY - (fontMetrics.ascent + fontMetrics.descent) * HALF, paint)
     }
 
     private fun animationStyleOf(index: Int): CellAnimation? {
