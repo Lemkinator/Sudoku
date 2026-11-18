@@ -220,8 +220,10 @@ class MainActivityMenuTest {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             idleMainLooper()
             dialog.isShowing.shouldBeFalse()
-            (userSettings.filterFlags and SudokuSize.FOUR.filterFlag) shouldBe 0
-            (userSettings.filterFlags and SudokuFilterFlags.SIZE_ALL) shouldBe 0
+            val sizeFourFlag = userSettings.filterFlags and SudokuSize.FOUR.filterFlag
+            val allSizesFlag = userSettings.filterFlags and SudokuFilterFlags.SIZE_ALL
+            sizeFourFlag shouldBe 0
+            allSizesFlag shouldBe 0
         }
 
     @Test
@@ -287,7 +289,8 @@ class MainActivityMenuTest {
 
     private fun IntentForResult.shouldBeContainerTransform(cls: Class<*>) {
         intent.shouldBeContainerTransformTo(cls, options)
-        (intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe 0
+        val singleTopFlag = intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP
+        singleTopFlag shouldBe 0
     }
 
     @Test

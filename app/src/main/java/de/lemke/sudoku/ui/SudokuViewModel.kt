@@ -172,7 +172,7 @@ private const val KEY_PENDING_SUMMARY = "pending_summary"
 private const val KEY_INPUT = "board_input"
 
 @HiltViewModel
-class SudokuViewModel @Inject constructor(
+class SudokuViewModel @Suppress("LongParameterList") @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val getSudoku: GetSudokuUseCase,
     private val queueSudokuSave: QueueSudokuSaveUseCase,

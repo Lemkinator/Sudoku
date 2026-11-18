@@ -155,9 +155,9 @@ class FakeSudokusRepository : SudokusRepository {
     private fun Stored.collidesWith(other: Stored): Boolean {
         val mine = sudoku.info
         val theirs = other.sudoku.info
-        return id == other.id ||
-            (mine.mode is GameMode.Level && mine.mode == theirs.mode && mine.size == theirs.size) ||
-            (mine.dailyDate != null && mine.dailyDate == theirs.dailyDate)
+        val sameLevel = mine.mode is GameMode.Level && mine.mode == theirs.mode && mine.size == theirs.size
+        val sameDailyDate = mine.dailyDate != null && mine.dailyDate == theirs.dailyDate
+        return id == other.id || sameLevel || sameDailyDate
     }
 
     private fun observe(query: (List<Stored>) -> List<Stored>): Flow<List<GameSummary>> {

@@ -129,7 +129,8 @@ object SudokuFileCodec {
         val mode = int(FIELD_MODE)?.let { GameMode.fromCode(it, int(FIELD_LEVEL), dailyDate(created)) }
         val difficulty = int(FIELD_DIFFICULTY)?.let(Difficulty::fromCodeOrNull)
         val countsValid = COUNT_FIELDS.all { int(it) != null }
-        return if (id != null && mode != null && difficulty != null && countsValid) {
+        val isComplete = id != null && mode != null && difficulty != null && countsValid
+        return if (isComplete) {
             val usage = long(FIELD_USAGE).toInt()
             GameInfo(
                 id = SudokuId(id),

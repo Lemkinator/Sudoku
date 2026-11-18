@@ -34,6 +34,7 @@ import java.time.LocalDateTime
 private val LIST_SIZE = SudokuSize.FOUR
 
 /** A 4x4 sudoku without givens whose first [filled] fields hold their solution, so progress is `filled * 100 / 16`. */
+@Suppress("LongParameterList")
 internal fun listSudoku(
     sudokuId: SudokuId,
     mode: GameMode,

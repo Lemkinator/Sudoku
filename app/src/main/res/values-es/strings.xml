@@ -22,7 +22,6 @@
     <string name="commonutils_yes">Sí</string>
     <string name="commonutils_no">No</string>
     <string name="commonutils_delete">Eliminar</string>
-    <string name="commonutils_no_entry">Sin entrada</string>
     <string name="commonutils_pause">Pausa</string>
     <string name="commonutils_resume">Continuar</string>
     <string name="commonutils_history">Historial</string>

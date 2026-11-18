@@ -27,67 +27,66 @@
     <string name="size16" translatable="false">16×16</string>
 
     <!--Override commonutils strings-->
-    <string name="commonutils_app_description" translatable="false">@string/app_description</string>
-    <string name="commonutils_email" translatable="false">sudoku@leonard-lemke.com</string>
-    <string name="commonutils_privacy_website" translatable="false">https://www.leonard-lemke.com/apps/sudoku/privacy-policy</string>
+    <string name="commonutils_app_description" translatable="false" tools:ignore="UnusedResources">@string/app_description</string>
+    <string name="commonutils_email" translatable="false" tools:ignore="UnusedResources">sudoku@leonard-lemke.com</string>
+    <string name="commonutils_privacy_website" translatable="false" tools:ignore="UnusedResources">https://www.leonard-lemke.com/apps/sudoku/privacy-policy</string>
 
     <string name="commonutils_yes">Yes</string>
     <string name="commonutils_no">No</string>
     <string name="commonutils_delete">Delete</string>
-    <string name="commonutils_no_entry">No entry</string>
     <string name="commonutils_pause">Pause</string>
     <string name="commonutils_resume">Resume</string>
     <string name="commonutils_history">History</string>
     <string name="commonutils_statistics">Statistics</string>
 
     <!--OOBE-->
-    <string name="commonutils_oobe1_title">Beautiful design</string>.
-    <string name="commonutils_oobe2_title">Free</string>
-    <string name="commonutils_oobe3_title">No ads</string>
-    <string name="commonutils_oobe2_summary">No subscriptions, no in-app purchases, no costs at all.</string>
-    <string name="commonutils_oobe3_summary">No annoying ads after each Sudoku.</string>
-    <string name="commonutils_tos">Terms of Service</string>
-    <string name="commonutils_tos_content">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com. \n\nRegarding the contact features provided in various places within this app, which generate a topic-specific, prewritten email when activated, the following applies: These templates are intended solely as a starting point for your personalized message. Sending one of these templates unchanged, or a blank email, constitutes misuse of the feature and is not permitted. By doing so anyway, you legally agree to be classified as a person demonstrably incapable of properly operating basic functions of their smartphone and its email application functions. Such a classification renders further communication obsolete and releases the recipient from any obligation to respond.</string>
-    <string name="commonutils_oobe_tos_text">By continuing, you agree to the %1$s.</string>
-    <string name="commonutils_oobe_new_tos_text">The %1$s have been updated. By continuing, you agree to the new %1$s.</string>
+    <string name="commonutils_oobe1_title" tools:ignore="UnusedResources">Beautiful design</string>.
+    <string name="commonutils_oobe2_title" tools:ignore="UnusedResources">Free</string>
+    <string name="commonutils_oobe3_title" tools:ignore="UnusedResources">No ads</string>
+    <string name="commonutils_oobe2_summary" tools:ignore="UnusedResources">No subscriptions, no in-app purchases, no costs at all.</string>
+    <string name="commonutils_oobe3_summary" tools:ignore="UnusedResources">No annoying ads after each Sudoku.</string>
+    <string name="commonutils_tos" tools:ignore="UnusedResources">Terms of Service</string>
+    <string name="commonutils_tos_content" tools:ignore="UnusedResources">It is not permitted to use this app contrary to morality or the laws in force. \n\nYou also agree that you will not use this app for any purposes prohibited by United States law, including, without limitation, the development, design, manufacture, or production of missile, chemical or biological weapons. \nHowever, this restriction will not apply in the event of the occurrence (certified by the United States Centers for Disease Control or successor body) of a widespread viral infection transmitted via bites or contact with bodily fluids that causes human corpses to reanimate and seek to consume living human flesh, blood, brain or nerve tissue and is likely to result in the fall of organized civilization. \n\nA special consideration, which may include monetary compensation, will be provided to a limited number of users who read this section of the Terms and Services and contact me at writing-an-email-to-this-address-will-cost-you-10-euro@leonard-lemke.com. This offer may be withdrawn at any time without any notice. \n\nAdditional questions will be answered at this-email-is-way-too-long-and-hopefully-you-cannot-copy-paste@leonard-lemke.com. \n\nRegarding the contact features provided in various places within this app, which generate a topic-specific, prewritten email when activated, the following applies: These templates are intended solely as a starting point for your personalized message. Sending one of these templates unchanged, or a blank email, constitutes misuse of the feature and is not permitted. By doing so anyway, you legally agree to be classified as a person demonstrably incapable of properly operating basic functions of their smartphone and its email application functions. Such a classification renders further communication obsolete and releases the recipient from any obligation to respond.</string>
+    <string name="commonutils_oobe_tos_text" tools:ignore="UnusedResources">By continuing, you agree to the %1$s.</string>
+    <string name="commonutils_oobe_new_tos_text" tools:ignore="UnusedResources">The %1$s have been updated. By continuing, you agree to the new %1$s.</string>
 
     <!--About-->
-    <string name="commonutils_open_in_playstore">Open in Play Store</string>
-    <string name="commonutils_open_source_licenses">Open source licenses</string>
+    <string name="commonutils_open_in_playstore" tools:ignore="UnusedResources">Open in Play Store</string>
+    <string name="commonutils_open_source_licenses" tools:ignore="UnusedResources">Open source licenses</string>
 
     <!--AboutMe-->
     <string name="commonutils_about_me">About me</string>
-    <string name="commonutils_write_email">Write an e-mail</string>
-    <string name="commonutils_website">Website</string>
-    <string name="commonutils_support_me_text">If you want to support me in any way, feel free to send me an e-mail</string>
-    <string name="commonutils_support_me">Support me</string>
+    <string name="commonutils_write_email" tools:ignore="UnusedResources">Write an e-mail</string>
+    <string name="commonutils_website" tools:ignore="UnusedResources">Website</string>
+    <string name="commonutils_support_me_text" tools:ignore="UnusedResources">If you want to support me in any way, feel free to send me an e-mail</string>
+    <string name="commonutils_support_me" tools:ignore="UnusedResources">Support me</string>
     <string name="commonutils_rate_app">Rate app in Play Store</string>
-    <string name="commonutils_write_review">Write a review</string>
+    <string name="commonutils_write_review" tools:ignore="UnusedResources">Write a review</string>
     <string name="commonutils_share">Share</string>
     <string name="commonutils_share_app">Share app</string>
-    <string name="commonutils_useful_links">Useful links</string>
-    <string name="commonutils_playstore_ad">ADVERTISEMENT!!!&#129313;&#129396;</string>
-    <string name="commonutils_playstore_redirect_message">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>
+    <string name="commonutils_useful_links" tools:ignore="UnusedResources">Useful links</string>
+    <string name="commonutils_playstore_ad" tools:ignore="UnusedResources">ADVERTISEMENT!!!&#129313;&#129396;</string>
+    <string name="commonutils_playstore_redirect_message" tools:ignore="UnusedResources">According to Google Play, this is \"Deceptive advertisement that simulates or impersonates the user interface of an app feature\"… Since app updates are otherwise rejected by Google Play, here\'s a hint: This button leads (surprisingly?&#129313;) to my developer page on Google Play, continue?</string>
 
     <!--Settings-->
     <string name="commonutils_settings">Settings</string>
-    <string name="commonutils_design">Design</string>
-    <string name="commonutils_system_default">System default</string>
+    <string name="commonutils_design" tools:ignore="UnusedResources">Design</string>
+    <string name="commonutils_system_default" tools:ignore="UnusedResources">System default</string>
     <string name="commonutils_general">General</string>
     <string name="commonutils_language">Language</string>
     <string name="commonutils_change_language">Change app language</string>
-    <string name="commonutils_change_language_not_supported_by_device">Change language is not supported by your device.</string>
+    <string name="commonutils_change_language_not_supported_by_device" tools:ignore="UnusedResources">Change language is not supported by your device.</string>
     <string name="commonutils_delete_appdata_and_exit">Delete App-Data and exit</string>
-    <string name="commonutils_delete_appdata_and_exit_warning">Attention: This will delete all personal data. Continue? </string>
+    <string name="commonutils_delete_appdata_and_exit_warning" tools:ignore="UnusedResources">Attention: This will delete all personal data. Continue? </string>
     <string name="commonutils_dev_options">Developer options</string>
     <string name="commonutils_more_information">More Information</string>
-    <string name="commonutils_privacy_policy">Privacy Policy</string>
-    <string name="commonutils_report_bug">Report bug or improvement</string>
+    <string name="commonutils_privacy_policy" tools:ignore="UnusedResources">Privacy Policy</string>
+    <string name="commonutils_report_bug" tools:ignore="UnusedResources">Report bug or improvement</string>
 
     <!--Error-->
-    <string name="commonutils_no_email_app_installed">No e-mail app installed…</string>
-    <string name="commonutils_no_browser_app_installed">No browser app installed…</string>
-    <string name="commonutils_error_cant_open_url">Error: URL could not be opened.</string>
+    <string name="commonutils_no_email_app_installed" tools:ignore="UnusedResources">No e-mail app installed…</string>
+    <string name="commonutils_no_browser_app_installed" tools:ignore="UnusedResources">No browser app installed…</string>
+    <string name="commonutils_error_cant_open_url" tools:ignore="UnusedResources">Error: URL could not be opened.</string>
 
     <!--About-->
     <string name="sudoku_lib">Sudoku library</string>

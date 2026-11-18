@@ -60,7 +60,8 @@ class SudokuFilterFlagsTest : ShouldSpec(
 
         should("match a combination of type flags for either matching type") {
             val flags =
-                (SudokuFilterFlags.TYPE_NORMAL or SudokuFilterFlags.TYPE_DAILY) or
+                SudokuFilterFlags.TYPE_NORMAL or
+                    SudokuFilterFlags.TYPE_DAILY or
                     SudokuFilterFlags.SIZE_ALL or
                     SudokuFilterFlags.DIFFICULTY_ALL
 

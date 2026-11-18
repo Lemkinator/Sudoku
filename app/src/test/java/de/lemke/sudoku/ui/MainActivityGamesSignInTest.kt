@@ -184,7 +184,8 @@ class MainActivityGamesSignInTest {
             idleMainLooper()
             val started = shadowOf(activity).nextStartedActivityForResult
             started.intent.action shouldBe "de.lemke.sudoku.test.PLAY_GAMES_SCREEN"
-            (started.intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP) shouldBe 0
+            val singleTopFlag = started.intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP
+            singleTopFlag shouldBe 0
         }
     }
 

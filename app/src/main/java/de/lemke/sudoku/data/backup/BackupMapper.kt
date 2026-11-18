@@ -57,7 +57,8 @@ private fun infoOrNull(
     val size = SudokuSize.fromValueOrNull(entry.size)
     val difficulty = Difficulty.fromNameOrNull(entry.difficulty)
     val mode = entry.modeOrNull()
-    return if (size != null && difficulty != null && mode != null && entry.seconds >= 0) {
+    val isReadable = size != null && difficulty != null && mode != null && entry.seconds >= 0
+    return if (isReadable) {
         GameInfo(
             id = SudokuId(entry.id),
             size = size,

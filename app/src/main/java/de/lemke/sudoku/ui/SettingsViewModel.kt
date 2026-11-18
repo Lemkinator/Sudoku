@@ -40,7 +40,7 @@ sealed interface DailyNotificationToggleResult {
 }
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
     private val userSettings: UserSettings,
     private val dailyNotifications: DailyNotifications,
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,

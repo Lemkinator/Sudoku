@@ -73,15 +73,6 @@ class LegacyDatabaseSeed(private val connection: SQLiteConnection) {
     fun commit() = connection.execSQL("COMMIT")
 
     fun game(
-        id: String,
-        size: Int,
-        modeLevel: Int,
-        created: String,
-        updated: String,
-        fields: List<SeedField>,
-    ) = game(SeedGame(id, size, modeLevel, created, updated), fields)
-
-    fun game(
         game: SeedGame,
         fields: List<SeedField>,
     ) {

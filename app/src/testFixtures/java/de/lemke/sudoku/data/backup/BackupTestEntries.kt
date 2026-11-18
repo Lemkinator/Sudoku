@@ -38,7 +38,6 @@ fun backupEntry(
     created: String = "2026-05-02T08:00:00+02:00",
     updated: String = created,
     solvedCells: Int = 0,
-    seconds: Int = 0,
 ): SudokuBackupEntry {
     val open = FOUR_SOLUTION.indices.filterNot { it in FOUR_GIVENS }
     val filled = FOUR_GIVENS + open.take(solvedCells)
@@ -53,7 +52,7 @@ fun backupEntry(
         modeLevel = modeLevel,
         created = OffsetDateTime.parse(created),
         updated = OffsetDateTime.parse(updated),
-        seconds = seconds,
+        seconds = 0,
         dailyDate = null,
         board = Base64.getEncoder().encodeToString(BoardCodec.encode(board)),
     )

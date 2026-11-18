@@ -154,7 +154,8 @@ class SudokuActivityLifecycleTest {
 
             activity.resumeGame()
 
-            (activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) shouldBe 0
+            val keepScreenOnFlag = activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            keepScreenOnFlag shouldBe 0
         }
 
     // endregion
@@ -280,10 +281,9 @@ class SudokuActivityLifecycleTest {
             }
             scenario.moveToState(Lifecycle.State.CREATED)
             scenario.onActivity { activity ->
-                (
-                    activity.window.attributes.flags and
-                        android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                ) shouldNotBe 0
+                val keepScreenOnFlag =
+                    activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                keepScreenOnFlag shouldNotBe 0
             }
         }
     }
