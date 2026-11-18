@@ -76,7 +76,8 @@ class ProtoWriter {
     fun packedVarint(value: Long) {
         var rest = value
         while (rest and VARINT_PAYLOAD_MASK.toLong().inv() != 0L) {
-            out.write((rest.toInt() and VARINT_PAYLOAD_MASK) or VARINT_CONTINUATION)
+            val payload = rest.toInt() and VARINT_PAYLOAD_MASK
+            out.write(payload or VARINT_CONTINUATION)
             rest = rest ushr VARINT_PAYLOAD_BITS
         }
         out.write(rest.toInt())
@@ -87,7 +88,10 @@ class ProtoWriter {
     private fun tag(
         number: Int,
         wireType: Int,
-    ) = packedVarint((number.toLong() shl TAG_SHIFT) or wireType.toLong())
+    ) {
+        val shiftedNumber = number.toLong() shl TAG_SHIFT
+        packedVarint(shiftedNumber or wireType.toLong())
+    }
 }
 
 /** Reads the protobuf wire format. Every function returns null for a message that is truncated or malformed. */

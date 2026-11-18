@@ -87,7 +87,10 @@ object BoardCodec {
 
     private fun List<Int>.toNibbles(): ByteArray {
         val padded = if (size % 2 == 0) this else this + 0
-        return ByteArray(padded.size / 2) { ((padded[it * 2] shl NIBBLE_BITS) or padded[it * 2 + 1]).toByte() }
+        return ByteArray(padded.size / 2) {
+            val highNibble = padded[it * 2] shl NIBBLE_BITS
+            (highNibble or padded[it * 2 + 1]).toByte()
+        }
     }
 
     private fun Map<Int, ProtoField>.varint(number: Int): Long? = (this[number] as? VarintField)?.value
@@ -99,7 +102,8 @@ object BoardCodec {
         val solution = bytes(FIELD_SOLUTION)
         val cells = bytes(FIELD_CELLS)
         val notes = size?.let { notesOrNull(this[FIELD_NOTES], it) }
-        return if (size != null && solution != null && cells != null && notes != null) {
+        val isComplete = size != null && solution != null && cells != null && notes != null
+        return if (isComplete) {
             cellsOrNull(size, solution, cells, notes)?.let { Board(size, it, preserved) }
         } else {
             null
@@ -156,11 +160,14 @@ object BoardCodec {
         solutionNibble: Int,
         packed: Int,
         notes: NoteMask,
-    ): Cell? =
-        CellOrigin.fromCodeOrNull((packed ushr CELL_ORIGIN_SHIFT) and CELL_ORIGIN_MASK)?.let { origin ->
+    ): Cell? {
+        val shiftedOrigin = packed ushr CELL_ORIGIN_SHIFT
+        return CellOrigin.fromCodeOrNull(shiftedOrigin and CELL_ORIGIN_MASK)?.let { origin ->
             val value = (packed and CELL_VALUE_MASK).takeIf { it != 0 }
             val solution = solutionNibble + 1
             val consistent = origin == CellOrigin.PLAYER || value == solution
-            if (solution <= size.value && (value ?: 0) <= size.value && consistent) Cell(solution, value, origin, notes) else null
+            val valueOrZero = value ?: 0
+            if (solution <= size.value && valueOrZero <= size.value && consistent) Cell(solution, value, origin, notes) else null
         }
+    }
 }

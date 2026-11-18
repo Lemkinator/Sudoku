@@ -102,7 +102,8 @@ class BoardGeometry(
         y: Float,
     ): Boolean {
         val side = metrics.side
-        if (x < 0f || y < 0f || x >= side || y >= side) return false
+        val isOutside = x < 0f || y < 0f || x >= side || y >= side
+        if (isOutside) return false
         val dx = x - x.coerceIn(cornerRadius, side - cornerRadius)
         val dy = y - y.coerceIn(cornerRadius, side - cornerRadius)
         return dx * dx + dy * dy <= cornerRadius * cornerRadius

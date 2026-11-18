@@ -175,6 +175,7 @@ class SudokuViewModelPhaseTest {
         phase: Phase,
     ) {
         val playing = this as SudokuGame.Playing
-        (playing.kind to playing.errorLimit to playing.phase) shouldBe (kind to errorLimit to phase)
+        val actual = playing.kind to playing.errorLimit to playing.phase
+        actual shouldBe (kind to errorLimit to phase)
     }
 }

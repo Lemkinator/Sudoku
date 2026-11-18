@@ -58,12 +58,9 @@ class AlarmReceiver : BroadcastReceiver() {
         entryPoint.applicationScope().launch {
             try {
                 val notificationEnabled = userSettings.dailySudokuNotificationEnabled
-                if (
-                    !intent.action.equals(Intent.ACTION_BOOT_COMPLETED) &&
-                    !intent.action.equals(Intent.ACTION_MY_PACKAGE_REPLACED) &&
-                    notificationEnabled &&
-                    !isDailySudokuCompleted()
-                ) {
+                val isSystemEvent =
+                    intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED
+                if (!isSystemEvent && notificationEnabled && !isDailySudokuCompleted()) {
                     sendDailyNotification()
                 }
                 sendDailyNotification.setDailySudokuNotification(enable = notificationEnabled)

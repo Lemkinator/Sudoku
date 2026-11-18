@@ -45,7 +45,7 @@ import org.robolectric.annotation.Config
 
 private fun testCells(size: SudokuSize): List<Cell> =
     (0 until size.cellCount).map { index ->
-        val solution = (index % size.value) + 1
+        val solution = index % size.value + 1
         val origin =
             when {
                 index % 3 == 0 -> CellOrigin.GIVEN

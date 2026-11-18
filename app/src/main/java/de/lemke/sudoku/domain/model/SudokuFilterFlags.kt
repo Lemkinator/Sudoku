@@ -32,18 +32,25 @@ object SudokuFilterFlags {
 
 fun Int.matchesSudokuFilterFlags(info: GameInfo): Boolean = matchesType(info) && matchesSize(info) && matchesDifficulty(info)
 
-private fun Int.matchesType(info: GameInfo): Boolean =
-    this and SudokuFilterFlags.TYPE_ALL != 0 ||
-        (this and SudokuFilterFlags.TYPE_NORMAL != 0 && info.mode == GameMode.Normal) ||
-        (this and SudokuFilterFlags.TYPE_DAILY != 0 && info.mode is GameMode.Daily) ||
-        (this and SudokuFilterFlags.TYPE_LEVEL != 0 && info.mode is GameMode.Level)
+private fun Int.matchesType(info: GameInfo): Boolean {
+    val matchesNormal = this and SudokuFilterFlags.TYPE_NORMAL != 0 && info.mode == GameMode.Normal
+    val matchesDaily = this and SudokuFilterFlags.TYPE_DAILY != 0 && info.mode is GameMode.Daily
+    val matchesLevel = this and SudokuFilterFlags.TYPE_LEVEL != 0 && info.mode is GameMode.Level
+    return this and SudokuFilterFlags.TYPE_ALL != 0 || matchesNormal || matchesDaily || matchesLevel
+}
 
 private fun Int.matchesSize(info: GameInfo): Boolean = this and SudokuFilterFlags.SIZE_ALL != 0 || this and info.size.filterFlag != 0
 
-private fun Int.matchesDifficulty(info: GameInfo): Boolean =
-    this and SudokuFilterFlags.DIFFICULTY_ALL != 0 ||
-        (this and SudokuFilterFlags.DIFFICULTY_VERY_EASY != 0 && info.difficulty == Difficulty.VERY_EASY) ||
-        (this and SudokuFilterFlags.DIFFICULTY_EASY != 0 && info.difficulty == Difficulty.EASY) ||
-        (this and SudokuFilterFlags.DIFFICULTY_MEDIUM != 0 && info.difficulty == Difficulty.MEDIUM) ||
-        (this and SudokuFilterFlags.DIFFICULTY_HARD != 0 && info.difficulty == Difficulty.HARD) ||
-        (this and SudokuFilterFlags.DIFFICULTY_EXPERT != 0 && info.difficulty == Difficulty.EXPERT)
+private fun Int.matchesDifficulty(info: GameInfo): Boolean {
+    val matchesVeryEasy = this and SudokuFilterFlags.DIFFICULTY_VERY_EASY != 0 && info.difficulty == Difficulty.VERY_EASY
+    val matchesEasy = this and SudokuFilterFlags.DIFFICULTY_EASY != 0 && info.difficulty == Difficulty.EASY
+    val matchesMedium = this and SudokuFilterFlags.DIFFICULTY_MEDIUM != 0 && info.difficulty == Difficulty.MEDIUM
+    val matchesHard = this and SudokuFilterFlags.DIFFICULTY_HARD != 0 && info.difficulty == Difficulty.HARD
+    val matchesExpert = this and SudokuFilterFlags.DIFFICULTY_EXPERT != 0 && info.difficulty == Difficulty.EXPERT
+    return this and SudokuFilterFlags.DIFFICULTY_ALL != 0 ||
+        matchesVeryEasy ||
+        matchesEasy ||
+        matchesMedium ||
+        matchesHard ||
+        matchesExpert
+}

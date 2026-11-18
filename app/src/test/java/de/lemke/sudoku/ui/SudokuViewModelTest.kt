@@ -312,7 +312,8 @@ class SudokuViewModelTest : ShouldSpec(
             val next = repository.lastSaved()
             viewModel.game.value shouldBe SudokuGame.Ready(next)
             savedStateHandle.get<String>(KEY_SUDOKU_ID) shouldBe next.info.id.value
-            (next.info.size to next.info.difficulty) shouldBe (SudokuSize.NINE to Difficulty.HARD)
+            val sizeAndDifficulty = next.info.size to next.info.difficulty
+            sizeAndDifficulty shouldBe (SudokuSize.NINE to Difficulty.HARD)
             next.info.mode shouldBe GameMode.Normal
             repository.saves shouldBe listOf(next)
         }
@@ -325,7 +326,8 @@ class SudokuViewModelTest : ShouldSpec(
 
             val next = repository.lastSaved()
             viewModel.game.value shouldBe SudokuGame.Ready(next)
-            (next.info.size to next.info.mode) shouldBe (SudokuSize.FOUR to GameMode.Level(8))
+            val sizeAndMode = next.info.size to next.info.mode
+            sizeAndMode shouldBe (SudokuSize.FOUR to GameMode.Level(8))
             repository.saves shouldBe listOf(next)
         }
 
