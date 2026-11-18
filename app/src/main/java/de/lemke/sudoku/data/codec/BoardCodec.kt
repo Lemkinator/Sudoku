@@ -161,13 +161,13 @@ object BoardCodec {
         packed: Int,
         notes: NoteMask,
     ): Cell? {
-        val shiftedOrigin = packed ushr CELL_ORIGIN_SHIFT
-        return CellOrigin.fromCodeOrNull(shiftedOrigin and CELL_ORIGIN_MASK)?.let { origin ->
+        val originCode = packed ushr CELL_ORIGIN_SHIFT and CELL_ORIGIN_MASK
+        return CellOrigin.fromCodeOrNull(originCode)?.let { origin ->
             val value = (packed and CELL_VALUE_MASK).takeIf { it != 0 }
             val solution = solutionNibble + 1
             val consistent = origin == CellOrigin.PLAYER || value == solution
-            val valueOrZero = value ?: 0
-            if (solution <= size.value && valueOrZero <= size.value && consistent) Cell(solution, value, origin, notes) else null
+            val valueInRange = value == null || value <= size.value
+            if (solution <= size.value && valueInRange && consistent) Cell(solution, value, origin, notes) else null
         }
     }
 }

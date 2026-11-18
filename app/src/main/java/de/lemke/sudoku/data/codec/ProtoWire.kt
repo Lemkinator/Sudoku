@@ -89,8 +89,8 @@ class ProtoWriter {
         number: Int,
         wireType: Int,
     ) {
-        val shiftedNumber = number.toLong() shl TAG_SHIFT
-        packedVarint(shiftedNumber or wireType.toLong())
+        val key = number.toLong() shl TAG_SHIFT
+        packedVarint(key or wireType.toLong())
     }
 }
 
