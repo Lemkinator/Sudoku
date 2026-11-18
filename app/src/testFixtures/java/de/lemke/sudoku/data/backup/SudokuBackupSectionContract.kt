@@ -35,7 +35,7 @@ private const val SUDOKUS_V2 =
 abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupEntry>() {
     override fun sampleEntries(): List<SudokuBackupEntry> =
         listOf(
-            backupEntry(id = "normal-game", updated = "2026-05-02T08:10:00+02:00", solvedCells = 3, seconds = 95),
+            backupEntry(id = "normal-game", updated = "2026-05-02T08:10:00+02:00", solvedCells = 3).copy(seconds = 95),
             backupEntry(id = "daily-game", modeLevel = -1, created = "2026-05-03T07:30:00+02:00").copy(dailyDate = MAY_SECOND),
             backupEntry(id = "level-game", modeLevel = 2, created = "2026-01-10T19:00:00+01:00", solvedCells = 10),
         )
@@ -135,9 +135,9 @@ abstract class SudokuBackupSectionContract : BackupSectionContract<SudokuBackupE
             ),
             ClashCase(
                 name = "normal: equal updated, the entry greater by encodedOrder wins",
-                local = backupEntry(id = "same", seconds = 5),
-                incoming = backupEntry(id = "same", seconds = 7),
-                expected = backupEntry(id = "same", seconds = 7),
+                local = backupEntry(id = "same").copy(seconds = 5),
+                incoming = backupEntry(id = "same").copy(seconds = 7),
+                expected = backupEntry(id = "same").copy(seconds = 7),
             ),
         )
 
