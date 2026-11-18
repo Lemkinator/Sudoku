@@ -78,7 +78,7 @@ val MIGRATION_2_3 =
         }
     }
 
-private class LegacyField(
+private data class LegacyField(
     val sudokuId: String,
     val gameSize: Int,
     val index: Int,

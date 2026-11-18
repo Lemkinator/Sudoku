@@ -59,8 +59,8 @@ class MigrationMeasurementTest {
         val nineFields = patternFields(SudokuSize.NINE, filled = { true })
         val sixteenFields = patternFields(SudokuSize.SIXTEEN, filled = { true })
         seed.begin()
-        repeat(SIXTEEN_COUNT) { seed.game("sixteen-$it", 16, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00", sixteenFields) }
-        repeat(NINE_COUNT) { seed.game("nine-$it", 9, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00", nineFields) }
+        repeat(SIXTEEN_COUNT) { seed.game(SeedGame("sixteen-$it", 16, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00"), sixteenFields) }
+        repeat(NINE_COUNT) { seed.game(SeedGame("nine-$it", 9, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00"), nineFields) }
         seed.commit()
     }
 
@@ -98,8 +98,8 @@ class MigrationMeasurementTest {
     fun `a fresh 9x9 game stores a 130-byte board`() {
         val connection = helper.createDatabase(2)
         LegacyDatabaseSeed(connection).apply {
-            game("nine-0", 9, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00", patternFields(SudokuSize.NINE))
-            game("sixteen-0", 16, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00", patternFields(SudokuSize.SIXTEEN))
+            game(SeedGame("nine-0", 9, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00"), patternFields(SudokuSize.NINE))
+            game(SeedGame("sixteen-0", 16, 0, "2026-01-01T08:00:00", "2026-01-01T09:00:00"), patternFields(SudokuSize.SIXTEEN))
         }
         connection.close()
 

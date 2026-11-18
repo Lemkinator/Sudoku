@@ -56,18 +56,22 @@ class AppDatabaseMigrationInstrumentedTest {
         val won = patternFields(SudokuSize.FOUR, filled = { true })
         val connection = helper.createDatabase(2)
         LegacyDatabaseSeed(connection).apply {
-            game("normal-4", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", open)
-            game("level-1-won", FOUR, 1, "${DAY}T07:00:00", "${DAY}T08:00:00", won)
-            game("level-1-open", FOUR, 1, "${DAY}T07:00:00", "${DAY}T10:00:00", open)
-            game("daily-0900", FOUR, -1, "${DAY}T06:00:00", "${DAY}T09:00:00", open)
-            game("daily-1000", FOUR, -1, "${DAY}T06:30:00", "${DAY}T10:00:00", open)
+            game(SeedGame("normal-4", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"), open)
+            game(SeedGame("level-1-won", FOUR, 1, "${DAY}T07:00:00", "${DAY}T08:00:00"), won)
+            game(SeedGame("level-1-open", FOUR, 1, "${DAY}T07:00:00", "${DAY}T10:00:00"), open)
+            game(SeedGame("daily-0900", FOUR, -1, "${DAY}T06:00:00", "${DAY}T09:00:00"), open)
+            game(SeedGame("daily-1000", FOUR, -1, "${DAY}T06:30:00", "${DAY}T10:00:00"), open)
             game(
-                "damaged-given",
-                FOUR,
-                0,
-                "${DAY}T07:00:00",
-                "${DAY}T08:00:00",
-                open.mapIndexed { index, field -> if (index == 0) field.copy(value = FOUR) else field },
+                SeedGame("damaged-given", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"),
+                open.mapIndexed { index, field ->
+                    if (index ==
+                        0
+                    ) {
+                        field.copy(value = FOUR)
+                    } else {
+                        field
+                    }
+                },
             )
         }
         connection.close()

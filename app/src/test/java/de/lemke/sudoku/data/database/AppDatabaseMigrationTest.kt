@@ -81,32 +81,37 @@ class AppDatabaseMigrationTest {
         helper.createDatabase(2).also { connection ->
             LegacyDatabaseSeed(connection).apply {
                 begin()
-                game("normal-4", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.FOUR).withNotes(1, "2Z9"))
                 game(
-                    "normal-9",
-                    NINE,
-                    0,
-                    "${DAY}T07:00:00",
-                    "${DAY}T08:00:00",
-                    patternFields(SudokuSize.NINE, filled = { it % 3 != 0 && it < 41 }).withHint(11).withNotes(79, "139"),
+                    SeedGame("normal-4", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"),
+                    patternFields(SudokuSize.FOUR).withNotes(1, "2Z9"),
                 )
-                game("normal-16", SIXTEEN, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.SIXTEEN).withNotes(5, "AG"))
-                game("daily-0900", FOUR, -1, "${DAY}T06:00:00", "${DAY}T09:00:00", patternFields(SudokuSize.FOUR))
-                game("daily-1000", FOUR, -1, "${DAY}T06:30:00", "${DAY}T10:00:00", patternFields(SudokuSize.FOUR))
-                game("level-1", NINE, 1, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.NINE))
-                game("level-2", NINE, 2, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.NINE))
                 game(
-                    "level-3-won",
-                    NINE,
-                    3,
-                    "${DAY}T07:00:00",
-                    "${DAY}T08:00:00",
+                    SeedGame("normal-9", NINE, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"),
+                    patternFields(SudokuSize.NINE, filled = {
+                        it % 3 !=
+                            0 &&
+                            it < 41
+                    }).withHint(11).withNotes(79, "139"),
+                )
+                game(
+                    SeedGame("normal-16", SIXTEEN, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"),
+                    patternFields(SudokuSize.SIXTEEN).withNotes(5, "AG"),
+                )
+                game(SeedGame("daily-0900", FOUR, -1, "${DAY}T06:00:00", "${DAY}T09:00:00"), patternFields(SudokuSize.FOUR))
+                game(SeedGame("daily-1000", FOUR, -1, "${DAY}T06:30:00", "${DAY}T10:00:00"), patternFields(SudokuSize.FOUR))
+                game(SeedGame("level-1", NINE, 1, "${DAY}T07:00:00", "${DAY}T08:00:00"), patternFields(SudokuSize.NINE))
+                game(SeedGame("level-2", NINE, 2, "${DAY}T07:00:00", "${DAY}T08:00:00"), patternFields(SudokuSize.NINE))
+                game(
+                    SeedGame("level-3-won", NINE, 3, "${DAY}T07:00:00", "${DAY}T08:00:00"),
                     patternFields(SudokuSize.NINE, filled = { true }),
                 )
-                game("four-level-1-won", FOUR, 1, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.FOUR, filled = { true }))
-                game("four-level-1-open", FOUR, 1, "${DAY}T07:00:00", "${DAY}T10:00:00", patternFields(SudokuSize.FOUR))
-                game("size-5", 5, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", List(25) { SeedField(it, it % 5 + 1) })
-                game("short-9", NINE, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", patternFields(SudokuSize.NINE).dropLast(1))
+                game(
+                    SeedGame("four-level-1-won", FOUR, 1, "${DAY}T07:00:00", "${DAY}T08:00:00"),
+                    patternFields(SudokuSize.FOUR, filled = { true }),
+                )
+                game(SeedGame("four-level-1-open", FOUR, 1, "${DAY}T07:00:00", "${DAY}T10:00:00"), patternFields(SudokuSize.FOUR))
+                game(SeedGame("size-5", 5, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"), List(25) { SeedField(it, it % 5 + 1) })
+                game(SeedGame("short-9", NINE, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"), patternFields(SudokuSize.NINE).dropLast(1))
                 commit()
             }
         }
@@ -193,8 +198,8 @@ class AppDatabaseMigrationTest {
     fun `the completed daily of a day wins over a later unfinished one`() {
         val connection = helper.createDatabase(2)
         LegacyDatabaseSeed(connection).apply {
-            game("daily-open", FOUR, -1, "${DAY}T06:00:00", "${DAY}T11:00:00", patternFields(SudokuSize.FOUR))
-            game("daily-won", FOUR, -1, "${DAY}T06:30:00", "${DAY}T09:00:00", patternFields(SudokuSize.FOUR, filled = { true }))
+            game(SeedGame("daily-open", FOUR, -1, "${DAY}T06:00:00", "${DAY}T11:00:00"), patternFields(SudokuSize.FOUR))
+            game(SeedGame("daily-won", FOUR, -1, "${DAY}T06:30:00", "${DAY}T09:00:00"), patternFields(SudokuSize.FOUR, filled = { true }))
         }
 
         migrated(connection).use { migrated ->
@@ -206,8 +211,8 @@ class AppDatabaseMigrationTest {
     fun `of two unfinished games of a level the later one wins`() {
         val connection = helper.createDatabase(2)
         LegacyDatabaseSeed(connection).apply {
-            game("level-late", FOUR, 1, "${DAY}T06:00:00", "${DAY}T11:00:00", patternFields(SudokuSize.FOUR))
-            game("level-early", FOUR, 1, "${DAY}T06:30:00", "${DAY}T09:00:00", patternFields(SudokuSize.FOUR))
+            game(SeedGame("level-late", FOUR, 1, "${DAY}T06:00:00", "${DAY}T11:00:00"), patternFields(SudokuSize.FOUR))
+            game(SeedGame("level-early", FOUR, 1, "${DAY}T06:30:00", "${DAY}T09:00:00"), patternFields(SudokuSize.FOUR))
         }
 
         migrated(connection).use { migrated -> migrated.ids("SELECT id FROM game") shouldBe listOf("level-late") }
@@ -290,7 +295,7 @@ class AppDatabaseMigrationTest {
                     }
                 }
         val connection = helper.createDatabase(2)
-        LegacyDatabaseSeed(connection).game("repair", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", fields)
+        LegacyDatabaseSeed(connection).game(SeedGame("repair", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"), fields)
 
         migrated(connection).use { migrated ->
             migrated.board("repair").cells.take(4) shouldBe
@@ -310,7 +315,7 @@ class AppDatabaseMigrationTest {
             created: String = "${DAY}T07:00:00",
             updated: String = "${DAY}T08:00:00",
             fields: List<SeedField> = valid,
-        ) = game(id, FOUR, modeLevel, created, updated, fields)
+        ) = game(SeedGame(id, FOUR, modeLevel, created, updated), fields)
 
         fun List<SeedField>.at2(change: (SeedField) -> SeedField) = map { if (it.index == 2) change(it) else it }
         broken("null-solution", fields = valid.at2 { it.copy(solution = null) })
@@ -335,7 +340,7 @@ class AppDatabaseMigrationTest {
         val connection = helper.createDatabase(2)
         val valid = patternFields(SudokuSize.FOUR)
         LegacyDatabaseSeed(connection).apply {
-            game("control", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", valid)
+            game(SeedGame("control", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00"), valid)
             game(SeedGame("unknown-difficulty", FOUR, 0, "${DAY}T07:00:00", "${DAY}T08:00:00", difficulty = 9), valid)
             unreadableGames(valid)
         }
