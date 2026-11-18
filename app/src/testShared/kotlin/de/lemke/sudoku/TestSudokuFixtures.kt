@@ -28,6 +28,7 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 /** A readable sudoku over a valid solved pattern; every third cell is given, the rest stays empty unless [completed]. */
+@Suppress("LongParameterList")
 fun testSudoku(
     size: SudokuSize = SudokuSize.FOUR,
     mode: GameMode = GameMode.Normal,
