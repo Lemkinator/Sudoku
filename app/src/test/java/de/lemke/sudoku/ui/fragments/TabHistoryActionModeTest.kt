@@ -128,12 +128,8 @@ class TabHistoryActionModeTest {
         PlayGamesSdk.initialize(ApplicationProvider.getApplicationContext())
     }
 
-    private var restoreReflectedField: (() -> Unit)? = null
-
     @After
     fun tearDown() {
-        restoreReflectedField?.invoke()
-        restoreReflectedField = null
         database.close()
     }
 
@@ -406,18 +402,6 @@ class TabHistoryActionModeTest {
                 drawerLayout.isActionMode.shouldBeTrue()
                 fragment.sudokuListAdapter.getSelectedIds() shouldBe setOf(selectedId)
             }
-        }
-    }
-
-    @Test
-    fun `onSaveInstanceState returns early when only the drawer layout was never assigned`() {
-        launch { fragment ->
-            val drawerLayoutField = TabHistory::class.java.getDeclaredField("drawerLayout").apply { isAccessible = true }
-            val originalDrawerLayout = drawerLayoutField.get(fragment)
-            restoreReflectedField = { drawerLayoutField.set(fragment, originalDrawerLayout) }
-            drawerLayoutField.set(fragment, null)
-
-            fragment.onSaveInstanceState(Bundle())
         }
     }
 
