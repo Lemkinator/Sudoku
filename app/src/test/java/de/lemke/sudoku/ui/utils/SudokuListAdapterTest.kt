@@ -28,9 +28,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.domain.model.Board
@@ -50,6 +50,7 @@ import dev.oneuiproject.oneui.widget.Separator
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -400,36 +401,86 @@ class SudokuListAdapterTest {
         adapter.itemCount shouldBe 1
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun diffCallback(): DiffUtil.ItemCallback<SudokuListItem> {
-        // Kotlin stores this private companion val's backing field as a static on SudokuListAdapter itself.
-        val field = SudokuListAdapter::class.java.getDeclaredField("diffCallback").apply { isAccessible = true }
-        return field.get(null) as DiffUtil.ItemCallback<SudokuListItem>
+    private fun diffEvents(
+        old: List<SudokuListItem>,
+        new: List<SudokuListItem>,
+    ): List<String> {
+        val adapter = buildAdapter()
+        var committed = false
+        adapter.submitList(old) { committed = true }
+        awaitMainLooperUntil { committed }
+        val events = mutableListOf<String>()
+        adapter.registerAdapterDataObserver(
+            object : RecyclerView.AdapterDataObserver() {
+                override fun onItemRangeChanged(
+                    positionStart: Int,
+                    itemCount: Int,
+                ) {
+                    events += "changed $positionStart $itemCount"
+                }
+
+                override fun onItemRangeChanged(
+                    positionStart: Int,
+                    itemCount: Int,
+                    payload: Any?,
+                ) {
+                    events += "changed $positionStart $itemCount"
+                }
+
+                override fun onItemRangeInserted(
+                    positionStart: Int,
+                    itemCount: Int,
+                ) {
+                    events += "inserted $positionStart $itemCount"
+                }
+
+                override fun onItemRangeRemoved(
+                    positionStart: Int,
+                    itemCount: Int,
+                ) {
+                    events += "removed $positionStart $itemCount"
+                }
+
+                override fun onItemRangeMoved(
+                    fromPosition: Int,
+                    toPosition: Int,
+                    itemCount: Int,
+                ) {
+                    events += "moved $fromPosition $toPosition"
+                }
+            },
+        )
+        committed = false
+        adapter.submitList(new) { committed = true }
+        awaitMainLooperUntil { committed }
+        return events
     }
 
     @Test
-    fun `diffCallback matches separators by stable id independently of sudoku items`() {
-        val callback = diffCallback()
-        val separatorA = SeparatorItem("A")
-        val separatorASame = SeparatorItem("A")
-        val separatorB = SeparatorItem("B")
-
-        callback.areItemsTheSame(separatorA, separatorASame) shouldBe true
-        callback.areItemsTheSame(separatorA, separatorB) shouldBe false
-        callback.areContentsTheSame(separatorA, separatorASame) shouldBe true
-        callback.areContentsTheSame(separatorA, separatorB) shouldBe false
+    fun `submitList reports nothing for an equal separator`() {
+        diffEvents(listOf(SeparatorItem("A")), listOf(SeparatorItem("A"))) shouldBe emptyList()
     }
 
     @Test
-    fun `diffCallback falls through to else for a sudoku item and separator pair`() {
-        val callback = diffCallback()
+    fun `submitList changes a separator whose stable id is kept but whose text differs`() {
+        "Aa".hashCode() shouldBe "BB".hashCode()
+
+        diffEvents(listOf(SeparatorItem("Aa")), listOf(SeparatorItem("BB"))) shouldBe listOf("changed 0 1")
+    }
+
+    @Test
+    fun `submitList replaces a separator with another stable id`() {
+        diffEvents(listOf(SeparatorItem("A")), listOf(SeparatorItem("B"))) shouldContainExactlyInAnyOrder
+            listOf("removed 0 1", "inserted 0 1")
+    }
+
+    @Test
+    fun `submitList replaces a sudoku item with a separator and back`() {
         val sudokuItem = SudokuItem(sudokuFixture().summary(), "A")
         val separator = SeparatorItem("A")
 
-        callback.areItemsTheSame(sudokuItem, separator) shouldBe false
-        callback.areItemsTheSame(separator, sudokuItem) shouldBe false
-        callback.areContentsTheSame(sudokuItem, separator) shouldBe false
-        callback.areContentsTheSame(separator, sudokuItem) shouldBe false
+        diffEvents(listOf(sudokuItem), listOf(separator)) shouldContainExactlyInAnyOrder listOf("removed 0 1", "inserted 0 1")
+        diffEvents(listOf(separator), listOf(sudokuItem)) shouldContainExactlyInAnyOrder listOf("removed 0 1", "inserted 0 1")
     }
 
     private fun layoutRecyclerViewWith(adapter: SudokuListAdapter): RecyclerView {
