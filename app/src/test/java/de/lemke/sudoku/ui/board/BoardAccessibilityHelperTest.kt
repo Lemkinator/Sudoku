@@ -26,7 +26,6 @@ import android.view.View.MeasureSpec
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.accessibility.AccessibilityRecord
 import android.widget.FrameLayout
 import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.customview.widget.ExploreByTouchHelper
@@ -46,6 +45,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadow.api.Shadow
+import org.robolectric.shadows.ShadowAccessibilityRecord
 
 private const val SIDE = 400
 private const val CELLS_PER_EVENT_LIMIT = 8
@@ -59,8 +60,7 @@ private class RecordingParent(context: Context) : FrameLayout(context) {
         child: View,
         event: AccessibilityEvent,
     ): Boolean {
-        val sourceId = AccessibilityRecord::class.java.getMethod("getSourceNodeId").invoke(event) as Long
-        sourceViews += AccessibilityNodeInfo::class.java.getMethod("getVirtualDescendantId", Long::class.java).invoke(null, sourceId) as Int
+        sourceViews += Shadow.extract<ShadowAccessibilityRecord>(event).virtualDescendantId
         contentChanges += event.contentChangeTypes
         return true
     }

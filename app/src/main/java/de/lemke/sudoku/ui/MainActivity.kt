@@ -38,6 +38,8 @@ import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.activity.viewModels
+import androidx.annotation.VisibleForTesting
+import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat.makeCustomAnimation
@@ -266,7 +268,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initDrawer() {
-        binding.navigationView.findMenuItem(R.id.leaks_dest)?.isVisible = BuildConfig.DEBUG
         binding.navigationView.onSingleLaunchItemSelected(::onNavigationItemSelected)
         binding.drawerLayout.apply {
             setTitle(getString(R.string.app_name))
@@ -274,7 +275,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun onNavigationItemSelected(item: MenuItem): Boolean {
+    @VisibleForTesting(otherwise = PRIVATE)
+    internal fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.achievements_dest -> openPlayGamesScreen(PlayGamesScreen.ACHIEVEMENTS)
             R.id.leaderboards_dest -> openPlayGamesScreen(PlayGamesScreen.LEADERBOARDS)

@@ -118,7 +118,7 @@ class TabHistory : Fragment(), ViewYTranslator by AppBarAwareYTranslator() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (!this::binding.isInitialized || !this::drawerLayout.isInitialized) return
+        if (!this::binding.isInitialized) return
         outState.saveSearchAndActionMode(
             isActionMode = drawerLayout.isActionMode,
             selectedIds = sudokuListAdapter.getSelectedIds(),
