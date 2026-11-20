@@ -17,7 +17,6 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Bundle
-import android.os.Looper
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +31,7 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import dagger.hilt.android.testing.UninstallModules
 import de.lemke.commonutils.HiltTestRule
+import de.lemke.commonutils.awaitMainLooperUntil
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
@@ -61,7 +61,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Clock
-import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -77,8 +76,6 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
 import dev.oneuiproject.oneui.design.R as designR
-
-private const val MENU_SYNC_DELAY_MS = 375L
 
 /**
  * `seslStartLongPressMultiSelection()` NPEs under Robolectric.
@@ -151,8 +148,13 @@ class TabHistoryActionModeTest {
 
     private fun TabHistory.clickSelectAll() {
         requireActivity().findViewById<View>(designR.id.toolbarlayout_selectall).performClick()
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(MENU_SYNC_DELAY_MS))
-        idleMainLooper()
+        awaitMainLooperUntil {
+            requireActivity()
+                .findViewById<ViewGroup>(designR.id.tbl_footer_parent)
+                .descendants
+                .filterIsInstance<BottomNavigationView>()
+                .any { it.menu.findItem(R.id.menuButtonDelete) != null }
+        }
     }
 
     private fun TabHistory.bottomActionModeBar(): BottomNavigationView {
@@ -278,7 +280,7 @@ class TabHistoryActionModeTest {
             fragment.clickSelectAll()
             val menu = fragment.bottomActionModeBar().menu
             menu.add(Menu.NONE, 12345, Menu.NONE, "other")
-            menu.performIdentifierAction(12345, 0)
+            menu.performIdentifierAction(12345, 0).shouldBeTrue()
             idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeTrue()
