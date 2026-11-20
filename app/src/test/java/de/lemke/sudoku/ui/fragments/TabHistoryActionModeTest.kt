@@ -17,11 +17,16 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.os.Bundle
-import androidx.appcompat.view.menu.MenuBuilder
+import android.os.Looper
+import android.view.Menu
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.descendants
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.testing.BindValue
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -50,13 +55,13 @@ import de.lemke.sudoku.ui.SudokuActivity
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
 import dev.oneuiproject.oneui.layout.DrawerLayout
-import dev.oneuiproject.oneui.layout.ToolbarLayout
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.time.Clock
+import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,9 +76,12 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowDialog
+import dev.oneuiproject.oneui.design.R as designR
+
+private const val MENU_SYNC_DELAY_MS = 375L
 
 /**
- * `seslStartLongPressMultiSelection()` NPEs under Robolectric, and `ToolbarLayout` hides its `actionModeListener`.
+ * `seslStartLongPressMultiSelection()` NPEs under Robolectric.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @UninstallModules(SudokusRepositoryModule::class)
@@ -145,20 +153,20 @@ class TabHistoryActionModeTest {
         }
     }
 
-    private fun actionModeListenerOf(drawerLayout: DrawerLayout): ToolbarLayout.ActionModeListener {
-        val field = ToolbarLayout::class.java.getDeclaredField("actionModeListener").apply { isAccessible = true }
-        return field.get(drawerLayout) as ToolbarLayout.ActionModeListener
+    private fun TabHistory.clickSelectAll() {
+        requireActivity().findViewById<View>(designR.id.toolbarlayout_selectall).performClick()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(MENU_SYNC_DELAY_MS))
+        idleMainLooper()
     }
 
-    private fun deleteMenuItem(fragment: TabHistory) =
-        MenuBuilder(fragment.requireContext())
-            .apply { fragment.requireActivity().menuInflater.inflate(R.menu.delete_menu, this) }
-            .findItem(R.id.menuButtonDelete)!!
+    private fun TabHistory.bottomActionModeBar(): BottomNavigationView {
+        val footer = requireActivity().findViewById<ViewGroup>(designR.id.tbl_footer_parent)
+        return footer.descendants.filterIsInstance<BottomNavigationView>().single()
+    }
 
-    private fun otherMenuItem(fragment: TabHistory) =
-        MenuBuilder(fragment.requireContext())
-            .apply { add(0, 12345, 0, "other") }
-            .findItem(12345)!!
+    private fun TabHistory.clickDelete() {
+        bottomActionModeBar().menu.performIdentifierAction(R.id.menuButtonDelete, 0)
+    }
 
     @Test
     fun `long-clicking an item enters action mode and deleting the selection removes it`() {
@@ -177,8 +185,7 @@ class TabHistoryActionModeTest {
             drawerLayout.isActionMode.shouldBeTrue()
             fragment.sudokuListAdapter.isActionMode.shouldBeTrue()
 
-            val listener = actionModeListenerOf(drawerLayout)
-            listener.onSelectAll(true)
+            fragment.clickSelectAll()
             fragment.sudokuListAdapter.getSelectedIds() shouldBe
                 setOf(first, second)
                     .map {
@@ -187,7 +194,7 @@ class TabHistoryActionModeTest {
                             .toLong()
                     }.toSet()
 
-            listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+            fragment.clickDelete()
             idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeFalse()
@@ -208,13 +215,12 @@ class TabHistoryActionModeTest {
             val drawerLayout = fragment.requireActivity().findViewById<DrawerLayout>(R.id.drawerLayout)
             fragment.launchActionMode()
             idleMainLooper()
-            val listener = actionModeListenerOf(drawerLayout)
-            listener.onSelectAll(true)
+            fragment.clickSelectAll()
             deleteGate = CompletableDeferred()
             deleteCalls = 0
 
-            listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
-            listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+            fragment.clickDelete()
+            fragment.clickDelete()
             idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeTrue()
@@ -245,10 +251,9 @@ class TabHistoryActionModeTest {
                         .first()
                 fragment.launchActionMode()
                 idleMainLooper()
-                val listener = actionModeListenerOf(activity.findViewById(R.id.drawerLayout))
-                listener.onSelectAll(true)
+                fragment.clickSelectAll()
                 deleteGate = CompletableDeferred()
-                listener.onMenuItemClicked(deleteMenuItem(fragment)).shouldBeTrue()
+                fragment.clickDelete()
             }
             idleMainLooper()
 
@@ -274,8 +279,10 @@ class TabHistoryActionModeTest {
             fragment.launchActionMode()
             idleMainLooper()
 
-            val listener = actionModeListenerOf(drawerLayout)
-            listener.onMenuItemClicked(otherMenuItem(fragment)).shouldBeFalse()
+            fragment.clickSelectAll()
+            val menu = fragment.bottomActionModeBar().menu
+            menu.add(Menu.NONE, 12345, Menu.NONE, "other")
+            menu.performIdentifierAction(12345, 0)
             idleMainLooper()
 
             drawerLayout.isActionMode.shouldBeTrue()
@@ -345,8 +352,7 @@ class TabHistoryActionModeTest {
         launch { fragment ->
             fragment.launchActionMode()
             idleMainLooper()
-            val listener = actionModeListenerOf(fragment.requireActivity().findViewById(R.id.drawerLayout))
-            listener.onSelectAll(true)
+            fragment.clickSelectAll()
 
             val outState = Bundle()
             fragment.onSaveInstanceState(outState)
@@ -380,8 +386,7 @@ class TabHistoryActionModeTest {
                     activity.supportFragmentManager.fragments
                         .filterIsInstance<TabHistory>()
                         .first()
-                val listener = actionModeListenerOf(activity.findViewById(R.id.drawerLayout))
-                listener.onSelectAll(true)
+                fragment.clickSelectAll()
                 selectedId = fragment.sudokuListAdapter.getSelectedIds().first()
             }
 
