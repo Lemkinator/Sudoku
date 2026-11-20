@@ -26,7 +26,6 @@ import androidx.reflect.DeviceInfo
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.games.PlayGamesSdk
-import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
 import de.lemke.commonutils.HiltTestRule
@@ -54,7 +53,6 @@ import de.lemke.sudoku.domain.model.SudokuSize
 import de.lemke.sudoku.testSudoku
 import de.lemke.sudoku.ui.SudokuActivity.Companion.KEY_SUDOKU_ID
 import dev.oneuiproject.oneui.dialog.ProgressDialog
-import dev.oneuiproject.oneui.navigation.widget.DrawerNavigationView
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
@@ -368,16 +366,21 @@ class MainActivityMenuTest {
         }
     }
 
-    private fun navigationListenerOf(navigationView: DrawerNavigationView): NavigationView.OnNavigationItemSelectedListener {
-        val field = DrawerNavigationView::class.java.getDeclaredField("navigationItemSelectedListener").apply { isAccessible = true }
-        return field.get(navigationView) as NavigationView.OnNavigationItemSelectedListener
-    }
+    @Test
+    fun `the debug drawer shows the memory leak item`() =
+        launch { activity ->
+            activity.binding.navigationView
+                .findMenuItem(R.id.leaks_dest)
+                .shouldNotBeNull()
+                .isVisible
+                .shouldBeTrue()
+        }
 
     @Test
     fun `an unrecognized navigation item is ignored`() =
         launch { activity ->
-            val listener = navigationListenerOf(activity.binding.navigationView)
-            listener.onNavigationItemSelected(RoboMenuItem(-54321)).shouldBeFalse()
+            activity.onNavigationItemSelected(RoboMenuItem(-54321)).shouldBeFalse()
+            shadowOf(activity).nextStartedActivity shouldBe null
         }
 
     // endregion
