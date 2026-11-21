@@ -25,6 +25,10 @@ git config core.hooksPath .githooks
 
 Missing this opt-in is a top build-failure cause for new contributors — CI also runs `detektMain detektTest`, which the hook does not.
 
+With `PRECOMMIT_GRADLE` set to the build-queue wrapper, exit 75 (wait limit ran out) or 76 (queue error) means the check did not run
+and the hook exits with that same code: 75 prints a retry message, 76 prints that the queue reported an error and that the
+`[build-queue]` line above names the cause. Any other failure exits 1 with a `./gradlew spotlessApply` reminder.
+
 ## Private Dependencies (Required for Build)
 
 Two private GitHub Maven repos are used:
