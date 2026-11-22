@@ -22,19 +22,12 @@ import android.R.anim.slide_in_left
 import android.R.anim.slide_out_right
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
-import android.graphics.Typeface
-import android.graphics.Typeface.NORMAL
 import android.net.Uri
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE
 import android.os.Bundle
-import android.text.SpannableString
-import android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-import android.text.TextPaint
-import android.text.style.ClickableSpan
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.activity.viewModels
@@ -50,7 +43,6 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.games.PlayGames
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,12 +52,9 @@ import de.lemke.commonutils.ui.utils.collectState
 import de.lemke.commonutils.ui.utils.configureCommonUtilsSplashScreen
 import de.lemke.commonutils.ui.utils.onSingleLaunchItemSelected
 import de.lemke.commonutils.ui.utils.onboardIfNeeded
-import de.lemke.commonutils.ui.utils.openURL
 import de.lemke.commonutils.ui.utils.popOverOrTransformToActivity
 import de.lemke.commonutils.ui.utils.prepareActivityTransformationFrom
 import de.lemke.commonutils.ui.utils.registerForSingleLaunchResult
-import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutActivity
-import de.lemke.commonutils.ui.utils.setupCommonUtilsAboutMeActivity
 import de.lemke.commonutils.ui.utils.setupHeaderAndNavRail
 import de.lemke.commonutils.ui.utils.showOnce
 import de.lemke.commonutils.ui.utils.singleLaunchMenuItem
@@ -169,7 +158,6 @@ class MainActivity : AppCompatActivity() {
         }
 
     private fun openMain() {
-        setupCommonUtilsActivities()
         initDrawer()
         initTabs()
         initFragments()
@@ -224,47 +212,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         if (handled) viewModel.onImportedSudokuHandled(result)
-    }
-
-    private fun setupCommonUtilsActivities() {
-        val bib = getString(R.string.sudoku_lib)
-        val license = getString(R.string.sudoku_lib_license)
-        val text = getString(R.string.app_description) + "\n" + getString(R.string.sudoku_lib_license_text, bib, license)
-        val optionalText = SpannableString(text)
-        optionalText.setSpan(
-            object : ClickableSpan() {
-                override fun onClick(widget: View) {
-                    openURL(getString(R.string.sudoku_lib_github_link))
-                }
-
-                override fun updateDrawState(ds: TextPaint) {
-                    super.updateDrawState(ds)
-                    ds.typeface = Typeface.create("sans-serif-medium", NORMAL)
-                }
-            },
-            text.indexOf(bib),
-            text.indexOf(bib) + bib.length,
-            SPAN_EXCLUSIVE_EXCLUSIVE,
-        )
-        optionalText.setSpan(
-            object : ClickableSpan() {
-                override fun onClick(widget: View) {
-                    openURL(getString(R.string.sudoku_lib_license_github_link))
-                }
-
-                override fun updateDrawState(ds: TextPaint) {
-                    super.updateDrawState(ds)
-                    ds.typeface = Typeface.create("sans-serif-medium", NORMAL)
-                }
-            },
-            text.indexOf(license),
-            text.indexOf(license) + license.length,
-            SPAN_EXCLUSIVE_EXCLUSIVE,
-        )
-        setupCommonUtilsAboutActivity(appVersion = BuildConfig.VERSION_NAME, optionalText = optionalText)
-        setupCommonUtilsAboutMeActivity(
-            onShareApp = { activity -> PlayGames.getAchievementsClient(activity).unlock(getString(R.string.achievement_share_app)) },
-        )
     }
 
     private fun initDrawer() {
