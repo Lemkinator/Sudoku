@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <issue id="Overdraw">
+        <ignore path="src/main/res/layout/activity_daily_sudoku.xml" />
+        <ignore path="src/main/res/layout/activity_intro.xml" />
+        <ignore path="src/main/res/layout-land/activity_intro.xml" />
+        <ignore path="src/main/res/layout/activity_sudoku.xml" />
+        <ignore path="src/main/res/layout-land/activity_sudoku.xml" />
+        <ignore path="src/main/res/layout/activity_settings.xml" />
+        <ignore path="src/main/res/layout/activity_sudoku_level.xml" />
+    </issue>
+</lint>
