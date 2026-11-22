@@ -18,7 +18,9 @@ package de.lemke.sudoku
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Typeface
 import android.text.SpannableString
+import android.text.TextPaint
 import android.text.style.ClickableSpan
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
@@ -104,6 +106,16 @@ class AppTest {
         aboutText().links()[1].onClick(View(app))
 
         shadowOf(app).nextStartedActivity.data.toString() shouldBe "https://github.com/sfuhrm/sudoku/blob/master/LICENSE"
+    }
+
+    @Test
+    fun `a link is drawn underlined in the medium sans-serif face`() {
+        val paint = TextPaint()
+
+        aboutText().links()[0].updateDrawState(paint)
+
+        paint.isUnderlineText shouldBe true
+        paint.typeface.shouldNotBeNull().style shouldBe Typeface.NORMAL
     }
 
     @Test
