@@ -188,6 +188,7 @@ Four tools run as part of `./gradlew build`, and dependency analysis runs separa
   type resolution, so rules that need it stay silent. The pre-commit hook runs plain `detekt` only, so type-aware rules run in
   `check`/CI. The hook does not replace `./gradlew detektMain detektTest`; run it before you push.
   The androidTest task skips `src/testShared`, which the unit-test task analyzes.
+- **Lint** — `app/lint.xml` lists the approved Overdraw files; `app/lint-baseline.xml` holds the other known findings.
 - **Kover** — coverage floor enforced via `minBound` in `app/build.gradle.kts`'s
   `kover { reports { variant("debug") { verify { rule { ... } } } } }`.
   Verify: `./gradlew koverVerifyDebug`. CI strips zero-instruction `<line>` entries from the
