@@ -18,7 +18,6 @@ package de.lemke.sudoku
 
 import android.app.Activity
 import android.content.Context
-import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.TextPaint
 import android.text.style.ClickableSpan
@@ -96,16 +95,20 @@ class AppTest {
 
     @Test
     fun `clicking the library link opens the library's GitHub page`() {
-        aboutText().links()[0].onClick(View(app))
+        val activity = Robolectric.buildActivity(Activity::class.java).get()
 
-        shadowOf(app).nextStartedActivity.data.toString() shouldBe "https://github.com/sfuhrm/sudoku"
+        aboutText().links()[0].onClick(View(activity))
+
+        shadowOf(activity).nextStartedActivity.data.toString() shouldBe "https://github.com/sfuhrm/sudoku"
     }
 
     @Test
     fun `clicking the license link opens the license's GitHub page`() {
-        aboutText().links()[1].onClick(View(app))
+        val activity = Robolectric.buildActivity(Activity::class.java).get()
 
-        shadowOf(app).nextStartedActivity.data.toString() shouldBe "https://github.com/sfuhrm/sudoku/blob/master/LICENSE"
+        aboutText().links()[1].onClick(View(activity))
+
+        shadowOf(activity).nextStartedActivity.data.toString() shouldBe "https://github.com/sfuhrm/sudoku/blob/master/LICENSE"
     }
 
     @Test
@@ -115,7 +118,7 @@ class AppTest {
         aboutText().links()[0].updateDrawState(paint)
 
         paint.isUnderlineText shouldBe true
-        paint.typeface.shouldNotBeNull().style shouldBe Typeface.NORMAL
+        paint.typeface.shouldNotBeNull().weight shouldBe 500
     }
 
     @Test
