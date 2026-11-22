@@ -87,13 +87,6 @@
             <intent-filter android:label="Import">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <!--data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.sudoku" />
-                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.sudoku" />
-                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.sudoku" />
-                <data android:pathPattern=".*\\..*\\..*\\..*\\.sudoku" />
-                <data android:pathPattern=".*\\..*\\..*\\.sudoku" />
-                <data android:pathPattern=".*\\..*\\.sudoku" />
-                <data android:pathPattern=".*\\.sudoku" /-->
                 <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="application/sudoku" />
                 <data android:scheme="file" />
