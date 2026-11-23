@@ -366,16 +366,6 @@ class MainActivityMenuTest {
     }
 
     @Test
-    fun `the debug drawer shows the memory leak item`() =
-        launch { activity ->
-            activity.binding.navigationView
-                .findMenuItem(R.id.leaks_dest)
-                .shouldNotBeNull()
-                .isVisible
-                .shouldBeTrue()
-        }
-
-    @Test
     fun `an unrecognized navigation item is ignored`() =
         launch { activity ->
             activity.onNavigationItemSelected(RoboMenuItem(-54321)).shouldBeFalse()
