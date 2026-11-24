@@ -388,6 +388,18 @@ class IntroActivityFlowTest {
             activity.onOptionsItemSelected(RoboMenuItem(-12345)).shouldBeFalse()
         }
 
+    @Test
+    fun `choosing skip and then continue shows one notifications dialog`() =
+        launch { activity ->
+            activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_skip)).shouldBeTrue()
+            activity.binding.introContinueButton.performClick()
+
+            ShadowDialog
+                .getShownDialogs()
+                .filterIsInstance<AlertDialog>()
+                .count { it.isShowing } shouldBe 1
+        }
+
     // endregion
 
     // region continue button / notifications dialog

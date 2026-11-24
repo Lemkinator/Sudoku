@@ -164,6 +164,30 @@ class QueueSudokuSaveUseCaseTest {
         }
 
     @Test
+    fun `run a suspending exclusive block after the earlier save that was still running`() =
+        runTest {
+            val saveGate = CompletableDeferred<Unit>()
+            val blockGate = CompletableDeferred<Unit>()
+            val queueSudokuSave = queue()
+            gateSaves(saveGate)
+            queueSudokuSave(testSudoku())
+
+            val savesSeenByBlock =
+                async {
+                    queueSudokuSave.exclusive {
+                        blockGate.await()
+                        sudokusRepository.saves.size
+                    }
+                }
+            runCurrent()
+            saveGate.complete(Unit)
+            runCurrent()
+            blockGate.complete(Unit)
+
+            savesSeenByBlock.await() shouldBe 1
+        }
+
+    @Test
     fun `release the saves queued behind an exclusive block that failed`() =
         runTest {
             val queueSudokuSave = queue()
