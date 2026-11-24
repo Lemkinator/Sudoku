@@ -28,7 +28,11 @@ import de.lemke.commonutils.HiltTestRule
 import de.lemke.commonutils.bypassOobe
 import de.lemke.commonutils.data.SettingsRepository
 import de.lemke.commonutils.idleMainLooper
+import de.lemke.sudoku.domain.SaveSudokuUseCase
+import de.lemke.sudoku.testSudoku
+import java.time.LocalDateTime
 import javax.inject.Inject
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -48,6 +52,9 @@ class MainActivityScreenshotTest {
 
     @Inject
     lateinit var settings: SettingsRepository
+
+    @Inject
+    lateinit var saveSudoku: SaveSudokuUseCase
 
     @Before
     fun setup() {
@@ -83,6 +90,15 @@ class MainActivityScreenshotTest {
     @Test
     fun mainActivity_history() {
         captureMainScreenshot("src/test/screenshots/main_history.png", tabPosition = 0)
+    }
+
+    @Test
+    fun mainActivity_history_withSudokus() {
+        runBlocking {
+            saveSudoku(testSudoku(created = LocalDateTime.of(2024, 3, 15, 10, 30)))
+            saveSudoku(testSudoku(created = LocalDateTime.of(2024, 2, 10, 9, 0)))
+        }
+        captureMainScreenshot("src/test/screenshots/main_history_sudokus.png", tabPosition = 0)
     }
 
     @Test
