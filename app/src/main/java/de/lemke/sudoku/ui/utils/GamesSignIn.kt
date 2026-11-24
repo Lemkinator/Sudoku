@@ -37,8 +37,6 @@ class DefaultGamesSignIn @Inject constructor() : GamesSignIn {
     override fun signIn(activity: Activity): Task<Boolean> = PlayGames.getGamesSignInClient(activity).signIn().authenticated()
 
     private fun Task<AuthenticationResult>.authenticated(): Task<Boolean> = continueWith(directExecutor) { it.result.isAuthenticated }
-
-    private companion object {
-        val directExecutor = Executor { it.run() }
-    }
 }
+
+private val directExecutor = Executor { it.run() }
