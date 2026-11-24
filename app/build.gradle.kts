@@ -217,7 +217,6 @@ dependencies {
     implementation(libs.common.utils.transitions)
     implementation(libs.coroutines.core)
     runtimeOnly(libs.coroutines.android)
-    implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
     implementation(libs.kotlinx.serialization.core)

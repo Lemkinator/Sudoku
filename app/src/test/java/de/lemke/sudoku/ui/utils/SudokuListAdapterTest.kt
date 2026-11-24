@@ -338,7 +338,7 @@ class SudokuListAdapterTest {
     }
 
     @Test
-    fun `onBindViewHolder with a SELECTION_MODE payload updates action mode without rebinding content`() {
+    fun `onBindViewHolder with a selection mode payload updates action mode without rebinding content`() {
         val sudoku = sudokuFixture()
         val adapter = buildAdapter()
         adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
@@ -349,37 +349,10 @@ class SudokuListAdapterTest {
         holder.textView.text = "sentinel"
         adapter.toggleActionMode(true)
 
-        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
+        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.SelectionModePayload))
 
         holder.textView.text shouldBe "sentinel"
         holder.selectableLayout.isSelectionMode shouldBe true
-    }
-
-    @Test
-    fun `onBindViewHolder with a HIGHLIGHT payload rebinds a sudoku item's content`() {
-        val sudoku = sudokuFixture(errorsMade = 3)
-        val adapter = buildAdapter(errorLimit = 0)
-        adapter.submitList(listOf(SudokuItem(sudoku.summary(), "A")))
-        val holder = adapter.onCreateViewHolder(FrameLayout(context), SudokuItem.VIEW_TYPE)
-        adapter.onBindViewHolder(holder, 0)
-        adapter.errorLimit = 3
-
-        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.HIGHLIGHT))
-
-        smallText(holder) shouldBe expectedSmallText(sudoku, errorLimit = 3, mode = Mode.NORMAL)
-    }
-
-    @Test
-    fun `onBindViewHolder with a HIGHLIGHT payload leaves a separator untouched`() {
-        val separatorItem = SeparatorItem("Sep")
-        val adapter = buildAdapter()
-        adapter.submitList(listOf(separatorItem))
-        val holder = adapter.onCreateViewHolder(FrameLayout(context), SeparatorItem.VIEW_TYPE)
-        holder.textView.text = "sentinel"
-
-        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.HIGHLIGHT))
-
-        holder.textView.text shouldBe "sentinel"
     }
 
     @Test
@@ -544,7 +517,18 @@ class SudokuListAdapterTest {
     }
 
     @Test
-    fun `a SELECTION_MODE payload on a separator holder is a no-op instead of crashing`() {
+    fun `a long click on a row without a long-click listener is consumed`() {
+        val adapter = buildAdapter()
+        adapter.submitList(listOf(SudokuItem(sudokuFixture().summary(), "A")))
+
+        val recyclerView = layoutRecyclerViewWith(adapter)
+        val holder = recyclerView.findViewHolderForAdapterPosition(0).shouldNotBeNull()
+
+        holder.itemView.performLongClick().shouldBeTrue()
+    }
+
+    @Test
+    fun `a selection mode payload on a separator holder is a no-op instead of crashing`() {
         val separatorItem = SeparatorItem("Sep")
         val adapter = buildAdapter()
         adapter.submitList(listOf(separatorItem))
@@ -554,7 +538,7 @@ class SudokuListAdapterTest {
         holder.textView.text = "sentinel"
         adapter.toggleActionMode(true)
 
-        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.Payload.SELECTION_MODE))
+        adapter.onBindViewHolder(holder, 0, mutableListOf(SudokuListAdapter.SelectionModePayload))
 
         holder.textView.text shouldBe "sentinel"
     }

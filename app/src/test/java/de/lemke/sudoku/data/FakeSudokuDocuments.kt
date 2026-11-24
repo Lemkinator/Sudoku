@@ -21,17 +21,14 @@ import java.io.FileNotFoundException
 
 /** Serves the documents added for a [Uri]. */
 class FakeSudokuDocuments : SudokuDocuments {
-    private val documents = mutableMapOf<Uri, Pair<DocumentInfo, ByteArray?>>()
+    private val documents = mutableMapOf<Uri, ByteArray?>()
 
     fun addDocument(
         uri: Uri,
         content: ByteArray?,
-        info: DocumentInfo = DocumentInfo(exists = true, readable = true, mimeType = "application/octet-stream"),
     ) {
-        documents[uri] = info to content
+        documents[uri] = content
     }
 
-    override fun readBytes(uri: Uri): ByteArray = documents[uri]?.second ?: throw FileNotFoundException("No content for $uri")
-
-    override fun describe(uri: Uri): DocumentInfo = documents[uri]?.first ?: DocumentInfo(exists = false, readable = false, mimeType = null)
+    override fun readBytes(uri: Uri): ByteArray = documents[uri] ?: throw FileNotFoundException("No content for $uri")
 }
