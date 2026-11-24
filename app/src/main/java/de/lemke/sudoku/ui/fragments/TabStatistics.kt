@@ -52,7 +52,6 @@ class TabStatistics : Fragment() {
     internal lateinit var binding: FragmentTabStatisticsBinding
     internal var statisticsList: List<Pair<String, String?>> = emptyList()
     private val viewModel: TabStatisticsViewModel by viewModels()
-    private val statisticsAdapter = StatisticsListAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,6 +64,7 @@ class TabStatistics : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        val statisticsAdapter = StatisticsListAdapter()
         binding.statisticsListRecycler.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = statisticsAdapter
