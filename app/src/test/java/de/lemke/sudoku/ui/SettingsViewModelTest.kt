@@ -25,6 +25,7 @@ import de.lemke.commonutils.backup.FakeBackupDocuments
 import de.lemke.commonutils.backup.core.BackupApp
 import de.lemke.commonutils.backup.core.BackupEngine
 import de.lemke.commonutils.backup.core.BackupFileExtension
+import de.lemke.commonutils.backup.testBackupScreenDeps
 import de.lemke.commonutils.freshTestPreferences
 import de.lemke.sudoku.R
 import de.lemke.sudoku.data.FakeDailyNotifications
@@ -68,15 +69,17 @@ class SettingsViewModelTest {
             userSettings,
             dailyNotifications,
             SetDailyNotificationEnabledUseCase(userSettings, sendDailyNotification),
-            sectionLabels,
-            BackupEngine(
-                setOf(SudokuBackupSection(database.gameDao())),
-                DirectBackupTransaction(),
-                BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup")),
-                { "2026-10-30T12:00:00Z" },
+            testBackupScreenDeps(
+                BackupEngine(
+                    setOf(SudokuBackupSection(database.gameDao())),
+                    DirectBackupTransaction(),
+                    BackupApp("sudoku", 1, BackupFileExtension(".sudokubackup")),
+                    { "2026-10-30T12:00:00Z" },
+                ),
+                dispatcher,
+                FakeBackupDocuments(),
+                sectionLabels,
             ),
-            FakeBackupDocuments(),
-            dispatcher,
         )
     }
 

@@ -79,10 +79,10 @@ class DailySudokuActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         viewModel.dailyShowUncompleted.let {
-            menu?.findItem(R.id.menuitem_show_all_sudokus)?.isVisible = !it
-            menu?.findItem(R.id.menuitem_show_only_completed_sudokus)?.isVisible = it
+            menu.findItem(R.id.menuitem_show_all_sudokus).isVisible = !it
+            menu.findItem(R.id.menuitem_show_only_completed_sudokus).isVisible = it
         }
         return super.onPrepareOptionsMenu(menu)
     }

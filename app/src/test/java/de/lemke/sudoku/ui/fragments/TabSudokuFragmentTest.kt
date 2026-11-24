@@ -17,6 +17,8 @@
 package de.lemke.sudoku.ui.fragments
 
 import android.content.Intent
+import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.widget.SeslSeekBar
 import androidx.core.view.isVisible
@@ -280,6 +282,48 @@ class TabSudokuFragmentTest {
             idleMainLooper()
             userSettings.difficultySliderValue shouldBe 3
         }
+
+    @Test
+    fun `dragging the difficulty seekbar to its end persists the hardest difficulty`() =
+        launch { fragment ->
+            val seekBar = fragment.requireView().findViewById<SeslSeekBar>(R.id.difficulty_seekbar)
+            userSettings.difficultySliderValue = 0
+            seekBar.progress = 0
+
+            seekBar.dragToEnd()
+            idleMainLooper()
+
+            seekBar.progress shouldBe seekBar.max
+            userSettings.difficultySliderValue shouldBe seekBar.max
+        }
+
+    @Test
+    fun `dragging the size seekbar to its end persists the largest size`() =
+        launch { fragment ->
+            val seekBar = fragment.requireView().findViewById<SeslSeekBar>(R.id.size_seekbar)
+            userSettings.sizeSliderValue = 0
+            seekBar.progress = 0
+
+            seekBar.dragToEnd()
+            idleMainLooper()
+
+            seekBar.progress shouldBe 2
+            userSettings.sizeSliderValue shouldBe 2
+        }
+
+    private fun SeslSeekBar.dragToEnd() {
+        val y = height / 2f
+        val start = paddingLeft.toFloat()
+        val end = (width - paddingRight).toFloat()
+        val downTime = SystemClock.uptimeMillis()
+        val steps = 10
+        dispatchTouchEvent(MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, start, y, 0))
+        for (step in 1..steps) {
+            val x = start + (end - start) * step / steps
+            dispatchTouchEvent(MotionEvent.obtain(downTime, downTime + step, MotionEvent.ACTION_MOVE, x, y, 0))
+        }
+        dispatchTouchEvent(MotionEvent.obtain(downTime, downTime + steps + 1, MotionEvent.ACTION_UP, end, y, 0))
+    }
 
     @Test
     fun `the size seekbar offers one step per sudoku size`() =

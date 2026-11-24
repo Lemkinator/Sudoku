@@ -192,6 +192,33 @@ class SudokuActivityGameStateTest {
     }
 
     @Test
+    fun `pausing the activity while the game restarts leaves the restart running and plays the restarted board`() {
+        launch(formulaicSudoku(solved = false)) { scenario ->
+            scenario.onActivity { activity ->
+                activity.userSettings.errorLimit = 1
+                activity.tapCell(1)
+                activity.tapDigit(1)
+                pausableDefaultDispatcher.pause()
+                activity.onOptionsItemSelected(RoboMenuItem(R.id.menu_reset)).shouldBeTrue()
+            }
+            idleMainLooper()
+
+            scenario.moveToState(Lifecycle.State.CREATED)
+            scenario.onActivity { activity -> activity.viewModel.game.value shouldBe SudokuGame.Restarting }
+
+            pausableDefaultDispatcher.resume()
+            scenario.moveToState(Lifecycle.State.RESUMED)
+            awaitMainLooperUntil { scenario.read { it.viewModel.game.value is SudokuGame.Playing } }
+            scenario.onActivity { activity ->
+                activity.sudoku.info.errorsMade shouldBe 0
+                activity.sudoku.board[1]
+                    .value
+                    .shouldBeNull()
+            }
+        }
+    }
+
+    @Test
     fun `a tap and a move reported while the game restarts change nothing`() {
         launch(formulaicSudoku(solved = false)) { scenario ->
             scenario.onActivity { activity ->

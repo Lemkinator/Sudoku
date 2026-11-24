@@ -217,7 +217,6 @@ dependencies {
     implementation(libs.common.utils.transitions)
     implementation(libs.coroutines.core)
     runtimeOnly(libs.coroutines.android)
-    implementation(libs.documentfile)
     implementation(libs.sudoku)
     implementation(libs.play.services.games)
     implementation(libs.kotlinx.serialization.core)
@@ -382,7 +381,7 @@ kover {
             verify {
                 rule {
                     minBound(99, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.INSTRUCTION)
-                    minBound(98, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
+                    minBound(99, coverageUnits = kotlinx.kover.gradle.plugin.dsl.CoverageUnit.BRANCH)
                 }
             }
         }

@@ -19,16 +19,11 @@ package de.lemke.sudoku.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import de.lemke.commonutils.backup.BackupDocuments
-import de.lemke.commonutils.backup.BackupSectionLabel
-import de.lemke.commonutils.backup.BackupStateHolder
-import de.lemke.commonutils.backup.core.BackupEngine
-import de.lemke.commonutils.di.DefaultDispatcher
+import de.lemke.commonutils.backup.BackupScreenDeps
 import de.lemke.sudoku.data.DailyNotifications
 import de.lemke.sudoku.data.UserSettings
 import de.lemke.sudoku.domain.SetDailyNotificationEnabledUseCase
 import javax.inject.Inject
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.launch
 
 sealed interface DailyNotificationToggleResult {
@@ -40,16 +35,14 @@ sealed interface DailyNotificationToggleResult {
 }
 
 @HiltViewModel
-class SettingsViewModel @Suppress("LongParameterList") @Inject constructor(
+class SettingsViewModel @Inject constructor(
     private val userSettings: UserSettings,
     private val dailyNotifications: DailyNotifications,
     private val setDailyNotificationEnabled: SetDailyNotificationEnabledUseCase,
-    val sectionLabels: Set<BackupSectionLabel>,
-    backupEngine: BackupEngine,
-    backupDocuments: BackupDocuments,
-    @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
+    backupScreen: BackupScreenDeps,
 ) : ViewModel() {
-    val backup = BackupStateHolder(viewModelScope, backupEngine, backupDocuments, defaultDispatcher)
+    val sectionLabels = backupScreen.sectionLabels
+    val backup = backupScreen.stateHolder(viewModelScope)
 
     val dailySudokuNotificationHour: Int get() = userSettings.dailySudokuNotificationHour
     val dailySudokuNotificationMinute: Int get() = userSettings.dailySudokuNotificationMinute

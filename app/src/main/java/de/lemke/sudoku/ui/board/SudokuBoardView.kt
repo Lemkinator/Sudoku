@@ -213,8 +213,6 @@ class SudokuBoardView @JvmOverloads constructor(
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean = gestureDetector.onTouchEvent(event) || super.onTouchEvent(event)
 
-    override fun performClick(): Boolean = super.performClick()
-
     override fun onDraw(canvas: Canvas) {
         val render = render ?: return
         val geometry = geometry ?: return

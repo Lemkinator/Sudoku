@@ -19,14 +19,20 @@ package de.lemke.sudoku.ui
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.app.NotificationManager
 import android.content.Context.NOTIFICATION_SERVICE
+import android.content.Intent
 import android.os.Looper
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.descendants
+import androidx.picker.app.SeslTimePickerDialog
 import androidx.preference.DropDownPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceScreen
 import androidx.preference.SeslSwitchPreferenceScreen
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
+import com.google.android.gms.games.AchievementsClient
+import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.PlayGamesSdk
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -37,13 +43,21 @@ import de.lemke.commonutils.idleMainLooper
 import de.lemke.sudoku.R
 import de.lemke.sudoku.TestDispatchers
 import de.lemke.sudoku.data.UserSettings
+import dev.oneuiproject.oneui.ktx.getRelativeLinksCard
+import dev.oneuiproject.oneui.widget.RelativeLinksCard
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import io.mockk.verify
 import java.time.Duration
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -87,6 +101,11 @@ class SettingsFragmentTest {
     @After
     fun resetDispatchers() {
         testDispatchers.reset()
+    }
+
+    @After
+    fun unmockPlayGames() {
+        unmockkStatic(PlayGames::class)
     }
 
     private fun launch(block: (SettingsActivity.SettingsFragment) -> Unit) {
@@ -189,15 +208,16 @@ class SettingsFragmentTest {
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.onPreferenceClickListener?.onPreferenceClick(pref)
             idleMainLooper()
-            val dialog = ShadowDialog.getLatestDialog() as AlertDialog
-            // SeslTimePickerDialog ignores BUTTON_POSITIVE clicks during its 283ms show animation.
-            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(300))
+            val dialog = ShadowDialog.getLatestDialog() as SeslTimePickerDialog
+            dialog.updateTime(9, 5)
+            // SeslTimePickerDialog ignores BUTTON_POSITIVE clicks until its spinners' show animation ends.
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(5))
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
             idleMainLooper()
             dialog.isShowing.shouldBeFalse()
-            userSettings.dailySudokuNotificationHour shouldBe 14
-            userSettings.dailySudokuNotificationMinute shouldBe 37
-            pref.summary.toString() shouldContain "2:37"
+            userSettings.dailySudokuNotificationHour shouldBe 9
+            userSettings.dailySudokuNotificationMinute shouldBe 5
+            pref.summary.toString() shouldContain "9:05"
         }
     }
 
@@ -282,6 +302,51 @@ class SettingsFragmentTest {
             val pref = fragment.pref<SeslSwitchPreferenceScreen>("dailySudokuNotificationEnabled")
             pref.summary.toString() shouldNotContain "AM"
             pref.summary.toString() shouldNotContain "PM"
+        }
+    }
+
+    // endregion
+
+    // region relative links
+
+    @Test
+    fun `the share app link unlocks the share achievement and opens the share sheet`() {
+        val achievements = mockk<AchievementsClient>(relaxed = true)
+        launch { fragment ->
+            val activity = fragment.requireActivity()
+            mockkStatic(PlayGames::class)
+            every { PlayGames.getAchievementsClient(activity) } returns achievements
+
+            fragment
+                .getRelativeLinksCard()
+                .shouldNotBeNull()
+                .link("Share app")
+                .performClick()
+
+            verify(exactly = 1) { achievements.unlock("CgkIqfzS8vQZEAIQBA") }
+            shadowOf(activity).nextStartedActivity.action shouldBe Intent.ACTION_CHOOSER
+        }
+    }
+
+    private fun RelativeLinksCard.link(title: String): TextView =
+        descendants.filterIsInstance<TextView>().first {
+            it.text.toString() ==
+                title
+        }
+
+    // endregion
+
+    // region recreation
+
+    @Test
+    fun `recreating the settings screen keeps its single settings fragment`() {
+        ActivityScenario.launch(SettingsActivity::class.java).use { scenario ->
+            idleMainLooper()
+            scenario.recreate()
+            idleMainLooper()
+            scenario.onActivity { activity ->
+                activity.supportFragmentManager.fragments.filterIsInstance<SettingsActivity.SettingsFragment>() shouldHaveSize 1
+            }
         }
     }
 

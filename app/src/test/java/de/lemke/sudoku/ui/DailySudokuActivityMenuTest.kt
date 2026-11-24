@@ -153,12 +153,6 @@ class DailySudokuActivityMenuTest {
             activity.onOptionsItemSelected(RoboMenuItem(-12345)).shouldBeFalse()
         }
 
-    @Test
-    fun `onPrepareOptionsMenu is a no-op when the framework passes a null menu`() =
-        launch { activity ->
-            activity.onPrepareOptionsMenu(null)
-        }
-
     // endregion
 
     // region recycler click wiring

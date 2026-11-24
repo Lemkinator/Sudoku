@@ -64,9 +64,10 @@ class TabStatistics : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        val statisticsAdapter = StatisticsListAdapter()
         binding.statisticsListRecycler.apply {
             layoutManager = LinearLayoutManager(context)
-            adapter = StatisticsListAdapter()
+            adapter = statisticsAdapter
             itemAnimator = null
             addItemDecoration(
                 SemItemDecoration(
@@ -82,9 +83,9 @@ class TabStatistics : Fragment() {
                 val previousSize = statisticsList.size
                 updateStatistics(it)
                 if (previousSize == 0) {
-                    binding.statisticsListRecycler.adapter?.notifyItemRangeInserted(0, statisticsList.size)
+                    statisticsAdapter.notifyItemRangeInserted(0, statisticsList.size)
                 } else {
-                    binding.statisticsListRecycler.adapter?.notifyItemRangeChanged(0, statisticsList.size)
+                    statisticsAdapter.notifyItemRangeChanged(0, statisticsList.size)
                 }
             }
         }
@@ -189,8 +190,6 @@ class TabStatistics : Fragment() {
 
     inner class StatisticsListAdapter : RecyclerView.Adapter<ViewHolder>() {
         override fun getItemCount(): Int = statisticsList.size
-
-        override fun getItemId(position: Int): Long = position.toLong()
 
         override fun getItemViewType(position: Int): Int = if (statisticsList[position].second == null) 1 else 0
 

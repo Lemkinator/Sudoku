@@ -55,7 +55,7 @@ class SudokuListAdapter(
         onBlockActionMode = onBlockActionMode,
         selectableIdsProvider = selectableIdsProvider,
         isSelectable = isSelectable,
-        selectionChangePayload = Payload.SELECTION_MODE,
+        selectionChangePayload = SelectionModePayload,
         useAlphabeticIndex = false,
         diffCallback = diffCallback,
     ) {
@@ -117,22 +117,9 @@ class SudokuListAdapter(
         if (payloads.isEmpty()) {
             onBindViewHolder(holder, position)
         } else {
-            for (payload in payloads.toSet()) {
-                when (payload) {
-                    Payload.SELECTION_MODE -> {
-                        when (holder) {
-                            is SudokuViewHolder -> holder.bindActionModeAnimate(getItemId(position))
-                            is SeparatorViewHolder -> Unit
-                        }
-                    }
-
-                    Payload.HIGHLIGHT -> {
-                        when (val item = currentList[position]) {
-                            is SudokuItem -> (holder as SudokuViewHolder).bindSummary(item.summary)
-                            is SeparatorItem -> Unit
-                        }
-                    }
-                }
+            when (holder) {
+                is SudokuViewHolder -> holder.bindActionModeAnimate(getItemId(position))
+                is SeparatorViewHolder -> Unit
             }
         }
     }
@@ -272,10 +259,7 @@ class SudokuListAdapter(
         }
     }
 
-    enum class Payload {
-        SELECTION_MODE,
-        HIGHLIGHT,
-    }
+    data object SelectionModePayload
 
     enum class Mode {
         NORMAL,
