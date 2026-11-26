@@ -46,7 +46,8 @@ class ScrollBenchmark {
     @Test
     fun scrollBaselineProfile() = scroll(CompilationMode.Partial())
 
-    private fun scroll(compilationMode: CompilationMode) =
+    private fun scroll(compilationMode: CompilationMode) {
+        var historySeeded = false
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
             metrics = listOf(FrameTimingMetric()),
@@ -56,11 +57,14 @@ class ScrollBenchmark {
             setupBlock = {
                 pressHome()
                 startActivityAndSkipOnboarding()
-                repeat(HISTORY_SEED_COUNT) {
-                    device.clickAndWaitForNewWindow(By.res(PACKAGE_NAME, "newGameButton"), GENERATION_TIMEOUT_MS)
-                    device.waitAndFindObject(By.res(PACKAGE_NAME, "board"), GENERATION_TIMEOUT_MS)
-                    device.pressBack()
-                    device.waitForIdle()
+                if (!historySeeded) {
+                    repeat(HISTORY_SEED_COUNT) {
+                        device.clickNewGame(GENERATION_TIMEOUT_MS)
+                        device.waitAndFindObject(By.res(PACKAGE_NAME, "board"), GENERATION_TIMEOUT_MS)
+                        device.pressBack()
+                        device.waitForIdle()
+                    }
+                    historySeeded = true
                 }
                 device.waitAndFindObject(By.res(PACKAGE_NAME, "history_dest"), TIMEOUT_MS).click()
                 device.waitAndFindObject(
@@ -73,4 +77,5 @@ class ScrollBenchmark {
                 checkNotNull(device.findObject(By.res(PACKAGE_NAME, "sudokuHistoryList"))) { "sudokuHistoryList not found" }
             device.flingElementDownUp(recycler)
         }
+    }
 }
