@@ -19,7 +19,9 @@ package de.lemke.sudoku.di
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.TestScope
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,12 +30,21 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [36])
 class SettingsProvideModuleTest {
+    private val firstScope = TestScope()
+    private val secondScope = TestScope()
+
+    @After
+    fun tearDown() {
+        firstScope.cancel()
+        secondScope.cancel()
+    }
+
     @Test
     fun `settings written through one instance are read by the next one`() {
         val context = ApplicationProvider.getApplicationContext<Application>()
 
-        SettingsProvideModule.provideUserSettings(context, TestScope()).sizeSliderValue = 2
+        SettingsProvideModule.provideUserSettings(context, firstScope).sizeSliderValue = 2
 
-        SettingsProvideModule.provideUserSettings(context, TestScope()).sizeSliderValue shouldBe 2
+        SettingsProvideModule.provideUserSettings(context, secondScope).sizeSliderValue shouldBe 2
     }
 }
