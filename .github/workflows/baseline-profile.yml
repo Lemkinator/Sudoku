@@ -38,6 +38,7 @@ jobs:
       # itself is what exercises the real generator end to end - this is the same command the
       # release workflow runs, making this job an early-warning rehearsal for it.
       - name: Build release APK with a freshly generated baseline profile
+        timeout-minutes: 30
         run: |
           chmod +x ./gradlew
           ./gradlew :app:assembleRelease \
@@ -67,3 +68,14 @@ jobs:
         with:
           name: baseline-profile
           path: app/build/outputs/apk/release/baselineProfiles/
+      - name: Upload generator test output on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: baseline-profile-test-output
+          if-no-files-found: ignore
+          path: |
+            ~/.android/avd/gradle-managed/**/*.txt
+            benchmarks/build/reports/androidTests/managedDevice/
+            benchmarks/build/outputs/androidTest-results/managedDevice/
+            benchmarks/build/outputs/managed_device_android_test_additional_output/
