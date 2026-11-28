@@ -106,7 +106,6 @@ private fun MacrobenchmarkScope.navigateToLevelsAndBack() {
 
 private const val LARGEST_DIGIT_BUTTON = "number_button_g"
 private const val DEFAULT_LARGEST_DIGIT_BUTTON = "number_button_9"
-private const val FIRST_DIGIT_BUTTON = "number_button_1"
 
 // Upper bound of a conditional wait: a 16x16 generation can take 30 to 60 s on a device.
 private const val LARGE_GENERATION_TIMEOUT_MS = 120_000L
@@ -215,21 +214,26 @@ private fun MacrobenchmarkScope.playBoard() {
     val match = emptyCell.matcher(description)
     check(match.matches()) { "Unexpected cell description '$description'" }
     val cell = Cell(match.group(1), match.group(2))
+    val digit = device.firstEnabledDigit()
     device.tapCell(cell)
-    device.tapButton(FIRST_DIGIT_BUTTON)
-    device.awaitCell(cell, cellTexts.value("1"))
+    device.tapButton("number_button_$digit")
+    device.awaitCell(cell, cellTexts.value(digit))
     device.tapCell(cell)
     device.tapButton("delete_button")
     device.awaitCell(cell, cellTexts.empty())
     device.tapButton("note_button")
     device.tapCell(cell)
-    device.tapButton(FIRST_DIGIT_BUTTON)
-    device.awaitCell(cell, cellTexts.notes(cellTexts.empty(), "1"))
+    device.tapButton("number_button_$digit")
+    device.awaitCell(cell, cellTexts.notes(cellTexts.empty(), digit))
     device.tapCell(cell)
     device.tapButton("delete_button")
     device.awaitCell(cell, cellTexts.empty())
     device.tapButton("note_button")
 }
+
+// A digit whose cells are all placed correctly has a disabled button, and givens count as placed.
+private fun UiDevice.firstEnabledDigit(): String =
+    ('1'..'9').first { findObject(By.res(PACKAGE_NAME, "number_button_$it"))?.isEnabled == true }.toString()
 
 private fun cellSelector(
     cell: Cell,
